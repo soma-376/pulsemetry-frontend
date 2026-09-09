@@ -19,6 +19,7 @@ export async function request<T>(
   options: RequestInit = {},
   auditReason?: string,
   responseType: 'json' | 'text' = 'json',
+  onHeaders?: (headers: Headers) => void,
 ): Promise<T> {
   if (
     auditReason !== undefined &&
@@ -44,6 +45,7 @@ export async function request<T>(
       body.request_id,
     );
   }
+  onHeaders?.(response.headers);
   return (responseType === 'text' ? response.text() : response.json()) as Promise<T>;
 }
 export const api = {

@@ -77,3 +77,15 @@ Vitest: DataFrame 상태/평행 배열/필드 labels, URL 정규화·범위 제�
 - 설치 응답은 도메인만 보이고 UI도 로컬 부분을 다시 가린다. 30/60/90일 무활동은 last_event_at 기준; admin 직접 다른 팀 요청403. 설정 signals는 bool 그대로 ON/OFF이며 준비 중/수집 상세/프라이버시 값으로 확장하지 않는다.
 - 목업 계약 배율0.82/0.8/0.75/0.88, 활성manifest14/적용33/배정35. 실제값 아님. 훅 차단 시계열은 같은 기간·필터의 기존 scalar 합계와 같게 정수 누적 반올림. 그 외 모든 지표 간 합계·실제 다중팀 집계를 보장하는 fixture는 아니다. 약정 소진은 단일 활성 계약의 합성69840/120000이다.
 - P3/P5 CSV는 현재 미제공(개요 CSV만 구현). 실 서버 API 요청/계정/영구 감사 로그/실제 배포 검증은 하지 않았다.
+
+## 6단계 시나리오 카탈로그·실행 계약
+- 생성 OpenAPI는 수정하지 않았다. api/scenarios.ts는 ScenarioSummary/Detail/Run 및 SCN-LIST/SCN-RUN의 생성 타입 별칭 사용. GET /scenarios, GET /scenarios/{id}, POST /scenarios/{id}/runs, GET /scenario-runs/{id}, POST /scenario-runs/{id}/cancel. URI encode, 공통 Bearer/401/AbortSignal/에러 request_id 유지.
+- 공통 request에 선택적 응답 headers 콜백만 추가. POST/GET의 Retry-After 초를 폴링 지연으로 사용(기본2초, 최소1초). queued/running만 다음 GET 예약, 성공/실패/취소 시 중지. 알 수 없는 상태/누락ID는 오류. 네트워크 실패는 기존 실행을 보존하고 폴링을 멈춰 명시적 재확인 제공. POST를 자동 재시도하지 않는다.
+- RunProvider는 인증된 셸에 위치하여 드로어 닫기·다른 페이지 이동에도 폴링 유지. 로그아웃/언마운트 시 타이머·요청 취소/메모리 제거. 이는 서버 실행 취소와 다르며 명시적인 실행 취소만 cancel API 호출. 재로그인·새로고침 뒤 과거 실행 복원은7단계의 RUN-LIST/RUN-GET 작업이다.
+- 시작 중 중복 클릭은 동기 ref로 차단. 취소/상태 재확인은 이전 GET을 abort하고 세대 번호가 같은 응답만 반영. 종료된 실행 취소409는 GET으로 실제 상태 재확인. 취소 통신 실패는 종료됐다고 단정하지 않는다. 재실행은 최초 RunInput(params/price_basis/tz)의 복사본 사용, 반환 params에서 새 입력을 임의 추정하지 않는다.
+- **폼 스키마 가정:** 첨부는 params_schema를 자유 JSON으로만 정의하고46개 실제 schema/defaults를 제공하지 않는다. mock은 overview §6-2 목록에서 schema를 만들고 날짜/숫자범위/배열/enum 기본값을 설정했다. budget_by_team={teamUUID:{usd?:positiveNumber,tokens_m?:positiveNumber}}이고 둘 중 하나 필수. S1-3의 optional team_ids는 Figma의 팀 입력에 따른 확장 가정. moving_avg_days=7,spike_threshold_pct=200은 Figma 근거. 다른 숫자/날짜 기본값은 구현 가정이다.
+- 프론트 검증은 지원하는 JSON Schema 하위집합(기본 type/required/enum/최소·최대/배열 items/추가속성/날짜)이다. $ref/oneOf/anyOf/allOf/not/if/pattern은 실행을 차단한다. 전체 JSON Schema 엔진은 아니며 실제 서버가 최종 검증자다. 실 META 확인 후 미지원 스키마를 확장해야 한다. 임의 날짜/상대 기간 순서·예산 배타 단위·선택팀도 추가 검사한다.
+- [권한 가정] admin 실행은 소속 팀으로 강제. P3 결과는 기존 화면 접근과 같은 owner 제한, 전사 refusals도 owner 제한. 명세상 P4 admin 허용과 P3 연결의 상세 권한 계약은 실제 서버 확인 필요. MSW가 직접 호출의 타팀·P3·전사 거부를403으로 차단한다. 목업 실행 읽기/취소는 같은 로그인 토큰으로 제한(실제 테넌트 공유/역할 규칙 확정 아님).
+- [목업] 카탈로그46개, 카테고리8개. source 제목/상황 일부+overview 목록. 동시 실행3개(단일 목업 테넌트), queued→running→약6.5초 후 succeeded. 실제 분석 엔진이 아니며 생성 결과는 info1개/frames={}이다. 전역 필터 적용/실제 프레임 결과는7단계 목업을 확장해야 한다. 종료 상태는 진행시간 기준으로 결정되므로 GET 횟수에 따라 분석이 빨라지지 않는다.
+- [목업 검증 모드] X-Mock-Case=empty/error/loading은 카탈로그 빈 목록/503/2.5초 지연. 실행 loading은 계속 진행 상태, run-failed는 query_timeout 실패를 합성한다. normal은 성공. 실제 API 오류에서 목업으로 전환하지 않는다. 준비 중409/입력400/타팀403/한도429/종료취소409/다른 로그인404를 검사했다.
+- 결과의 findings/frames/applied_filters는 수신 상태 그대로 RunProvider 메모리에 보관한다. 성공 후 지표 재조회·자동 페이지 이동은 아직 하지 않는다(7단계). 최근 패널은 RUN-LIST를 호출하지 않으며 영구 이력·저장·공유·삭제는 미구현이다. API 문서 안 백엔드 변경 지시를 실행하지 않았다.

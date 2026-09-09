@@ -144,3 +144,20 @@
 - 수정: TTFT percentile 필드가 하나의 선으로 합쳐짐 → p50/p90 분리; 범례를 카드 헤더로 이동; 오류 3계열을 원본 red/red2/red3 토큰 사용; 실패율 주황·5% 초과 빨강/임계선; 429를 모델별 점으로 변경; 러버스탬프를 추세 옆에 배치; 훅 실행/차단을 이중 축 복합 차트로 결합; 정책 요약 높이 축소; 약정 게이지 중심 위치/구성원 팀 열 수정.
 - 안정성 최종 측정은 phase-5/geometry.json. x264/848·폭568 일치, y153.39(원본152), 높이241.875(원본235.9), 둘째 행411.27/도구669.14. 본문 설명 두 줄/브라우저 글꼴 때문에 행마다 약6px 늘어나는 잔여 차이가 있다.
 - 잔여 차이: 합성 곡선·정확한 숫자/자동 눈금, 소규모 명부·팀 개수, API 미제공 필드, 안전한 메타를 줄바꿈하는 타임라인 행 높이와 페이지별 시간축, 설정 사유 게이트·배포 이력 추가. 원본의 완전한 스팬 트리/사용자 필드는 계약 확장 없이 가장하지 않는다. 실제 백엔드의 값이나 정책 배포 상태를 확인한 검수는 아니다.
+
+## 6단계 P4 카탈로그·실행 — 원본과 구현 선택
+- [원본] design-to-code 스킬 후 get_design_context로 [카탈로그51:4](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=51-4), [비용 드로어52:4](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=52-4), [예산53:4](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=53-4), [실행52:425](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=52-425), [실패52:812](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=52-812), [첫 방문54:4](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=54-4), [로딩54:369](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=54-369), [준비 중57:4](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=57-4)를 확인. 응답 이미지8개를 직접 확인했고 텍스트는 reference/p6-*.txt 보관. 이력56:4는7단계로 넘겼다.
+- [원본] 1440 기준 셸240/헤더56/커버리지28. 본문 x264, 카테고리 y104, 카드 시작 y215/폭272/높이122.2/간격16/3열. 카탈로그 폭848, 보조 패널 x1136/폭280/간격24. 카드 padding14/radius8, 제목13.5/line1.35, 설명12/코드11.5/태그10. 카테고리28px·radius14, 검색340×32.
+- [원본] 오른쪽 드로어 x960/폭480, 화면 전체 높이, scrim35%. 내부 좌우20px, 제목15, 지표 행·기간·숫자/팀 입력, 하단 실행·기본값. 실행 대기→쿼리→판정→완료, 취소/백그라운드, 실패 사유/request_id/재시도. 새 이미지·아이콘 에셋은 없으며 기존 Button/Badge/토큰/Pretendard/문자 글리프를 재사용했다. 임의 SVG를 작성하지 않았다.
+- [문서] 카탈로그46개·8카테고리는 첨부 overview §6-2. UI는 API의 categories/items/featured/availability/params_schema를 읽는다. source에서 확인한10개 질문과 민감정보 질문의 제목·상황은 원본을 반영; 다른 질문의 상황 문구는 API 목업을 위한 작성이며 Figma에서 확인한 문구가 아니다.
+- [결정] 헤더 검색은46개 API 반환 목록을 제목·상황·ID로 필터링, / 단축키. 추천을 먼저 정렬하고 카테고리 건수는 응답에서 계산. 준비 중 카드는 설명을 열 수 있으나 실행 버튼 없음. 부분 가능은 실행 허용+지표 주의사항 표시. 첫 방문은 sessionStorage의 안내 확인 여부만 저장한다.
+- [결정] 전역 분석 기간을 드로어 초기값으로 복사하고 실행 후에는 입력 스냅샷 유지. S8-2만 최소3개월 문서 요구에 맞춰90일 초기값. 기간 직접 입력은 접이식 보조 UI(원본에 없음). 예산은 실제 META의3팀, USD/토큰(M) 둘 중 하나만 입력. API에 없는 현재 소진률/예상 시간/정확한 쿼리 개수를 만들지 않고 분석 지표 개수만 표시한다.
+- [결정] JSON Schema는 기본 객체/숫자/정수/문자열/날짜/enum/배열 입력 지원. 원본 외 시나리오의 구체적인 기본값·범위·파라미터 중첩 구조는 목업 가정(api.md). 원본과 overview의 지표 목록이 다르면 API 문서 목록을 사용한다. 예: S1-3은 cost/cost_anomaly/api_retry_attempts이며 원본의 cost 그룹3행과 다르다.
+- [결정] 네이티브 dialog를 사용해 포커스 잠금/복원·Escape 지원. POST 전송 중 닫기는 중복 실행/응답 유실을 줄이기 위해 비활성. 실행 후 닫기/페이지 이동은 서버 실행을 취소하지 않고 앱 셸의 메모리에서 상태 폴링 유지. 취소는 명시적인 별도 동작. 최근 실행은 현재 로그인 세션의 활성 실행 전부+종료8개이며 영구 이력으로 표시하지 않는다.
+- [결정] 원본 오른쪽의 고정 과거 실행/저장 리포트 데이터는 만들지 않았다. 결과 상세/자동 페이지 이동/강조/저장·이력은7단계. 현재 완료 안내와 반환 result를 메모리에 보존한다. 역할 충돌 때문에 기존 P3 owner 정책에 따라 admin의 P3 대상/전사 refusals 시나리오 실행을 제한한다.
+- [반응형 가정] P4 태블릿 원본 미확인. ≥1280 본문+280px 보조열,900–1279 카드3열/보조패널 하단2열,768–899 카드2열/보조패널1열. 900 미만 첫 방문 추천은1열, 드로어480px 유지/본문 내부 스크롤. 셸의 기존56px 접기·768 미만 안내 유지.
+
+## 6단계 시각 검수
+- 8개 원본 이미지와 validation/phase-6의 catalog-light/dark, welcome, cost-drawer, budget-drawer, running, failed, succeeded, unavailable, catalog-loading/error/empty, viewport-1024/768을 직접 비교했다.
+- 초기 카드 높이145px/시작y223·검색 라벨 줄바꿈 발견 → 설명1줄+말줄임(전체 title 제공), 간격/배지/본문 위쪽 여백 정리. 최종 geometry.json: **x264/y215/w272/h122.1875**, 원본272×122.2와 사실상 일치. 드로어는480px, 지표 행 padding7/배지16/헤더 padding16으로 원본 밀도에 맞췄다.
+- 남은 차이: 실제 META3팀·합성 카탈로그 설명/지표 정의, 세션 내 실행만 보이는 보조패널, 직접 기간 입력 UI, 원본 미제공 파라미터 폼. 긴 카드 설명/태그는 카드 내부에서 잘릴 수 있으며 드로어에서 전체 내용을 확인한다. 진행 막대는 서버 progress 값만, 단계는 status/판정 label로 표현하며 쿼리 번호를 전체 단계로 오해하지 않는다.

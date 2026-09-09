@@ -1,0 +1,1011 @@
+[
+  {
+    "scenario_id": "S1-1",
+    "category": "cost",
+    "title": "부서별 토큰 할당 불균형",
+    "featured": false,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P1",
+    "highlight_widgets": [
+      "W1.3",
+      "W1.6"
+    ],
+    "metric_ids": [
+      "tokens",
+      "cost",
+      "adoption_rate"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "team_ids",
+      "budget_by_team"
+    ]
+  },
+  {
+    "scenario_id": "S1-2",
+    "category": "cost",
+    "title": "모델 티어 미스매치",
+    "featured": false,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.5",
+      "W2.2"
+    ],
+    "metric_ids": [
+      "tokens",
+      "cost",
+      "prompts_per_session",
+      "tool_calls"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "team_ids",
+      "premium_model_patterns"
+    ]
+  },
+  {
+    "scenario_id": "S1-3",
+    "category": "cost",
+    "title": "비용 스파이크·폭주",
+    "featured": true,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P1",
+    "highlight_widgets": [
+      "W1.2",
+      "W1.3",
+      "W2.5"
+    ],
+    "metric_ids": [
+      "cost",
+      "cost_anomaly",
+      "api_retry_attempts"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "moving_avg_days",
+      "spike_threshold_pct"
+    ]
+  },
+  {
+    "scenario_id": "S1-4",
+    "category": "cost",
+    "title": "반복 프롬프트→캐싱",
+    "featured": true,
+    "availability": "partial",
+    "unavailable_reason": "유사도 불가",
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.6"
+    ],
+    "metric_ids": [
+      "tokens",
+      "cache_read_ratio",
+      "prompts_per_session"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "team_ids"
+    ]
+  },
+  {
+    "scenario_id": "S1-5",
+    "category": "cost",
+    "title": "컨텍스트 과다 첨부",
+    "featured": true,
+    "availability": "partial",
+    "unavailable_reason": "@멘션 없음",
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.6",
+      "W2.9"
+    ],
+    "metric_ids": [
+      "input_output_ratio",
+      "compactions",
+      "compaction_reduction"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "team_ids",
+      "io_ratio_threshold"
+    ]
+  },
+  {
+    "scenario_id": "S1-6",
+    "category": "cost",
+    "title": "모델·effort 낭비",
+    "featured": false,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.5",
+      "W2.6"
+    ],
+    "metric_ids": [
+      "cost",
+      "tokens",
+      "sessions"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "team_ids"
+    ]
+  },
+  {
+    "scenario_id": "S1-7",
+    "category": "cost",
+    "title": "유휴 라이선스·좀비 시트",
+    "featured": true,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P3",
+    "highlight_widgets": [
+      "W3.2"
+    ],
+    "metric_ids": [
+      "telemetry_coverage",
+      "active_users",
+      "cost_per_active_user"
+    ],
+    "required_params": [
+      "as_of",
+      "inactive_days"
+    ]
+  },
+  {
+    "scenario_id": "S2-1",
+    "category": "usage_pattern",
+    "title": "오전/오후 사용량 변동",
+    "featured": true,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.3"
+    ],
+    "metric_ids": [
+      "usage_heatmap",
+      "rate_limit_events",
+      "session_last_event"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "team_ids"
+    ]
+  },
+  {
+    "scenario_id": "S2-2",
+    "category": "usage_pattern",
+    "title": "Rate Limit 상시 도달",
+    "featured": true,
+    "availability": "partial",
+    "unavailable_reason": "retries_exhausted 없음",
+    "target_page": "P3",
+    "highlight_widgets": [
+      "W3.3",
+      "W2.6"
+    ],
+    "metric_ids": [
+      "rate_limit_events",
+      "tokens",
+      "api_retry_attempts"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "team_ids"
+    ]
+  },
+  {
+    "scenario_id": "S2-3",
+    "category": "usage_pattern",
+    "title": "요일·스프린트 주기",
+    "featured": false,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.3",
+      "W2.4"
+    ],
+    "metric_ids": [
+      "usage_heatmap",
+      "sessions",
+      "llm_duration_ms",
+      "rate_limit_events"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "team_ids",
+      "sprint_dates"
+    ]
+  },
+  {
+    "scenario_id": "S3-1",
+    "category": "adoption",
+    "title": "직군별 채택 격차",
+    "featured": false,
+    "availability": "partial",
+    "unavailable_reason": "직군 없음→팀",
+    "target_page": "P1",
+    "highlight_widgets": [
+      "W1.6",
+      "W1.1"
+    ],
+    "metric_ids": [
+      "active_users",
+      "adoption_rate",
+      "prompts_per_session",
+      "tool_calls",
+      "mcp_connections"
+    ],
+    "required_params": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "scenario_id": "S3-2",
+    "category": "adoption",
+    "title": "파워유저 집중 vs 롱테일",
+    "featured": true,
+    "availability": "available",
+    "unavailable_reason": "익명",
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.5",
+      "W2.8"
+    ],
+    "metric_ids": [
+      "usage_concentration",
+      "tool_calls",
+      "tokens"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "team_ids"
+    ]
+  },
+  {
+    "scenario_id": "S3-3",
+    "category": "adoption",
+    "title": "온보딩 정착",
+    "featured": true,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P3",
+    "highlight_widgets": [
+      "W3.2"
+    ],
+    "metric_ids": [
+      "onboarding_ttfu",
+      "onboarding_retention",
+      "active_time"
+    ],
+    "required_params": [
+      "cohort_from",
+      "cohort_to",
+      "team_ids"
+    ]
+  },
+  {
+    "scenario_id": "S3-4",
+    "category": "adoption",
+    "title": "부서별 활용 격차",
+    "featured": true,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P1",
+    "highlight_widgets": [
+      "W1.6",
+      "W1.5"
+    ],
+    "metric_ids": [
+      "sessions",
+      "active_time",
+      "lines_of_code",
+      "adoption_rate"
+    ],
+    "required_params": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "scenario_id": "S3-5",
+    "category": "adoption",
+    "title": "고급 기능 활용률",
+    "featured": false,
+    "availability": "partial",
+    "unavailable_reason": "스킬·플러그인 없음",
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.8",
+      "W2.10"
+    ],
+    "metric_ids": [
+      "mcp_connections",
+      "subagent_cost_ratio",
+      "command_prompt_ratio",
+      "tool_failure_rate"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "team_ids"
+    ]
+  },
+  {
+    "scenario_id": "S4-1",
+    "category": "productivity",
+    "title": "재시도·프롬프트 반복률",
+    "featured": false,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.2"
+    ],
+    "metric_ids": [
+      "prompts_per_session",
+      "tokens"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "team_ids"
+    ]
+  },
+  {
+    "scenario_id": "S4-2",
+    "category": "productivity",
+    "title": "대화 포기율",
+    "featured": false,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.2",
+      "W2.10"
+    ],
+    "metric_ids": [
+      "abandoned_session_ratio",
+      "session_last_event",
+      "api_error_rate"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "team_ids"
+    ]
+  },
+  {
+    "scenario_id": "S4-3",
+    "category": "productivity",
+    "title": "코드 수용률·revert",
+    "featured": false,
+    "availability": "partial",
+    "unavailable_reason": "revert 불가",
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.7",
+      "W2.4"
+    ],
+    "metric_ids": [
+      "edit_acceptance_rate",
+      "lines_of_code",
+      "commits",
+      "pull_requests"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "team_ids",
+      "language"
+    ]
+  },
+  {
+    "scenario_id": "S4-4",
+    "category": "productivity",
+    "title": "교육 효과 전후 비교",
+    "featured": true,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.0",
+      "W2.2",
+      "W2.8"
+    ],
+    "metric_ids": [
+      "active_users",
+      "prompts_per_session",
+      "edit_acceptance_rate",
+      "mcp_connections"
+    ],
+    "required_params": [
+      "pivot_date",
+      "window_weeks",
+      "team_ids"
+    ]
+  },
+  {
+    "scenario_id": "S4-5",
+    "category": "productivity",
+    "title": "템플릿 활용률",
+    "featured": true,
+    "availability": "partial",
+    "unavailable_reason": "스킬 없음",
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.8",
+      "W2.2"
+    ],
+    "metric_ids": [
+      "command_prompt_ratio",
+      "prompts_per_session"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "command_names"
+    ]
+  },
+  {
+    "scenario_id": "S4-6",
+    "category": "productivity",
+    "title": "유즈케이스 분포",
+    "featured": false,
+    "availability": "partial",
+    "unavailable_reason": "주제 분류 불가",
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.8"
+    ],
+    "metric_ids": [
+      "tool_calls",
+      "lines_of_code"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "team_ids"
+    ]
+  },
+  {
+    "scenario_id": "S4-7",
+    "category": "productivity",
+    "title": "성과 상관분석",
+    "featured": false,
+    "availability": "unavailable",
+    "unavailable_reason": "외부 DORA",
+    "target_page": "P1",
+    "highlight_widgets": [],
+    "metric_ids": [],
+    "required_params": []
+  },
+  {
+    "scenario_id": "S4-8",
+    "category": "productivity",
+    "title": "Plan 응답 대기 시간",
+    "featured": true,
+    "availability": "available",
+    "unavailable_reason": "팀 단위",
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.7"
+    ],
+    "metric_ids": [
+      "gate_wait_ms",
+      "tool_rejections",
+      "usage_heatmap"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "team_ids",
+      "wait_thresholds_min"
+    ]
+  },
+  {
+    "scenario_id": "S5-1",
+    "category": "security",
+    "title": "민감정보 유출",
+    "featured": true,
+    "availability": "unavailable",
+    "unavailable_reason": "원문 미취급",
+    "target_page": "P3",
+    "highlight_widgets": [],
+    "metric_ids": [
+      "hook_blocking"
+    ],
+    "required_params": []
+  },
+  {
+    "scenario_id": "S5-2",
+    "category": "security",
+    "title": "코드·문서 외부 유출",
+    "featured": false,
+    "availability": "partial",
+    "unavailable_reason": null,
+    "target_page": "P3",
+    "highlight_widgets": [
+      "W3.2"
+    ],
+    "metric_ids": [
+      "mcp_connections",
+      "read_tool_density"
+    ],
+    "required_params": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "scenario_id": "S5-3",
+    "category": "security",
+    "title": "고객 데이터 취급",
+    "featured": false,
+    "availability": "unavailable",
+    "unavailable_reason": "원문",
+    "target_page": "P3",
+    "highlight_widgets": [],
+    "metric_ids": [],
+    "required_params": []
+  },
+  {
+    "scenario_id": "S5-4",
+    "category": "security",
+    "title": "섀도우 AI",
+    "featured": false,
+    "availability": "partial",
+    "unavailable_reason": null,
+    "target_page": "P3",
+    "highlight_widgets": [
+      "W3.3",
+      "W3.2"
+    ],
+    "metric_ids": [
+      "rate_limit_events",
+      "vendor_account_mismatch",
+      "mcp_connections",
+      "active_users"
+    ],
+    "required_params": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "scenario_id": "S5-5",
+    "category": "security",
+    "title": "인젝션·탈옥 시도",
+    "featured": true,
+    "availability": "partial",
+    "unavailable_reason": "전사 단위",
+    "target_page": "P3",
+    "highlight_widgets": [
+      "W3.3"
+    ],
+    "metric_ids": [
+      "refusals",
+      "hook_blocking",
+      "tool_rejections"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "probe_window_min",
+      "probe_count"
+    ]
+  },
+  {
+    "scenario_id": "S5-6",
+    "category": "security",
+    "title": "정책 위반 용도",
+    "featured": false,
+    "availability": "partial",
+    "unavailable_reason": null,
+    "target_page": "P3",
+    "highlight_widgets": [
+      "W3.3"
+    ],
+    "metric_ids": [
+      "tool_rejections"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "pivot_date"
+    ]
+  },
+  {
+    "scenario_id": "S5-7",
+    "category": "security",
+    "title": "무검증 반출(러버스탬프)",
+    "featured": false,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P3",
+    "highlight_widgets": [
+      "W3.3"
+    ],
+    "metric_ids": [
+      "rubber_stamp_ratio",
+      "auto_approval_ratio",
+      "pull_requests"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "threshold_ms"
+    ]
+  },
+  {
+    "scenario_id": "S6-1",
+    "category": "quality",
+    "title": "품질 피드백 루프",
+    "featured": false,
+    "availability": "partial",
+    "unavailable_reason": "설문 없음",
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.7",
+      "W2.2"
+    ],
+    "metric_ids": [
+      "refusals",
+      "edit_acceptance_rate",
+      "prompts_per_session"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "models"
+    ]
+  },
+  {
+    "scenario_id": "S6-2",
+    "category": "quality",
+    "title": "환각 신고",
+    "featured": false,
+    "availability": "unavailable",
+    "unavailable_reason": "외부 채널",
+    "target_page": "P3",
+    "highlight_widgets": [],
+    "metric_ids": [],
+    "required_params": []
+  },
+  {
+    "scenario_id": "S6-3",
+    "category": "quality",
+    "title": "모델 버전 드리프트",
+    "featured": false,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P3",
+    "highlight_widgets": [
+      "W3.1"
+    ],
+    "metric_ids": [
+      "api_error_rate",
+      "tool_failure_rate",
+      "prompts_per_session",
+      "llm_stop_reasons"
+    ],
+    "required_params": [
+      "pivot_date",
+      "models"
+    ]
+  },
+  {
+    "scenario_id": "S6-4",
+    "category": "quality",
+    "title": "레이턴시·에러율·장애",
+    "featured": false,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P3",
+    "highlight_widgets": [
+      "W3.1"
+    ],
+    "metric_ids": [
+      "llm_duration_ms",
+      "llm_ttft_ms",
+      "api_error_rate",
+      "active_users"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "models"
+    ]
+  },
+  {
+    "scenario_id": "S6-5",
+    "category": "quality",
+    "title": "리트라이 스톰",
+    "featured": false,
+    "availability": "partial",
+    "unavailable_reason": "고갈 없음",
+    "target_page": "P3",
+    "highlight_widgets": [
+      "W3.1"
+    ],
+    "metric_ids": [
+      "api_retry_attempts",
+      "cost"
+    ],
+    "required_params": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "scenario_id": "S7-1",
+    "category": "governance",
+    "title": "에이전트 태스크 성공률",
+    "featured": false,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.10",
+      "W2.5"
+    ],
+    "metric_ids": [
+      "tool_failure_rate",
+      "tool_calls",
+      "subagent_activity",
+      "cost"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "team_ids",
+      "failure_threshold"
+    ]
+  },
+  {
+    "scenario_id": "S7-2",
+    "category": "governance",
+    "title": "과도한 데이터 접근",
+    "featured": true,
+    "availability": "partial",
+    "unavailable_reason": null,
+    "target_page": "P3",
+    "highlight_widgets": [
+      "W3.2",
+      "W3.3"
+    ],
+    "metric_ids": [
+      "read_tool_density",
+      "mcp_connections",
+      "auto_approval_ratio"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "density_threshold"
+    ]
+  },
+  {
+    "scenario_id": "S7-3",
+    "category": "governance",
+    "title": "에이전트 정책 위반·에스컬레이션",
+    "featured": false,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P3",
+    "highlight_widgets": [
+      "W3.3"
+    ],
+    "metric_ids": [
+      "tool_rejections",
+      "hook_blocking",
+      "gate_wait_ms"
+    ],
+    "required_params": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "scenario_id": "S7-4",
+    "category": "governance",
+    "title": "감사 로그·리텐션 거버넌스",
+    "featured": true,
+    "availability": "partial",
+    "unavailable_reason": "retention_sweep·auth 없음",
+    "target_page": "P3",
+    "highlight_widgets": [
+      "W3.2",
+      "W3.4"
+    ],
+    "metric_ids": [
+      "telemetry_coverage",
+      "hook_executions",
+      "mcp_connections"
+    ],
+    "required_params": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "scenario_id": "S8-1",
+    "category": "strategy",
+    "title": "ROI·경영 보고",
+    "featured": false,
+    "availability": "partial",
+    "unavailable_reason": "재무 조인 없음",
+    "target_page": "P1",
+    "highlight_widgets": [
+      "W1.1",
+      "W1.5",
+      "W1.2"
+    ],
+    "metric_ids": [
+      "sessions",
+      "tokens",
+      "active_time",
+      "lines_of_code",
+      "commits",
+      "pull_requests",
+      "cost_per_active_user"
+    ],
+    "required_params": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "scenario_id": "S8-2",
+    "category": "strategy",
+    "title": "예산 수립·비용 예측",
+    "featured": true,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P1",
+    "highlight_widgets": [
+      "W1.2",
+      "W1.4"
+    ],
+    "metric_ids": [
+      "cost",
+      "tokens",
+      "model_unit_price",
+      "cache_read_ratio",
+      "onboarding_retention"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "growth_model"
+    ]
+  },
+  {
+    "scenario_id": "S8-3",
+    "category": "strategy",
+    "title": "신규 모델 A/B",
+    "featured": false,
+    "availability": "available",
+    "unavailable_reason": "설문 축 제외",
+    "target_page": "P3",
+    "highlight_widgets": [
+      "W3.1",
+      "W2.5"
+    ],
+    "metric_ids": [
+      "prompts_per_session",
+      "cost",
+      "llm_duration_ms",
+      "api_error_rate"
+    ],
+    "required_params": [
+      "from",
+      "to",
+      "model_a",
+      "model_b"
+    ]
+  },
+  {
+    "scenario_id": "S8-4",
+    "category": "strategy",
+    "title": "벤더 종속",
+    "featured": false,
+    "availability": "partial",
+    "unavailable_reason": null,
+    "target_page": "P1",
+    "highlight_widgets": [
+      "W1.4"
+    ],
+    "metric_ids": [
+      "tokens",
+      "cost"
+    ],
+    "required_params": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "scenario_id": "S8-5",
+    "category": "strategy",
+    "title": "도구 중복·통합",
+    "featured": true,
+    "availability": "partial",
+    "unavailable_reason": null,
+    "target_page": "P1",
+    "highlight_widgets": [
+      "W1.1",
+      "W1.4"
+    ],
+    "metric_ids": [
+      "active_users",
+      "cost_per_active_user",
+      "tool_calls"
+    ],
+    "required_params": [
+      "from",
+      "to"
+    ]
+  },
+  {
+    "scenario_id": "S8-6",
+    "category": "strategy",
+    "title": "정책 실효성",
+    "featured": false,
+    "availability": "available",
+    "unavailable_reason": null,
+    "target_page": "P3",
+    "highlight_widgets": [
+      "W3.3"
+    ],
+    "metric_ids": [
+      "tool_rejections",
+      "hook_blocking",
+      "gate_wait_ms"
+    ],
+    "required_params": [
+      "pivot_date",
+      "window_weeks"
+    ]
+  },
+  {
+    "scenario_id": "S8-7",
+    "category": "strategy",
+    "title": "챔피언 프로그램",
+    "featured": true,
+    "availability": "partial",
+    "unavailable_reason": "개인 리스트 미제공",
+    "target_page": "P2",
+    "highlight_widgets": [
+      "W2.0",
+      "W2.2"
+    ],
+    "metric_ids": [
+      "adoption_rate",
+      "prompts_per_session",
+      "usage_concentration"
+    ],
+    "required_params": [
+      "pivot_date",
+      "team_ids"
+    ]
+  }
+]

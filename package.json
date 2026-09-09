@@ -15,7 +15,8 @@
     "check:teams": "node scripts/check-teams.mjs",
     "check:team-details": "node scripts/check-team-details.mjs",
     "check:overview": "node scripts/check-overview.mjs",
-    "check:operations": "node scripts/check-operations.mjs"
+    "check:operations": "node scripts/check-operations.mjs",
+    "check:scenarios": "node scripts/check-scenarios.mjs && node scripts/check-scenario-states.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",

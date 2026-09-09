@@ -1,3 +1,5 @@
+import { RunProvider } from '../pages/scenarios/RunProvider';
+import { ScenarioHeader } from '../pages/scenarios/Scenarios';
 import { OverviewCsv } from '../pages/overview/OverviewCsv';
 import { series } from '../widgets/model';
 import { useEffect, useState, type FormEvent } from 'react';
@@ -180,12 +182,14 @@ export function Shell() {
         </div>
       </aside>
       <FilterProvider>
-        <div className={s.workspace}>
-          <GlobalHeader />
-          <main id="page-content" className={s.content} tabIndex={-1}>
-            <Outlet />
-          </main>
-        </div>
+        <RunProvider key={profile.member_id}>
+          <div className={s.workspace}>
+            <GlobalHeader />
+            <main id="page-content" className={s.content} tabIndex={-1}>
+              <Outlet />
+            </main>
+          </div>
+        </RunProvider>
       </FilterProvider>
     </div>
   );
@@ -215,7 +219,9 @@ function GlobalHeader() {
   }
   return (
     <>
-      {location.pathname === '/settings' ? (
+      {location.pathname === '/scenarios' ? (
+        <ScenarioHeader />
+      ) : location.pathname === '/settings' ? (
         <div className={s.settingsBar}>
           <h1>설정</h1>
           <a href="#contracts">계약 · 단가</a>

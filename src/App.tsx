@@ -1,3 +1,4 @@
+import { Scenarios } from './pages/scenarios/Scenarios';
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -41,7 +42,9 @@ export function App() {
                         key={p.path}
                         path={p.path}
                         element={
-                          p.path === '/operations' ? (
+                          p.path === '/scenarios' ? (
+                            <Scenarios />
+                          ) : p.path === '/operations' ? (
                             <Operations />
                           ) : p.path === '/settings' ? (
                             <Settings />

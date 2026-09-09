@@ -1,3 +1,4 @@
+import { scenarioHandlers } from './scenarios';
 import { operationsHandlers, operationsMetric } from './operations';
 import { resultCsv } from '../api/csv';
 import { teamMetric } from './teamMetrics';
@@ -60,6 +61,7 @@ function validAuditReason(request: Request) {
 }
 export const handlers = [
   ...operationsHandlers(role, teams),
+  ...scenarioHandlers(role, paymentTeam),
   http.post('*/v1/auth/login', async ({ request }) => {
     await delay(150);
     const body = (await request.json()) as { email: string; password: string };
