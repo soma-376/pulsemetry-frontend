@@ -54,3 +54,21 @@
 - 숫자117의 너비는 원본 렌더 이미지보다 넓다. Foundations에 명시된 tabular-nums를 브라우저에 적용한 결과이며 숫자 자리수 정렬을 유지한다.
 - 실제 노드에 맞는 Pretendard를 로컬 제공하여 시스템 대체 폰트 영향을 제거했다. 불필요한 전 굵기/WOFF 폰트를400·500·600 WOFF2와 mono Latin으로 줄였다.
 - 확인 화면의 자체 배치는 제품 원본 비교 대상이 아니다. P1/P2 전체 화면 비교는 해당 구현 단계에서 수행한다.
+
+## 1단계 셸 — 근거와 확정값
+- [원본] get_design_context로 실제 P2 SideNav [39:5](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=39-5), FilterToolbar [39:38](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=39-38), CoverageStrip [39:82](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=39-82)를 확인. 추출 코드·이미지는 reference/shell-39-*.txt/png.
+- [원본] 내비 항목 높이34, 간격2, 좌우8, radius6, 글리프14px/테두리1.5px. 로고는20px/radius5의 파란 사각형. 원본이 CSS box로 제공한 도형을 그대로 구현했으며 임의 SVG 아이콘을 추가하지 않았다.
+- [원본] 펼친 사이드바240, 헤더52, 툴바56, 커버리지28. 기간 세그먼트173.2, 날짜108.3, 부서/모델80.3, 제품113.5/70.1, 단가73.5, 질문107.4, 새로고침113.6px. 공통 컨트롤 높이30.
+- [원본] 원본 비교 select는 빈 상자로 제공됨. [결정] 없음/직전 기간/전주를 API enum에 맞게 채웠다. native select 팝업과 날짜 편집 패널은 구현 선택이며 별도 Figma 원본이 없다.
+- [결정] 로그인·미구현 페이지 안내·커버리지 상세 설명·개발용 API 검사 화면은 기존 토큰을 사용한 자체 구성이다. 대시보드 완료 화면으로 취급하지 않는다.
+- [결정] 시나리오의 숫자12는 카탈로그 구현 전 표시하지 않는다. CSV는 페이지별 데이터 구현 전 비활성. 원본 하단에 로그아웃·목업 표기를 추가했다.
+- [결정] 테마는 localStorage, 인증은 메모리. 재로드 시 로그인이 필요하고 보호 경로/필터는 로그인 후 복원한다.
+- [결정] 자동 새로고침은 기본 꺼짐/5분. 상대 기간의 해석은 API에 맡긴다. 사용자 지정 종료 날짜는 KST 자정 미포함. 선택 제품은 최소1개이며 둘 다 선택하면 API 빈 배열(전체). 부서·모델 UI는 단일 선택, 계약 배열 형식은 유지한다.
+- [결정] 마지막 적재 시각은 실제 시각인 KST 날짜/시간으로 표시한다. 원본의 정적 “3분 전” 문구를 현재 시각처럼 표시하지 않는다.
+- [결정] 1280 이상240px(수동56px 접기 가능),768–1279는56px.1024에서 툴바2줄/83px,768에서는 내용에 따라 더 줄바꿈한다.768 미만 안내는 앱 공통에서 한 번만 표시한다.
+
+## 1단계 시각 검수
+- source shell 이미지와 validation/phase-1/desktop-light.png·desktop-dark.png·viewport-1024.png·viewport-768.png를 비교.
+- 내비 위치·선택 상태·중립색·제품 파랑·컨트롤 높이를 맞췄다. 초기 구현에서 기간/모델/단가 컨트롤 너비가 원본과 달라 원본 수치로 수정했다.
+- 데스크톱 측정은 phase-1/results.json에 보관한다. 본문은 준비 중 안내로서 이번 비교는 셸에 한정한다.
+- 남은 미세 차이: native select 화살표/팝업, 날짜·비교 텍스트 메트릭, 원본과 다른 로그인 사용자 및 적재 시각, 실제 viewport 하단에 붙는 계정 영역. 전체 P2 비교는2–3단계에서 수행한다.

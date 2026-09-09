@@ -20,7 +20,7 @@ async function noOverflow(width) {
   checks.push(`${width}px: no page horizontal overflow`);
 }
 try {
-  await page.goto(process.env.BASE_URL ?? 'http://127.0.0.1:5173');
+  await page.goto((process.env.BASE_URL ?? 'http://127.0.0.1:5173') + '/dev/components');
   await page.evaluate(() => document.fonts.ready);
   await expect(page.getByRole('heading', { name: '하나의 규칙으로, 일관된 분석 경험' })).toBeVisible();
   await expect(page.locator('[data-component="kpi-card"]')).toHaveCount(8);

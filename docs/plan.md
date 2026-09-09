@@ -5,8 +5,8 @@
 ## 목표와 기술
 - 독립 로컬 Git 저장소 pulsemetry-frontend. React, TypeScript, Vite, npm.
 - CSS Modules·CSS 변수, 접근성 primitives는 Radix UI.
-- 다음 단계에 React Router·TanStack Query·MSW·OpenAPI 타입 생성 도입. 차트 단계에 Recharts 도입.
-- 테스트 도구는 동작 구현 시점에 Vitest·React Testing Library 추가. 브라우저 검증은 Playwright.
+- 1단계에 React Router·TanStack Query·MSW·OpenAPI 타입 생성 도입 완료. 차트 단계에 Recharts 도입.
+- Vitest는1단계 도입 완료. React Testing Library는 컴포넌트 테스트 필요 시 추가. 브라우저 검증은 Playwright.
 - 실제 백엔드 수정·실서비스 검증·배포는 범위 밖.
 - 화면은 목업 데이터로 완성하고, 같은 계약의 실제 API로 교체할 수 있게 구현한다.
 

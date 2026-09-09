@@ -1,0 +1,41 @@
+export default function CoverageStrip() {
+  return (
+    <div className="bg-[var(--surface\/sub,#eef0f3)] border-[var(--border\/default,#e2e5ea)] border-b border-solid relative size-full" data-node-id="39:82" data-name="CoverageStrip">
+      <div className="absolute bg-[var(--accent\/gray,#6b7280)] left-[24px] rounded-[3px] size-[6px] top-[10.5px]" data-node-id="39:83" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[38px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[4.35px] whitespace-nowrap" data-node-id="39:84">
+        텔레메트리 활성 기기 기준 · 활성 설치
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[217.7px] not-italic text-[12px] text-[color:var(--text\/1,#111827)] top-[4.35px] whitespace-nowrap" data-node-id="39:85">
+        11
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[228.7px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[4.35px] whitespace-nowrap" data-node-id="39:86">
+        / 활성 구성원
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[296.6px] not-italic text-[12px] text-[color:var(--text\/1,#111827)] top-[4.35px] whitespace-nowrap" data-node-id="39:87">
+        12
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[309.4px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[4.35px] whitespace-nowrap" data-node-id="39:88">
+        (
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[316.5px] not-italic text-[12px] text-[color:var(--text\/1,#111827)] top-[4.35px] whitespace-nowrap" data-node-id="39:89">
+        92%
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[342.4px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[4.35px] whitespace-nowrap" data-node-id="39:90">
+        ) · 마지막 적재 3분 전
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[1110.8px] not-italic text-[12px] text-[color:var(--accent\/blue,#1d4ed8)] top-[4.35px] whitespace-nowrap" data-node-id="39:91">
+        커버리지 상세
+      </p>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+These styles are contained in the design: sub/12: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), sub/12-sb: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0).
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

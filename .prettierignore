@@ -1,0 +1,6 @@
+node_modules
+dist
+docs/reference
+src/api/schema.d.ts
+public/mockServiceWorker.js
+package-lock.json
