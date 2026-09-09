@@ -2,6 +2,8 @@
 
 확정: 2026-09-09. 사용자 선택: 콘솔 전체 / 목업 우선·연동 준비 / 데스크톱·태블릿.
 
+현재: **2단계 완료. 다음 회차는3단계.**
+
 ## 목표와 기술
 - 독립 로컬 Git 저장소 pulsemetry-frontend. React, TypeScript, Vite, npm.
 - CSS Modules·CSS 변수, 접근성 primitives는 Radix UI.

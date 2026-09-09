@@ -1,12 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link, NavLink, Navigate, Outlet, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button } from '../components/ui';
 import { api, mockMode } from '../api/client';
 import type { FilterOptions, QueryResponse } from '../api/types';
 import { useAuth } from './auth';
-import { presets, readFilters, scopeFilters, writeFilters, type Filters } from './filters';
+import { presets, type Filters } from './filters';
 import s from './Shell.module.css';
+import { FilterProvider, useScopedFilters } from './filterContext';
 export const pages = [
   { path: '/', name: '개요', phase: 4 },
   { path: '/teams', name: '팀 분석', phase: 2 },
@@ -176,36 +177,22 @@ export function Shell() {
           {mockMode && <span className={s.mockLabel}>목업</span>}
         </div>
       </aside>
-      <div className={s.workspace}>
-        <GlobalHeader />
-        <main id="page-content" className={s.content} tabIndex={-1}>
-          <Outlet />
-        </main>
-      </div>
+      <FilterProvider>
+        <div className={s.workspace}>
+          <GlobalHeader />
+          <main id="page-content" className={s.content} tabIndex={-1}>
+            <Outlet />
+          </main>
+        </div>
+      </FilterProvider>
     </div>
   );
 }
 function GlobalHeader() {
   const { profile } = useAuth();
-  const [search, setSearch] = useSearchParams();
-  const raw = readFilters(search);
+  const { value, serialized, options, auto, setAuto, update } = useScopedFilters();
   const cache = useQueryClient();
-  const [auto, setAuto] = useState(false),
-    [details, setDetails] = useState(false);
-  const options = useQuery({
-    queryKey: ['filters', profile?.member_id, profile?.role, raw.from, raw.to],
-    queryFn: ({ signal }) => api.filters(raw.from, raw.to, signal),
-  });
-  const value = options.data ? scopeFilters(raw, options.data, profile!) : raw;
-  const serialized = writeFilters(value).toString();
-  useEffect(() => {
-    if (
-      options.data &&
-      serialized !== search.toString() &&
-      window.location.search.slice(1) === search.toString()
-    )
-      setSearch(serialized, { replace: true });
-  }, [serialized, options.data, search, setSearch]);
+  const [details, setDetails] = useState(false);
   const coverage = useQuery({
     queryKey: ['widget', 'coverage', profile?.role, serialized],
     queryFn: ({ signal }) =>
@@ -219,9 +206,6 @@ function GlobalHeader() {
     enabled: !!options.data,
     refetchInterval: auto ? 300000 : false,
   });
-  function update(patch: Partial<Filters>) {
-    setSearch(writeFilters({ ...value, ...patch }));
-  }
   async function refresh() {
     await cache.invalidateQueries({ queryKey: ['filters'] });
     await cache.invalidateQueries({ queryKey: ['widget'] });

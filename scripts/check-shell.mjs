@@ -1,6 +1,9 @@
 import { chromium, expect } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
-const out = new URL('../docs/validation/phase-1/', import.meta.url);
+const out = new URL(
+  '../docs/validation/' + (process.env.VALIDATION_DIR || 'phase-1') + '/',
+  import.meta.url,
+);
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
@@ -98,6 +101,7 @@ try {
   await expect(page.getByText('768px 이상의 화면에서 이용해 주세요.').first()).toBeVisible();
   checks.push('Narrow-screen message');
   await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('link', { name: '개요', exact: true }).click();
   await page.getByRole('link', { name: 'API 상태 검증 도구' }).click();
   for (const [state, text] of [
     ['empty', '관측된 데이터가 없습니다'],

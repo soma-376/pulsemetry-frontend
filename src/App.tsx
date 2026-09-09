@@ -5,6 +5,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { AuthProvider } from './app/auth';
 import { Shell, Login, PlannedPage, pages } from './app/Shell';
 import { mockMode } from './api/client';
+const Teams = lazy(() => import('./pages/teams/Teams').then((m) => ({ default: m.Teams })));
 const Preview = lazy(() => import('./ComponentPreview').then((m) => ({ default: m.App })));
 const ApiPreview = lazy(() => import('./dev/ApiPreview').then((m) => ({ default: m.ApiPreview })));
 const queryClient = new QueryClient({
@@ -27,7 +28,11 @@ export function App() {
                   <Route path="/dev/components" element={<Preview />} />
                   <Route element={<Shell />}>
                     {pages.map((p) => (
-                      <Route key={p.path} path={p.path} element={<PlannedPage />} />
+                      <Route
+                        key={p.path}
+                        path={p.path}
+                        element={p.path === '/teams' ? <Teams /> : <PlannedPage />}
+                      />
                     ))}
                     {mockMode && <Route path="/dev/api" element={<ApiPreview />} />}
                     <Route path="*" element={<PlannedPage />} />

@@ -1,3 +1,4 @@
+import { teamMetric } from './teamMetrics';
 import { http, HttpResponse, delay } from 'msw';
 import type {
   FilterOptions,
@@ -28,10 +29,19 @@ function role(request: Request) {
 }
 function resolved(expr: string) {
   const now = Date.parse('2026-09-07T09:44:12Z');
-  if (expr === 'now') return new Date(now).toISOString();
-  const match = /^now-(\d+)([hd])$/.exec(expr);
-  if (match)
-    return new Date(now - Number(match[1]) * (match[2] === 'd' ? 86400000 : 3600000)).toISOString();
+  const match = /^now(?:-(\d+)([hdw]))?(?:\/([dw]))?$/.exec(expr);
+  if (match) {
+    let ms =
+      now -
+      Number(match[1] || 0) * ({ h: 3600000, d: 86400000, w: 604800000 }[match[2] || 'd'] || 0);
+    if (match[3]) {
+      const date = new Date(ms + 32400000);
+      date.setUTCHours(0, 0, 0, 0);
+      if (match[3] === 'w') date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
+      ms = date.getTime() - 32400000;
+    }
+    return new Date(ms).toISOString();
+  }
   return new Date(
     Number.isFinite(Date.parse(expr)) ? Date.parse(expr) : now - 604800000,
   ).toISOString();
@@ -103,58 +113,69 @@ export const handlers = [
     const empty = state === 'empty',
       masked = state === 'masked';
     const scoped = r === 'admin' || body.filters?.team_ids?.includes(paymentTeam);
-    const members = empty ? 0 : scoped ? 12 : 36;
-    const installations = empty ? 0 : scoped ? 11 : 32;
+    const platform = body.filters?.team_ids?.includes(platformTeam);
+    const members = empty ? 0 : scoped ? 12 : platform ? 24 : 36;
+    const installations = empty ? 0 : scoped ? 11 : platform ? 21 : 32;
     const results: Record<string, QueryResult> = {};
     for (const [i, q] of body.queries.entries())
       results[q.ref_id] =
-        q.metric_id !== 'telemetry_coverage'
+        state === 'partial' && i === 1
           ? {
-              status: 400,
+              status: 504,
               frames: [],
               error: {
-                error: 'invalid_request',
-                message: '이 지표의 목업은 아직 구현되지 않았습니다.',
-                request_id: 'mock-unsupported',
+                error: 'query_timeout',
+                message: '일부 쿼리 시간 초과',
+                request_id: 'mock-partial',
               },
             }
-          : state === 'partial' && i === 1
-            ? {
-                status: 504,
+          : q.metric_id !== 'telemetry_coverage'
+            ? teamMetric(q, body, resolved(body.from), resolved(body.to), state) || {
+                status: 400,
                 frames: [],
                 error: {
-                  error: 'query_timeout',
-                  message: '일부 쿼리 시간 초과',
-                  request_id: 'mock-partial',
+                  error: 'invalid_request',
+                  message: '이 지표의 목업은 아직 구현되지 않았습니다.',
+                  request_id: 'mock-unsupported',
                 },
               }
-            : {
-                status: 200,
-                frames: empty
-                  ? []
-                  : [
-                      {
-                        schema: {
-                          ref_id: q.ref_id,
-                          metric_id: q.metric_id,
-                          frame_type: q.frame_type || 'scalar',
-                          fields: [
-                            {
-                              name: 'value',
-                              type: 'number',
-                              labels: { team_name: scoped ? '결제' : '전체' },
-                              config: {
-                                unit: 'ratio',
-                                suppressed: masked,
-                                group_size: masked ? 3 : members,
+            : state === 'partial' && i === 1
+              ? {
+                  status: 504,
+                  frames: [],
+                  error: {
+                    error: 'query_timeout',
+                    message: '일부 쿼리 시간 초과',
+                    request_id: 'mock-partial',
+                  },
+                }
+              : {
+                  status: 200,
+                  frames: empty
+                    ? []
+                    : [
+                        {
+                          schema: {
+                            ref_id: q.ref_id,
+                            metric_id: q.metric_id,
+                            frame_type: q.frame_type || 'scalar',
+                            fields: [
+                              {
+                                name: 'value',
+                                type: 'number',
+                                labels: { team_name: scoped ? '결제' : '전체' },
+                                config: {
+                                  unit: 'ratio',
+                                  suppressed: masked,
+                                  group_size: masked ? 3 : members,
+                                },
                               },
-                            },
-                          ],
+                            ],
+                          },
+                          data: { values: [[masked ? null : installations / members]] },
                         },
-                        data: { values: [[masked ? null : installations / members]] },
-                      },
-                    ],
-              };
+                      ],
+                };
     return HttpResponse.json({
       request_id: 'mock-query',
       resolved_from: resolved(body.from),
