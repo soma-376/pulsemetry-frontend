@@ -1,0 +1,102 @@
+type IconButtonProps = {
+  className?: string;
+  glyph?: "menu";
+  size?: "24";
+};
+
+function IconButton({ className, glyph = "menu", size = "24" }: IconButtonProps) {
+  return (
+    <div className={className || "bg-[var(--surface\\/card,white)] border border-[var(--border\\/default,#e2e5ea)] border-solid content-stretch flex items-center justify-center relative rounded-[6px] size-[24px]"} data-node-id="8:49">
+      <p className="[word-break:break-word] font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-none not-italic relative shrink-0 text-[14px] text-[color:var(--text\/2,#4b5563)] whitespace-nowrap" data-node-id="8:50">
+        ⋯
+      </p>
+    </div>
+  );
+}
+
+function InfoIconButton({ className }: { className?: string }) {
+  return (
+    <div className={className || "border border-[var(--text\\/3,#6b7280)] border-solid content-stretch flex items-center justify-center relative rounded-[8px] size-[16px]"} data-node-id="8:66" data-name="InfoIconButton">
+      <p className="[word-break:break-word] font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] not-italic relative shrink-0 text-[10px] text-[color:var(--text\/3,#6b7280)] whitespace-nowrap" data-node-id="8:67">
+        i
+      </p>
+    </div>
+  );
+}
+
+type WidgetCardProps = {
+  className?: string;
+  emphasis?: "default" | "dimmed" | "highlighted";
+  mode?: "chart" | "table";
+};
+
+export default function WidgetCard({ className, emphasis = "default", mode = "chart" }: WidgetCardProps) {
+  const isChart = mode === "chart";
+  const isChartAndDimmed = mode === "chart" && emphasis === "dimmed";
+  const isChartAndHighlighted = mode === "chart" && emphasis === "highlighted";
+  const isDimmed = emphasis === "dimmed";
+  const isHighlighted = emphasis === "highlighted";
+  const isTable = mode === "table";
+  const isTableAndDefault = mode === "table" && emphasis === "default";
+  const isTableAndDimmed = mode === "table" && emphasis === "dimmed";
+  const isTableAndHighlighted = mode === "table" && emphasis === "highlighted";
+  return (
+    <div className={className || `${String.raw`bg-[var(--surface\/card,white)] border-solid content-stretch flex flex-col gap-[10px] items-start p-[16px] relative rounded-[8px] w-[400px] `}${isHighlighted ? String.raw`border-2 border-[var(--accent\/blue,#1d4ed8)]` : isDimmed ? String.raw`border border-[var(--border\/default,#e2e5ea)] opacity-30` : String.raw`border border-[var(--border\/default,#e2e5ea)]`}`} id={isTableAndHighlighted ? "node-13_69" : isTableAndDimmed ? "node-13_59" : isTableAndDefault ? "node-13_49" : isChartAndHighlighted ? "node-13_39" : isChartAndDimmed ? "node-13_29" : "node-13_19"}>
+      <div className="content-stretch flex gap-[6px] items-center overflow-clip relative shrink-0 w-full" id={isTableAndHighlighted ? "node-13_70" : isTableAndDimmed ? "node-13_60" : isTableAndDefault ? "node-13_50" : isChartAndHighlighted ? "node-13_40" : isChartAndDimmed ? "node-13_30" : "node-13_20"} data-name="header">
+        <p className="[word-break:break-word] font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] not-italic relative shrink-0 text-[13px] text-[color:var(--text\/1,#111827)] whitespace-nowrap" id={isTableAndHighlighted ? "node-13_71" : isTableAndDimmed ? "node-13_61" : isTableAndDefault ? "node-13_51" : isChartAndHighlighted ? "node-13_41" : isChartAndDimmed ? "node-13_31" : "node-13_21"}>
+          비용 추세
+        </p>
+        <InfoIconButton className="border border-[var(--text\/3,#6b7280)] border-solid content-stretch flex items-center justify-center relative rounded-[8px] shrink-0 size-[16px]" />
+        <div className="flex-[1_0_0] h-px min-w-px relative" id={isTableAndHighlighted ? "node-13_74" : isTableAndDimmed ? "node-13_64" : isTableAndDefault ? "node-13_54" : isChartAndHighlighted ? "node-13_44" : isChartAndDimmed ? "node-13_34" : "node-13_24"} data-name="Frame" />
+        <IconButton className="bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid content-stretch flex items-center justify-center relative rounded-[6px] shrink-0 size-[24px]" />
+      </div>
+      {isChart && (
+        <>
+          <div className="bg-[var(--surface\/sub,#eef0f3)] h-[200px] relative rounded-[4px] shrink-0 w-full" id={isHighlighted ? "node-13_47" : isDimmed ? "node-13_37" : "node-13_27"} data-name="body slot · chart" />
+          <p className="[word-break:break-word] font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] not-italic relative shrink-0 text-[11px] text-[color:var(--text\/3,#6b7280)] whitespace-nowrap" id={isHighlighted ? "node-13_48" : isDimmed ? "node-13_38" : "node-13_28"}>
+            청구액 아님(공시 단가 추정)
+          </p>
+        </>
+      )}
+      {isTable && (
+        <>
+          <div className="bg-[var(--surface\/sub,#eef0f3)] h-[160px] relative rounded-[4px] shrink-0 w-full" id={isHighlighted ? "node-13_77" : isDimmed ? "node-13_67" : "node-13_57"} data-name="body slot · table" />
+          <p className="[word-break:break-word] font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] not-italic relative shrink-0 text-[11px] text-[color:var(--text\/3,#6b7280)] whitespace-nowrap" id={isHighlighted ? "node-13_78" : isDimmed ? "node-13_68" : "node-13_58"}>
+            청구액 아님(공시 단가 추정)
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+
+These styles are contained in the design: widget-title/13-sb: Font(family: "font/ui", style: Regular, size: 13, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/10: Font(family: "font/ui", style: Regular, size: 10, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), glyph/14: Font(family: "font/ui", style: Regular, size: 14, weight: 400, lineHeight: 1, letterSpacing: 0), caption/11: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0).
+
+Component descriptions: The following components have usage descriptions or documentation links defined in Figma. These descriptions provide important context about the intended usage, best practices, and any constraints for each component. Follow these guidelines when implementing or using these components.
+
+## WidgetCard
+**Node ID:** 13:79
+
+위젯 셸. 시안의 모든 위젯은 chart / table 두 모드를 갖습니다(⋯ 메뉴의 "표로 보기"). emphasis: dimmed = 시나리오 적용 시 관련 없는 위젯 opacity .3, highlighted = 관련 위젯 2px accent/blue 아웃라인 + order:-1로 맨 앞 배치. body slot을 실제 차트/표로 교체해서 쓰세요.
+
+## InfoIconButton
+**Node ID:** 8:66
+
+지표 정의 보기. 16×16 원, cursor:help. title 속성의 정의문은 Figma로 넘어오지 않으니 Foundations 표를 참고하세요.
+
+## IconButton
+**Node ID:** 8:65
+
+글리프 버튼. menu(⋯) = 위젯 메뉴, close(×) = 드로어 닫기, collapse(‹)/expand(›) = 내비 접기.
+
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

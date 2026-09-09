@@ -1,0 +1,568 @@
+<canvas id="0:1" name="00 Foundations" x="0" y="0" width="0" height="0">
+  <frame id="5:2" name="Pulsemetry Foundations" x="0" y="0" width="1440" height="1977">
+    <frame id="5:3" name="Title" x="40" y="40" width="1360" height="49">
+      <text id="5:4" name="Pulsemetry 디자인 파운데이션" x="0" y="0" width="221" height="26" />
+      <text id="5:5" name="Claude Design 시안 &quot;Pulsemetry 관리자 대시보드&quot;에서 변환. 색·타이포·간격은 모두 Pulsemetry 변수 컬렉션(Light/Dark 2모드)에 묶여 있습니다." x="0" y="32" width="704" height="17" />
+    </frame>
+    <frame id="5:6" name="Section · 색 토큰" x="40" y="121" width="1360" height="783">
+      <frame id="5:7" name="Frame" x="0" y="0" width="1360" height="23">
+        <text id="5:8" name="색 토큰" x="0" y="0" width="46" height="23" />
+        <text id="5:9" name="46개 · 각 카드의 왼쪽이 Light, 오른쪽이 Dark" x="54" y="4" width="219" height="17" />
+      </frame>
+      <frame id="5:10" name="Swatches" x="0" y="35" width="1360" height="748">
+        <frame id="5:11" name="surface/bg" x="0" y="0" width="210" height="83">
+          <frame id="5:12" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:13" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:14" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:15" name="surface/bg" x="10" y="56" width="69" height="17" />
+        </frame>
+        <frame id="5:16" name="surface/card" x="222" y="0" width="210" height="83">
+          <frame id="5:17" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:18" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:19" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:20" name="surface/card" x="10" y="56" width="83" height="17" />
+        </frame>
+        <frame id="5:21" name="surface/sub" x="444" y="0" width="210" height="83">
+          <frame id="5:22" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:23" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:24" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:25" name="surface/sub" x="10" y="56" width="76" height="17" />
+        </frame>
+        <frame id="5:26" name="surface/hover" x="666" y="0" width="210" height="83">
+          <frame id="5:27" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:28" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:29" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:30" name="surface/hover" x="10" y="56" width="90" height="17" />
+        </frame>
+        <frame id="5:31" name="border/default" x="888" y="0" width="210" height="83">
+          <frame id="5:32" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:33" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:34" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:35" name="border/default" x="10" y="56" width="97" height="17" />
+        </frame>
+        <frame id="5:36" name="text/1" x="1110" y="0" width="210" height="83">
+          <frame id="5:37" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:38" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:39" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:40" name="text/1" x="10" y="56" width="42" height="17" />
+        </frame>
+        <frame id="5:41" name="text/2" x="0" y="95" width="210" height="83">
+          <frame id="5:42" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:43" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:44" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:45" name="text/2" x="10" y="56" width="42" height="17" />
+        </frame>
+        <frame id="5:46" name="text/3" x="222" y="95" width="210" height="83">
+          <frame id="5:47" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:48" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:49" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:50" name="text/3" x="10" y="56" width="42" height="17" />
+        </frame>
+        <frame id="5:51" name="accent/blue" x="444" y="95" width="210" height="83">
+          <frame id="5:52" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:53" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:54" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:55" name="accent/blue" x="10" y="56" width="76" height="17" />
+        </frame>
+        <frame id="5:56" name="accent/blue2" x="666" y="95" width="210" height="83">
+          <frame id="5:57" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:58" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:59" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:60" name="accent/blue2" x="10" y="56" width="83" height="17" />
+        </frame>
+        <frame id="5:61" name="accent/blue-tint" x="888" y="95" width="210" height="83">
+          <frame id="5:62" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:63" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:64" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:65" name="accent/blue-tint" x="10" y="56" width="111" height="17" />
+        </frame>
+        <frame id="5:66" name="accent/purple" x="1110" y="95" width="210" height="83">
+          <frame id="5:67" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:68" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:69" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:70" name="accent/purple" x="10" y="56" width="90" height="17" />
+        </frame>
+        <frame id="5:71" name="accent/lav" x="0" y="190" width="210" height="83">
+          <frame id="5:72" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:73" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:74" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:75" name="accent/lav" x="10" y="56" width="69" height="17" />
+        </frame>
+        <frame id="5:76" name="accent/green" x="222" y="190" width="210" height="83">
+          <frame id="5:77" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:78" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:79" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:80" name="accent/green" x="10" y="56" width="83" height="17" />
+        </frame>
+        <frame id="5:81" name="accent/green-tint" x="444" y="190" width="210" height="83">
+          <frame id="5:82" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:83" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:84" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:85" name="accent/green-tint" x="10" y="56" width="118" height="17" />
+        </frame>
+        <frame id="5:86" name="accent/orange" x="666" y="190" width="210" height="83">
+          <frame id="5:87" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:88" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:89" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:90" name="accent/orange" x="10" y="56" width="90" height="17" />
+        </frame>
+        <frame id="5:91" name="accent/orange-tint" x="888" y="190" width="210" height="83">
+          <frame id="5:92" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:93" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:94" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:95" name="accent/orange-tint" x="10" y="56" width="125" height="17" />
+        </frame>
+        <frame id="5:96" name="accent/red" x="1110" y="190" width="210" height="83">
+          <frame id="5:97" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:98" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:99" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:100" name="accent/red" x="10" y="56" width="69" height="17" />
+        </frame>
+        <frame id="5:101" name="accent/red2" x="0" y="285" width="210" height="83">
+          <frame id="5:102" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:103" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:104" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:105" name="accent/red2" x="10" y="56" width="76" height="17" />
+        </frame>
+        <frame id="5:106" name="accent/red3" x="222" y="285" width="210" height="83">
+          <frame id="5:107" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:108" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:109" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:110" name="accent/red3" x="10" y="56" width="76" height="17" />
+        </frame>
+        <frame id="5:111" name="accent/red-tint" x="444" y="285" width="210" height="83">
+          <frame id="5:112" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:113" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:114" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:115" name="accent/red-tint" x="10" y="56" width="104" height="17" />
+        </frame>
+        <frame id="5:116" name="accent/gray" x="666" y="285" width="210" height="83">
+          <frame id="5:117" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:118" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:119" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:120" name="accent/gray" x="10" y="56" width="76" height="17" />
+        </frame>
+        <frame id="5:121" name="accent/gray-tint" x="888" y="285" width="210" height="83">
+          <frame id="5:122" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:123" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:124" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:125" name="accent/gray-tint" x="10" y="56" width="111" height="17" />
+        </frame>
+        <frame id="5:126" name="chart/seq1" x="1110" y="285" width="210" height="83">
+          <frame id="5:127" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:128" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:129" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:130" name="chart/seq1" x="10" y="56" width="69" height="17" />
+        </frame>
+        <frame id="5:131" name="chart/seq2" x="0" y="380" width="210" height="83">
+          <frame id="5:132" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:133" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:134" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:135" name="chart/seq2" x="10" y="56" width="69" height="17" />
+        </frame>
+        <frame id="5:136" name="chart/seq3" x="222" y="380" width="210" height="83">
+          <frame id="5:137" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:138" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:139" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:140" name="chart/seq3" x="10" y="56" width="69" height="17" />
+        </frame>
+        <frame id="5:141" name="chart/seq4" x="444" y="380" width="210" height="83">
+          <frame id="5:142" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:143" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:144" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:145" name="chart/seq4" x="10" y="56" width="69" height="17" />
+        </frame>
+        <frame id="5:146" name="chart/vio1" x="666" y="380" width="210" height="83">
+          <frame id="5:147" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:148" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:149" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:150" name="chart/vio1" x="10" y="56" width="69" height="17" />
+        </frame>
+        <frame id="5:151" name="chart/vio2" x="888" y="380" width="210" height="83">
+          <frame id="5:152" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:153" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:154" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:155" name="chart/vio2" x="10" y="56" width="69" height="17" />
+        </frame>
+        <frame id="5:156" name="chart/vio3" x="1110" y="380" width="210" height="83">
+          <frame id="5:157" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:158" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:159" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:160" name="chart/vio3" x="10" y="56" width="69" height="17" />
+        </frame>
+        <frame id="5:161" name="chart/vio4" x="0" y="475" width="210" height="83">
+          <frame id="5:162" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:163" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:164" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:165" name="chart/vio4" x="10" y="56" width="69" height="17" />
+        </frame>
+        <frame id="5:166" name="chart/heat1" x="222" y="475" width="210" height="83">
+          <frame id="5:167" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:168" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:169" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:170" name="chart/heat1" x="10" y="56" width="76" height="17" />
+        </frame>
+        <frame id="5:171" name="chart/heat2" x="444" y="475" width="210" height="83">
+          <frame id="5:172" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:173" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:174" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:175" name="chart/heat2" x="10" y="56" width="76" height="17" />
+        </frame>
+        <frame id="5:176" name="chart/heat3" x="666" y="475" width="210" height="83">
+          <frame id="5:177" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:178" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:179" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:180" name="chart/heat3" x="10" y="56" width="76" height="17" />
+        </frame>
+        <frame id="5:181" name="chart/heat4" x="888" y="475" width="210" height="83">
+          <frame id="5:182" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:183" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:184" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:185" name="chart/heat4" x="10" y="56" width="76" height="17" />
+        </frame>
+        <frame id="5:186" name="chart/heat5" x="1110" y="475" width="210" height="83">
+          <frame id="5:187" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:188" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:189" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:190" name="chart/heat5" x="10" y="56" width="76" height="17" />
+        </frame>
+        <frame id="5:191" name="chart/heatfg1" x="0" y="570" width="210" height="83">
+          <frame id="5:192" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:193" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:194" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:195" name="chart/heatfg1" x="10" y="56" width="90" height="17" />
+        </frame>
+        <frame id="5:196" name="chart/heatfg2" x="222" y="570" width="210" height="83">
+          <frame id="5:197" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:198" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:199" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:200" name="chart/heatfg2" x="10" y="56" width="90" height="17" />
+        </frame>
+        <frame id="5:201" name="chart/heatfg3" x="444" y="570" width="210" height="83">
+          <frame id="5:202" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:203" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:204" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:205" name="chart/heatfg3" x="10" y="56" width="90" height="17" />
+        </frame>
+        <frame id="5:206" name="chart/heatfg4" x="666" y="570" width="210" height="83">
+          <frame id="5:207" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:208" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:209" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:210" name="chart/heatfg4" x="10" y="56" width="90" height="17" />
+        </frame>
+        <frame id="5:211" name="chart/heatfg5" x="888" y="570" width="210" height="83">
+          <frame id="5:212" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:213" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:214" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:215" name="chart/heatfg5" x="10" y="56" width="90" height="17" />
+        </frame>
+        <frame id="5:216" name="misc/skel" x="1110" y="570" width="210" height="83">
+          <frame id="5:217" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:218" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:219" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:220" name="misc/skel" x="10" y="56" width="63" height="17" />
+        </frame>
+        <frame id="5:221" name="misc/on-accent" x="0" y="665" width="210" height="83">
+          <frame id="5:222" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:223" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:224" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:225" name="misc/on-accent" x="10" y="56" width="97" height="17" />
+        </frame>
+        <frame id="5:226" name="misc/on-inverse" x="222" y="665" width="210" height="83">
+          <frame id="5:227" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:228" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:229" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:230" name="misc/on-inverse" x="10" y="56" width="104" height="17" />
+        </frame>
+        <frame id="5:231" name="overlay/scrim-45" x="444" y="665" width="210" height="83">
+          <frame id="5:232" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:233" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:234" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:235" name="overlay/scrim-45" x="10" y="56" width="111" height="17" />
+        </frame>
+        <frame id="5:236" name="overlay/scrim-35" x="666" y="665" width="210" height="83">
+          <frame id="5:237" name="chips" x="10" y="10" width="190" height="40">
+            <frame id="5:238" name="light" x="0" y="0" width="95" height="40" />
+            <frame id="5:239" name="dark" x="95" y="0" width="95" height="40" />
+          </frame>
+          <text id="5:240" name="overlay/scrim-35" x="10" y="56" width="111" height="17" />
+        </frame>
+      </frame>
+    </frame>
+    <frame id="6:2" name="Section · 색 의미 규칙" x="40" y="936" width="1360" height="331">
+      <frame id="6:3" name="Frame" x="0" y="0" width="1360" height="23">
+        <text id="6:4" name="색 의미 규칙" x="0" y="0" width="78" height="23" />
+        <text id="6:5" name="혼용 금지 · 두 테마 모두 카드 배경 대비 4.5:1 이상" x="86" y="4" width="235" height="17" />
+      </frame>
+      <frame id="6:6" name="semantics" x="0" y="35" width="1360" height="296">
+        <frame id="6:7" name="Frame" x="0" y="0" width="194" height="134">
+          <frame id="6:8" name="swatch" x="12" y="12" width="100" height="36">
+            <frame id="6:9" name="Frame" x="0" y="0" width="100" height="36" />
+          </frame>
+          <text id="6:10" name="파랑" x="12" y="56" width="21" height="17" />
+          <text id="6:11" name="사용량 · 활동 (세션, 활성 사용자, 토큰)" x="12" y="81" width="170" height="16" />
+          <text id="6:12" name="--blue" x="12" y="105" width="42" height="17" />
+        </frame>
+        <frame id="6:13" name="Frame" x="206" y="0" width="194" height="134">
+          <frame id="6:14" name="swatch" x="12" y="12" width="100" height="36">
+            <frame id="6:15" name="Frame" x="0" y="0" width="50" height="36" />
+            <frame id="6:16" name="Frame" x="50" y="0" width="50" height="36" />
+          </frame>
+          <text id="6:17" name="보라" x="12" y="56" width="21" height="17" />
+          <text id="6:18" name="비용(공시) · 연보라 = 계약 단가" x="12" y="81" width="170" height="16" />
+          <text id="6:19" name="--purple / --lav" x="12" y="105" width="111" height="17" />
+        </frame>
+        <frame id="6:20" name="Frame" x="412" y="0" width="194" height="134">
+          <frame id="6:21" name="swatch" x="12" y="12" width="100" height="36">
+            <frame id="6:22" name="Frame" x="0" y="0" width="100" height="36" />
+          </frame>
+          <text id="6:23" name="초록" x="12" y="56" width="21" height="17" />
+          <text id="6:24" name="산출 (LoC 추가, 커밋, PR, 성공)" x="12" y="81" width="170" height="16" />
+          <text id="6:25" name="--green" x="12" y="105" width="49" height="17" />
+        </frame>
+        <frame id="6:26" name="Frame" x="618" y="0" width="194" height="134">
+          <frame id="6:27" name="swatch" x="12" y="12" width="100" height="36">
+            <frame id="6:28" name="Frame" x="0" y="0" width="100" height="36" />
+          </frame>
+          <text id="6:29" name="주황" x="12" y="56" width="21" height="17" />
+          <text id="6:30" name="마찰 · 대기 (권한 대기, 자동 승인, 거절)" x="12" y="81" width="170" height="16" />
+          <text id="6:31" name="--orange" x="12" y="105" width="56" height="17" />
+        </frame>
+        <frame id="6:32" name="Frame" x="824" y="0" width="194" height="150">
+          <frame id="6:33" name="swatch" x="12" y="12" width="100" height="36">
+            <frame id="6:34" name="Frame" x="0" y="0" width="100" height="36" />
+          </frame>
+          <text id="6:35" name="빨강" x="12" y="56" width="21" height="17" />
+          <text id="6:36" name="이상 탐지 · 실패 · 정책 위반만 (에러율, 거부, 스파이크, 429)" x="12" y="81" width="170" height="32" />
+          <text id="6:37" name="--red" x="12" y="121" width="35" height="17" />
+        </frame>
+        <frame id="6:38" name="Frame" x="1030" y="0" width="194" height="134">
+          <frame id="6:39" name="swatch" x="12" y="12" width="170" height="36">
+            <instance id="6:40" name="pattern/hatch-gray" x="0" y="0" width="640" height="360" />
+          </frame>
+          <text id="6:43" name="회색" x="12" y="56" width="21" height="17" />
+          <text id="6:44" name="미관측 · n&lt;5 마스킹 · 준비 중" x="12" y="81" width="170" height="16" />
+          <text id="6:45" name="--gray / --gray-tint" x="12" y="105" width="138" height="17" />
+        </frame>
+        <frame id="6:46" name="Frame" x="0" y="162" width="194" height="134">
+          <frame id="6:47" name="swatch" x="12" y="12" width="100" height="36">
+            <frame id="6:48" name="Frame" x="0" y="0" width="25" height="36" />
+            <frame id="6:49" name="Frame" x="25" y="0" width="25" height="36" />
+            <frame id="6:50" name="Frame" x="50" y="0" width="25" height="36" />
+            <frame id="6:51" name="Frame" x="75" y="0" width="25" height="36" />
+          </frame>
+          <text id="6:52" name="표면" x="12" y="56" width="21" height="17" />
+          <text id="6:53" name="배경 / 카드 / 서브 / 보더" x="12" y="81" width="170" height="16" />
+          <text id="6:54" name="--bg --card --sub --border" x="12" y="105" width="180" height="17" />
+        </frame>
+      </frame>
+    </frame>
+    <frame id="6:55" name="Section · 타이포" x="40" y="1299" width="1360" height="369">
+      <frame id="6:56" name="Frame" x="0" y="0" width="1360" height="23">
+        <text id="6:57" name="타이포" x="0" y="0" width="42" height="23" />
+        <text id="6:58" name="font/ui = 42dot Sans (Pretendard 프록시) · font/mono = IBM Plex Mono · 본문 13px / 1.45" x="50" y="4" width="464" height="17" />
+      </frame>
+      <frame id="6:59" name="Frame" x="0" y="35" width="1360" height="334">
+        <frame id="6:60" name="Frame" x="12" y="12" width="1336" height="33">
+          <text id="6:61" name="kpi/30-sb" x="0" y="14" width="160" height="17" />
+          <text id="6:62" name="4,812.37" x="176" y="0" width="112" height="33" />
+          <frame id="6:63" name="Frame" x="304" y="26" width="851" height="1" />
+          <text id="6:64" name="KPI 주값 · tabular-nums · 자간 −2%" x="1171" y="15" width="165" height="16" />
+        </frame>
+        <frame id="6:65" name="Frame" x="12" y="55" width="1336" height="31">
+          <text id="6:66" name="stat/28-sb" x="0" y="12" width="160" height="17" />
+          <text id="6:67" name="$69,840" x="176" y="0" width="106" height="31" />
+          <frame id="6:68" name="Frame" x="298" y="24" width="931" height="1" />
+          <text id="6:69" name="StatBlock 대형 숫자" x="1245" y="13" width="91" height="16" />
+        </frame>
+        <frame id="6:70" name="Frame" x="12" y="96" width="1336" height="26">
+          <text id="6:71" name="h1/18-sb" x="0" y="6" width="160" height="17" />
+          <text id="6:72" name="개요 · 팀 분석" x="176" y="0" width="95" height="26" />
+          <frame id="6:73" name="Frame" x="287" y="18" width="982" height="1" />
+          <text id="6:74" name="페이지 제목" x="1285" y="7" width="51" height="16" />
+        </frame>
+        <frame id="6:75" name="Frame" x="12" y="132" width="1336" height="23">
+          <text id="6:76" name="h2/16-sb" x="0" y="4" width="160" height="17" />
+          <text id="6:77" name="시나리오" x="176" y="0" width="56" height="23" />
+          <frame id="6:78" name="Frame" x="248" y="16" width="1031" height="1" />
+          <text id="6:79" name="섹션 제목" x="1295" y="5" width="41" height="16" />
+        </frame>
+        <frame id="6:80" name="Frame" x="12" y="165" width="1336" height="19">
+          <text id="6:81" name="widget-title/13-sb" x="0" y="1" width="160" height="17" />
+          <text id="6:82" name="비용 추세" x="176" y="0" width="49" height="19" />
+          <frame id="6:83" name="Frame" x="241" y="13" width="1038" height="1" />
+          <text id="6:84" name="위젯 제목" x="1295" y="2" width="41" height="16" />
+        </frame>
+        <frame id="6:85" name="Frame" x="12" y="194" width="1336" height="19">
+          <text id="6:86" name="body/13" x="0" y="1" width="160" height="17" />
+          <text id="6:87" name="본문 13px — 표 셀, 내비 항목, 인풋 값" x="176" y="0" width="197" height="19" />
+          <frame id="6:88" name="Frame" x="389" y="13" width="911" height="1" />
+          <text id="6:89" name="본문" x="1316" y="2" width="20" height="16" />
+        </frame>
+        <frame id="6:90" name="Frame" x="12" y="223" width="1336" height="17">
+          <text id="6:91" name="sub/12" x="0" y="0" width="160" height="17" />
+          <text id="6:92" name="보조 12px — 툴바 라벨, KPI 라벨" x="176" y="0" width="159" height="17" />
+          <frame id="6:93" name="Frame" x="351" y="12" width="949" height="1" />
+          <text id="6:94" name="보조" x="1316" y="1" width="20" height="16" />
+        </frame>
+        <frame id="6:95" name="Frame" x="12" y="250" width="1336" height="17">
+          <text id="6:96" name="caption/11" x="0" y="0" width="160" height="17" />
+          <text id="6:97" name="캡션 11px — 축 라벨, 각주, &quot;청구액 아님&quot;" x="176" y="1" width="180" height="16" />
+          <frame id="6:98" name="Frame" x="372" y="12" width="928" height="1" />
+          <text id="6:99" name="캡션" x="1316" y="1" width="20" height="16" />
+        </frame>
+        <frame id="6:100" name="Frame" x="12" y="277" width="1336" height="18">
+          <text id="6:101" name="badge/11-sb-18" x="0" y="0" width="160" height="17" />
+          <text id="6:102" name="12" x="176" y="0" width="12" height="18" />
+          <frame id="6:103" name="Frame" x="204" y="12" width="988" height="1" />
+          <text id="6:104" name="배지 · line-height 고정 18px" x="1208" y="1" width="128" height="16" />
+        </frame>
+        <frame id="6:105" name="Frame" x="12" y="305" width="1336" height="17">
+          <text id="6:106" name="mono/11-5" x="0" y="0" width="160" height="17" />
+          <text id="6:107" name="claude-sonnet-4-5 · query_source" x="176" y="0" width="221" height="17" />
+          <frame id="6:108" name="Frame" x="413" y="12" width="851" height="1" />
+          <text id="6:109" name="식별자 · 코드" x="1280" y="1" width="56" height="16" />
+        </frame>
+      </frame>
+    </frame>
+    <frame id="6:110" name="Section · 간격" x="40" y="1700" width="1360" height="213">
+      <frame id="6:111" name="Frame" x="0" y="0" width="1360" height="23">
+        <text id="6:112" name="간격 · 모서리 · 그리드" x="0" y="0" width="135" height="23" />
+        <text id="6:113" name="그리드 12컬럼 · 거터 16px · 최대 1440px · 최소 1024px · 그림자 없음" x="143" y="4" width="335" height="17" />
+      </frame>
+      <frame id="6:114" name="Frame" x="0" y="35" width="1360" height="178">
+        <frame id="6:115" name="Frame" x="12" y="12" width="1336" height="78">
+          <frame id="6:116" name="Frame" x="0" y="54" width="7" height="24">
+            <frame id="6:117" name="Frame" x="2.5" y="0" width="2" height="2" />
+            <text id="6:118" name="2" x="0" y="8" width="7" height="16" />
+          </frame>
+          <frame id="6:119" name="Frame" x="17" y="52" width="7" height="26">
+            <frame id="6:120" name="Frame" x="1.5" y="0" width="4" height="4" />
+            <text id="6:121" name="4" x="0" y="10" width="7" height="16" />
+          </frame>
+          <frame id="6:122" name="Frame" x="34" y="50" width="7" height="28">
+            <frame id="6:123" name="Frame" x="0.5" y="0" width="6" height="6" />
+            <text id="6:124" name="6" x="0" y="12" width="7" height="16" />
+          </frame>
+          <frame id="6:125" name="Frame" x="51" y="48" width="8" height="30">
+            <frame id="6:126" name="Frame" x="0" y="0" width="8" height="8" />
+            <text id="6:127" name="8" x="0.5" y="14" width="7" height="16" />
+          </frame>
+          <frame id="6:128" name="Frame" x="69" y="46" width="12" height="32">
+            <frame id="6:129" name="Frame" x="1" y="0" width="10" height="10" />
+            <text id="6:130" name="10" x="0" y="16" width="12" height="16" />
+          </frame>
+          <frame id="6:131" name="Frame" x="91" y="44" width="12" height="34">
+            <frame id="6:132" name="Frame" x="0" y="0" width="12" height="12" />
+            <text id="6:133" name="12" x="0" y="18" width="12" height="16" />
+          </frame>
+          <frame id="6:134" name="Frame" x="113" y="40" width="16" height="38">
+            <frame id="6:135" name="Frame" x="0" y="0" width="16" height="16" />
+            <text id="6:136" name="16" x="2" y="22" width="12" height="16" />
+          </frame>
+          <frame id="6:137" name="Frame" x="139" y="36" width="20" height="42">
+            <frame id="6:138" name="Frame" x="0" y="0" width="20" height="20" />
+            <text id="6:139" name="20" x="3" y="26" width="14" height="16" />
+          </frame>
+          <frame id="6:140" name="Frame" x="169" y="32" width="24" height="46">
+            <frame id="6:141" name="Frame" x="0" y="0" width="24" height="24" />
+            <text id="6:142" name="24" x="5" y="30" width="14" height="16" />
+          </frame>
+          <frame id="6:143" name="Frame" x="203" y="24" width="32" height="54">
+            <frame id="6:144" name="Frame" x="0" y="0" width="32" height="32" />
+            <text id="6:145" name="32" x="9" y="38" width="14" height="16" />
+          </frame>
+          <frame id="6:146" name="Frame" x="245" y="16" width="40" height="62">
+            <frame id="6:147" name="Frame" x="0" y="0" width="40" height="40" />
+            <text id="6:148" name="40" x="13" y="46" width="14" height="16" />
+          </frame>
+          <frame id="6:149" name="Frame" x="295" y="0" width="56" height="78">
+            <frame id="6:150" name="Frame" x="0" y="0" width="56" height="56" />
+            <text id="6:151" name="56" x="21" y="62" width="14" height="16" />
+          </frame>
+        </frame>
+        <frame id="6:152" name="Frame" x="12" y="106" width="1336" height="22">
+          <frame id="6:153" name="Frame" x="0" y="0" width="105" height="22">
+            <frame id="6:154" name="Frame" x="0" y="0" width="34" height="22" />
+            <text id="6:155" name="radius/4 배지" x="42" y="3" width="63" height="16" />
+          </frame>
+          <frame id="6:156" name="Frame" x="119" y="0" width="114" height="22">
+            <frame id="6:157" name="Frame" x="0" y="0" width="34" height="22" />
+            <text id="6:158" name="radius/6 컨트롤" x="42" y="3" width="72" height="16" />
+          </frame>
+          <frame id="6:159" name="Frame" x="247" y="0" width="105" height="22">
+            <frame id="6:160" name="Frame" x="0" y="0" width="34" height="22" />
+            <text id="6:161" name="radius/8 카드" x="42" y="3" width="63" height="16" />
+          </frame>
+          <frame id="6:162" name="Frame" x="366" y="0" width="119" height="22">
+            <frame id="6:163" name="Frame" x="0" y="0" width="34" height="22" />
+            <text id="6:164" name="radius/10 카운트" x="42" y="3" width="77" height="16" />
+          </frame>
+          <frame id="6:165" name="Frame" x="499" y="0" width="104" height="22">
+            <frame id="6:166" name="Frame" x="0" y="0" width="34" height="22" />
+            <text id="6:167" name="radius/15 pill" x="42" y="3" width="62" height="16" />
+          </frame>
+        </frame>
+        <frame id="6:168" name="Frame" x="12" y="144" width="1336" height="22">
+          <frame id="6:169" name="Frame" x="0" y="0" width="247" height="22">
+            <text id="6:170" name="카드 패딩 16px · 라운드 8px · 1px 보더 · 그림자 없음" x="8" y="3" width="231" height="16" />
+          </frame>
+          <frame id="6:171" name="Frame" x="255" y="0" width="197" height="22">
+            <text id="6:172" name="포커스 링 2px accent/blue · offset 2px" x="8" y="3" width="181" height="16" />
+          </frame>
+          <frame id="6:173" name="Frame" x="460" y="0" width="148" height="22">
+            <text id="6:174" name="비교 기간 = 같은 색 50% 점선" x="8" y="3" width="132" height="16" />
+          </frame>
+          <frame id="6:175" name="Frame" x="616" y="0" width="318" height="22">
+            <text id="6:176" name="사이드 내비 240px / 접힘 56px · 툴바 56px · 커버리지 스트립 28px" x="8" y="3" width="302" height="16" />
+          </frame>
+        </frame>
+      </frame>
+    </frame>
+  </frame>
+</canvas>
