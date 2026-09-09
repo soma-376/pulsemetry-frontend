@@ -1,0 +1,118 @@
+const imgDonut = "https://www.figma.com/api/mcp/asset/77f5e746-f12f-468e-b30c-7ca354ccf6f9.svg";
+
+export default function W14() {
+  return (
+    <div className="bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid relative rounded-[8px] size-full" data-node-id="24:6" data-name="W1.4 모델 점유율">
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[13px] text-[color:var(--text\/1,#111827)] top-[17.67px] whitespace-nowrap" data-node-id="24:7">
+        모델 점유율
+      </p>
+      <div className="absolute border border-[var(--accent\/gray,#6b7280)] border-solid left-[81.3px] rounded-[8px] size-[16px] top-[20px]" data-node-id="24:8" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[7.4px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[2px] whitespace-nowrap" data-node-id="24:9">
+          i
+        </p>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[107.3px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[19.52px] whitespace-nowrap" data-node-id="24:10">
+        토큰 비중
+      </p>
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid left-[331.3px] rounded-[6px] size-[24px] top-[16px]" data-node-id="24:11" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-none left-[13.5px] not-italic text-[14px] text-[color:var(--text\/2,#4b5563)] text-center top-[4px] whitespace-nowrap" data-node-id="24:12">
+          ⋯
+        </p>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[57.5px] not-italic text-[18px] text-[color:var(--text\/1,#111827)] top-[137.6px] tracking-[-0.18px] whitespace-nowrap" data-node-id="24:18">
+        1.24B
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[72.5px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[157.25px] whitespace-nowrap" data-node-id="24:19">
+        토큰
+      </p>
+      <div className="absolute bg-[var(--chart\/seq2,#1e3a8a)] left-[164px] rounded-[2px] size-[8px] top-[111.9px]" data-node-id="24:20" data-name="box" />
+      <div className="absolute h-[16.7px] left-[180px] overflow-clip top-[107.6px] w-[99.2px]" data-node-id="24:21" data-name="box">
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-0 not-italic text-[11.5px] text-[color:var(--text\/1,#111827)] top-[-0.34px] whitespace-nowrap" data-node-id="24:22">
+          claude-sonnet-4-5
+        </p>
+      </div>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[313.7px] not-italic text-[12px] text-[color:var(--text\/1,#111827)] text-right top-[106.5px] whitespace-nowrap" data-node-id="24:23">
+        46%
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[322.9px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] text-right top-[106.5px] whitespace-nowrap" data-node-id="24:24">
+        ·
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[344.9px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] text-right top-[106.5px] whitespace-nowrap" data-node-id="24:25">
+        104
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[355.4px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] text-right top-[106.5px] whitespace-nowrap" data-node-id="24:26">
+        명
+      </p>
+      <div className="absolute bg-[var(--chart\/seq1,#172554)] left-[164px] rounded-[2px] size-[8px] top-[137.3px]" data-node-id="24:27" data-name="box" />
+      <div className="absolute h-[16.7px] left-[180px] overflow-clip top-[132.9px] w-[106.6px]" data-node-id="24:28" data-name="box">
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-0 not-italic text-[11.5px] text-[color:var(--text\/1,#111827)] top-[-0.34px] whitespace-nowrap" data-node-id="24:29">
+          claude-opus-4-1
+        </p>
+      </div>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[321.1px] not-italic text-[12px] text-[color:var(--text\/1,#111827)] text-right top-[131.9px] whitespace-nowrap" data-node-id="24:30">
+        27%
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[330.2px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] text-right top-[131.9px] whitespace-nowrap" data-node-id="24:31">
+        ·
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[345px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] text-right top-[131.9px] whitespace-nowrap" data-node-id="24:32">
+        61
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[355.4px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] text-right top-[131.9px] whitespace-nowrap" data-node-id="24:33">
+        명
+      </p>
+      <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] left-[164px] rounded-[2px] size-[8px] top-[162.7px]" data-node-id="24:34" data-name="box" />
+      <div className="absolute h-[16.7px] left-[180px] overflow-clip top-[158.3px] w-[106.6px]" data-node-id="24:35" data-name="box">
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-0 not-italic text-[11.5px] text-[color:var(--text\/1,#111827)] top-[-0.34px] whitespace-nowrap" data-node-id="24:36">
+          gpt-5-codex
+        </p>
+      </div>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[321.1px] not-italic text-[12px] text-[color:var(--text\/1,#111827)] text-right top-[157.3px] whitespace-nowrap" data-node-id="24:37">
+        17%
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[330.2px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] text-right top-[157.3px] whitespace-nowrap" data-node-id="24:38">
+        ·
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[345px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] text-right top-[157.3px] whitespace-nowrap" data-node-id="24:39">
+        38
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[355.4px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] text-right top-[157.3px] whitespace-nowrap" data-node-id="24:40">
+        명
+      </p>
+      <div className="absolute bg-[var(--accent\/blue2,#0369a1)] left-[164px] rounded-[2px] size-[8px] top-[188.1px]" data-node-id="24:41" data-name="box" />
+      <div className="absolute h-[16.7px] left-[180px] overflow-clip top-[183.7px] w-[106.6px]" data-node-id="24:42" data-name="box">
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-0 not-italic text-[11.5px] text-[color:var(--text\/1,#111827)] top-[-0.34px] whitespace-nowrap" data-node-id="24:43">
+          claude-haiku-4-5
+        </p>
+      </div>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[321.1px] not-italic text-[12px] text-[color:var(--text\/1,#111827)] text-right top-[182.7px] whitespace-nowrap" data-node-id="24:44">
+        10%
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[330.2px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] text-right top-[182.7px] whitespace-nowrap" data-node-id="24:45">
+        ·
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[345px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] text-right top-[182.7px] whitespace-nowrap" data-node-id="24:46">
+        72
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[355.4px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] text-right top-[182.7px] whitespace-nowrap" data-node-id="24:47">
+        명
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[267.42px] whitespace-nowrap" data-node-id="24:48">
+        입력+출력 토큰 합 · 사용자 수는 모델별 중복 집계
+      </p>
+      <div className="absolute left-[16px] size-[132px] top-[88px]" data-node-id="24:134" data-name="donut">
+        <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgDonut} />
+      </div>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+These styles are contained in the design: widget-title/13-sb: Font(family: "font/ui", style: Regular, size: 13, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/10: Font(family: "font/ui", style: Regular, size: 10, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), glyph/14: Font(family: "font/ui", style: Regular, size: 14, weight: 400, lineHeight: 1, letterSpacing: 0), h1/18-sb: Font(family: "font/ui", style: Regular, size: 18, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: -1), mono/11-5: Font(family: "font/mono", style: Regular, size: 11.5, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), sub/12-sb: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), sub/12: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0).
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

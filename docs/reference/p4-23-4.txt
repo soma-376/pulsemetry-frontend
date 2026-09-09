@@ -1,0 +1,96 @@
+const imgChart = "https://www.figma.com/api/mcp/asset/8d7da0af-48e6-4056-96ce-25dcd196e604.svg";
+
+export default function W12() {
+  return (
+    <div className="bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid relative rounded-[8px] size-full" data-node-id="23:4" data-name="W1.2 비용 추세">
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[13px] text-[color:var(--text\/1,#111827)] top-[17.67px] whitespace-nowrap" data-node-id="23:5">
+        비용 추세
+      </p>
+      <div className="absolute border border-[var(--accent\/gray,#6b7280)] border-solid left-[70.1px] rounded-[8px] size-[16px] top-[20px]" data-node-id="23:6" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[7.4px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[2px] whitespace-nowrap" data-node-id="23:7">
+          i
+        </p>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[96.1px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[19.52px] whitespace-nowrap" data-node-id="23:8">
+        일 단위 · USD
+      </p>
+      <div className="absolute border-[var(--accent\/purple,#5b21b6)] border-solid border-t-2 h-[2px] left-[505.6px] top-[27px] w-[14px]" data-node-id="23:9" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[524.6px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[19.98px] whitespace-nowrap" data-node-id="23:10">
+        공시
+      </p>
+      <div className="absolute border-[var(--accent\/lav,#7c3aed)] border-dashed border-t-2 h-[2px] left-[555.6px] top-[27px] w-[14px]" data-node-id="23:11" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[574.6px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[19.98px] whitespace-nowrap" data-node-id="23:12">
+        계약
+      </p>
+      <div className="absolute border-[var(--accent\/purple,#5b21b6)] border-dashed border-t-2 h-[2px] left-[605.6px] opacity-50 top-[27px] w-[14px]" data-node-id="23:13" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[624.6px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[19.52px] whitespace-nowrap" data-node-id="23:14">
+        전주
+      </p>
+      <div className="absolute bg-[var(--accent\/red,#b91c1c)] left-[655.6px] rounded-[4px] size-[8px] top-[24px]" data-node-id="23:15" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[668.6px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[19.98px] whitespace-nowrap" data-node-id="23:16">
+        스파이크
+      </p>
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid left-[720.7px] rounded-[6px] size-[24px] top-[16px]" data-node-id="23:17" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-none left-[13.5px] not-italic text-[14px] text-[color:var(--text\/2,#4b5563)] text-center top-[4px] whitespace-nowrap" data-node-id="23:18">
+          ⋯
+        </p>
+      </div>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[68px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-right top-[51.53px] whitespace-nowrap" data-node-id="23:19">
+        $1,400
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[68.1px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-right top-[143.52px] whitespace-nowrap" data-node-id="23:20">
+        $700
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[68.1px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-right top-[235.63px] whitespace-nowrap" data-node-id="23:21">
+        $0
+      </p>
+      <div className="absolute border-[var(--border\/default,#e2e5ea)] border-solid border-t h-px left-[76px] top-[52px] w-[668.7px]" data-node-id="23:22" data-name="box" />
+      <div className="absolute border-[var(--border\/default,#e2e5ea)] border-dashed border-t h-px left-[76px] top-[152px] w-[668.7px]" data-node-id="23:23" data-name="box" />
+      <div className="absolute border-[var(--border\/default,#e2e5ea)] border-solid border-t h-px left-[76px] top-[251px] w-[668.7px]" data-node-id="23:24" data-name="box" />
+      <div className="absolute h-[200px] left-[76px] top-[52px] w-[668.7px]" data-node-id="23:25" data-name="chart">
+        <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChart} />
+      </div>
+      <div className="absolute bg-[var(--accent\/red,#b91c1c)] border-2 border-[var(--surface\/card,white)] border-solid left-[357.6px] rounded-[5px] size-[10px] top-[59.5px]" data-node-id="23:29" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[370.6px] not-italic text-[11px] text-[color:var(--accent\/red,#b91c1c)] top-[56.03px] whitespace-nowrap" data-node-id="23:30">
+        데이터 팀 스파이크 · 이동평균 +340%
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[76px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[259.52px] whitespace-nowrap" data-node-id="23:31">
+        8/31
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[174.9px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[259.52px] whitespace-nowrap" data-node-id="23:32">
+        9/1
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[267px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[259.52px] whitespace-nowrap" data-node-id="23:33">
+        9/2
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[359.1px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[259.52px] whitespace-nowrap" data-node-id="23:34">
+        9/3
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[451.2px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[259.52px] whitespace-nowrap" data-node-id="23:35">
+        9/4
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[543.3px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[259.52px] whitespace-nowrap" data-node-id="23:36">
+        9/5
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[635.4px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[259.52px] whitespace-nowrap" data-node-id="23:37">
+        9/6
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[727.5px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[259.52px] whitespace-nowrap" data-node-id="23:38">
+        9/7
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[287.42px] whitespace-nowrap" data-node-id="23:39">
+        청구액 아님(공시 단가 추정) · 스파이크 = 7일 이동평균 +200% 초과
+      </p>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+These styles are contained in the design: widget-title/13-sb: Font(family: "font/ui", style: Regular, size: 13, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/10: Font(family: "font/ui", style: Regular, size: 10, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), glyph/14: Font(family: "font/ui", style: Regular, size: 14, weight: 400, lineHeight: 1, letterSpacing: 0), caption/11-md: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0).
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

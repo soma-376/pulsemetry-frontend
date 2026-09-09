@@ -108,7 +108,7 @@ describe('widget contracts', () => {
     expect(new Date(Number(m.points[0].key) + 32400000).getUTCDay()).toBe(1);
   });
   it('rejects unsupported metrics and isolates malformed frames', () => {
-    expect(result({ ref_id: 'A', metric_id: 'refusals' })).toBeUndefined();
+    expect(result({ ref_id: 'A', metric_id: 'vendor_account_mismatch' })).toBeUndefined();
     expect(
       series({
         status: 200,

@@ -1,4 +1,4 @@
-import { Widget, Result, DataTable, q, shortDate, axis, tip } from './Widget';
+import { Widget, Result, DataTable, q, shortDate, axis, tip } from '../../widgets/Widget';
 import { TeamDetails } from './TeamDetails';
 import { useState } from 'react';
 import {

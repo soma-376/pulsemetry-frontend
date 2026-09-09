@@ -1,0 +1,396 @@
+const imgStripes = "https://www.figma.com/api/mcp/asset/e32b77a5-37af-48ed-8817-6bed2ff16562.svg";
+
+export default function W16() {
+  return (
+    <div className="bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid relative rounded-[8px] size-full" data-node-id="25:24" data-name="W1.6 팀×주 도입률">
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[13px] text-[color:var(--text\/1,#111827)] top-[17.67px] whitespace-nowrap" data-node-id="25:25">
+        팀 × 주 도입률
+      </p>
+      <div className="absolute border border-[var(--accent\/gray,#6b7280)] border-solid left-[95.8px] rounded-[8px] size-[16px] top-[20px]" data-node-id="25:26" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[7.4px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[2px] whitespace-nowrap" data-node-id="25:27">
+          i
+        </p>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[121.8px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[19.52px] whitespace-nowrap" data-node-id="25:28">
+        행 = 팀(활성 인원순) · 열 = 주
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[904.2px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[19.52px] whitespace-nowrap" data-node-id="25:29">{`<45`}</p>
+      <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[10px] left-[930.5px] rounded-[2px] top-[23px] w-[14px]" data-node-id="25:30" data-name="box" />
+      <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[10px] left-[946.5px] rounded-[2px] top-[23px] w-[14px]" data-node-id="25:31" data-name="box" />
+      <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[10px] left-[962.5px] rounded-[2px] top-[23px] w-[14px]" data-node-id="25:32" data-name="box" />
+      <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[10px] left-[978.5px] rounded-[2px] top-[23px] w-[14px]" data-node-id="25:33" data-name="box" />
+      <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[10px] left-[994.5px] rounded-[2px] top-[23px] w-[14px]" data-node-id="25:34" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[1014.5px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[19.52px] whitespace-nowrap" data-node-id="25:35">
+        ≥75%
+      </p>
+      <div className="absolute h-[10px] left-[1057.4px] overflow-clip rounded-[2px] top-[23px] w-[14px]" data-node-id="25:36" data-name="n<5 masked">
+        <div className="absolute bg-[var(--accent\/gray-tint,#e5e7eb)] h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="25:37" data-name="hatch">
+          <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I25:37;4:2" data-name="stripes">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+          </div>
+        </div>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[1076.4px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[19.98px] whitespace-nowrap" data-node-id="25:40">{`n<5`}</p>
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid left-[1110px] rounded-[6px] size-[24px] top-[16px]" data-node-id="25:41" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-none left-[13.5px] not-italic text-[14px] text-[color:var(--text\/2,#4b5563)] text-center top-[4px] whitespace-nowrap" data-node-id="25:42">
+          ⋯
+        </p>
+      </div>
+      <div className="absolute h-[233.9px] left-[16px] overflow-clip top-[52px] w-[1118px]" data-node-id="25:43" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[183.4px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[-0.47px] whitespace-nowrap" data-node-id="25:44">
+          7/13
+        </p>
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[308.6px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[-0.47px] whitespace-nowrap" data-node-id="25:45">
+          7/20
+        </p>
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[433.4px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[-0.47px] whitespace-nowrap" data-node-id="25:46">
+          7/27
+        </p>
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[559px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[-0.47px] whitespace-nowrap" data-node-id="25:47">
+          8/3
+        </p>
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[682.4px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[-0.47px] whitespace-nowrap" data-node-id="25:48">
+          8/10
+        </p>
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[807.1px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[-0.47px] whitespace-nowrap" data-node-id="25:49">
+          8/17
+        </p>
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[932.9px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[-0.47px] whitespace-nowrap" data-node-id="25:50">
+          8/24
+        </p>
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[1056.6px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[-0.47px] whitespace-nowrap" data-node-id="25:51">
+          8/31
+        </p>
+        <div className="absolute h-[17.4px] left-0 overflow-clip top-[29.2px] w-[31.1px]" data-node-id="25:52" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[12px] text-[color:var(--text\/1,#111827)] top-[-0.7px] whitespace-nowrap" data-node-id="25:53">
+            플랫폼
+          </p>
+        </div>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[89px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[29.52px] whitespace-nowrap" data-node-id="25:54">
+          34명
+        </p>
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[32px] left-[124px] rounded-[4px] top-[21.9px] w-[120.8px]" data-node-id="25:55" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg3,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:56">
+            62%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[32px] left-[248.8px] rounded-[4px] top-[21.9px] w-[120.8px]" data-node-id="25:57" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg4,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:58">
+            65%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[32px] left-[373.5px] rounded-[4px] top-[21.9px] w-[120.8px]" data-node-id="25:59" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg4,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:60">
+            68%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[32px] left-[498.3px] rounded-[4px] top-[21.9px] w-[120.8px]" data-node-id="25:61" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg4,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:62">
+            71%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[32px] left-[623px] rounded-[4px] top-[21.9px] w-[120.8px]" data-node-id="25:63" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg4,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:64">
+            74%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[32px] left-[747.8px] rounded-[4px] top-[21.9px] w-[120.8px]" data-node-id="25:65" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg5,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:66">
+            76%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[32px] left-[872.5px] rounded-[4px] top-[21.9px] w-[120.8px]" data-node-id="25:67" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg5,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:68">
+            79%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[32px] left-[997.3px] rounded-[4px] top-[21.9px] w-[120.8px]" data-node-id="25:69" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg5,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:70">
+            82%
+          </p>
+        </div>
+        <div className="absolute h-[17.4px] left-0 overflow-clip top-[65.2px] w-[20.8px]" data-node-id="25:71" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[12px] text-[color:var(--text\/1,#111827)] top-[-0.7px] whitespace-nowrap" data-node-id="25:72">
+            결제
+          </p>
+        </div>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[89px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[65.53px] whitespace-nowrap" data-node-id="25:73">
+          29명
+        </p>
+        <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[32px] left-[124px] rounded-[4px] top-[57.9px] w-[120.8px]" data-node-id="25:74" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg2,#111827)] top-[6.6px] whitespace-nowrap" data-node-id="25:75">
+            48%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[32px] left-[248.8px] rounded-[4px] top-[57.9px] w-[120.8px]" data-node-id="25:76" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg2,#111827)] top-[6.6px] whitespace-nowrap" data-node-id="25:77">
+            51%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[32px] left-[373.5px] rounded-[4px] top-[57.9px] w-[120.8px]" data-node-id="25:78" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg3,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:79">
+            55%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[32px] left-[498.3px] rounded-[4px] top-[57.9px] w-[120.8px]" data-node-id="25:80" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg3,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:81">
+            58%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[32px] left-[623px] rounded-[4px] top-[57.9px] w-[120.8px]" data-node-id="25:82" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg3,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:83">
+            60%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[32px] left-[747.8px] rounded-[4px] top-[57.9px] w-[120.8px]" data-node-id="25:84" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg3,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:85">
+            63%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[32px] left-[872.5px] rounded-[4px] top-[57.9px] w-[120.8px]" data-node-id="25:86" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg4,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:87">
+            67%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[32px] left-[997.3px] rounded-[4px] top-[57.9px] w-[120.8px]" data-node-id="25:88" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg4,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:89">
+            70%
+          </p>
+        </div>
+        <div className="absolute h-[17.4px] left-0 overflow-clip top-[101.2px] w-[31.1px]" data-node-id="25:90" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[12px] text-[color:var(--text\/1,#111827)] top-[-0.7px] whitespace-nowrap" data-node-id="25:91">
+            데이터
+          </p>
+        </div>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[89px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[101.53px] whitespace-nowrap" data-node-id="25:92">
+          26명
+        </p>
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[32px] left-[124px] rounded-[4px] top-[93.9px] w-[120.8px]" data-node-id="25:93" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg4,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:94">
+            70%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[32px] left-[248.8px] rounded-[4px] top-[93.9px] w-[120.8px]" data-node-id="25:95" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg4,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:96">
+            72%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[32px] left-[373.5px] rounded-[4px] top-[93.9px] w-[120.8px]" data-node-id="25:97" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg4,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:98">
+            69%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[32px] left-[498.3px] rounded-[4px] top-[93.9px] w-[120.8px]" data-node-id="25:99" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg5,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:100">
+            75%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[32px] left-[623px] rounded-[4px] top-[93.9px] w-[120.8px]" data-node-id="25:101" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg5,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:102">
+            78%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[32px] left-[747.8px] rounded-[4px] top-[93.9px] w-[120.8px]" data-node-id="25:103" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg5,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:104">
+            80%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[32px] left-[872.5px] rounded-[4px] top-[93.9px] w-[120.8px]" data-node-id="25:105" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg5,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:106">
+            83%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[32px] left-[997.3px] rounded-[4px] top-[93.9px] w-[120.8px]" data-node-id="25:107" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg5,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:108">
+            85%
+          </p>
+        </div>
+        <div className="absolute h-[17.4px] left-0 overflow-clip top-[137.2px] w-[51.9px]" data-node-id="25:109" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[12px] text-[color:var(--text\/1,#111827)] top-[-0.7px] whitespace-nowrap" data-node-id="25:110">
+            프론트엔드
+          </p>
+        </div>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[89px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[137.52px] whitespace-nowrap" data-node-id="25:111">
+          24명
+        </p>
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[32px] left-[124px] rounded-[4px] top-[129.9px] w-[120.8px]" data-node-id="25:112" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg1,#111827)] top-[6.6px] whitespace-nowrap" data-node-id="25:113">
+            40%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[32px] left-[248.8px] rounded-[4px] top-[129.9px] w-[120.8px]" data-node-id="25:114" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg1,#111827)] top-[6.6px] whitespace-nowrap" data-node-id="25:115">
+            44%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[32px] left-[373.5px] rounded-[4px] top-[129.9px] w-[120.8px]" data-node-id="25:116" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg2,#111827)] top-[6.6px] whitespace-nowrap" data-node-id="25:117">
+            47%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[32px] left-[498.3px] rounded-[4px] top-[129.9px] w-[120.8px]" data-node-id="25:118" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg2,#111827)] top-[6.6px] whitespace-nowrap" data-node-id="25:119">
+            52%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[32px] left-[623px] rounded-[4px] top-[129.9px] w-[120.8px]" data-node-id="25:120" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg3,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:121">
+            55%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[32px] left-[747.8px] rounded-[4px] top-[129.9px] w-[120.8px]" data-node-id="25:122" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg3,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:123">
+            58%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[32px] left-[872.5px] rounded-[4px] top-[129.9px] w-[120.8px]" data-node-id="25:124" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg3,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:125">
+            61%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[32px] left-[997.3px] rounded-[4px] top-[129.9px] w-[120.8px]" data-node-id="25:126" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg4,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:127">
+            66%
+          </p>
+        </div>
+        <div className="absolute h-[17.4px] left-0 overflow-clip top-[173.2px] w-[31.1px]" data-node-id="25:128" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[12px] text-[color:var(--text\/1,#111827)] top-[-0.7px] whitespace-nowrap" data-node-id="25:129">
+            모바일
+          </p>
+        </div>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[89px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[173.52px] whitespace-nowrap" data-node-id="25:130">
+          22명
+        </p>
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[32px] left-[124px] rounded-[4px] top-[165.9px] w-[120.8px]" data-node-id="25:131" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg1,#111827)] top-[6.6px] whitespace-nowrap" data-node-id="25:132">
+            35%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[32px] left-[248.8px] rounded-[4px] top-[165.9px] w-[120.8px]" data-node-id="25:133" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg1,#111827)] top-[6.6px] whitespace-nowrap" data-node-id="25:134">
+            38%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[32px] left-[373.5px] rounded-[4px] top-[165.9px] w-[120.8px]" data-node-id="25:135" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg1,#111827)] top-[6.6px] whitespace-nowrap" data-node-id="25:136">
+            42%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[32px] left-[498.3px] rounded-[4px] top-[165.9px] w-[120.8px]" data-node-id="25:137" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg2,#111827)] top-[6.6px] whitespace-nowrap" data-node-id="25:138">
+            45%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[32px] left-[623px] rounded-[4px] top-[165.9px] w-[120.8px]" data-node-id="25:139" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg2,#111827)] top-[6.6px] whitespace-nowrap" data-node-id="25:140">
+            49%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[32px] left-[747.8px] rounded-[4px] top-[165.9px] w-[120.8px]" data-node-id="25:141" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg2,#111827)] top-[6.6px] whitespace-nowrap" data-node-id="25:142">
+            53%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[32px] left-[872.5px] rounded-[4px] top-[165.9px] w-[120.8px]" data-node-id="25:143" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg3,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:144">
+            56%
+          </p>
+        </div>
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[32px] left-[997.3px] rounded-[4px] top-[165.9px] w-[120.8px]" data-node-id="25:145" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[47.5px] not-italic text-[12px] text-[color:var(--chart\/heatfg3,white)] top-[6.6px] whitespace-nowrap" data-node-id="25:146">
+            60%
+          </p>
+        </div>
+        <div className="absolute h-[17.4px] left-0 overflow-clip top-[209.2px] w-[31.1px]" data-node-id="25:147" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[12px] text-[color:var(--text\/1,#111827)] top-[-0.7px] whitespace-nowrap" data-node-id="25:148">
+            인프라
+          </p>
+        </div>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[92.2px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[209.52px] whitespace-nowrap" data-node-id="25:149">{`n<5`}</p>
+        <div className="absolute h-[32px] left-[124px] overflow-clip rounded-[4px] top-[201.9px] w-[120.8px]" data-node-id="25:150" data-name="n<5 masked">
+          <div className="absolute bg-[var(--accent\/gray-tint,#e5e7eb)] h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="25:151" data-name="hatch">
+            <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I25:151;4:2" data-name="stripes">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+            </div>
+          </div>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[49.4px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[6.6px] whitespace-nowrap" data-node-id="25:154">{`n<5`}</p>
+        </div>
+        <div className="absolute h-[32px] left-[248.8px] overflow-clip rounded-[4px] top-[201.9px] w-[120.8px]" data-node-id="25:155" data-name="n<5 masked">
+          <div className="absolute bg-[var(--accent\/gray-tint,#e5e7eb)] h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="25:156" data-name="hatch">
+            <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I25:156;4:2" data-name="stripes">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+            </div>
+          </div>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[49.4px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[6.6px] whitespace-nowrap" data-node-id="25:159">{`n<5`}</p>
+        </div>
+        <div className="absolute h-[32px] left-[373.5px] overflow-clip rounded-[4px] top-[201.9px] w-[120.8px]" data-node-id="25:160" data-name="n<5 masked">
+          <div className="absolute bg-[var(--accent\/gray-tint,#e5e7eb)] h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="25:161" data-name="hatch">
+            <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I25:161;4:2" data-name="stripes">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+            </div>
+          </div>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[49.4px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[6.6px] whitespace-nowrap" data-node-id="25:164">{`n<5`}</p>
+        </div>
+        <div className="absolute h-[32px] left-[498.3px] overflow-clip rounded-[4px] top-[201.9px] w-[120.8px]" data-node-id="25:165" data-name="n<5 masked">
+          <div className="absolute bg-[var(--accent\/gray-tint,#e5e7eb)] h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="25:166" data-name="hatch">
+            <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I25:166;4:2" data-name="stripes">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+            </div>
+          </div>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[49.4px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[6.6px] whitespace-nowrap" data-node-id="25:169">{`n<5`}</p>
+        </div>
+        <div className="absolute h-[32px] left-[623px] overflow-clip rounded-[4px] top-[201.9px] w-[120.8px]" data-node-id="25:170" data-name="n<5 masked">
+          <div className="absolute bg-[var(--accent\/gray-tint,#e5e7eb)] h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="25:171" data-name="hatch">
+            <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I25:171;4:2" data-name="stripes">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+            </div>
+          </div>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[49.4px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[6.6px] whitespace-nowrap" data-node-id="25:174">{`n<5`}</p>
+        </div>
+        <div className="absolute h-[32px] left-[747.8px] overflow-clip rounded-[4px] top-[201.9px] w-[120.8px]" data-node-id="25:175" data-name="n<5 masked">
+          <div className="absolute bg-[var(--accent\/gray-tint,#e5e7eb)] h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="25:176" data-name="hatch">
+            <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I25:176;4:2" data-name="stripes">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+            </div>
+          </div>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[49.4px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[6.6px] whitespace-nowrap" data-node-id="25:179">{`n<5`}</p>
+        </div>
+        <div className="absolute h-[32px] left-[872.5px] overflow-clip rounded-[4px] top-[201.9px] w-[120.8px]" data-node-id="25:180" data-name="n<5 masked">
+          <div className="absolute bg-[var(--accent\/gray-tint,#e5e7eb)] h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="25:181" data-name="hatch">
+            <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I25:181;4:2" data-name="stripes">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+            </div>
+          </div>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[49.4px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[6.6px] whitespace-nowrap" data-node-id="25:184">{`n<5`}</p>
+        </div>
+        <div className="absolute h-[32px] left-[997.3px] overflow-clip rounded-[4px] top-[201.9px] w-[120.8px]" data-node-id="25:185" data-name="n<5 masked">
+          <div className="absolute bg-[var(--accent\/gray-tint,#e5e7eb)] h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="25:186" data-name="hatch">
+            <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I25:186;4:2" data-name="stripes">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+            </div>
+          </div>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[49.4px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[6.6px] whitespace-nowrap" data-node-id="25:189">{`n<5`}</p>
+        </div>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[297.42px] whitespace-nowrap" data-node-id="25:190">
+        도입률 = 주간 활성 사용자 / 활성 구성원 · 5명 미만 팀은 값 대신 마스킹
+      </p>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+These styles are contained in the design: widget-title/13-sb: Font(family: "font/ui", style: Regular, size: 13, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/10: Font(family: "font/ui", style: Regular, size: 10, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), glyph/14: Font(family: "font/ui", style: Regular, size: 14, weight: 400, lineHeight: 1, letterSpacing: 0), sub/12: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), sub/12-md: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0).
+Component descriptions: The following components have usage descriptions or documentation links defined in Figma. These descriptions provide important context about the intended usage, best practices, and any constraints for each component. Follow these guidelines when implementing or using these components.
+
+## pattern/hatch-gray
+**Node ID:** 4:4
+
+n<5 마스킹 빗금. 원본 CSS repeating-linear-gradient(135deg, --gray 0 1px, --gray-tint 1px 4px) 대체. 클리핑 프레임 안에 절대배치로 넣어 쓰세요 — 리사이즈하면 줄 간격이 깨집니다.
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

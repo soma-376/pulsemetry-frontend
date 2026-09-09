@@ -1,6 +1,6 @@
 import { chromium, expect } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
-const out = new URL('../docs/validation/phase-3/', import.meta.url);
+const out = new URL(`../docs/validation/${process.env.VALIDATION_DIR || 'phase-3'}/`, import.meta.url);
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });

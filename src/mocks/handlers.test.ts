@@ -62,3 +62,42 @@ it('omits exact coverage counts for small team and masked cases', async () => {
     expect(result.results.A.frames[0].data.values).toEqual([[null]]);
   }
 });
+it('CSV negotiates the first query only and masks small-team values', async () => {
+  const response = await fetch('http://localhost/v1/query', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${await login('owner')}`, Accept: 'text/csv' },
+    body: JSON.stringify({
+      from: 'now-7d',
+      to: 'now',
+      compare: 'none',
+      queries: [
+        { ref_id: 'A', metric_id: 'cost', frame_type: 'table', group_by: ['team'] },
+        { ref_id: 'B', metric_id: 'sessions' },
+      ],
+    }),
+  });
+  expect(response.headers.get('content-type')).toContain('text/csv');
+  const csv = await response.text();
+  expect(csv).toContain('n<5');
+  expect(csv).toContain('플랫폼');
+  expect(csv).not.toContain('sessions');
+});
+it('admin direct aggregate queries stay scoped and cannot query organization refusals', async () => {
+  const response = await fetch('http://localhost/v1/query', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${await login()}` },
+    body: JSON.stringify({
+      from: 'now-7d',
+      to: 'now',
+      compare: 'none',
+      queries: [
+        { ref_id: 'A', metric_id: 'cost', frame_type: 'table', group_by: ['team'] },
+        { ref_id: 'B', metric_id: 'refusals' },
+      ],
+    }),
+  });
+  const body = await response.json();
+  expect(body.results.A.frames).toHaveLength(1);
+  expect(body.results.A.frames[0].schema.fields[0].labels.team_name).toBe('결제');
+  expect(body.results.B.status).toBe(403);
+});

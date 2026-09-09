@@ -18,6 +18,7 @@ export async function request<T>(
   path: string,
   options: RequestInit = {},
   auditReason?: string,
+  responseType: 'json' | 'text' = 'json',
 ): Promise<T> {
   if (
     auditReason !== undefined &&
@@ -43,9 +44,16 @@ export async function request<T>(
       body.request_id,
     );
   }
-  return response.json() as Promise<T>;
+  return (responseType === 'text' ? response.text() : response.json()) as Promise<T>;
 }
 export const api = {
+  queryCsv: (body: QueryRequest, signal?: AbortSignal) =>
+    request<string>(
+      '/query',
+      { method: 'POST', body: JSON.stringify(body), headers: { Accept: 'text/csv' }, signal },
+      undefined,
+      'text',
+    ),
   login: (email: string, password: string) =>
     request<LoginResponse>('/auth/login', {
       method: 'POST',

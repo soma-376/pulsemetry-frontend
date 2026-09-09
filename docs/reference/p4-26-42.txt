@@ -1,0 +1,62 @@
+const imgChart = "https://www.figma.com/api/mcp/asset/edd2e4de-de4a-4605-80e1-73b614cd6ca3.svg";
+const imgChart1 = "https://www.figma.com/api/mcp/asset/8c5d88be-10e6-4de3-bd97-16c6ef9eb8e7.svg";
+
+export default function W17() {
+  return (
+    <div className="bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid relative rounded-[8px] size-full" data-node-id="26:42" data-name="W1.7 신뢰">
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[13px] text-[color:var(--text\/1,#111827)] top-[17.67px] whitespace-nowrap" data-node-id="26:43">
+        신뢰
+      </p>
+      <div className="absolute border border-[var(--accent\/gray,#6b7280)] border-solid left-[44.5px] rounded-[8px] size-[16px] top-[20px]" data-node-id="26:44" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[7.4px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[2px] whitespace-nowrap" data-node-id="26:45">
+          i
+        </p>
+      </div>
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid left-[331.3px] rounded-[6px] size-[24px] top-[16px]" data-node-id="26:46" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-none left-[13.5px] not-italic text-[14px] text-[color:var(--text\/2,#4b5563)] text-center top-[4px] whitespace-nowrap" data-node-id="26:47">
+          ⋯
+        </p>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[51.3px] whitespace-nowrap" data-node-id="26:48">
+        편집 수락률
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[73.9px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[51.3px] whitespace-nowrap" data-node-id="26:49">
+        (사람 결정만)
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.1] left-[16px] not-italic text-[28px] text-[color:var(--accent\/orange,#c2410c)] top-[71px] tracking-[-0.56px] whitespace-nowrap" data-node-id="26:50">
+        74.2%
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[108.7px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[83.7px] whitespace-nowrap" data-node-id="26:51">
+        ▲ +1.4pt
+      </p>
+      <div className="absolute h-[36px] left-[245.3px] top-[59.1px] w-[110px]" data-node-id="26:52" data-name="chart">
+        <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChart} />
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[115.5px] whitespace-nowrap" data-node-id="26:54">
+        자동 승인 비율
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.1] left-[16px] not-italic text-[28px] text-[color:var(--accent\/orange,#c2410c)] top-[135.2px] tracking-[-0.56px] whitespace-nowrap" data-node-id="26:55">
+        23.8%
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[108.7px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[147.9px] whitespace-nowrap" data-node-id="26:56">
+        ▲ +2.1pt
+      </p>
+      <div className="absolute h-[36px] left-[245.3px] top-[123.3px] w-[110px]" data-node-id="26:57" data-name="chart">
+        <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChart1} />
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[231.23px] whitespace-nowrap" data-node-id="26:59">
+        수락률은 KPI가 아님 · D-2와 세트로 읽을 것
+      </p>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+These styles are contained in the design: widget-title/13-sb: Font(family: "font/ui", style: Regular, size: 13, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/10: Font(family: "font/ui", style: Regular, size: 10, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), glyph/14: Font(family: "font/ui", style: Regular, size: 14, weight: 400, lineHeight: 1, letterSpacing: 0), sub/12: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), stat/28-sb: Font(family: "font/ui", style: Regular, size: 28, weight: 400, lineHeight: 1.100000023841858, letterSpacing: -2), sub/12-sb: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0).
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

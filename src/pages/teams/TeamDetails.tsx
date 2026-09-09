@@ -15,7 +15,7 @@ import { adaptResult, type Cell } from '../../api/frames';
 import type { QueryResult } from '../../api/types';
 import { number, format, series, timeline } from '../../widgets/model';
 import { useScopedFilters } from '../../app/filterContext';
-import { Widget, Result, DataTable, q, axis, tip, shortDate } from './Widget';
+import { Widget, Result, DataTable, q, axis, tip, shortDate } from '../../widgets/Widget';
 import s from './TeamDetails.module.css';
 type Row = { labels: Record<string, string>; cells: Record<string, Cell> };
 export function detailRows(result?: QueryResult): Row[] {

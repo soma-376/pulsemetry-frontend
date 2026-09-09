@@ -1,3 +1,4 @@
+import { overviewMetric } from './overviewMetrics';
 import { detailMetric } from './teamDetails';
 import type { Field, Frame, QueryRequest, QueryResult } from '../api/types';
 type Query = QueryRequest['queries'][number];
@@ -35,6 +36,8 @@ export function teamMetric(
   state: string | null,
 ): QueryResult | undefined {
   if (body.filters?.team_ids?.includes('33333333-3333-4333-8333-333333333333')) state = 'masked';
+  const overview = overviewMetric(q, body, from, to, state);
+  if (overview) return overview;
   const fields = (name: string, unit: string, labels: Record<string, string> = {}): Field => ({
     name,
     type: 'number',

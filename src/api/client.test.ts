@@ -59,3 +59,19 @@ it('propagates cancellation without fallback or retry', async () => {
   await expect(api.me()).rejects.toHaveProperty('name', 'AbortError');
   expect(fetcher).toHaveBeenCalledOnce();
 });
+it('CSV uses text negotiation with authentication and cancellation signal', async () => {
+  const fetcher = vi.fn().mockResolvedValue(new Response('metric,value\r\ncost,12'));
+  vi.stubGlobal('fetch', fetcher);
+  setToken('csv-token');
+  const signal = new AbortController().signal;
+  expect(
+    await api.queryCsv(
+      { from: 'now-7d', to: 'now', queries: [{ ref_id: 'A', metric_id: 'cost' }] },
+      signal,
+    ),
+  ).toContain('cost,12');
+  const init = fetcher.mock.calls[0][1];
+  expect(init.headers.get('Accept')).toBe('text/csv');
+  expect(init.headers.get('Authorization')).toBe('Bearer csv-token');
+  expect(init.signal).toBe(signal);
+});

@@ -16,7 +16,7 @@ const result = (
   request = body,
 ) => teamMetric({ metric_id, ref_id: 'A', ...extra }, request, request.from, request.to, state)!;
 it('keeps public language rows and strips every numeric cell in small groups', () => {
-  const r = result('edit_acceptance_rate');
+  const r = result('edit_acceptance_rate', { frame_type: 'table', group_by: ['language'] });
   const rows = adaptResult(r).frames;
   expect(rows[0].rows[0][0].value).toBe(0.764);
   expect(rows[4].fields[0].labels?.language).toBe('Shell');
@@ -30,7 +30,7 @@ it('exposes only p50/p90 and count for gate wait in milliseconds', () => {
   expect(r.frames[1].schema.fields[0].config?.unit).toBe('ms');
 });
 it('keeps automatic approval numerator and denominator consistent with ratio', () => {
-  for (const f of result('auto_approval_ratio').frames) {
+  for (const f of result('auto_approval_ratio', { frame_type: 'table', group_by: ['decided_by'] }).frames) {
     const [ratio, n, d] = f.data.values;
     expect(ratio[0]).toBeCloseTo(Number(n[0]) / Number(d[0]));
   }

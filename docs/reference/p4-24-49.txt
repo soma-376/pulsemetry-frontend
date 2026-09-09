@@ -1,0 +1,195 @@
+const imgStripes = "https://www.figma.com/api/mcp/asset/601c9918-a6bf-4d17-8fd6-0e96ecdc1658.svg";
+const imgChart = "https://www.figma.com/api/mcp/asset/42e267c9-a73c-4cad-8c7f-87476b43e16c.svg";
+
+export default function W15() {
+  return (
+    <div className="bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid relative rounded-[8px] size-full" data-node-id="24:49" data-name="W1.5 산출 추세">
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[13px] text-[color:var(--text\/1,#111827)] top-[17.67px] whitespace-nowrap" data-node-id="24:50">
+        산출 추세
+      </p>
+      <div className="absolute border border-[var(--accent\/gray,#6b7280)] border-solid left-[70.1px] rounded-[8px] size-[16px] top-[20px]" data-node-id="24:51" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[7.4px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[2px] whitespace-nowrap" data-node-id="24:52">
+          i
+        </p>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[96.1px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[19.52px] whitespace-nowrap" data-node-id="24:53">
+        주 단위 · 최근 8주
+      </p>
+      <div className="absolute bg-[var(--accent\/green,#15803d)] left-[487.3px] rounded-[2px] size-[10px] top-[23px]" data-node-id="24:54" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[502.3px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[19.98px] whitespace-nowrap" data-node-id="24:55">
+        LoC 추가
+      </p>
+      <div className="absolute left-[555.8px] overflow-clip rounded-[2px] size-[10px] top-[23px]" data-node-id="24:56" data-name="hatch 15803d">
+        <div className="absolute h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="24:57" data-name="hatch">
+          <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I24:57;4:2" data-name="stripes">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+          </div>
+        </div>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[570.8px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[19.98px] whitespace-nowrap" data-node-id="24:60">
+        LoC 삭제
+      </p>
+      <div className="absolute border-[var(--accent\/green,#15803d)] border-solid border-t-2 h-[2px] left-[624.3px] top-[27px] w-[14px]" data-node-id="24:61" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[643.3px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[19.98px] whitespace-nowrap" data-node-id="24:62">
+        커밋
+      </p>
+      <div className="absolute border-[var(--accent\/green,#15803d)] border-dashed border-t-2 h-[2px] left-[674.3px] top-[27px] w-[14px]" data-node-id="24:63" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[693.3px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[19.98px] whitespace-nowrap" data-node-id="24:64">
+        PR
+      </p>
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid left-[720.7px] rounded-[6px] size-[24px] top-[16px]" data-node-id="24:65" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-none left-[13.5px] not-italic text-[14px] text-[color:var(--text\/2,#4b5563)] text-center top-[4px] whitespace-nowrap" data-node-id="24:66">
+          ⋯
+        </p>
+      </div>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[60px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-right top-[51.53px] whitespace-nowrap" data-node-id="24:67">
+        +50k
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[60px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-right top-[159.52px] whitespace-nowrap" data-node-id="24:68">
+        0
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[60px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-right top-[215.63px] whitespace-nowrap" data-node-id="24:69">
+        −20k
+      </p>
+      <div className="absolute border-[var(--border\/default,#e2e5ea)] border-solid border-t h-px left-[68px] top-[52px] w-[476.7px]" data-node-id="24:70" data-name="box" />
+      <div className="absolute border-[var(--accent\/gray,#6b7280)] border-solid border-t h-px left-[68px] top-[169px] w-[476.7px]" data-node-id="24:71" data-name="box" />
+      <div className="absolute border-[var(--border\/default,#e2e5ea)] border-solid border-t h-px left-[68px] top-[231px] w-[476.7px]" data-node-id="24:72" data-name="box" />
+      <div className="absolute bg-[var(--accent\/green,#15803d)] h-[73.1px] left-[79.9px] rounded-tl-[2px] rounded-tr-[2px] top-[95.9px] w-[30.5px]" data-node-id="24:73" data-name="box" />
+      <div className="absolute h-[38.2px] left-[79.9px] overflow-clip rounded-bl-[2px] rounded-br-[2px] top-[169px] w-[30.5px]" data-node-id="24:74" data-name="hatch 15803d">
+        <div className="absolute h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="24:75" data-name="hatch">
+          <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I24:75;4:2" data-name="stripes">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+          </div>
+        </div>
+      </div>
+      <div className="absolute bg-[var(--accent\/green,#15803d)] h-[81.4px] left-[140.3px] rounded-tl-[2px] rounded-tr-[2px] top-[87.6px] w-[30.4px]" data-node-id="24:78" data-name="box" />
+      <div className="absolute h-[43.7px] left-[140.3px] overflow-clip rounded-bl-[2px] rounded-br-[2px] top-[169px] w-[30.4px]" data-node-id="24:79" data-name="hatch 15803d">
+        <div className="absolute h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="24:80" data-name="hatch">
+          <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I24:80;4:2" data-name="stripes">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+          </div>
+        </div>
+      </div>
+      <div className="absolute bg-[var(--accent\/green,#15803d)] h-[69.1px] left-[200.6px] rounded-tl-[2px] rounded-tr-[2px] top-[99.9px] w-[30.5px]" data-node-id="24:83" data-name="box" />
+      <div className="absolute h-[37.3px] left-[200.6px] overflow-clip rounded-bl-[2px] rounded-br-[2px] top-[169px] w-[30.5px]" data-node-id="24:84" data-name="hatch 15803d">
+        <div className="absolute h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="24:85" data-name="hatch">
+          <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I24:85;4:2" data-name="stripes">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+          </div>
+        </div>
+      </div>
+      <div className="absolute bg-[var(--accent\/green,#15803d)] h-[89.1px] left-[261px] rounded-tl-[2px] rounded-tr-[2px] top-[79.9px] w-[30.4px]" data-node-id="24:88" data-name="box" />
+      <div className="absolute h-[47.9px] left-[261px] overflow-clip rounded-bl-[2px] rounded-br-[2px] top-[169px] w-[30.4px]" data-node-id="24:89" data-name="hatch 15803d">
+        <div className="absolute h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="24:90" data-name="hatch">
+          <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I24:90;4:2" data-name="stripes">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+          </div>
+        </div>
+      </div>
+      <div className="absolute bg-[var(--accent\/green,#15803d)] h-[95.9px] left-[321.3px] rounded-tl-[2px] rounded-tr-[2px] top-[73.1px] w-[30.5px]" data-node-id="24:93" data-name="box" />
+      <div className="absolute h-[55.4px] left-[321.3px] overflow-clip rounded-bl-[2px] rounded-br-[2px] top-[169px] w-[30.5px]" data-node-id="24:94" data-name="hatch 15803d">
+        <div className="absolute h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="24:95" data-name="hatch">
+          <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I24:95;4:2" data-name="stripes">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+          </div>
+        </div>
+      </div>
+      <div className="absolute bg-[var(--accent\/green,#15803d)] h-[85.1px] left-[381.6px] rounded-tl-[2px] rounded-tr-[2px] top-[83.9px] w-[30.4px]" data-node-id="24:98" data-name="box" />
+      <div className="absolute h-[47px] left-[381.6px] overflow-clip rounded-bl-[2px] rounded-br-[2px] top-[169px] w-[30.4px]" data-node-id="24:99" data-name="hatch 15803d">
+        <div className="absolute h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="24:100" data-name="hatch">
+          <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I24:100;4:2" data-name="stripes">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+          </div>
+        </div>
+      </div>
+      <div className="absolute bg-[var(--accent\/green,#15803d)] h-[104.6px] left-[442px] rounded-tl-[2px] rounded-tr-[2px] top-[64.4px] w-[30.5px]" data-node-id="24:103" data-name="box" />
+      <div className="absolute h-[57.6px] left-[442px] overflow-clip rounded-bl-[2px] rounded-br-[2px] top-[169px] w-[30.5px]" data-node-id="24:104" data-name="hatch 15803d">
+        <div className="absolute h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="24:105" data-name="hatch">
+          <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I24:105;4:2" data-name="stripes">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+          </div>
+        </div>
+      </div>
+      <div className="absolute bg-[var(--accent\/green,#15803d)] h-[112.9px] left-[502.3px] rounded-tl-[2px] rounded-tr-[2px] top-[56.1px] w-[30.5px]" data-node-id="24:108" data-name="box" />
+      <div className="absolute h-[62.6px] left-[502.3px] overflow-clip rounded-bl-[2px] rounded-br-[2px] top-[169px] w-[30.5px]" data-node-id="24:109" data-name="hatch 15803d">
+        <div className="absolute h-[360px] left-0 overflow-clip top-0 w-[640px]" data-node-id="24:110" data-name="hatch">
+          <div className="absolute h-[360px] left-0 top-0 w-[640px]" data-node-id="I24:110;4:2" data-name="stripes">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgStripes} />
+          </div>
+        </div>
+      </div>
+      <div className="absolute h-[180px] left-[68px] top-[52px] w-[476.7px]" data-node-id="24:113" data-name="chart">
+        <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChart} />
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[552.7px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[51.53px] whitespace-nowrap" data-node-id="24:116">
+        600 · 150
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[552.7px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[133.52px] whitespace-nowrap" data-node-id="24:117">
+        300 · 75
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[552.7px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[215.63px] whitespace-nowrap" data-node-id="24:118">
+        0
+      </p>
+      <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-l border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[180px] left-[616.7px] not-italic top-[52px] w-[128px] whitespace-nowrap" data-node-id="24:119" data-name="box">
+        <p className="absolute leading-[1.45] left-[16px] text-[12px] text-[color:var(--text\/2,#4b5563)] top-[42.5px]" data-node-id="24:120">
+          통합 깊이
+        </p>
+        <p className="absolute leading-[1.1] left-[16px] text-[28px] text-[color:var(--accent\/green,#15803d)] top-[64.2px] tracking-[-0.56px]" data-node-id="24:121">
+          0.39
+        </p>
+        <p className="absolute leading-[1.45] left-[16px] text-[11px] text-[color:var(--text\/3,#6b7280)] top-[98.93px]" data-node-id="24:122">
+          커밋 / fresh 세션
+        </p>
+        <p className="absolute leading-[1.45] left-[16px] text-[12px] text-[color:var(--text\/3,#6b7280)] top-[118.7px]" data-node-id="24:123">
+          ▲ +0.03
+        </p>
+        <p className="absolute leading-[1.45] left-[67.8px] text-[12px] text-[color:var(--text\/3,#6b7280)] top-[118.7px]" data-node-id="24:124">
+          전주 대비
+        </p>
+      </div>
+      <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[94.2px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[239.52px] whitespace-nowrap" data-node-id="24:125">
+        7/13
+      </p>
+      <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[155px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[239.52px] whitespace-nowrap" data-node-id="24:126">
+        7/20
+      </p>
+      <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[215.4px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[239.52px] whitespace-nowrap" data-node-id="24:127">
+        7/27
+      </p>
+      <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[276.6px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[239.52px] whitespace-nowrap" data-node-id="24:128">
+        8/3
+      </p>
+      <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[335.5px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[239.52px] whitespace-nowrap" data-node-id="24:129">
+        8/10
+      </p>
+      <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[395.9px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[239.52px] whitespace-nowrap" data-node-id="24:130">
+        8/17
+      </p>
+      <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[457.2px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[239.52px] whitespace-nowrap" data-node-id="24:131">
+        8/24
+      </p>
+      <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[516.5px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[239.52px] whitespace-nowrap" data-node-id="24:132">
+        8/31
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[267.42px] whitespace-nowrap" data-node-id="24:133">
+        AI 관여 LoC = 도구가 편집한 파일의 diff · 커밋/PR은 훅 이벤트 기준(미관측 ≠ 미사용)
+      </p>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+These styles are contained in the design: widget-title/13-sb: Font(family: "font/ui", style: Regular, size: 13, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/10: Font(family: "font/ui", style: Regular, size: 10, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), glyph/14: Font(family: "font/ui", style: Regular, size: 14, weight: 400, lineHeight: 1, letterSpacing: 0), sub/12: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), stat/28-sb: Font(family: "font/ui", style: Regular, size: 28, weight: 400, lineHeight: 1.100000023841858, letterSpacing: -2), sub/12-sb: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0).
+Component descriptions: The following components have usage descriptions or documentation links defined in Figma. These descriptions provide important context about the intended usage, best practices, and any constraints for each component. Follow these guidelines when implementing or using these components.
+
+## pattern/hatch-gray
+**Node ID:** 4:4
+
+n<5 마스킹 빗금. 원본 CSS repeating-linear-gradient(135deg, --gray 0 1px, --gray-tint 1px 4px) 대체. 클리핑 프레임 안에 절대배치로 넣어 쓰세요 — 리사이즈하면 줄 간격이 깨집니다.
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

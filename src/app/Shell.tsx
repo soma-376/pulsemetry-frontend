@@ -1,3 +1,4 @@
+import { OverviewCsv } from '../pages/overview/OverviewCsv';
 import { series } from '../widgets/model';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
@@ -190,6 +191,7 @@ export function Shell() {
   );
 }
 function GlobalHeader() {
+  const location = useLocation();
   const { profile } = useAuth();
   const { value, serialized, options, auto, setAuto, update } = useScopedFilters();
   const cache = useQueryClient();
@@ -272,9 +274,13 @@ function GlobalHeader() {
               5분
             </label>
           </div>
-          <Button disabled title="페이지 데이터 구현 후 제공">
-            CSV
-          </Button>
+          {location.pathname === '/' ? (
+            <OverviewCsv />
+          ) : (
+            <Button disabled title="페이지 데이터 구현 후 제공">
+              CSV
+            </Button>
+          )}
         </div>
       </div>
       {options.isError && (

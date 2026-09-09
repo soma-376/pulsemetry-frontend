@@ -1,0 +1,46 @@
+export default function Kpi() {
+  return (
+    <div className="bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid relative rounded-[8px] size-full" data-node-id="21:37" data-name="KPI 비용">
+      <div className="absolute h-[17.4px] left-[16px] overflow-clip top-[16px] w-[20.7px]" data-node-id="21:38" data-name="box">
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[-0.45px] whitespace-nowrap" data-node-id="21:39">
+          비용
+        </p>
+      </div>
+      <div className="absolute border border-[var(--accent\/gray,#6b7280)] border-solid left-[144.7px] rounded-[8px] size-[16px] top-[16.7px]" data-node-id="21:40" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[7.4px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[2px] whitespace-nowrap" data-node-id="21:41">
+          i
+        </p>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.1] left-[16px] not-italic text-[30px] text-[color:var(--text\/1,#111827)] top-[39.15px] tracking-[-0.6px] whitespace-nowrap" data-node-id="21:42">
+        $4,812.37
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[24px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[80.05px] whitespace-nowrap" data-node-id="21:43">
+        USD
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[99.15px] whitespace-nowrap" data-node-id="21:44">
+        ▲
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[30.8px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[99.15px] whitespace-nowrap" data-node-id="21:45">
+        +12.4%
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[82px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[99.15px] whitespace-nowrap" data-node-id="21:46">
+        전주 대비
+      </p>
+      <div className="absolute h-[16px] left-[16px] overflow-clip top-[123px] w-[144.7px]" data-node-id="21:47" data-name="box">
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[-0.47px] whitespace-nowrap" data-node-id="21:48">
+          청구액 아님(공시 단가 추정)
+        </p>
+      </div>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+These styles are contained in the design: sub/12: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/10: Font(family: "font/ui", style: Regular, size: 10, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), kpi/30-sb: Font(family: "font/ui", style: Regular, size: 30, weight: 400, lineHeight: 1.100000023841858, letterSpacing: -2), sub/12-md: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), sub/12-sb: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0).
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

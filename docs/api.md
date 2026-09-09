@@ -52,3 +52,14 @@ Vitest: DataFrame 상태/평행 배열/필드 labels, URL 정규화·범위 제�
 - [보호] 마스킹 여부는 coverage 프레임에서 판정한다. 최초 coverage 응답 전 본문 조회를 보류한다. coverage 재조회 실패 시 같은 필터의 이전 응답이 있으면 위젯별 오류/재시도를 유지한다. 필터 변경은 별도 캐시 키이므로 이전 팀 숫자를 보여주지 않는다.
 - [보호] 언어 표만 공개 가능한 행을 남기고 작은 그룹의 모든 수치를 숨긴다. 다른 상세 집계는 마스킹 값이 섞이면 보수적으로 해당 결과를 가린다. 전역 작은 팀은 KPI·차트·상세 표·커버리지 숫자를 화면에서 모두 제거한다.
 - 부분 실패 시 성공 ref를 유지하고 실패 ref를 재시도한다. 마스킹/미관측/0/분모0은 변환 계층에서 구분하며 데이터 표는 정제된 셀만 사용한다.
+
+## 4단계 P1/CSV 계약
+- P1: active_users/adoption_rate/cost/cost_per_active_user/sessions/lines_of_code scalar, cost 일 추세(공시/계약 별 ref)+cost_anomaly, cost(team), tokens(model)+model_users(model), lines_of_code/commits/pull_requests 주 추세+integration_depth, adoption_rate(team,1w), 편집/자동 승인 scalar+일 추세, api_error_rate/llm_ttft_ms 시간 추세, refusals/hook_blocking/hook_executions.
+- [문서] integration_depth=(commits+pull_requests)/fresh. cost_anomaly=일 비용/직전N일 평균−1. model_users는 모델별 중복 사용자. refusals는 team 분해 금지 및 홉 중복 가능. 훅은 detailed tracing 전제. API 오류율은 시도 단위일 수 있다.
+- [가정] tokens params.types=['input','output'], cost_anomaly params.window_days=7의 파라미터 명칭/가용성은 META에서 실서버 확인 필요. 단일 수치 필드 value + value_compare, TTFT percentile label, 팀 식별 label team/team_name, hook_executions의 sessions_with_hooks/sessions는 목업 프레임 규약. 실 API와 필드 선택 매핑을 확인해야 한다. API 원본은 반환 필드의 정확한 동적 schema를 강제하지 않는다.
+- [목업] overviewMetrics.ts에서 위 조합을 명시적으로 추가. P2 table(language/decided_by)와 P1 scalar 집계를 분리. 기존 상세 테스트도 실제 P2 group_by를 명시하도록 정정. unsupported 검사는 새로 지원한 refusals 대신 vendor_account_mismatch로 유지.
+- [목업] 일 비용을 센트 누적 반올림하여 scalar 합계와 일치. 공시/계약은20% 할인 fixture. 직전7일 평균 이상값은 fixture 이전 구간을 기준값1로 채운 합성 결과. 비용 팀 분해는 전체35인 대비21/11/3, 작은 팀 값은 null. 기간/제품/모델 선택에 결정적 배율 적용; 비율·분위수·비교 기준은 고정 합성값이며 완전한 다차원 집계 엔진이 아니다. LoC scalar/주 추세, 모델별 토큰 등 모든 서로 다른 쿼리의 합계 일치를 보장하지 않는다.
+- [권한] 목업 query마다 최상위/쿼리 filters를 병합한 뒤 admin의 팀 범위를 서버 측에서도 강제한다. admin이 team_ids를 생략해도 자기 팀만 반환. refusals는 선택 팀 또는 team group_by에403. UI는 owner 전사에서만 해당 ref를 요청하고 CSV 선택지에도 같은 제한 적용.
+- [기간] 주간 산출/도입률은 completedWeeks(to), 헬스는 now-24h→now/compare none. useWidget override를 요청과 캐시 키에 반영. KPI는 overview-kpi-*와 차트 overview-*로 분리. 기존 coverage 캐시 키는 셸/P1/P2가 공유한다.
+- [문서] POST /query의 Accept:text/csv는 첫 쿼리 frames만 반환. 클라이언트 api.queryCsv는 Bearer/AbortSignal/401 공통 처리 후 text를 받는다. 실패 시 파일 생성 없음. 닫기/Escape/필터 변경/페이지 이동으로 pending 요청 취소.
+- [목업/결정] CSV는 metric/frame/row/field/labels/value/unit/state 열의 long-form이며 서버 CSV 열 모양은 실계약 확인 필요. adaptResult로 마스킹/분모0/미관측 구분, null을0으로 변환하지 않음. 문자열의 수식 접두사와 쉼표/따옴표/줄바꿈 escape. 실제 서버 CSV의 마스킹과 수식 escape는 백엔드 응답에서 검증해야 하며 실서버 확인은 하지 않았다.

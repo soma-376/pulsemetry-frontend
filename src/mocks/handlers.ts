@@ -1,3 +1,4 @@
+import { resultCsv } from '../api/csv';
 import { teamMetric } from './teamMetrics';
 import { http, HttpResponse, delay } from 'msw';
 import type {
@@ -132,7 +133,20 @@ export const handlers = [
               },
             }
           : q.metric_id !== 'telemetry_coverage'
-            ? teamMetric(q, body, resolved(body.from), resolved(body.to), state) || {
+            ? teamMetric(
+                q,
+                {
+                  ...body,
+                  filters: {
+                    ...body.filters,
+                    ...q.filters,
+                    ...(r === 'admin' ? { team_ids: [paymentTeam] } : {}),
+                  },
+                },
+                resolved(body.from),
+                resolved(body.to),
+                state,
+              ) || {
                 status: 400,
                 frames: [],
                 error: {
@@ -178,6 +192,13 @@ export const handlers = [
                         },
                       ],
                 };
+    if (request.headers.get('Accept') === 'text/csv') {
+      const first = results[body.queries[0]?.ref_id];
+      if (!first || first.status !== 200) return error(first?.status || 400, 'CSV 조회 실패');
+      return new HttpResponse(resultCsv(first), {
+        headers: { 'Content-Type': 'text/csv; charset=utf-8' },
+      });
+    }
     return HttpResponse.json({
       request_id: 'mock-query',
       resolved_from: resolved(body.from),

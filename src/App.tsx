@@ -5,6 +5,9 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { AuthProvider } from './app/auth';
 import { Shell, Login, PlannedPage, pages } from './app/Shell';
 import { mockMode } from './api/client';
+const Overview = lazy(() =>
+  import('./pages/overview/Overview').then((m) => ({ default: m.Overview })),
+);
 const Teams = lazy(() => import('./pages/teams/Teams').then((m) => ({ default: m.Teams })));
 const Preview = lazy(() => import('./ComponentPreview').then((m) => ({ default: m.App })));
 const ApiPreview = lazy(() => import('./dev/ApiPreview').then((m) => ({ default: m.ApiPreview })));
@@ -31,7 +34,15 @@ export function App() {
                       <Route
                         key={p.path}
                         path={p.path}
-                        element={p.path === '/teams' ? <Teams /> : <PlannedPage />}
+                        element={
+                          p.path === '/teams' ? (
+                            <Teams />
+                          ) : p.path === '/' ? (
+                            <Overview />
+                          ) : (
+                            <PlannedPage />
+                          )
+                        }
                       />
                     ))}
                     {mockMode && <Route path="/dev/api" element={<ApiPreview />} />}

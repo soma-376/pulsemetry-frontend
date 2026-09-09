@@ -4,7 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
 import type { QueryRequest } from '../api/types';
 import { useScopedFilters } from '../app/filterContext';
-export function useWidget(id: string, queries: QueryRequest['queries'], recentWeeks = false) {
+export function useWidget(
+  id: string,
+  queries: QueryRequest['queries'],
+  recentWeeks = false,
+  requestPatch?: Partial<QueryRequest>,
+) {
   const scope = useScopedFilters();
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -16,12 +21,19 @@ export function useWidget(id: string, queries: QueryRequest['queries'], recentWe
     return () => observer.disconnect();
   }, []);
   const query = useQuery({
-    queryKey: ['widget', id, scope.role, scope.serialized],
+    queryKey: [
+      'widget',
+      id,
+      scope.role,
+      scope.serialized,
+      ...(requestPatch ? [JSON.stringify(requestPatch)] : []),
+    ],
     queryFn: ({ signal }) =>
       api.query(
         {
           ...scope.value,
           ...(recentWeeks ? completedWeeks(scope.value.to) : {}),
+          ...requestPatch,
           queries,
         },
         signal,

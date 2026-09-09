@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from 'react';
-import { Button, WidgetCard, WidgetState } from '../../components/ui';
-import { useWidget } from '../../widgets/useWidget';
-import { series, format, type Point } from '../../widgets/model';
-import type { QueryRequest, QueryResult } from '../../api/types';
-import s from './Teams.module.css';
+import { Button, WidgetCard, WidgetState } from '../components/ui';
+import { useWidget } from './useWidget';
+import { series, format, type Point } from './model';
+import type { QueryRequest, QueryResult } from '../api/types';
+import s from '../pages/teams/Teams.module.css';
 type Query = QueryRequest['queries'][number];
 export const q = (
   metric_id: Query['metric_id'],
@@ -12,11 +12,13 @@ export const q = (
 ): Query => ({ ref_id: 'A', metric_id, frame_type, ...extra });
 const tokenColors = [1, 2, 3, 4].map((n) => `var(--chart-seq${n})`);
 export const shortDate = (v: number) =>
-  new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Seoul',
-    month: 'numeric',
-    day: 'numeric',
-  }).format(new Date(v));
+  !Number.isFinite(v)
+    ? '—'
+    : new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Seoul',
+        month: 'numeric',
+        day: 'numeric',
+      }).format(new Date(v));
 export const axis = {
   tick: { fontSize: 11, fill: 'var(--text-3)' },
   axisLine: false,
@@ -102,8 +104,10 @@ export function Widget({
   queries,
   children,
   controls,
+  headerLegend,
   recentWeeks = false,
   size = 'small',
+  requestPatch,
 }: {
   id: string;
   title: string;
@@ -112,11 +116,13 @@ export function Widget({
   caption: string;
   queries: QueryRequest['queries'];
   controls?: ReactNode;
+  headerLegend?: ReactNode;
   recentWeeks?: boolean;
+  requestPatch?: Partial<QueryRequest>;
   size?: string;
   children: (data: Record<string, QueryResult>, retry: () => void) => ReactNode;
 }) {
-  const { ref, query } = useWidget(id, queries, recentWeeks);
+  const { ref, query } = useWidget(id, queries, recentWeeks, requestPatch);
   const [menu, setMenu] = useState(false);
   const [tables, setTables] = useState(false);
   return (
@@ -133,6 +139,7 @@ export function Widget({
         caption={caption}
         action={
           <div className={s.headerActions}>
+            {headerLegend}
             {id === 'output' && (
               <Legend
                 labels={['LoC 추가', '삭제', '커밋', 'PR']}
