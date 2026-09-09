@@ -1,9 +1,9 @@
-import { useId, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { useId, type ComponentPropsWithRef, type ReactNode } from 'react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import s from './ui.module.css';
 
 export type Tone = 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'gray';
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+type ButtonProps = ComponentPropsWithRef<'button'> & {
   variant?: 'primary' | 'secondary' | 'ghost';
   size?: 26 | 30 | 32 | 36;
 };

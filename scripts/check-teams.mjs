@@ -34,7 +34,19 @@ async function loadAll() {
 }
 async function state(value) {
   await page.evaluate((v) => sessionStorage.setItem('pulsemetry.mockCase', v), value);
+  // Refresh first reloads META, then invalidates widgets. Wait for that second
+  // request phase before scrolling; stale cached text is not a completion signal.
+  const refreshed = page.waitForResponse(
+    (r) =>
+      r.url().endsWith('/v1/query') &&
+      r
+        .request()
+        .postDataJSON()
+        ?.queries?.some((q) => q.metric_id === 'telemetry_coverage') &&
+      r.request().headers()['x-mock-case'] === value,
+  );
   await page.getByRole('button', { name: '새로고침', exact: true }).click();
+  await refreshed;
 }
 try {
   await page.goto(base + '/teams?compare=previous_week&teams=11111111-1111-4111-8111-111111111111');

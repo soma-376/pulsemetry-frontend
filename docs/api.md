@@ -110,3 +110,11 @@ Vitest: DataFrame 상태/평행 배열/필드 labels, URL 정규화·범위 제�
 - [가정] 활성 실행 삭제409(먼저 취소), 연결된 saved 항목이 있으면 run 삭제409(저장 항목 먼저 삭제). saved 삭제는 실행 유지. 첨부 명세에는 이런 충돌 정책이 명시되지 않아 실서버 확인 필요. UI는 반환409를 inline 표시하고 성공을 꾸미지 않는다.
 - [가정] 상대 재실행 시 Run.params에 서버가 강제한 team_ids가 들어 있어도 목업은 원래 시나리오 스키마에 없는 scope 필드를 분리 검증하고 동일한 팀 권한 검사를 적용. 실제 SCN-RUN 재입력 허용 계약 확인 필요.
 - 첨부 문서 안의 백엔드 변경 지시 미실행. 백엔드/다른 저장소 수정·외부 공유 게시·배포·원격 push 없음.
+
+
+## 8단계 API 계약 통합 검수
+- 첨부 YAML을 openapi-typescript로 별도 임시 파일에 재생성해 src/api/schema.d.ts와 바이트 일치 확인. 생성 파일/첨부 계약/백엔드 변경 없음. 문서 위쪽 단계별 설명은 당시 상태이며 실행/저장/이력은7단계 계약이 최신이다.
+- 공통 클라이언트·DataFrame·필터·권한·감사·시나리오·리포트 기존 단위91개 및 전체 UI 회귀를 재실행. 0/null/마스킹/부분 오류, GET cursor/DELETE204/POST 입력/상대식/필터 범위/401 및 취소 처리 통과. 모든46개 시나리오의 실제 분석 정확성을 검증한 것은 아님.
+- `VITE_API_MODE=real npm run build` 후 `npm run check:real-api`: 임시 localhost4174 preview와 Playwright HTTP 응답 대역으로4개 흐름 검증. 실제 번들의 로그인 Bearer, MSW 등록0/X-Mock-Case 없음, 카탈로그503 오류 유지→명시적 재시도→서버 빈 목록, 이력401→로그인. 응답은 테스트 전용 합성이며 실제 서버/네트워크 권한/CORS/실계정/영구 저장을 검증한 것으로 표현하지 않는다. preview는 검사 후 종료,5173 개발 서버는 유지.
+- 최종 산출물 기본 빌드는 목업으로 복원. 실제 모드에서도 public의 정적 mockServiceWorker.js가 빌드 폴더에 복사될 수 있으나 앱은 이를 등록/로드하지 않음. 실 모드 오류에 fixture 대체 없음.
+- 실제 연동의 남은 확인: META 지표 fields/labels/frame_type 및 SCN params_schema 하위집합, admin/P3·refusals 범위, X-Audit-Reason 한국어 디코딩, saved/공유/삭제 정책, 원본 상대 params 및 실패 run 단가 보존. 이들은 프론트 단위 검사나 타입 재생성만으로 확정할 수 없다.

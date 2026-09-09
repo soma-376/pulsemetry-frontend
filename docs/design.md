@@ -190,3 +190,13 @@
 - 실제 캡처: docs/validation/phase-7의 result-light/dark/1024/768, save-fixed/relative, history, not-found, states, shell. geometry.json에 비용·팀 비용·판정 패널 위치/크기 기록.
 - 비교 후 수정: 1024px의 본문 패딩16과 결과 margin−24 불일치로8px 넘침 → margin−16; 중복 blue outline 제거 및 공통 highlighted 재사용; 주요 위젯 비율512:248; UUID가 축 라벨에 노출돼 줄바꿈되던 부분을 팀 이름으로 변경; 차트 높이·모달 제목 간격 축소; 활성 이력 탭만 밑줄.
 - 남은 차이는 데이터 계약 및 위의 반환 프레임 전용 화면 결정에 따른 차이. 원본의 임의 과거 실행/저장 항목 수치를 만들지 않았다. 8단계에서 전체 페이지 통합 검수를 진행한다.
+
+
+## 8단계 통합 검수 — 원본·수정·잔여 차이
+- [원본] 툴바 [39:38](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=39-38), 팀 선택 [40:6](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=40-6)을 get_design_context로 재확인. reference/p8-toolbar-39-38.txt, p8-teams-40-6.txt. 기존 원본 p1-desktop/p2-desktop/p2-tablet 및 이전 단계 노드 수치를 비교 근거로 재사용.
+- [원본/수정] 팀 선택 바 32px, 버튼26px, 바 border1/radius6, 안쪽 간격2, 버튼 radius4. 선택 배경 text/1·글자 misc/on-inverse, 비선택 글자 text/2. 구현의 흰 배경/파란 선택 글자를 원본 토큰으로 수정하고 비선택 색을 명시해 Dark에서도 읽을 수 있게 했다. 팀 이름·개수·전체 선택은 API 권한/계층 차이에 따른 기존 결정 유지, 원본234px 너비를 강제하지 않음.
+- [실측] 1440 셸 sidebar240/toolbar56/coverage28. P1 KPI x264/y146.09/w178.66/h164(원본 h163.5), 비용762.66×322, 도입률1152×332. P2 세션373.33×274.375/y304, 산출568×437, 토큰568×326, 기능762.66×363.05(원본360.6), 품질1152×319/y1768.42(원본y1766.3). 주요 그리드 유지, 약0–3px 차이는 폰트/표 높이에 따른 미세 차이로 남김.
+- [검수] validation/phase-8의 개요·팀·운영·설정·시나리오·결과/저장 캡처와 Light/Dark 실행 화면을 확인. P2 전체 완료 화면은 team-details/desktop-*.png를 사용(기본 teams 검사는 아래쪽 상세 위젯을 아직 로드하지 않은 캡처일 수 있음). 합성 그래프 모양/서버 팀 수/눈금 차이는 원본과의 픽셀 일치로 주장하지 않는다.
+- [결정/접근성] 기존 리포트 포커스 처리를 components/dialogFocus.ts로 공유. 네이티브 모달의 inert 동작을 유지하며 Tab/Shift+Tab 경계 순환, 열기 전 버튼 보존, 종료 후 복원. 시나리오/감사/리포트에 적용, CSV는 순환 처리 재사용. 기간 팝오버 Escape/취소/적용 후 트리거 복귀, 페이지별 document.title, 결과 위젯 이동 시 reduced-motion 선호 반영. 새 시각 디자인을 추정한 것이 아닌 상호작용 결정이다.
+- [반응형] 기존 페이지별 1280/1024/768 규칙 유지. owner/admin의 접근 가능한 P1–P5, Light/Dark,1440/1024/768 조합54개에서 가로 넘침 없음. 결과/이력 반응형은 check:reports, P2 원본 태블릿/상세 상태는 check:team-details로 별도 검증. 768 미만은 지원 안내 유지.
+- [한계] headless Chromium의 키보드·포커스·스크린샷 검수이며 전체 WCAG 인증/스크린리더 실기기/Firefox/Safari 검증이 아님. L4 반환 프레임 전용 뷰와 비관련 대시보드 생략, 동적 자료/차트 차이는7단계 결정 유지.

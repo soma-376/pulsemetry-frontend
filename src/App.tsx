@@ -1,6 +1,6 @@
 import { Scenarios } from './pages/scenarios/Scenarios';
-import { lazy, Suspense } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { AuthProvider } from './app/auth';
@@ -27,10 +27,31 @@ const ApiPreview = lazy(() => import('./dev/ApiPreview').then((m) => ({ default:
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, staleTime: 60000, refetchOnWindowFocus: false } },
 });
+function PageTitle() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const title =
+      pages.find((page) => page.path === pathname)?.name ||
+      (pathname === '/login'
+        ? '로그인'
+        : pathname === '/scenarios/history'
+          ? '실행 이력 · 저장 리포트'
+          : pathname.startsWith('/runs/')
+            ? '시나리오 결과'
+            : pathname === '/dev/components'
+              ? '디자인 시스템'
+              : pathname === '/dev/api'
+                ? 'API 검사'
+                : '페이지를 찾을 수 없습니다');
+    document.title = `${title} · Pulsemetry`;
+  }, [pathname]);
+  return null;
+}
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <PageTitle />
         <AuthProvider>
           <Tooltip.Provider delayDuration={200}>
             <div className="small-screen">

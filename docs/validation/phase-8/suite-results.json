@@ -1,0 +1,57 @@
+[
+  {
+    "suite": "browser",
+    "code": 0,
+    "seconds": 3
+  },
+  {
+    "suite": "shell",
+    "code": 0,
+    "seconds": 6
+  },
+  {
+    "suite": "teams",
+    "code": 0,
+    "seconds": 10
+  },
+  {
+    "suite": "team-details",
+    "code": 0,
+    "seconds": 10
+  },
+  {
+    "suite": "overview",
+    "code": 0,
+    "seconds": 16
+  },
+  {
+    "suite": "operations",
+    "code": 0,
+    "seconds": 13
+  },
+  {
+    "suite": "scenarios",
+    "code": 0,
+    "seconds": 35
+  },
+  {
+    "suite": "scenario-states",
+    "code": 0,
+    "seconds": 6
+  },
+  {
+    "suite": "reports",
+    "code": 0,
+    "seconds": 24
+  },
+  {
+    "suite": "report-states",
+    "code": 0,
+    "seconds": 2
+  },
+  {
+    "suite": "accessibility",
+    "code": 0,
+    "seconds": 3
+  }
+]

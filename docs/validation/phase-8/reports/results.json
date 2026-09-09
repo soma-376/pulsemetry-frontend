@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "automatic result navigation, applied 28d, widget focus, no duplicate query",
+    "fixed and relative saves, save failure retains form and retry",
+    "fixed reopens without POST, relative creates new run with original params",
+    "dark and 1024/768 no horizontal page overflow",
+    "direct run URL survives reload and login",
+    "release returns target dashboard with applied filters",
+    "delete confirmation/cancel, saved deletion preserves run, run deletion removes row",
+    "deleted shared URL returns not-found after login"
+  ],
+  "errors": []
+}

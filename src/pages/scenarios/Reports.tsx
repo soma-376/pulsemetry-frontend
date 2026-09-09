@@ -1,3 +1,4 @@
+import { useModalFocus } from '../../components/dialogFocus';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -84,46 +85,12 @@ export function ReportDialog({
   busy?: boolean;
   children: ReactNode;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const opener = useRef(document.activeElement as HTMLElement | null);
-  useEffect(() => {
-    const dialog = ref.current;
-    dialog?.showModal();
-    return () => {
-      dialog?.close();
-      queueMicrotask(() => opener.current?.isConnected && opener.current.focus());
-    };
-  }, []);
+  const modalFocus = useModalFocus();
   return (
     <dialog
-      ref={ref}
+      {...modalFocus}
       className={s.modal}
       aria-label={title}
-      onKeyDown={(e) => {
-        if (e.key !== 'Tab') return;
-        const focusable = [
-          ...e.currentTarget.querySelectorAll<HTMLElement>(
-            'button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),a[href],[tabindex="0"]',
-          ),
-        ].filter(
-          (el) =>
-            el.getClientRects().length &&
-            !(el instanceof HTMLInputElement && el.type === 'radio' && !el.checked),
-        );
-        const first = focusable[0],
-          last = focusable.at(-1);
-        if (!first) {
-          e.preventDefault();
-          return;
-        }
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }}
       onCancel={(e) => {
         e.preventDefault();
         if (!busy) close();
@@ -610,7 +577,10 @@ function RunReportBody({ runId }: { runId: string }) {
       (el) => el.dataset.resultWidget === id,
     );
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.scrollIntoView({
+        behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+        block: 'center',
+      });
       el.focus({ preventScroll: true });
     }
   }

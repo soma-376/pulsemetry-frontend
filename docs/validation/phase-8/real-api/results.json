@@ -1,0 +1,43 @@
+{
+  "checks": [
+    "Real build login uses HTTP Bearer; HTTP 503 remains an error without fixture fallback",
+    "No MSW registration or mock request header in real build",
+    "Explicit retry recovers to the server empty catalog",
+    "HTTP 401 returns to login and removes protected content"
+  ],
+  "calls": [
+    {
+      "path": "/v1/auth/login",
+      "method": "POST"
+    },
+    {
+      "path": "/v1/me",
+      "method": "GET"
+    },
+    {
+      "path": "/v1/scenarios",
+      "method": "GET"
+    },
+    {
+      "path": "/v1/meta/filters",
+      "method": "GET"
+    },
+    {
+      "path": "/v1/query",
+      "method": "POST"
+    },
+    {
+      "path": "/v1/scenarios",
+      "method": "GET"
+    },
+    {
+      "path": "/v1/scenario-runs",
+      "method": "GET"
+    },
+    {
+      "path": "/v1/saved-reports",
+      "method": "GET"
+    }
+  ],
+  "errors": []
+}

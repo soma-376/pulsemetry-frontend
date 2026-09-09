@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useModalFocus } from '../../components/dialogFocus';
+import { useState, type ReactNode } from 'react';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { Button, Badge, WidgetState } from '../../components/ui';
 import { adaptResult } from '../../api/frames';
@@ -93,14 +94,11 @@ export function AuditDialog({
   onCancel: () => void;
   onSubmit: (reason: string) => void;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
+  const modalFocus = useModalFocus();
   const [reason, setReason] = useState('');
-  useEffect(() => {
-    ref.current?.showModal();
-  }, []);
   const valid = reason.trim().length >= 10 && reason.trim().length <= 500;
   return (
-    <dialog ref={ref} className={s.dialog} onCancel={onCancel} aria-labelledby="audit-title">
+    <dialog {...modalFocus} className={s.dialog} onCancel={onCancel} aria-labelledby="audit-title">
       <form
         onSubmit={(e) => {
           e.preventDefault();

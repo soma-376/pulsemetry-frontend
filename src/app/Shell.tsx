@@ -2,7 +2,7 @@ import { RunProvider, useRuns } from '../pages/scenarios/RunProvider';
 import { ScenarioHeader } from '../pages/scenarios/Scenarios';
 import { OverviewCsv } from '../pages/overview/OverviewCsv';
 import { series } from '../widgets/model';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button } from '../components/ui';
@@ -473,6 +473,12 @@ function DateRange({
 }) {
   const [open, setOpen] = useState(false),
     [error, setError] = useState('');
+  const trigger = useRef<HTMLButtonElement>(null);
+  function close() {
+    setOpen(false);
+    setError('');
+    trigger.current?.focus();
+  }
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
@@ -480,8 +486,7 @@ function DateRange({
       to = `${f.get('to')}T00:00:00+09:00`;
     if (Date.parse(from) >= Date.parse(to)) return setError('종료일은 시작일 이후여야 합니다.');
     onChange({ from, to });
-    setOpen(false);
-    setError('');
+    close();
   }
   const date = (str?: string) =>
     str
@@ -494,7 +499,12 @@ function DateRange({
       : '';
   return (
     <div className={s.date}>
-      <Button onClick={() => setOpen(!open)} aria-expanded={open} aria-label="사용자 지정 기간">
+      <Button
+        ref={trigger}
+        onClick={() => (open ? close() : setOpen(true))}
+        aria-expanded={open}
+        aria-label="사용자 지정 기간"
+      >
         {data
           ? `${date(data.resolved_from).slice(5)} → ${date(data.resolved_to).slice(5)}`
           : '기간 선택'}
@@ -505,7 +515,7 @@ function DateRange({
           role="dialog"
           aria-label="기간 설정"
           onKeyDown={(e) => {
-            if (e.key === 'Escape') setOpen(false);
+            if (e.key === 'Escape') close();
           }}
           onSubmit={submit}
         >
@@ -529,7 +539,7 @@ function DateRange({
           <Button type="submit" variant="primary">
             기간 적용
           </Button>
-          <Button onClick={() => setOpen(false)}>취소</Button>
+          <Button onClick={close}>취소</Button>
         </form>
       )}
     </div>

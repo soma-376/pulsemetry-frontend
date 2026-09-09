@@ -1,3 +1,4 @@
+import { trapDialogTab } from '../../components/dialogFocus';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '../../components/ui';
 import { api } from '../../api/client';
@@ -90,6 +91,7 @@ function CsvDialog() {
       </Button>
       <dialog
         ref={dialog}
+        onKeyDown={trapDialogTab}
         className={s.dialog}
         aria-labelledby="overview-csv-title"
         onCancel={() => {

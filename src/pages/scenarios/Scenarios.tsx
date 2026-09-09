@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useModalFocus } from '../../components/dialogFocus';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Badge, Button } from '../../components/ui';
@@ -317,23 +318,15 @@ function Drawer({
   onRun: (id: string) => void;
   ready: boolean;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null),
-    runs = useRuns();
+  const modalFocus = useModalFocus();
+  const runs = useRuns();
   const detail = useQuery({
     queryKey: ['scenario', id],
     queryFn: ({ signal }) => scenarioApi.detail(id, signal),
   });
-  useEffect(() => {
-    const before = document.activeElement as HTMLElement;
-    dialog.current?.showModal();
-    return () => {
-      dialog.current?.close();
-      before?.focus();
-    };
-  }, []);
   return (
     <dialog
-      ref={dialog}
+      {...modalFocus}
       className={s.drawer}
       onCancel={(e) => {
         e.preventDefault();

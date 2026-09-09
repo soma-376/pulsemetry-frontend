@@ -1,0 +1,17 @@
+{
+  "checks": [
+    "Language rows remain visible; small group numeric cells are masked",
+    "Feature availability and org-only quality scope",
+    "Compaction count bars and reduction axis rendered",
+    "Four friction tabs fetch their own metric and render values",
+    "Arrow and Home keys switch accessible tabs",
+    "Partial failures retain successful feature and compaction results",
+    "Partial result retry recovers",
+    "Empty data is distinct from zero and unavailable",
+    "1024 and 768 layouts do not overflow",
+    "Small team suppresses all widgets, KPI and coverage numbers",
+    "Masked state returns to accessible aggregate scope",
+    "No unhandled browser errors"
+  ],
+  "errors": []
+}

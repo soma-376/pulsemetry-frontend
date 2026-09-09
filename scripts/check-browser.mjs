@@ -2,7 +2,7 @@ import { chromium, expect } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 
 // Run against an already running local Vite server. No live API calls.
-const out = new URL('../docs/validation/', import.meta.url);
+const out = new URL(`../docs/validation/${process.env.VALIDATION_DIR || ''}/`, import.meta.url);
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 1100 }, deviceScaleFactor: 1 });
