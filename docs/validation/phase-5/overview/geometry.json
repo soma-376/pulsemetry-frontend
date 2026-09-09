@@ -1,0 +1,100 @@
+[
+  {
+    "id": "active_users",
+    "x": 264,
+    "y": 146.09375,
+    "width": 178.65625,
+    "height": 164
+  },
+  {
+    "id": "adoption_rate",
+    "x": 458.65625,
+    "y": 146.09375,
+    "width": 178.671875,
+    "height": 164
+  },
+  {
+    "id": "cost",
+    "x": 653.328125,
+    "y": 146.09375,
+    "width": 178.671875,
+    "height": 164
+  },
+  {
+    "id": "cost_per_active_user",
+    "x": 848,
+    "y": 146.09375,
+    "width": 178.65625,
+    "height": 164
+  },
+  {
+    "id": "sessions",
+    "x": 1042.65625,
+    "y": 146.09375,
+    "width": 178.671875,
+    "height": 164
+  },
+  {
+    "id": "lines_of_code",
+    "x": 1237.328125,
+    "y": 146.09375,
+    "width": 178.671875,
+    "height": 164
+  },
+  {
+    "id": "overview-cost",
+    "x": 264,
+    "y": 326.09375,
+    "width": 762.65625,
+    "height": 322
+  },
+  {
+    "id": "overview-teams",
+    "x": 1042.65625,
+    "y": 326.09375,
+    "width": 373.34375,
+    "height": 322
+  },
+  {
+    "id": "overview-models",
+    "x": 264,
+    "y": 664.09375,
+    "width": 373.328125,
+    "height": 302
+  },
+  {
+    "id": "overview-output",
+    "x": 653.328125,
+    "y": 664.09375,
+    "width": 762.671875,
+    "height": 302
+  },
+  {
+    "id": "overview-adoption",
+    "x": 264,
+    "y": 982.09375,
+    "width": 1152,
+    "height": 332
+  },
+  {
+    "id": "overview-trust",
+    "x": 264,
+    "y": 1330.09375,
+    "width": 373.328125,
+    "height": 266
+  },
+  {
+    "id": "overview-health",
+    "x": 653.328125,
+    "y": 1330.09375,
+    "width": 373.328125,
+    "height": 266
+  },
+  {
+    "id": "overview-governance",
+    "x": 1042.65625,
+    "y": 1330.09375,
+    "width": 373.34375,
+    "height": 266
+  }
+]

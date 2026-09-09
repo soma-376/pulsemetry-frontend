@@ -1,3 +1,4 @@
+import { operationsHandlers, operationsMetric } from './operations';
 import { resultCsv } from '../api/csv';
 import { teamMetric } from './teamMetrics';
 import { http, HttpResponse, delay } from 'msw';
@@ -49,7 +50,16 @@ function resolved(expr: string) {
     Number.isFinite(Date.parse(expr)) ? Date.parse(expr) : now - 604800000,
   ).toISOString();
 }
+function validAuditReason(request: Request) {
+  try {
+    const text = decodeURIComponent(request.headers.get('X-Audit-Reason') || '').trim();
+    return text.length >= 10 && text.length <= 500;
+  } catch {
+    return false;
+  }
+}
 export const handlers = [
+  ...operationsHandlers(role, teams),
   http.post('*/v1/auth/login', async ({ request }) => {
     await delay(150);
     const body = (await request.json()) as { email: string; password: string };
@@ -105,10 +115,7 @@ export const handlers = [
     const filters = [body.filters, ...(body.queries || []).map((q) => q.filters)];
     if (r === 'admin' && filters.some((f) => f?.team_ids?.some((t) => t !== paymentTeam)))
       return error(403, '접근할 수 없는 팀입니다.');
-    if (
-      filters.some((f) => f?.member_ids?.length) &&
-      (request.headers.get('X-Audit-Reason')?.trim().length || 0) < 10
-    )
+    if (filters.some((f) => f?.member_ids?.length) && !validAuditReason(request))
       return error(403, '개인 조회 사유가 필요합니다.');
     const state = request.headers.get('X-Mock-Case');
     await delay(state === 'loading' ? 2500 : 160);
@@ -133,7 +140,21 @@ export const handlers = [
               },
             }
           : q.metric_id !== 'telemetry_coverage'
-            ? teamMetric(
+            ? operationsMetric(
+                q,
+                {
+                  ...body,
+                  filters: {
+                    ...body.filters,
+                    ...q.filters,
+                    ...(r === 'admin' ? { team_ids: [paymentTeam] } : {}),
+                  },
+                },
+                resolved(body.from),
+                resolved(body.to),
+                state,
+              ) ||
+              teamMetric(
                 q,
                 {
                   ...body,

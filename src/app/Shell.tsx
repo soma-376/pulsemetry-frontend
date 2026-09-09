@@ -215,74 +215,84 @@ function GlobalHeader() {
   }
   return (
     <>
-      <div className={s.toolbar}>
-        <div className={s.inline}>
-          <Segment
-            label="기간"
-            values={presets.map((p) => [p, p.replace('now-', '')])}
-            value={value.to === 'now' ? value.from : ''}
-            onChange={(from) => update({ from, to: 'now' })}
-          />
-          <DateRange value={value} data={coverage.data} onChange={update} />
-          <label className={s.inline}>
-            비교
-            <select
-              aria-label="비교 기간"
-              value={value.compare}
-              onChange={(e) => update({ compare: e.target.value as Filters['compare'] })}
-            >
-              <option value="none">없음</option>
-              <option value="previous_period">직전 기간</option>
-              <option value="previous_week">전주</option>
-            </select>
-          </label>
-          <small>KST</small>
+      {location.pathname === '/settings' ? (
+        <div className={s.settingsBar}>
+          <h1>설정</h1>
+          <a href="#contracts">계약 · 단가</a>
+          <a href="#members">팀 · 구성원</a>
+          <a href="#policy">수집 정책</a>
+          <small>조회 전용 · 편집은 enrollment 관리 API에서</small>
         </div>
-        <div className={s.inline}>
-          <FilterSelect
-            options={options.data}
-            value={value}
-            onChange={update}
-            disabled={!options.data}
-          />
-          <Segment
-            label="단가"
-            values={[
-              ['list', '공시'],
-              ['contract', '계약'],
-            ]}
-            value={value.price_basis!}
-            onChange={(v) => update({ price_basis: v as Filters['price_basis'] })}
-          />
-        </div>
-        <div className={s.actions}>
-          <Link className={s.question} to={'/scenarios?' + serialized}>
-            답할 수 있는 질문
-          </Link>
-          <div className={s.refresh}>
-            <button onClick={refresh} disabled={coverage.isFetching} aria-label="새로고침">
-              새로고침
-            </button>
-            <label>
-              <input
-                type="checkbox"
-                role="switch"
-                aria-label="5분 자동 새로고침"
-                checked={auto}
-                onChange={(e) => setAuto(e.target.checked)}
-              />
-              5분
+      ) : (
+        <div className={s.toolbar}>
+          <div className={s.inline}>
+            <Segment
+              label="기간"
+              values={presets.map((p) => [p, p.replace('now-', '')])}
+              value={value.to === 'now' ? value.from : ''}
+              onChange={(from) => update({ from, to: 'now' })}
+            />
+            <DateRange value={value} data={coverage.data} onChange={update} />
+            <label className={s.inline}>
+              비교
+              <select
+                aria-label="비교 기간"
+                value={value.compare}
+                onChange={(e) => update({ compare: e.target.value as Filters['compare'] })}
+              >
+                <option value="none">없음</option>
+                <option value="previous_period">직전 기간</option>
+                <option value="previous_week">전주</option>
+              </select>
             </label>
+            <small>KST</small>
           </div>
-          {location.pathname === '/' ? (
-            <OverviewCsv />
-          ) : (
-            <Button disabled title="페이지 데이터 구현 후 제공">
-              CSV
-            </Button>
-          )}
+          <div className={s.inline}>
+            <FilterSelect
+              options={options.data}
+              value={value}
+              onChange={update}
+              disabled={!options.data}
+            />
+            <Segment
+              label="단가"
+              values={[
+                ['list', '공시'],
+                ['contract', '계약'],
+              ]}
+              value={value.price_basis!}
+              onChange={(v) => update({ price_basis: v as Filters['price_basis'] })}
+            />
+          </div>
+          <div className={s.actions}>
+            <Link className={s.question} to={'/scenarios?' + serialized}>
+              답할 수 있는 질문
+            </Link>
+            <div className={s.refresh}>
+              <button onClick={refresh} disabled={coverage.isFetching} aria-label="새로고침">
+                새로고침
+              </button>
+              <label>
+                <input
+                  type="checkbox"
+                  role="switch"
+                  aria-label="5분 자동 새로고침"
+                  checked={auto}
+                  onChange={(e) => setAuto(e.target.checked)}
+                />
+                5분
+              </label>
+            </div>
+            {location.pathname === '/' ? (
+              <OverviewCsv />
+            ) : (
+              <Button disabled title="현재 페이지의 CSV는 제공되지 않습니다">
+                CSV
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
       {options.isError && (
         <div className={s.notice} role="alert">
           필터를 불러오지 못했습니다. <Button onClick={() => options.refetch()}>필터 재시도</Button>

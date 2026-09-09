@@ -1,0 +1,20 @@
+{
+  "checks": [
+    "Offscreen health deferred",
+    "Six KPIs and eight widgets, compare and masked rows",
+    "No comparison hides deltas and previous line",
+    "Period, contract and model filters update data; weekly and health exceptions retained",
+    "CSV HTTP failure stays in dialog without fake file",
+    "CSV downloads scoped first query with n<5",
+    "Team bar opens P2 with filters",
+    "Scoped governance omits refusal query",
+    "Small team masks whole overview and returns",
+    "Partial cost failure keeps successful series",
+    "Error and retry recover",
+    "Empty data state",
+    "1024 and 768 layouts without page overflow",
+    "Admin stays in own team",
+    "No uncaught browser errors"
+  ],
+  "errors": []
+}

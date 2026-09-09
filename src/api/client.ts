@@ -28,7 +28,7 @@ export async function request<T>(
   const headers = new Headers(options.headers);
   if (options.body) headers.set('Content-Type', 'application/json');
   if (token) headers.set('Authorization', `Bearer ${token}`);
-  if (auditReason) headers.set('X-Audit-Reason', auditReason.trim());
+  if (auditReason) headers.set('X-Audit-Reason', encodeURIComponent(auditReason.trim()));
   if (mockMode)
     headers.set('X-Mock-Case', sessionStorage.getItem('pulsemetry.mockCase') || 'normal');
   const response = await fetch(`${base}${path}`, { ...options, headers });

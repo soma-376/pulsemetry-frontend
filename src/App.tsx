@@ -5,6 +5,12 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { AuthProvider } from './app/auth';
 import { Shell, Login, PlannedPage, pages } from './app/Shell';
 import { mockMode } from './api/client';
+const Operations = lazy(() =>
+  import('./pages/operations/Operations').then((m) => ({ default: m.Operations })),
+);
+const Settings = lazy(() =>
+  import('./pages/settings/Settings').then((m) => ({ default: m.Settings })),
+);
 const Overview = lazy(() =>
   import('./pages/overview/Overview').then((m) => ({ default: m.Overview })),
 );
@@ -35,7 +41,11 @@ export function App() {
                         key={p.path}
                         path={p.path}
                         element={
-                          p.path === '/teams' ? (
+                          p.path === '/operations' ? (
+                            <Operations />
+                          ) : p.path === '/settings' ? (
+                            <Settings />
+                          ) : p.path === '/teams' ? (
                             <Teams />
                           ) : p.path === '/' ? (
                             <Overview />

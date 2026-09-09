@@ -1,0 +1,186 @@
+export default function Component() {
+  return (
+    <div className="relative size-full" data-node-id="30:199" data-name="수집 정책">
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[14px] text-[color:var(--text\/1,#111827)] top-[-0.15px] tracking-[-0.14px] whitespace-nowrap" data-node-id="30:200">
+        수집 정책
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[61.7px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[2.3px] whitespace-nowrap" data-node-id="30:201">
+        활성 manifest가 설치 기기에 배포되는 OpenTelemetry 설정
+      </p>
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid h-[303.4px] left-0 rounded-[8px] top-[32.4px] w-[373.3px]" data-node-id="30:202" data-name="box">
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[13px] text-[color:var(--text\/1,#111827)] top-[15.08px] whitespace-nowrap" data-node-id="30:203">
+          활성 manifest
+        </p>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-[16px] not-italic text-[11.5px] text-[color:var(--text\/1,#111827)] top-[44px] whitespace-nowrap" data-node-id="30:204">
+          v14
+        </p>
+        <div className="absolute border border-[var(--border\/default,#e2e5ea)] border-solid h-[19.9px] left-[72.9px] rounded-[4px] top-[60.9px] w-[65.7px]" data-node-id="30:205" data-name="box">
+          <div className="absolute bg-[var(--accent\/green,#15803d)] left-[6px] rounded-[3px] size-[6px] top-[6px]" data-node-id="30:206" data-name="box" />
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[17px] not-italic text-[11px] text-[color:var(--accent\/green,#15803d)] top-[0.98px] whitespace-nowrap" data-node-id="30:207">
+            배포 완료
+          </p>
+        </div>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[94.7px] whitespace-nowrap" data-node-id="30:208">
+          게시
+        </p>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[220.6px] not-italic text-[12px] text-[color:var(--text\/1,#111827)] top-[94.7px] whitespace-nowrap" data-node-id="30:209">
+          2026-08-27 14:10 KST
+        </p>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[118.1px] whitespace-nowrap" data-node-id="30:210">
+          적용 설치
+        </p>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[299.1px] not-italic text-[12px] text-[color:var(--text\/1,#111827)] top-[118.1px] whitespace-nowrap" data-node-id="30:211">
+          124 / 128
+        </p>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[141.5px] whitespace-nowrap" data-node-id="30:212">
+          이전 버전(v13) 잔존
+        </p>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[347.6px] not-italic text-[12px] text-[color:var(--text\/1,#111827)] top-[141.5px] whitespace-nowrap" data-node-id="30:213">
+          4
+        </p>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[164.9px] whitespace-nowrap" data-node-id="30:214">
+          내보내기 간격
+        </p>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[239.7px] not-italic text-[12px] text-[color:var(--text\/1,#111827)] top-[164.9px] whitespace-nowrap" data-node-id="30:215">
+          metrics 60s · logs 5s
+        </p>
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[6px] left-[16px] rounded-[3px] top-[193px] w-[339.3px]" data-node-id="30:216" data-name="box">
+          <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] h-[6px] left-0 rounded-[3px] top-0 w-[328.8px]" data-node-id="30:217" data-name="box" />
+        </div>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[208.52px] whitespace-nowrap" data-node-id="30:218">
+          96.9% 적용 · 잔존 4대는 다음 세션 시작 시 갱신
+        </p>
+      </div>
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid h-[303.4px] left-[389.3px] rounded-[8px] top-[32.4px] w-[762.7px]" data-node-id="30:219" data-name="box">
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[13px] text-[color:var(--text\/1,#111827)] top-[15.08px] whitespace-nowrap" data-node-id="30:220">
+          signals
+        </p>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[495.6px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[17.02px] whitespace-nowrap" data-node-id="30:221">
+          토글 상태는 manifest v14 기준 · 변경은 새 버전 게시로만
+        </p>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[48.8px] left-[16px] top-[46.8px] w-[66.6px]" data-node-id="30:222" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/3,#6b7280)] top-[14.53px] whitespace-nowrap" data-node-id="30:223">
+            signal
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[48.8px] left-[82.6px] top-[46.8px] w-[73.8px]" data-node-id="30:224" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/3,#6b7280)] top-[14.53px] whitespace-nowrap" data-node-id="30:225">
+            상태
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[48.8px] left-[156.4px] top-[46.8px] w-[377px]" data-node-id="30:226" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/3,#6b7280)] top-[14.53px] whitespace-nowrap" data-node-id="30:227">
+            수집 항목
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[48.8px] left-[533.4px] top-[46.8px] w-[60.7px]" data-node-id="30:228" data-name="box">
+          <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[52.8px] not-italic text-[12.5px] text-[color:var(--text\/3,#6b7280)] text-right top-[14.48px] whitespace-nowrap" data-node-id="30:229">
+            적용 설치
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[48.8px] left-[594.1px] top-[46.8px] w-[150.6px]" data-node-id="30:230" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/3,#6b7280)] top-[14.53px] whitespace-nowrap" data-node-id="30:231">
+            프라이버시 옵션
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[55.3px] left-[16px] top-[95.6px] w-[66.6px]" data-node-id="30:232" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-[8px] not-italic text-[11.5px] text-[color:var(--text\/1,#111827)] top-[18.2px] whitespace-nowrap" data-node-id="30:233">
+            metrics
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[55.3px] left-[82.6px] top-[95.6px] w-[73.8px]" data-node-id="30:234" data-name="box">
+          <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] h-[14px] left-[8px] rounded-[7px] top-[18.6px] w-[26px]" data-node-id="30:235" data-name="box">
+            <div className="absolute bg-[var(--surface\/card,white)] left-[14px] rounded-[5px] size-[10px] top-[2px]" data-node-id="30:236" data-name="box" />
+          </div>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[40px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[17.13px] whitespace-nowrap" data-node-id="30:237">
+            ON
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[55.3px] left-[156.4px] top-[95.6px] w-[377px]" data-node-id="30:238" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/2,#4b5563)] top-[17.99px] w-[307px]" data-node-id="30:239">
+            session.count · active_time · token.usage · cost.usage · lines_of_code · commit · pull_request
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[55.3px] left-[533.4px] top-[95.6px] w-[60.7px]" data-node-id="30:240" data-name="box">
+          <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[52.8px] not-italic text-[12.5px] text-[color:var(--text\/1,#111827)] text-right top-[17.99px] whitespace-nowrap" data-node-id="30:241">
+            124 / 128
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[55.3px] left-[594.1px] top-[95.6px] w-[150.6px]" data-node-id="30:242" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[18.2px] whitespace-nowrap" data-node-id="30:243">
+            user.email 해시 · 팀 ID만
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[55.3px] left-[16px] top-[150.8px] w-[66.6px]" data-node-id="30:244" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-[8px] not-italic text-[11.5px] text-[color:var(--text\/1,#111827)] top-[18.2px] whitespace-nowrap" data-node-id="30:245">
+            logs
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[55.3px] left-[82.6px] top-[150.8px] w-[73.8px]" data-node-id="30:246" data-name="box">
+          <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] h-[14px] left-[8px] rounded-[7px] top-[18.6px] w-[26px]" data-node-id="30:247" data-name="box">
+            <div className="absolute bg-[var(--surface\/card,white)] left-[14px] rounded-[5px] size-[10px] top-[2px]" data-node-id="30:248" data-name="box" />
+          </div>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[40px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[17.13px] whitespace-nowrap" data-node-id="30:249">
+            ON
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[55.3px] left-[156.4px] top-[150.8px] w-[377px]" data-node-id="30:250" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/2,#4b5563)] top-[17.99px] w-[337px]" data-node-id="30:251">
+            user_prompt(길이만) · tool_result · tool_decision · api_request · api_error
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[55.3px] left-[533.4px] top-[150.8px] w-[60.7px]" data-node-id="30:252" data-name="box">
+          <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[52.8px] not-italic text-[12.5px] text-[color:var(--text\/1,#111827)] text-right top-[17.99px] whitespace-nowrap" data-node-id="30:253">
+            124 / 128
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[55.3px] left-[594.1px] top-[150.8px] w-[150.6px]" data-node-id="30:254" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[18.2px] w-[136px]" data-node-id="30:255">
+            프롬프트 본문 OFF · 파일 경로 마스킹
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[50.9px] left-[16px] top-[206.1px] w-[66.6px]" data-node-id="30:256" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-[8px] not-italic text-[11.5px] text-[color:var(--text\/1,#111827)] top-[16px] whitespace-nowrap" data-node-id="30:257">
+            traces
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[50.9px] left-[82.6px] top-[206.1px] w-[73.8px]" data-node-id="30:258" data-name="box">
+          <div className="absolute bg-[var(--accent\/gray,#6b7280)] h-[14px] left-[8px] rounded-[7px] top-[18.4px] w-[23.5px]" data-node-id="30:259" data-name="box">
+            <div className="absolute bg-[var(--surface\/card,white)] left-[2px] rounded-[5px] size-[10px] top-[2px]" data-node-id="30:260" data-name="box" />
+          </div>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[37.5px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[16.98px] whitespace-nowrap" data-node-id="30:261">
+            준비 중
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[50.9px] left-[156.4px] top-[206.1px] w-[377px]" data-node-id="30:262" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/2,#4b5563)] top-[15.84px] whitespace-nowrap" data-node-id="30:263">
+            어댑터 확장 필요
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[50.9px] left-[533.4px] top-[206.1px] w-[60.7px]" data-node-id="30:264" data-name="box">
+          <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[52.8px] not-italic text-[12.5px] text-[color:var(--text\/1,#111827)] text-right top-[15.84px] whitespace-nowrap" data-node-id="30:265">
+            —
+          </p>
+        </div>
+        <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[50.9px] left-[594.1px] top-[206.1px] w-[150.6px]" data-node-id="30:266" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[16px] whitespace-nowrap" data-node-id="30:267">
+            —
+          </p>
+        </div>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[269.02px] whitespace-nowrap" data-node-id="30:268">
+          traces는 준비 중(어댑터 확장 필요) · 프롬프트 본문(user_prompt content)은 기본 OFF, 세션 조회에서도 열지 않음
+        </p>
+      </div>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+These styles are contained in the design: brand/14-sb: Font(family: "font/ui", style: Regular, size: 14, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: -1), sub/12: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), widget-title/13-sb: Font(family: "font/ui", style: Regular, size: 13, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), mono/11-5: Font(family: "font/mono", style: Regular, size: 11.5, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11-md: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), sub/12-sb: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), sub/12-5: Font(family: "font/ui", style: Regular, size: 12.5, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0).
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

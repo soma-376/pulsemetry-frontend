@@ -538,3 +538,35 @@
     padding-left: 0;
   }
 }
+
+.settingsBar {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 24px;
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--border-default);
+}
+.settingsBar h1 {
+  font-size: 16px;
+  font-weight: 400;
+}
+.settingsBar a {
+  font-size: 13px;
+  text-decoration: none;
+  color: var(--text-2);
+}
+.settingsBar small {
+  margin-left: auto;
+  color: var(--text-3);
+  font-size: 12px;
+}
+@media (max-width: 1023px) {
+  .settingsBar {
+    gap: 12px;
+  }
+  .settingsBar small {
+    max-width: 180px;
+  }
+}
