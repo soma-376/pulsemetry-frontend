@@ -9,9 +9,11 @@ import type {
 } from '../api/types';
 export const paymentTeam = '11111111-1111-4111-8111-111111111111';
 export const platformTeam = '22222222-2222-4222-8222-222222222222';
+export const smallTeam = '33333333-3333-4333-8333-333333333333';
 const teams = [
   { team_id: paymentTeam, name: '결제', status: 'active' as const, member_count: 12 },
   { team_id: platformTeam, name: '플랫폼', status: 'active' as const, member_count: 24 },
+  { team_id: smallTeam, name: '정산', status: 'active' as const, member_count: 3 },
 ];
 const tokens = new Map<string, { role: 'owner' | 'admin'; expires: number }>();
 const error = (status: number, message: string) =>
@@ -111,11 +113,11 @@ export const handlers = [
     await delay(state === 'loading' ? 2500 : 160);
     if (state === 'error') return error(503, '목업 서버를 일시적으로 사용할 수 없습니다.');
     const empty = state === 'empty',
-      masked = state === 'masked';
+      masked = state === 'masked' || !!body.filters?.team_ids?.includes(smallTeam);
     const scoped = r === 'admin' || body.filters?.team_ids?.includes(paymentTeam);
     const platform = body.filters?.team_ids?.includes(platformTeam);
-    const members = empty ? 0 : scoped ? 12 : platform ? 24 : 36;
-    const installations = empty ? 0 : scoped ? 11 : platform ? 21 : 32;
+    const members = empty ? 0 : scoped ? 12 : platform ? 24 : 39;
+    const installations = empty ? 0 : scoped ? 11 : platform ? 21 : 35;
     const results: Record<string, QueryResult> = {};
     for (const [i, q] of body.queries.entries())
       results[q.ref_id] =
@@ -181,9 +183,9 @@ export const handlers = [
       resolved_from: resolved(body.from),
       resolved_to: resolved(body.to),
       coverage: {
-        active_installations: installations,
-        active_members: members,
-        ratio: members ? installations / members : null,
+        active_installations: masked ? undefined : installations,
+        active_members: masked ? undefined : members,
+        ratio: masked ? null : members ? installations / members : null,
         last_ingested_at: '2026-09-07T09:41:12Z',
       },
       results,

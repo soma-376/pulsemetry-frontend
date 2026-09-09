@@ -1,0 +1,81 @@
+export default function Content() {
+  return (
+    <div className="relative size-full" data-node-id="45:1054" data-name="Content">
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[24px] not-italic text-[18px] text-[color:var(--text\/1,#111827)] top-[22.7px] tracking-[-0.18px] whitespace-nowrap" data-node-id="45:1055">
+        팀 분석
+      </p>
+      <div className="absolute bg-[var(--surface\/sub,#eef0f3)] border border-[var(--border\/default,#e2e5ea)] border-solid h-[32px] left-[89px] rounded-[6px] top-[20px] w-[234px]" data-node-id="45:1056" data-name="box">
+        <div className="absolute h-[26px] left-[2px] rounded-[4px] top-[2px] w-[68.4px]" data-node-id="45:1057" data-name="box">
+          <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[34.2px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] text-center top-[6.05px] whitespace-nowrap" data-node-id="45:1058">
+            결제 코어
+          </p>
+        </div>
+        <div className="absolute bg-[var(--text\/1,#111827)] h-[26px] left-[72.4px] rounded-[4px] top-[2px] w-[76.8px]" data-node-id="45:1059" data-name="box">
+          <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[22.35px] not-italic text-[12px] text-[color:var(--misc\/on-inverse,white)] text-center top-[6.05px] whitespace-nowrap" data-node-id="45:1060">
+            정산
+          </p>
+          <div className="absolute bg-[var(--accent\/gray-tint,#e5e7eb)] h-[12px] left-[38.7px] rounded-[4px] top-[7px] w-[26.1px]" data-node-id="45:1061" data-name="box">
+            <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-[13.05px] not-italic text-[11.5px] text-[color:var(--text\/3,#6b7280)] text-center top-0 whitespace-nowrap" data-node-id="45:1062">{`n<5`}</p>
+          </div>
+        </div>
+        <div className="absolute h-[26px] left-[151.2px] rounded-[4px] top-[2px] w-[78.8px]" data-node-id="45:1063" data-name="box">
+          <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[39.4px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] text-center top-[6.05px] whitespace-nowrap" data-node-id="45:1064">
+            결제 플랫폼
+          </p>
+        </div>
+      </div>
+      <div className="[word-break:break-word] absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[23.4px] leading-[1.45] left-[337px] not-italic rounded-[11.7px] text-[12px] text-[color:var(--text\/2,#4b5563)] top-[24.3px] w-[104.4px] whitespace-nowrap" data-node-id="45:1065" data-name="box">
+        <p className="absolute left-[10px] top-[1.55px]" data-node-id="45:1066">
+          팀 활성 인원
+        </p>
+        <p className="absolute left-[70.7px] top-[1.55px]" data-node-id="45:1067">{`n<5`}</p>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[874.8px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[26.85px] whitespace-nowrap" data-node-id="45:1068">
+        2026-08-31 ~ 2026-09-07 ·
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[1030.4px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[26.85px] whitespace-nowrap" data-node-id="45:1069">
+        공시
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[1051.1px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[26.85px] whitespace-nowrap" data-node-id="45:1070">
+        단가 · 개인 이름·순위 없음
+      </p>
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid h-[480px] left-[24px] rounded-[8px] top-[68px] w-[1152px]" data-node-id="45:1071" data-name="box">
+        <div className="absolute bg-[var(--accent\/gray-tint,#e5e7eb)] h-[26.8px] left-[551.3px] rounded-[6px] top-[136.2px] w-[47.5px]" data-node-id="45:1072" data-name="box">
+          <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-[23.75px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] text-center top-[3.58px] whitespace-nowrap" data-node-id="45:1073">{`n<5`}</p>
+        </div>
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[574.5px] not-italic text-[16px] text-[color:var(--text\/1,#111827)] text-center top-[174.9px] whitespace-nowrap" data-node-id="45:1074">
+          이 팀은 활성 인원이 5명 미만이라 집계를 표시하지 않습니다
+        </p>
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[0] left-[575px] not-italic text-[0px] text-[color:var(--text\/2,#4b5563)] text-center top-[210px] w-[620px]" data-node-id="45:1075">
+          <span className="leading-[1.45] text-[#4b5563] text-[13px]">{`최소 집계 단위(5명) 미만 그룹은 개인이 추정될 수 있어 모든 지표를 마스킹합니다. 활성 인원 `}</span>
+          <span className="font-['IBM_Plex_Mono:Regular'] leading-[1.45] text-[#4b5563] text-[13px]">{`n<5`}</span>
+          <span className="leading-[1.45] text-[#4b5563] text-[13px]">{` · 관측 기간 2026-08-31 ~ 09-07. 상위 부서 단위로는 합산 값을 볼 수 있습니다.`}</span>
+        </p>
+        <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid h-[30px] left-[452.9px] rounded-[6px] top-[267.9px] w-[133.6px]" data-node-id="45:1078" data-name="box">
+          <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[65.8px] not-italic text-[12px] text-[color:var(--text\/1,#111827)] text-center top-[4.85px] whitespace-nowrap" data-node-id="45:1079">
+            상위 부서(결제)로 보기
+          </p>
+        </div>
+        <div className="absolute h-[30px] left-[594.5px] rounded-[6px] top-[267.9px] w-[102.6px]" data-node-id="45:1080" data-name="box">
+          <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[51.8px] not-italic text-[12px] text-[color:var(--accent\/blue,#1d4ed8)] text-center top-[5.85px] whitespace-nowrap" data-node-id="45:1081">
+            마스킹 정책 안내
+          </p>
+        </div>
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[564.7px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[325.42px] whitespace-nowrap" data-node-id="45:1082">
+          미관측 ≠ 미사용 · 커버리지
+        </p>
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[634.3px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-center top-[325.42px] whitespace-nowrap" data-node-id="45:1083">{`n<5`}</p>
+      </div>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+These styles are contained in the design: h1/18-sb: Font(family: "font/ui", style: Regular, size: 18, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: -1), sub/12-md: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), mono/11-5: Font(family: "font/mono", style: Regular, size: 11.5, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), sub/12: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), mono/12: Font(family: "font/mono", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), h2/16-sb: Font(family: "font/ui", style: Regular, size: 16, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), body/13: Font(family: "font/ui", style: Regular, size: 13, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0).
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

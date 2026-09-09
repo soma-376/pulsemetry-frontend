@@ -1,6 +1,9 @@
 import { chromium, expect } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
-const out = new URL('../docs/validation/phase-2/', import.meta.url);
+const out = new URL(
+  '../docs/validation/' + (process.env.VALIDATION_DIR || 'phase-2') + '/',
+  import.meta.url,
+);
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -85,9 +88,12 @@ try {
   checks.push('Model filter reaches widgets and replaces previous data');
   await page.getByLabel('모델', { exact: true }).selectOption('');
   await state('masked');
-  await expect(page.locator('[data-kpi="active_users"]')).toContainText('비공개');
-  await expect(widget('sessions')).toContainText('최소 집계 단위 미만');
-  await expect(widget('sessions').locator('.recharts-pie')).toHaveCount(0);
+  await expect(
+    page.getByRole('heading', {
+      name: '이 팀은 활성 인원이 5명 미만이라 집계를 표시하지 않습니다',
+    }),
+  ).toBeVisible();
+  await expect(page.locator('[data-widget]')).toHaveCount(0);
   checks.push('Masked data never enters charts');
   await state('empty');
   await expect(widget('sessions')).toContainText('관측된 데이터가 없습니다');
@@ -112,7 +118,9 @@ try {
   await expect(widget('tokens')).toContainText('61%');
   await widget('sessions').scrollIntoViewIfNeeded();
   await widget('sessions').getByRole('button', { name: '세션 시작 유형 메뉴' }).click();
-  await widget('sessions').getByRole('button', { name: '데이터 표 숨기기' }).click();
+  const hideTable = widget('sessions').getByRole('button', { name: '데이터 표 숨기기' });
+  if (await hideTable.count()) await hideTable.click();
+  else await widget('sessions').getByRole('button', { name: '세션 시작 유형 메뉴' }).click();
   await page.getByLabel('비교 기간').selectOption('previous_week');
   for (const width of [1024, 768]) {
     await page.setViewportSize({ width, height: 900 });

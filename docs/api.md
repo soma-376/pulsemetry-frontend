@@ -40,3 +40,15 @@ Vitest: DataFrame 상태/평행 배열/필드 labels, URL 정규화·범위 제�
 - [목업] teamMetrics.ts는 합성 fixture다. 결제7일 공시 기준 원본 숫자11명/318세션/$502.88/186.4시간을 사용하며 기간 길이·팀·제품·모델에 결정적 배율을 적용한다. 계약은 가정 할인20%. 이는 실제 통계 집계나 실제 계약 할인율이 아니다. 실제 API 실패를 이 데이터로 대체하지 않는다.
 - [목업] 제품·모델 선택은 수치 배율에 반영하며 모델별 비용은 선택 모델로 제한한다. 모든 차원의 실제 상관관계/기간별 활성 구성원 추이까지 재현하지 않는다. 분포 분위수는 고정이며 히트맵은 생성 패턴이다. 비용 모델 명칭은 기존 META 옵션과 맞추었다.
 - [목업] partial은 두 번째 ref504. 산출·비용·토큰 각각의 성공/실패 혼합을 검증했다. zero/missing/masked의 차이는 단위 테스트와 데이터 표에서 검증한다.
+
+## 3단계 상세 계약과 한계
+- 마찰: edit_acceptance_rate(language), auto_approval_ratio(decided_by), gate_wait_ms(decision, distribution), tool_rejections(tool_name,decided_by,limit5). gate_wait_ms는 ms 단위 p50/p90/count를 표시하고 평균/개인 축은 제공하지 않는다.
+- 기능: mcp_connections(server_name,server_scope,transport_type), command_prompt_ratio, tool_calls(action). 스킬/플러그인은 실제 지원 지표로 가장하지 않고 원본대로 준비 중.
+- 압축: compactions(trigger)·compaction_reduction 일별 추세와 scalar 요약4ref. 목업의 정수 일별 횟수 합계는 scalar 횟수와 맞춘다. 절감률은 API 정의대로 토큰 합계 기준. 시계열 절감률은 합성 패턴이며 해당 가중치 원본 토큰은 목업에서 생성하지 않는다.
+- 품질: tool_calls(error_type,limit8), tool_failure_rate, mcp_failure_ratio(server_name). 오류 유형 조회 params.success=false 및 MCP params.server_scope=org는 META params_schema가 없는 현재의 명시적 가정이다. 응답 server_scope=org 라벨도 확인하며 누락/다른 scope의 MCP 값은 표시하지 않는다. 실 API 지원 확인 필요.
+- [가정] table 필드: acceptance_rate/decisions/auto_approved, ratio/numerator/denominator, p50/p90/count, rejections, connections/failure_ratio, calls, failure_rate/failures/calls. API overview의 반환 의미에 기반했지만 특히 자동 승인 제외 수, scope 라벨 및 추가 params의 실제 명칭/가용성은 서버 계약 확인이 필요하다. 오류 시 목업 대체 없음.
+- [목업] teamDetails.ts에서 상세 지표를 명시적으로 제공한다. 제품/모델/기간·팀 배율을 개수에 반영하고 비율/분위수는 고정. group_by와 특정 params에 대해 필요한 조합만 구현한 fixture이며 일반 통계 엔진이 아니다. 직접 호출의 모든 잘못된 조합을 검증하지는 않는다.
+- [목업] 정산33333333-3333-4333-8333-333333333333 추가(owner만 접근). 선택 시 모든 지표 numeric payload는 null/suppressed. 커버리지의 정확한 설치/구성원 수는 응답에서 생략하고 ratio=null. group_size=3은 기존 마스킹 계약 테스트용 메타데이터다. 전체 fixture는35/39(결제11/12+플랫폼21/24+정산3/3). 앞선32/36 fixture를 대체한다.
+- [보호] 마스킹 여부는 coverage 프레임에서 판정한다. 최초 coverage 응답 전 본문 조회를 보류한다. coverage 재조회 실패 시 같은 필터의 이전 응답이 있으면 위젯별 오류/재시도를 유지한다. 필터 변경은 별도 캐시 키이므로 이전 팀 숫자를 보여주지 않는다.
+- [보호] 언어 표만 공개 가능한 행을 남기고 작은 그룹의 모든 수치를 숨긴다. 다른 상세 집계는 마스킹 값이 섞이면 보수적으로 해당 결과를 가린다. 전역 작은 팀은 KPI·차트·상세 표·커버리지 숫자를 화면에서 모두 제거한다.
+- 부분 실패 시 성공 ref를 유지하고 실패 ref를 재시도한다. 마스킹/미관측/0/분모0은 변환 계층에서 구분하며 데이터 표는 정제된 셀만 사용한다.

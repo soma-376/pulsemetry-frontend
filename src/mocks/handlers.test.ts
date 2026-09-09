@@ -49,3 +49,16 @@ it('masks fixture values in API payload', async () => {
   const result = await (await query(await login(), 'masked')).json();
   expect(result.results.A.frames[0].data.values[0][0]).toBeNull();
 });
+it('omits exact coverage counts for small team and masked cases', async () => {
+  const token = await login('owner');
+  for (const [state, filters] of [
+    ['masked', {}],
+    ['normal', { team_ids: ['33333333-3333-4333-8333-333333333333'] }],
+  ] as const) {
+    const result = await (await query(token, state, filters)).json();
+    expect(result.coverage.active_members).toBeUndefined();
+    expect(result.coverage.active_installations).toBeUndefined();
+    expect(result.coverage.ratio).toBeNull();
+    expect(result.results.A.frames[0].data.values).toEqual([[null]]);
+  }
+});

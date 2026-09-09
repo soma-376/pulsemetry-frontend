@@ -91,3 +91,20 @@
 - 1440 KPI x264/y152/w217.6/h136, 세션 행 x264/y304/w373.3/h274.4, 산출/비용568×437, 토큰568×326으로 원본과 약1px 이내의 카드 배치를 맞췄다. 측정은 phase-2/results.json.
 - 첫 비교에서 세션 행 높이286, 음수 삭제 막대 누락, 목요일 주간 경계, 차트 범례/캡션 위치 차이를 발견했다. 세션 본문164.5px, sign 누적, KST 월요일, 헤더 범례와 차트 직후 캡션으로 수정했다.
 - 남은 차이: API 팀 명칭/합성 시계열 모양, Recharts 자동 눈금·툴팁·숫자 폭, 히트맵24시간 압축, 개인 보호 후속 영역 안내. 1024 원본의 일부 잘린 텍스트는 줄바꿈으로 처리한다. 3단계 위젯은 완료 화면으로 가장하지 않는다.
+
+## 3단계 P2 상세 — 원본과 구현 선택
+- [원본] get_design_context 확인: 마찰 [42:224](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=42-224), 자동 승인 [44:972](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=44-972), 대기 [44:1961](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=44-1961), 거절 [44:2961](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=44-2961).
+- [원본] 기능 채택 [43:22](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=43-22), 압축 [43:134](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=43-134), 품질 [43:182](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=43-182), 작은 팀 [45:1054](https://www.figma.com/design/RWMkxrA8NVqfHfM3Fi16m0/Pulsemetry-Admin-Console?node-id=45-1054). 원문 코드는 reference/p3-*.txt에 보관.
+- [원본] 1440 기준 마찰568×326.3, 기능762.7×360.6, 압축373.3×360.6, 품질1152×318.5. 기능/압축 y1389.7, 품질 y1766.3(전역 셸84 포함). 마찰 탭32px, 언어 표 헤더29.9/행30.4px, 주값28/압축22px, 최소 팀 화면1152×480/제목16px.
+- [원본] 자동 승인 config+hook, 권한 대기 accept/reject의 p50→p90(평균 없음), 거절 user/config/hook 분리. 원본 빗금 SVG를 public/assets/friction-stripes.svg에 보관하여 원래640×360 크기로 재사용한다. 임의 벡터를 만들지 않았다.
+- [원본] 기능은 MCP 표와 미수집 스킬/플러그인, 명령 비중, 도구 액션7종. 품질은 오류 상위8, 도구 실패율, org MCP만. project/user 서버의 실패율을 품질에 포함하지 않는다.
+- [결정] 기존 WidgetCard/Badge/WidgetState/Result/DataTable와 API 프레임 변환을 재사용. 위젯 래퍼를 Widget.tsx로 추출했다. Radix 탭은 좌우/Home/End로 선택하며 로딩 중에도 탭 목록을 유지해 포커스를 잃지 않는다. 탭별 요청·캐시를 분리한다.
+- [결정] 마찰 높이는 토큰 행의326px을 유지하여 탭 전환 때 아래 배치가 크게 흔들리지 않게 한다. 거절 데이터 표를 펼치면 카드가 늘어날 수 있다. 원본의 작은 Shell 행은 숫자 전체를 n<5로 가린다(원본 자동 승인 셀의 —보다 보수적).
+- [결정] 1280 이상 기능/압축4:2열, 품질6열 전체.768–1279는 카드1열. 품질 내부는1024에서3영역,768에서는 MCP를 다음 행으로 배치. 표는 내부 스크롤, 장문은 줄바꿈한다. 해당 내부 분기와768 규칙은 구현 선택이다.
+- [결정] 작은 팀은 모든 KPI/위젯을 제거한 안내와 정책 펼치기를 제공한다. API에 부모 부서 ID가 없으므로 원본의 ‘상위 부서’ 링크 대신 권한 범위 내 전체 팀으로 복귀한다. 새 ‘정산’은 목업의 독립 팀이며 하위 계층을 의미하지 않는다.
+- [문서/결정] API의 압축 절감률은 1−Σafter/Σbefore이다. 원본 ‘평균 절감률’ 문구를 ‘토큰 합계 기준 절감률’로 정정했다. 평균 p50/p90 등 다른 집계를 추정하지 않는다. 대기 축은 최장 p90에 따라15초 단위로 확장한다.
+
+## 3단계 시각 검수
+- reference/p2-desktop.png 및 상세 get_design_context 이미지와 validation/phase-3의 desktop-light/dark, friction-0/1/2/3, features, compaction, quality, small-team 및1024/768 화면을 비교했다.
+- 탭 포커스 소실, 빗금/압축 색상, 대기 박스와 시간 축 정렬, 압축 오른쪽 라벨 잘림을 수정했다. 기능 카드 초기381px·품질325px을 표/행 간격으로 줄였다. 최종 실제 수치는 phase-3/geometry.json.
+- 남은 미세 차이: 합성 시계열/자동 눈금, 브라우저 폰트 숫자 폭, 표와 캡션 줄바꿈, 확장 가능한 거절 표, dark에서도 원본 light 주황 빗금. 원본 고정 부서 계층 대신 API 팀 선택·권한 범위 복귀. 실제 서버의 데이터 값/분포와 비교한 검수가 아니다.

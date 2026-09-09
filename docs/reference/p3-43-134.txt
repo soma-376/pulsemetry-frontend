@@ -1,0 +1,115 @@
+const imgChart = "https://www.figma.com/api/mcp/asset/79a3d5b0-0b19-41cb-a99d-dc01fe974142.svg";
+
+export default function Component() {
+  return (
+    <div className="bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid relative rounded-[8px] size-full" data-node-id="43:134" data-name="컨텍스트 압축">
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[13px] text-[color:var(--text\/1,#111827)] top-[18.42px] whitespace-nowrap" data-node-id="43:135">
+        컨텍스트 압축
+      </p>
+      <div className="absolute border border-[var(--accent\/gray,#6b7280)] border-solid left-[92.5px] rounded-[8px] size-[16px] top-[20px]" data-node-id="43:136" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[7px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[2px] whitespace-nowrap" data-node-id="43:137">
+          i
+        </p>
+      </div>
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid left-[331.3px] rounded-[6px] size-[24px] top-[16px]" data-node-id="43:138" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-none left-[11.85px] not-italic text-[14px] text-[color:var(--text\/2,#4b5563)] text-center top-[4px] whitespace-nowrap" data-node-id="43:139">
+          ⋯
+        </p>
+      </div>
+      <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] left-[16px] rounded-[2px] size-[10px] top-[55px]" data-node-id="43:140" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[30px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[51.53px] whitespace-nowrap" data-node-id="43:141">
+        auto
+      </p>
+      <div className="absolute bg-[var(--accent\/blue2,#0369a1)] left-[61.9px] rounded-[2px] size-[10px] top-[55px]" data-node-id="43:142" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[75.9px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[51.53px] whitespace-nowrap" data-node-id="43:143">
+        manual
+      </p>
+      <div className="absolute border-[var(--accent\/green,#15803d)] border-solid border-t-2 h-[2px] left-[121.4px] top-[59px] w-[14px]" data-node-id="43:144" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[139.4px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[51.53px] whitespace-nowrap" data-node-id="43:145">
+        절감률
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[44px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-right top-[75.53px] whitespace-nowrap" data-node-id="43:146">
+        40
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[44px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-right top-[132.52px] whitespace-nowrap" data-node-id="43:147">
+        20
+      </p>
+      <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[44px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] text-right top-[189.52px] whitespace-nowrap" data-node-id="43:148">
+        0
+      </p>
+      <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[130px] left-[50px] top-[76px] w-[263.3px]" data-node-id="43:149" data-name="box">
+        <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] h-[71px] left-0 rounded-bl-[2px] rounded-br-[2px] top-[58px] w-[28.5px]" data-node-id="43:150" data-name="box" />
+        <div className="absolute bg-[var(--accent\/blue2,#0369a1)] h-[16.1px] left-0 rounded-tl-[2px] rounded-tr-[2px] top-[40.9px] w-[28.5px]" data-node-id="43:151" data-name="box" />
+        <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] h-[77.4px] left-[33.5px] rounded-bl-[2px] rounded-br-[2px] top-[51.6px] w-[28.6px]" data-node-id="43:152" data-name="box" />
+        <div className="absolute bg-[var(--accent\/blue2,#0369a1)] h-[19.4px] left-[33.5px] rounded-tl-[2px] rounded-tr-[2px] top-[31.2px] w-[28.6px]" data-node-id="43:153" data-name="box" />
+        <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] h-[67.7px] left-[67.1px] rounded-bl-[2px] rounded-br-[2px] top-[61.3px] w-[28.5px]" data-node-id="43:154" data-name="box" />
+        <div className="absolute bg-[var(--accent\/blue2,#0369a1)] h-[12.9px] left-[67.1px] rounded-tl-[2px] rounded-tr-[2px] top-[47.4px] w-[28.5px]" data-node-id="43:155" data-name="box" />
+        <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] h-[100px] left-[100.6px] rounded-bl-[2px] rounded-br-[2px] top-[29px] w-[28.6px]" data-node-id="43:156" data-name="box" />
+        <div className="absolute bg-[var(--accent\/blue2,#0369a1)] h-[25.8px] left-[100.6px] rounded-tl-[2px] rounded-tr-[2px] top-[2.2px] w-[28.6px]" data-node-id="43:157" data-name="box" />
+        <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] h-[80.6px] left-[134.2px] rounded-bl-[2px] rounded-br-[2px] top-[48.4px] w-[28.5px]" data-node-id="43:158" data-name="box" />
+        <div className="absolute bg-[var(--accent\/blue2,#0369a1)] h-[16.1px] left-[134.2px] rounded-tl-[2px] rounded-tr-[2px] top-[31.3px] w-[28.5px]" data-node-id="43:159" data-name="box" />
+        <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] h-[25.8px] left-[167.7px] rounded-bl-[2px] rounded-br-[2px] top-[103.2px] w-[28.6px]" data-node-id="43:160" data-name="box" />
+        <div className="absolute bg-[var(--accent\/blue2,#0369a1)] h-[3.2px] left-[167.7px] rounded-tl-[2px] rounded-tr-[2px] top-[99px] w-[28.6px]" data-node-id="43:161" data-name="box" />
+        <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] h-[12.9px] left-[201.3px] rounded-bl-[2px] rounded-br-[2px] top-[116.1px] w-[28.5px]" data-node-id="43:162" data-name="box" />
+        <div className="absolute bg-[var(--accent\/blue2,#0369a1)] h-[0.01px] left-[201.3px] rounded-tl-[2px] rounded-tr-[2px] top-[115.1px] w-[28.5px]" data-node-id="43:163" data-name="box" />
+        <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] h-[83.9px] left-[234.8px] rounded-bl-[2px] rounded-br-[2px] top-[45.1px] w-[28.5px]" data-node-id="43:164" data-name="box" />
+        <div className="absolute bg-[var(--accent\/blue2,#0369a1)] h-[12.9px] left-[234.8px] rounded-tl-[2px] rounded-tr-[2px] top-[31.2px] w-[28.5px]" data-node-id="43:165" data-name="box" />
+        <div className="absolute h-[129px] left-0 top-0 w-[263.3px]" data-node-id="43:166" data-name="chart">
+          <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChart} />
+        </div>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[319.3px] not-italic text-[11px] text-[color:var(--accent\/green,#15803d)] top-[75.53px] whitespace-nowrap" data-node-id="43:168">
+        80%
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[319.3px] not-italic text-[11px] text-[color:var(--accent\/green,#15803d)] top-[132.52px] whitespace-nowrap" data-node-id="43:169">
+        40%
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[319.3px] not-italic text-[11px] text-[color:var(--accent\/green,#15803d)] top-[189.52px] whitespace-nowrap" data-node-id="43:170">
+        0
+      </p>
+      <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[63.8px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[211.75px] whitespace-nowrap" data-node-id="43:171">
+        8/31
+      </p>
+      <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[97.3px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[211.75px] whitespace-nowrap" data-node-id="43:172">
+        9/1
+      </p>
+      <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[131.3px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[211.75px] whitespace-nowrap" data-node-id="43:173">
+        9/2
+      </p>
+      <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[164.9px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[211.75px] whitespace-nowrap" data-node-id="43:174">
+        9/3
+      </p>
+      <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[198.4px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[211.75px] whitespace-nowrap" data-node-id="43:175">
+        9/4
+      </p>
+      <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[232px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[211.75px] whitespace-nowrap" data-node-id="43:176">
+        9/5
+      </p>
+      <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[265.5px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[211.75px] whitespace-nowrap" data-node-id="43:177">
+        9/6
+      </p>
+      <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[299.1px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[211.75px] whitespace-nowrap" data-node-id="43:178">
+        9/7
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[22px] text-[color:var(--accent\/green,#15803d)] top-[238.3px] tracking-[-0.44px] whitespace-nowrap" data-node-id="43:179">
+        63%
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[71.3px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[249.05px] whitespace-nowrap" data-node-id="43:180">
+        평균 절감률 · 압축 174회 (auto 141 · manual 33)
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[281.83px] whitespace-nowrap" data-node-id="43:181">
+        절감률 = (압축 전 − 후 토큰) ÷ 압축 전
+      </p>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+These styles are contained in the design: widget-title/13-sb: Font(family: "font/ui", style: Regular, size: 13, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/10: Font(family: "font/ui", style: Regular, size: 10, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), glyph/14: Font(family: "font/ui", style: Regular, size: 14, weight: 400, lineHeight: 1, letterSpacing: 0), caption/11: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), stat/22-sb: Font(family: "font/ui", style: Regular, size: 22, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: -2), sub/12: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0).
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

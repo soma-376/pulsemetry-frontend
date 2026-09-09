@@ -1,4 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { Widget, Result, DataTable, q, shortDate, axis, tip } from './Widget';
+import { TeamDetails } from './TeamDetails';
+import { useState } from 'react';
 import {
   ResponsiveContainer,
   PieChart,
@@ -24,20 +26,9 @@ import { series, number, format, timeline, type Point } from '../../widgets/mode
 import type { QueryRequest, QueryResult } from '../../api/types';
 import s from './Teams.module.css';
 type Query = QueryRequest['queries'][number];
-const q = (
-  metric_id: Query['metric_id'],
-  frame_type: Query['frame_type'] = 'scalar',
-  extra: Partial<Query> = {},
-): Query => ({ ref_id: 'A', metric_id, frame_type, ...extra });
 const blue = [2, 1, 3, 4].map((n) => `var(--chart-seq${n})`);
 const tokenColors = [1, 2, 3, 4].map((n) => `var(--chart-seq${n})`);
 const violet = [1, 2, 3, 4].map((n) => `var(--chart-vio${n})`);
-const shortDate = (v: number) =>
-  new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Seoul',
-    month: 'numeric',
-    day: 'numeric',
-  }).format(new Date(v));
 const day = (v?: string) =>
   v
     ? new Intl.DateTimeFormat('en-CA', {
@@ -47,176 +38,6 @@ const day = (v?: string) =>
         day: '2-digit',
       }).format(new Date(v))
     : '—';
-const axis = { tick: { fontSize: 11, fill: 'var(--text-3)' }, axisLine: false, tickLine: false };
-const tip = {
-  background: 'var(--surface-card)',
-  border: '1px solid var(--border-default)',
-  borderRadius: 6,
-  color: 'var(--text-1)',
-  fontSize: 12,
-};
-function Legend({ labels, colors }: { labels: string[]; colors: string[] }) {
-  return (
-    <div className={s.legend}>
-      {labels.map((label, i) => (
-        <span key={label}>
-          <i style={{ background: colors[i % colors.length] }} />
-          {label}
-        </span>
-      ))}
-    </div>
-  );
-}
-function DataTable({ points, title }: { points: Point[]; title: string }) {
-  return (
-    <details className={s.tableDetails}>
-      <summary>{title} 데이터 표</summary>
-      <div className={s.tableScroll}>
-        <table>
-          <thead>
-            <tr>
-              <th>구간 / 그룹</th>
-              <th>값</th>
-              <th>단위</th>
-            </tr>
-          </thead>
-          <tbody>
-            {points.map((p, i) => (
-              <tr key={i}>
-                <td>
-                  {typeof p.key === 'number' ? shortDate(p.key) : p.key}{' '}
-                  {Object.values(p.labels).join(' · ')}
-                </td>
-                <td>{format(p.value, p.unit)}</td>
-                <td>{p.unit === 'ratio' ? '%' : p.unit === 's' ? '시간' : p.unit}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </details>
-  );
-}
-function Result({
-  result,
-  title,
-  retry,
-  children,
-}: {
-  result?: QueryResult;
-  title: string;
-  retry: () => void;
-  children: (points: Point[]) => ReactNode;
-}) {
-  const model = series(result);
-  if (model.state === 'empty' && model.points.some((p) => p.value.state === 'zero-denominator'))
-    return <p className={s.noRatio}>분모 0 · 비율을 계산할 수 없습니다.</p>;
-  if (model.state !== 'success') return <WidgetState status={model.state} onRetry={retry} />;
-  return (
-    <>
-      {children(model.points)}
-      <DataTable points={model.points} title={title} />
-    </>
-  );
-}
-function Widget({
-  id,
-  title,
-  subtitle,
-  definition,
-  caption,
-  queries,
-  children,
-  recentWeeks = false,
-  size = 'small',
-}: {
-  id: string;
-  title: string;
-  subtitle: string;
-  definition: string;
-  caption: string;
-  queries: QueryRequest['queries'];
-  recentWeeks?: boolean;
-  size?: string;
-  children: (data: Record<string, QueryResult>, retry: () => void) => ReactNode;
-}) {
-  const { ref, query } = useWidget(id, queries, recentWeeks);
-  const [menu, setMenu] = useState(false);
-  const [tables, setTables] = useState(false);
-  return (
-    <div
-      ref={ref}
-      className={`${s.widget} ${s[size]} ${tables ? s.showTables : ''}`}
-      data-widget={id}
-      data-fetching={query.isFetching}
-    >
-      <WidgetCard
-        title={title}
-        subtitle={subtitle}
-        definition={definition}
-        caption={caption}
-        action={
-          <div className={s.headerActions}>
-            {id === 'output' && (
-              <Legend
-                labels={['LoC 추가', '삭제', '커밋', 'PR']}
-                colors={[
-                  'var(--accent-green)',
-                  'var(--accent-green-tint)',
-                  'var(--accent-green)',
-                  'var(--accent-green)',
-                ]}
-              />
-            )}{' '}
-            {id === 'tokens' && (
-              <Legend
-                labels={['input', 'output', 'cacheRead', 'cacheCreation']}
-                colors={tokenColors}
-              />
-            )}
-            <div className={s.menu}>
-              <button
-                aria-label={`${title} 메뉴`}
-                aria-expanded={menu}
-                onClick={() => setMenu(!menu)}
-              >
-                ⋯
-              </button>
-              {menu && (
-                <div className={s.menuPanel}>
-                  <Button
-                    onClick={() => {
-                      query.refetch();
-                      setMenu(false);
-                    }}
-                  >
-                    이 위젯 새로고침
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setTables(!tables);
-                      setMenu(false);
-                    }}
-                  >
-                    {tables ? '데이터 표 숨기기' : '데이터 표 보기'}
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        }
-      >
-        {query.isPending ? (
-          <WidgetState status="loading" />
-        ) : query.isError ? (
-          <WidgetState status="error" onRetry={() => query.refetch()} />
-        ) : (
-          children(query.data.results, () => query.refetch())
-        )}
-      </WidgetCard>
-    </div>
-  );
-}
 const kpis = [
   {
     metric: 'active_users',
@@ -653,6 +474,7 @@ export function Teams() {
   const { value, options, update } = useScopedFilters();
   const selected = value.filters?.team_ids || [];
   const coverage = useWidget('coverage', [q('telemetry_coverage')]);
+  const masked = series(coverage.query.data?.results.A).state === 'masked';
   return (
     <section className={s.page} aria-label="팀 분석 대시보드">
       <header className={s.title} ref={coverage.ref}>
@@ -675,191 +497,221 @@ export function Teams() {
             </button>
           ))}
         </div>
-        <Badge>팀 활성 인원 {coverage.query.data?.coverage?.active_members ?? '—'}명</Badge>
+        <Badge>
+          팀 활성 인원{' '}
+          {masked ? 'n<5' : `${coverage.query.data?.coverage?.active_members ?? '—'}명`}
+        </Badge>
         <p>
           {day(coverage.query.data?.resolved_from)} ~ {day(coverage.query.data?.resolved_to)}　
           {value.price_basis === 'contract' ? '계약' : '공시'} 단가 · 개인 이름·순위 없음
         </p>
       </header>
-      <div className={s.kpis}>
-        {kpis.map((spec) => (
-          <Kpi key={spec.metric} spec={spec} />
-        ))}
-      </div>
-      <div className={s.grid}>
-        <Widget
-          id="sessions"
-          title="세션 시작 유형"
-          subtitle="세션 수 비중"
-          definition="start_type별 세션 수입니다."
-          caption="fresh = 새 세션 · resume/continue = 이어하기 · agents_view = 에이전트 뷰 진입"
-          queries={[q('sessions', 'table', { group_by: ['start_type'] })]}
-        >
-          {(r, retry) => (
-            <Result result={r.A} title="세션 시작 유형" retry={retry}>
-              {(p) => <Sessions points={p} />}
-            </Result>
-          )}
-        </Widget>
-        <Widget
-          id="prompts"
-          title="세션당 프롬프트 수"
-          subtitle="분포 · 세션 단위"
-          definition="세션별 프롬프트 수의 버킷 분포와 p50/p90입니다."
-          caption="x = 세션당 프롬프트 버킷 · y = 세션 수 · 개인 축 없음"
-          queries={[q('prompts_per_session', 'distribution')]}
-        >
-          {(r, retry) => (
-            <Result result={r.A} title="세션당 프롬프트 수" retry={retry}>
-              {(p) => <Prompts points={p} />}
-            </Result>
-          )}
-        </Widget>
-        <Widget
-          id="heatmap"
-          title="시간대 × 요일"
-          subtitle="프롬프트 수 · KST"
-          definition="KST 시간과 요일별 프롬프트 합계입니다. 개인 축은 제공하지 않습니다."
-          caption="팀 합산만 · 미관측 ≠ 미사용"
-          queries={[q('usage_heatmap', 'table', { group_by: ['weekday', 'hour'] })]}
-        >
-          {(r, retry) => (
-            <Result result={r.A} title="시간대 × 요일" retry={retry}>
-              {(p) => <Heatmap points={p} />}
-            </Result>
-          )}
-        </Widget>
-        <Widget
-          id="output"
-          title="산출"
-          subtitle="주 단위 · 종료일 기준 완료된 최근 8주"
-          definition="AI 관여 LoC는 도구 편집 diff, 커밋과 PR은 훅 이벤트 기준입니다."
-          caption="AI 관여 LoC = 도구 편집 diff · 커밋/PR은 훅 이벤트 기준(미관측 ≠ 미사용)"
-          size="large"
-          recentWeeks
-          queries={[
-            q('lines_of_code', 'timeseries', { group_by: ['type'], interval: '1w' }),
-            q('commits', 'timeseries', { ref_id: 'B', interval: '1w' }),
-            q('pull_requests', 'timeseries', { ref_id: 'C', interval: '1w' }),
-          ]}
-        >
-          {(results, retry) => <Output results={results} retry={retry} />}
-        </Widget>
-        <Widget
-          id="cost"
-          title="비용 귀속"
-          subtitle={`${value.price_basis === 'contract' ? '계약' : '공시'} · 100% 누적`}
-          definition="모델, 쿼리 출처, 에이전트, MCP 서버별 비용 비중입니다. 각 행은 별도 분해입니다."
-          caption={`청구액 아님(${value.price_basis === 'contract' ? '계약' : '공시'} 단가 추정) · 팀 합계`}
-          size="large"
-          queries={['model', 'query_source', 'agent_name', 'mcp_server']
-            .map((dim, i) =>
-              q('cost', 'table', {
-                ref_id: String.fromCharCode(65 + i),
-                group_by: [dim as NonNullable<Query['group_by']>[number]],
-                source: 'metrics',
-              }),
-            )
-            .concat(q('subagent_cost_ratio', 'scalar', { ref_id: 'E' }))}
-        >
-          {(r, retry) => (
-            <div className={s.split}>
-              <div>
-                {['모델별', '쿼리 출처별', '에이전트별', 'MCP 서버별'].map((title, i) => (
-                  <CostRow
-                    key={title}
-                    title={title}
-                    dim={['model', 'query_source', 'agent_name', 'mcp_server'][i]}
-                    result={r[String.fromCharCode(65 + i)]}
+      {masked ? (
+        <div className={s.maskedPage} role="status">
+          <Badge>n&lt;5</Badge>
+          <h2>이 팀은 활성 인원이 5명 미만이라 집계를 표시하지 않습니다</h2>
+          <p>
+            최소 집계 단위(5명) 미만 그룹은 개인이 추정될 수 있어 모든 지표를 마스킹합니다. 활성
+            인원 n&lt;5 · 관측 기간 {day(coverage.query.data?.resolved_from)} ~{' '}
+            {day(coverage.query.data?.resolved_to)}.
+          </p>
+          <Button onClick={() => update({ filters: { ...value.filters, team_ids: [] } })}>
+            접근 가능한 전체 팀으로 보기
+          </Button>
+          <details>
+            <summary>마스킹 정책 안내</summary>
+            <p>
+              5명 미만 그룹의 수치·비율·그래프·비교값을 표시하지 않습니다. 미관측은 미사용을
+              의미하지 않습니다. 부서 계층은 현재 API에서 제공하지 않습니다.
+            </p>
+          </details>
+        </div>
+      ) : coverage.query.isPending ? (
+        <WidgetState status="loading" />
+      ) : coverage.query.isError && !coverage.query.data ? (
+        <WidgetState status="error" onRetry={() => coverage.query.refetch()} />
+      ) : (
+        <>
+          <div className={s.kpis}>
+            {kpis.map((spec) => (
+              <Kpi key={spec.metric} spec={spec} />
+            ))}
+          </div>
+          <div className={s.grid}>
+            <Widget
+              id="sessions"
+              title="세션 시작 유형"
+              subtitle="세션 수 비중"
+              definition="start_type별 세션 수입니다."
+              caption="fresh = 새 세션 · resume/continue = 이어하기 · agents_view = 에이전트 뷰 진입"
+              queries={[q('sessions', 'table', { group_by: ['start_type'] })]}
+            >
+              {(r, retry) => (
+                <Result result={r.A} title="세션 시작 유형" retry={retry}>
+                  {(p) => <Sessions points={p} />}
+                </Result>
+              )}
+            </Widget>
+            <Widget
+              id="prompts"
+              title="세션당 프롬프트 수"
+              subtitle="분포 · 세션 단위"
+              definition="세션별 프롬프트 수의 버킷 분포와 p50/p90입니다."
+              caption="x = 세션당 프롬프트 버킷 · y = 세션 수 · 개인 축 없음"
+              queries={[q('prompts_per_session', 'distribution')]}
+            >
+              {(r, retry) => (
+                <Result result={r.A} title="세션당 프롬프트 수" retry={retry}>
+                  {(p) => <Prompts points={p} />}
+                </Result>
+              )}
+            </Widget>
+            <Widget
+              id="heatmap"
+              title="시간대 × 요일"
+              subtitle="프롬프트 수 · KST"
+              definition="KST 시간과 요일별 프롬프트 합계입니다. 개인 축은 제공하지 않습니다."
+              caption="팀 합산만 · 미관측 ≠ 미사용"
+              queries={[q('usage_heatmap', 'table', { group_by: ['weekday', 'hour'] })]}
+            >
+              {(r, retry) => (
+                <Result result={r.A} title="시간대 × 요일" retry={retry}>
+                  {(p) => <Heatmap points={p} />}
+                </Result>
+              )}
+            </Widget>
+            <Widget
+              id="output"
+              title="산출"
+              subtitle="주 단위 · 종료일 기준 완료된 최근 8주"
+              definition="AI 관여 LoC는 도구 편집 diff, 커밋과 PR은 훅 이벤트 기준입니다."
+              caption="AI 관여 LoC = 도구 편집 diff · 커밋/PR은 훅 이벤트 기준(미관측 ≠ 미사용)"
+              size="large"
+              recentWeeks
+              queries={[
+                q('lines_of_code', 'timeseries', { group_by: ['type'], interval: '1w' }),
+                q('commits', 'timeseries', { ref_id: 'B', interval: '1w' }),
+                q('pull_requests', 'timeseries', { ref_id: 'C', interval: '1w' }),
+              ]}
+            >
+              {(results, retry) => <Output results={results} retry={retry} />}
+            </Widget>
+            <Widget
+              id="cost"
+              title="비용 귀속"
+              subtitle={`${value.price_basis === 'contract' ? '계약' : '공시'} · 100% 누적`}
+              definition="모델, 쿼리 출처, 에이전트, MCP 서버별 비용 비중입니다. 각 행은 별도 분해입니다."
+              caption={`청구액 아님(${value.price_basis === 'contract' ? '계약' : '공시'} 단가 추정) · 팀 합계`}
+              size="large"
+              queries={['model', 'query_source', 'agent_name', 'mcp_server']
+                .map((dim, i) =>
+                  q('cost', 'table', {
+                    ref_id: String.fromCharCode(65 + i),
+                    group_by: [dim as NonNullable<Query['group_by']>[number]],
+                    source: 'metrics',
+                  }),
+                )
+                .concat(q('subagent_cost_ratio', 'scalar', { ref_id: 'E' }))}
+            >
+              {(r, retry) => (
+                <div className={s.split}>
+                  <div>
+                    {['모델별', '쿼리 출처별', '에이전트별', 'MCP 서버별'].map((title, i) => (
+                      <CostRow
+                        key={title}
+                        title={title}
+                        dim={['model', 'query_source', 'agent_name', 'mcp_server'][i]}
+                        result={r[String.fromCharCode(65 + i)]}
+                        retry={retry}
+                      />
+                    ))}
+                  </div>
+                  <Stat
+                    result={r.E}
+                    label="서브에이전트 비용 비율"
+                    caption="query_source=subagent ÷ 전체"
+                    color="var(--accent-purple)"
                     retry={retry}
                   />
-                ))}
-              </div>
-              <Stat
-                result={r.E}
-                label="서브에이전트 비용 비율"
-                caption="query_source=subagent ÷ 전체"
-                color="var(--accent-purple)"
-                retry={retry}
-              />
-            </div>
-          )}
-        </Widget>
-        <Widget
-          id="tokens"
-          title="토큰 구성"
-          subtitle="일 단위 · 누적"
-          definition="input/output/cache_read/cache_create 토큰을 일 단위로 합산합니다."
-          caption="단위 M 토큰 · 캐시 생성은 비용 가중치가 다름(비용은 비용 귀속 참조)"
-          size="medium"
-          queries={[
-            q('tokens', 'timeseries', { group_by: ['type'], interval: '1d', source: 'events' }),
-            q('cache_read_ratio', 'scalar', { ref_id: 'B' }),
-          ]}
-        >
-          {(r, retry) => (
-            <>
-              <div className={s.split}>
-                <div>
-                  <Result result={r.A} title="토큰 구성" retry={retry}>
-                    {(points) => (
-                      <div className={s.tokenChart}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart
-                            data={timeline(points)}
-                            margin={{ top: 5, left: 0, right: 0, bottom: 0 }}
-                          >
-                            <XAxis
-                              {...axis}
-                              dataKey="time"
-                              tickFormatter={(v) => shortDate(Number(v))}
-                              minTickGap={20}
-                            />
-                            <YAxis {...axis} width={38} tickFormatter={(v) => `${v / 1000000}M`} />
-                            <CartesianGrid
-                              vertical={false}
-                              stroke="var(--border-default)"
-                              strokeDasharray="4 3"
-                            />
-                            <Tooltip
-                              contentStyle={tip}
-                              labelFormatter={(v) => shortDate(Number(v))}
-                            />
-                            {['input', 'output', 'cache_read', 'cache_create'].map((key, i) => (
-                              <Area
-                                key={key}
-                                dataKey={key}
-                                stackId="tokens"
-                                fillOpacity={0.9}
-                                stroke="var(--surface-card)"
-                                fill={tokenColors[i]}
-                                isAnimationActive={false}
-                              />
-                            ))}
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )}
-                  </Result>
                 </div>
-                <Stat
-                  result={r.B}
-                  label="캐시 읽기 비율"
-                  caption="cacheRead ÷ (input+cacheRead+cacheCreation)"
-                  color="var(--accent-blue)"
-                  retry={retry}
-                />
-              </div>
-            </>
-          )}
-        </Widget>
-        <div className={s.next}>
-          <WidgetCard title="마찰 · 기능 채택 · 압축 · 품질">
-            <Badge>3단계 구현 예정</Badge>
-            <p>다음 단계에서 상세 지표와 탭이 추가됩니다.</p>
-          </WidgetCard>
-        </div>
-      </div>
+              )}
+            </Widget>
+            <Widget
+              id="tokens"
+              title="토큰 구성"
+              subtitle="일 단위 · 누적"
+              definition="input/output/cache_read/cache_create 토큰을 일 단위로 합산합니다."
+              caption="단위 M 토큰 · 캐시 생성은 비용 가중치가 다름(비용은 비용 귀속 참조)"
+              size="medium"
+              queries={[
+                q('tokens', 'timeseries', { group_by: ['type'], interval: '1d', source: 'events' }),
+                q('cache_read_ratio', 'scalar', { ref_id: 'B' }),
+              ]}
+            >
+              {(r, retry) => (
+                <>
+                  <div className={s.split}>
+                    <div>
+                      <Result result={r.A} title="토큰 구성" retry={retry}>
+                        {(points) => (
+                          <div className={s.tokenChart}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart
+                                data={timeline(points)}
+                                margin={{ top: 5, left: 0, right: 0, bottom: 0 }}
+                              >
+                                <XAxis
+                                  {...axis}
+                                  dataKey="time"
+                                  tickFormatter={(v) => shortDate(Number(v))}
+                                  minTickGap={20}
+                                />
+                                <YAxis
+                                  {...axis}
+                                  width={38}
+                                  tickFormatter={(v) => `${v / 1000000}M`}
+                                />
+                                <CartesianGrid
+                                  vertical={false}
+                                  stroke="var(--border-default)"
+                                  strokeDasharray="4 3"
+                                />
+                                <Tooltip
+                                  contentStyle={tip}
+                                  labelFormatter={(v) => shortDate(Number(v))}
+                                />
+                                {['input', 'output', 'cache_read', 'cache_create'].map((key, i) => (
+                                  <Area
+                                    key={key}
+                                    dataKey={key}
+                                    stackId="tokens"
+                                    fillOpacity={0.9}
+                                    stroke="var(--surface-card)"
+                                    fill={tokenColors[i]}
+                                    isAnimationActive={false}
+                                  />
+                                ))}
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          </div>
+                        )}
+                      </Result>
+                    </div>
+                    <Stat
+                      result={r.B}
+                      label="캐시 읽기 비율"
+                      caption="cacheRead ÷ (input+cacheRead+cacheCreation)"
+                      color="var(--accent-blue)"
+                      retry={retry}
+                    />
+                  </div>
+                </>
+              )}
+            </Widget>
+            <TeamDetails />
+          </div>
+        </>
+      )}
     </section>
   );
 }

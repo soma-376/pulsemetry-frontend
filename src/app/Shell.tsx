@@ -1,3 +1,4 @@
+import { series } from '../widgets/model';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -289,6 +290,8 @@ function GlobalHeader() {
           <span>
             커버리지 조회 실패 <button onClick={() => coverage.refetch()}>재시도</button>
           </span>
+        ) : series(coverage.data?.results.A).state === 'masked' ? (
+          <span>최소 집계 단위 미만 · 활성 설치 / 구성원 / 커버리지 n&lt;5</span>
         ) : (
           <span>
             텔레메트리 활성 기기 기준 · 활성 설치{' '}

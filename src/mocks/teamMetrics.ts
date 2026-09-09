@@ -1,3 +1,4 @@
+import { detailMetric } from './teamDetails';
 import type { Field, Frame, QueryRequest, QueryResult } from '../api/types';
 type Query = QueryRequest['queries'][number];
 const scalarValues: Record<string, [number, number, string]> = {
@@ -33,6 +34,7 @@ export function teamMetric(
   to: string,
   state: string | null,
 ): QueryResult | undefined {
+  if (body.filters?.team_ids?.includes('33333333-3333-4333-8333-333333333333')) state = 'masked';
   const fields = (name: string, unit: string, labels: Record<string, string> = {}): Field => ({
     name,
     type: 'number',
@@ -60,7 +62,7 @@ export function teamMetric(
   const selection = body.filters || {};
   const factor =
     (!selection.team_ids?.length
-      ? 32 / 11
+      ? 35 / 11
       : selection.team_ids[0].startsWith('222')
         ? 21 / 11
         : 1) *
@@ -89,7 +91,7 @@ export function teamMetric(
     const [v, prev, unit] = scalarValues[q.metric_id];
     const scale = unit === 'USD' ? amountFactor * discount : unit === 'count' ? factor : 1;
     const members = !selection.team_ids?.length
-      ? 36
+      ? 39
       : selection.team_ids[0].startsWith('222')
         ? 24
         : 12;
@@ -191,6 +193,6 @@ export function teamMetric(
         [times, times.map((_, j) => Math.round(base * pattern[j % 8] * factor))],
       );
     });
-  } else return undefined;
+  } else return detailMetric(q, body, from, to, state, factor);
   return { status: 200, frames: state === 'empty' ? [] : frames };
 }
