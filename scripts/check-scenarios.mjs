@@ -1,6 +1,9 @@
 import { chromium, expect } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
-const out = new URL('../docs/validation/phase-6/', import.meta.url);
+const out = new URL(
+  `../docs/validation/${process.env.VALIDATION_DIR || 'phase-6'}/`,
+  import.meta.url,
+);
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
@@ -28,6 +31,11 @@ async function open(id) {
   await expect(dialog().getByRole('heading', { name: '이 질문에 답하는 지표' })).toBeVisible();
 }
 async function close() {
+  if (new URL(page.url()).pathname.startsWith('/runs/')) {
+    await page.getByRole('link', { name: '시나리오', exact: true }).click();
+    await expect(page.locator('#catalog')).toBeVisible();
+    return;
+  }
   await dialog().getByRole('button', { name: '드로어 닫기' }).click();
   await expect(dialog()).toHaveCount(0);
 }
@@ -84,7 +92,7 @@ try {
   await expect(dialog().getByRole('button', { name: '실행', exact: true })).toBeEnabled();
   await shot('budget-drawer');
   await dialog().getByRole('button', { name: '실행', exact: true }).click();
-  await expect(dialog().getByRole('heading', { name: '분석이 완료되었습니다.' })).toBeVisible({
+  await expect(page.getByRole('heading', { name: '판정 · findings' })).toBeVisible({
     timeout: 15000,
   });
   const count = calls.filter((c) => c.method === 'GET' && c.url.includes('/scenario-runs/')).length;
@@ -105,7 +113,7 @@ try {
   await shot('failed');
   await mode('normal');
   await dialog().getByRole('button', { name: '재실행', exact: true }).click();
-  await expect(dialog().getByRole('heading', { name: '분석이 완료되었습니다.' })).toBeVisible({
+  await expect(page.getByRole('heading', { name: '판정 · findings' })).toBeVisible({
     timeout: 15000,
   });
   await close();

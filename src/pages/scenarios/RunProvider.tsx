@@ -109,7 +109,27 @@ function useRunsState() {
       }
     }
   }
+  function accept(run: Run, retryMs = 2000) {
+    const existing = entries.current.get(run.run_id!);
+    if (existing) return;
+    const entry: RunEntry = { run, revision: 0 };
+    entries.current.set(run.run_id!, entry);
+    schedule(entry, retryMs);
+    emit();
+  }
+  function forget(id: string) {
+    const entry = entries.current.get(id);
+    if (entry) {
+      clearTimeout(entry.timer);
+      entry.controller?.abort();
+      entry.revision++;
+    }
+    entries.current.delete(id);
+    emit();
+  }
   return {
+    accept,
+    forget,
     entries: [...entries.current.values()].reverse(),
     revision,
     pending,

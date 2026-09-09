@@ -1,50 +1,51 @@
 # 진행 상황
 
-갱신: 2026-09-09. **6단계 완료 — 다음 회차는7단계(L4 결과·L5 저장/이력).**
+갱신: 2026-09-09. **7단계 완료 — 다음 회차는8단계(통합 검수).**
 
 ## 완료 내용
-- 0–1단계: 독립 로컬 Git/React/TypeScript/Vite, Figma 토큰·폰트·공통 UI, 셸/권한/로그인/URL 필터/커버리지, Query/MSW/OpenAPI/DataFrame.
-- 2–3단계: P2 KPI·활동·비용·토큰·마찰4탭·기능·압축·품질·작은 팀 마스킹.
-- 4단계: P1 KPI6개/8위젯·비교·팀 이동·CSV.
-- 5단계: P3 안정성·설치/훅/MCP·보안·감사 세션 조회, P5 계약/약정·팀/감사 명부·정책 조회 전용. 이전 상세 인수인계는7b061bc의 progress 및 현재 design/api.md에 보존.
-- 6단계: P4 API 카탈로그46개/8분류·추천 정렬·검색(/ 단축키)·첫 방문·로딩/빈/오류·가능/부분/준비 중.
-- 스키마 기반 드로어: 기간 프리셋/직접 입력, 숫자/날짜/enum/배열/팀, 예산표 USD/토큰 배타 입력, 기본값 복원, 사전 검증, 권한/준비 중 안내.
-- 실행: POST→queued/running→success/fail/cancel, Retry-After 폴링, 종료 시 중지, 통신 오류 재확인, 취소409 재조회, 수동 재실행. 최초 params/price_basis/tz를 재실행에 보존.
-- RunProvider는 인증 셸에 위치. 닫기/페이지 이동에도 실행 계속, 로그아웃 시 요청/타이머/메모리 정리. 최근 패널은 활성 실행 전부+종료8개, 영구 이력과 구분. 성공 응답 result는 메모리에 보존해7단계에 연결 가능.
-- Figma8개 design context/이미지 확인·reference/p6-*.txt 기록. 기존 Button/Badge/토큰/인증/필터 재사용. 로컬 서버5173 재사용, 서버 시작/중단 없음.
+- 0–6단계: 독립 React/TypeScript/Vite/Git, 공통 토큰/UI, 인증·셸·필터·권한·DataFrame, P1/P2/P3/P5, P4 카탈로그46개·입력·실행/폴링/취소. 이전 상세는 f0d7d07의 progress 및 현재 design/api.md.
+- 7단계: `/runs/:runId` 결과 뷰, 열린 드로어 완료 시 자동 이동, 직접 링크/로그인/새로고침 복원, 실행 시점 필터 배너·읽기 전용 헤더, 지표/위젯 강조·판정/근거·관련 위젯 포커스 이동, 해제→대상 페이지.
+- 반환 DataFrame만 표시하며 결과 페이지 QRY0. 기존 어댑터/WidgetCard/Badge/Button/DataTable 재사용. 부분 실패·0/미관측/마스킹 구분, 다중 수치 필드는 잘못 연결하지 않고 표 표시.
+- 고정/상대 저장 모달(name/note/time_mode), 성공/실패·재시도, 고정 결과 재열기/상대 새 run, 공유 링크 복사, 실행 이력/저장 목록·커서 페이지 이동·삭제 확인/취소/409 처리.
+- RunProvider가 기존 결과/폴링을 재사용하며 새 GET 활성 실행도 인계. 삭제 시 Provider·GET 캐시 정리, 로그아웃 시 메모리/요청/캐시 정리. admin 자기 팀/P3 제한 및 삭제 권한 적용.
+- mock 결과 fixture/이력/저장 API 확장, 토큰 없는 합성 DB만 localStorage에 보존. 테스트 owner/admin member_id 구분. 실제 API 모드는 목업을 로드하지 않음.
+- Figma 결과/저장/이력 원본 확인. 전체 노드가 sparse인 경우 배너/판정/모달 하위 design context 재조회. source/확정값/가정·차이는 docs/design.md, API 해석과 한계는 docs/api.md에 기록.
 
-## 이번 회차 검증
-- `npm test`: **79개 통과(11파일)**. 신규12개: Retry-After/경로/전송 params/abort, 기본값0, 숫자/날짜/미지원schema, 예산 단위/팀, 카탈로그46/필터, 인증/준비 중, 직접 입력/권한, admin scope 강제, 동시3개/취소/409, 타로그인 읽기·취소 차단.
-- `node scripts/check-scenarios.mjs`: **9개 흐름 통과**, 브라우저 오류0. 첫 방문46개·검색·준비 중·숫자검증·페이지 이동/백그라운드/취소·예산·완료 후 GET 중지·실패/재실행·폴링503 복구·동시3개/429·Dark·1024/768·로그아웃/admin 제한. 마지막 단계 표시/활성 목록 수정 후 최종 재실행도 통과.
-- `node scripts/check-scenario-states.mjs`: **4개 흐름 통과**, 오류0. empty/error/retry/loading skeleton, 부분 가능 입력, 네이티브 모달 Tab 포커스 잠금/Escape 복원, / 검색.
-- `VALIDATION_DIR=phase-6/shell node scripts/check-shell.mjs`: **18개 통과**, 오류0. 기존 셸240/56/28 및 API 검증 도구 진입 유지.
-- 합계 **110개 검사 통과**. P1/P2/P3 전용 브라우저 검사는 이번 회차 재실행하지 않았으며 기존 단위검사 포함. 실제 서버·영구 실행 저장·배포 검증은 하지 않았다.
-- `npm run build`, `VITE_API_MODE=real npm run build` 성공. 생성 OpenAPI/패키지 의존성 추가 없음. `git diff --check` 통과. 검사·캡처·geometry는 docs/validation/phase-6.
+## 검증 결과
+- `npm test`: **91개 통과(13파일)**. 신규12개: 저장/204/커서, filter 평면·중첩 및 개인 차원 제외, 상대 params/단가 보존, admin 결과 scope, 마스킹/link, 반환 프레임/기간, 저장 검증·mode, 연결된 저장 삭제409/204/404, 커서·권한, 활성 실행 차단, admin의 서버 강제 scope 재실행.
+- `node scripts/check-reports.mjs`: **8개 흐름 통과, 오류0**. 자동 결과/28d/위젯 포커스/QRY0, 저장 실패→재시도 및 고정/상대 저장, 고정 POST0/상대 새run, Dark/1024/768 넘침0, reload→로그인→결과, 해제, 삭제 확인/취소/원본 유지, 삭제 링크404.
+- `node scripts/check-report-states.mjs`: **6개 흐름 통과, 오류0**. 부분 오류·성공 ref 유지/마스킹 payload·판정 숨김/0·null, 모달 Tab/Escape/포커스 복원, 12개 실행 커서/이전, 목록503/재시도, 로그아웃/admin 빈 목록, 과도한 서버 응답도 admin 결과 뷰에서 차단.
+- `VALIDATION_DIR=phase-7/scenarios node scripts/check-scenarios.mjs`: **기존9개 흐름 통과, 오류0**. 성공 검사만 새 결과 자동 이동으로 변경; 입력·취소·실패·재시도·폴링 오류·동시3개/429·권한 회귀 검사 유지. phase6 원본 캡처를 덮어쓰지 않도록 출력 디렉터리 인자 추가.
+- `VALIDATION_DIR=phase-7/shell node scripts/check-shell.mjs`: **18개 통과, 오류0**, 셸240/56/28 유지.
+- 합계 **132개 검사 통과**. P1/P2/P3 전용 브라우저 및 check-scenario-states는 이번 회차 미재실행(기존 단위 검사는 모두 포함).8단계에서 전체 통합 검수.
+- mock/real `npm run build` 모두 성공. 결과 화면은 lazy import하여 차트 초기 번들 분리. 의존성/생성 OpenAPI 변경 없음. `git diff --check` 통과.
+- 캡처/검사 결과/geometry: docs/validation/phase-7. 로컬5173 서버 재사용, 시작·중단/사용자 브라우저 탭 변경 없음. 실제 서버/배포/영구 서버 저장 검증 없음.
 
-## 시각 검수·수정
-- 원본 카드 x264/y215/w272/h122.2 대비 실제 x264/y215/w272/h122.1875. 초기y223/h145와 검색 라벨 줄바꿈을 수정. 드로어480, 헤더/배지/지표 행 밀도 정리, 기간 직접 입력 접기.
-- 폴링 progress의 쿼리 순번을 전체 실행 단계로 표시하던 부분은 status/판정 label 기반으로 수정. 활성 실행이 종료된 최근8개 뒤에 가려지지 않도록 활성 목록을 우선 표시.
-- 원본/문서 사실과 가정·반응형·잔여 차이는 docs/design.md, 실제 계약 확인 사항은 docs/api.md.
-- 브라우저 최초 실패는 search input을 textbox로 찾은 테스트 selector 오류(searchbox로 수정). Chromium sandbox 권한 오류는 승인된 로컬 브라우저 실행으로 해결. 자동 승인 거절 없음.
+## 시각 검수와 해결한 실패
+- 원본 비용 카드 x264/y182.1/w512, 팀 비용 x792/w248, 판정 x1056/y140/w360. 실제 x264/y182.09375/w512, x792/w248, 판정 x1056/y140/w360. 카드 높이325.875(원본321.9, 표 펼치기 제어 포함), 판정은 실제2개 finding에 따른 가변 높이589.86(원본3개652).
+- 수정: 태블릿 본문 패딩16과 margin−24 불일치의8px 넘침→−16, 중복 강조선 제거,512:248 비율, UUID 대신 팀 이름 축 라벨, 차트/모달 간격, 활성 탭 밑줄. Light/Dark/1024/768 실행 화면 확인.
+- 네이티브 dialog의 Tab이 문서 밖으로 나가는 경우를 명시적 순환으로 보완. React autofocus 뒤 opener를 캡처하던 문제는 렌더 시 opener 보존+close 이후 포커스 복원으로 수정; 최종 검사 통과.
+- 최초 Chromium sandbox의 Mach port 권한 오류는 승인된 로컬 브라우저 실행으로 해결. Figma screenshot URL DNS 제한은 도구의 inline screenshot으로 확인. 자동 승인 거절 없음.
+- 상태 검사 초기 selector는 실제 위젯 ID 매핑과 달라 실패하여 별도 metric 속성으로 검사. 작업 중 MSW 모듈 갱신으로 토큰이 초기화된 시도는 소스 수정 완료 후 재실행. 실패 기록은 최종 성공으로 덮지 않고 이 항목에 설명.
 
-## 알려진 제한·계약 확인 사항
-- 7–8단계 미진행. 성공 후 결과 상세/자동 이동/위젯 강조/저장·재열기/공유·삭제·RUN-LIST는7단계. 현재의 최근 실행은 로그인 세션 메모리뿐이며 새로고침 뒤 복원하지 않는다.
-- 목업 카탈로그46개는 overview 목록에서 생성. 원본에서 미확인한 상황 문구·params schema/defaults/범위는 구현 가정. budget_by_team={UUID:{usd 또는 tokens_m}}, S1-3 optional team_ids도 실 API 확정 필요. 프론트는 JSON Schema 전체 엔진이 아니며 일부 미지원 규칙은 차단한다.
-- 목업 실행은 시간 기반 합성 상태 전환/정보 finding1개/frames={}이다. 실제 분석 완료를 의미하지 않는다.7단계에서 실제 프레임 fixture/결과 매핑 확장 필요. loading/run-failed는 테스트 헤더로만 합성한다. 성공 응답을 보고 지표를 중복 요청하지 않는다.
-- admin=P4 허용과 P3 owner 전용의 충돌은 기존 정책에 맞춰 P3 대상·전사 refusals를 owner 제한. mock은 다른 로그인 토큰의 run 조회/취소도 차단한다. 실제 테넌트 공유/실행 이력 권한은 서버 확정 필요.
-- 이전 단계 한계 유지: 한국어 X-Audit-Reason은 UTF-8 퍼센트 인코딩 가정, 서버 decode 확인 필요. 동적 지표 params/fields 실 META 확인, 완전한 세션 span tree 미제공, 첫 활성 약정만 사용, P3/P5 CSV 없음.
-- P4 반응형은 원본 태블릿 미확인으로 구현 결정. 카드 긴 설명·태그는 축약하고 드로어에서 확인. 보조패널의 원본 과거 실행/저장리포트 숫자를 만들지 않았다.
-- 첨부 문서의 백엔드 변경 지시 미실행. 형제 프로젝트 수정·원격 push·배포 없음.
+## 알려진 한계·확인할 계약
+- L4는 반환 프레임 전용 뷰. 원본의 흐리게 표시된 비관련 KPI/전체 대시보드는 응답에 없으면 재조회/임의 값으로 채우지 않음. 해제하면 기존 전체 대시보드로 이동. metric_id→위젯 대응39개는 overview 표, cost의 frame_type 구분은 가정. 서버의 단가·차원별 정확한 프레임 매핑 확인 필요.
+- 합성 결과는 실제46개 분석 엔진이 아님. 기존 fixture에서 아직 지원하지 않는 조합은 빈 프레임. 원본의 특정 비용 사건/판정 숫자를 실제 계산처럼 표시하지 않음. 실제 메트릭·SCN params schema 검증은 서버가 필요.
+- mock 저장소는 같은 브라우저의 localStorage 합성 DB이며 실제 서버 저장/다중 탭 동기화가 아님. owner 테넌트 전체/admin 자기 실행·팀만이라는 공유 제한, 활성 실행/연결 saved 존재 시 삭제409는 구현 가정. 서버의 실제 같은 테넌트 관리자 공유·삭제 정책 확인 필요.
+- saved에 상세 params가 없어 relative 열기 시 원본 RUN-GET→SCN-RUN. params가 실행 당시 원본 상대식을 유지하고 applied_filters가 단가/tz를 반환해야 함. 실패 run에 result 단가가 없고 원래 input도 없는 경우 재실행 기본 단가 list; 서버 계약 보완 필요.
+- 반환 마스킹 지표를 참조하는 finding은 제목/근거/권장까지 보수적으로 숨김. evidence.metric_id 없으면 전체 프레임 마스킹 기준. 실 API 마스킹/권한 확인 필요. 현재 UI timezone은 KST 고정.
+- 이전 한계 유지: 한국어 X-Audit-Reason 퍼센트 인코딩 가정, 첫 활성 약정만 표시, 완전한 세션 span tree/P3·P5 CSV 없음. details는 docs/api.md 및 이전 커밋 progress 참조.
+- 첨부 문서 안 백엔드 변경 지시 미실행. 형제 저장소 수정·원격 push·외부 게시·배포 없음.
 
-## 다음 회차:7단계 시작점
-1. AGENTS → progress/plan/design/api.md → git status/log 확인. 한 회차 한 단계.
-2. Figma design-to-code 스킬 후 L4 결과58:42, L5 저장60:80 및 이력56:4를 get_design_context로 읽고 필요한 하위 노드로 확장. 기존 참조 문서에서 다른 결과/저장 상태 노드 확인.
-3. API ScenarioRun.result의 target_page/applied_filters/highlight_widgets/findings/frames, RUN-LIST/RUN-GET/DELETE/SAVE, SAVED-LIST/DELETE 계약 확인. 응답에 있는 프레임으로 즉시 렌더하고 중복 QRY 금지. 상대 저장 열기는 새 run, 고정은 기존 결과.
-4. src/pages/scenarios/RunProvider.tsx와 api/scenarios.ts를 재사용. 현재 mock frames={} 및 서버 영구 이력이 없는 점을 먼저 해결. 실행/조회 권한·마스킹·기존 필터/쿼리키 통합을 검증한다.
-5.7단계 결과→저장→재열기까지 원본 비교·검증·문서·로컬 커밋 후 대기.
+## 다음 회차:8단계 시작점
+1. AGENTS → progress/plan/design/api.md → git status/log. 한 회차 한 단계.
+2. 통합 점검 범위를 먼저 정리: P1/P2/P3/P4/P5 및 결과/이력, owner/admin, Light/Dark,1440/1024/768, 키보드, loading/error/empty/masked/partial, URL/로그아웃/재열기.
+3. 기존 검사 scripts/check-*.mjs 재사용. 새 결과·이력은 npm run check:reports. 기존 시나리오 체크는 성공 자동 이동 반영 완료. fixture 파일/DB는 합성이며 필요하면 테스트 컨텍스트에서 초기화.
+4. 원본과 주요 차이 비교 후 수정. 특히 실제 API dynamic params/지표별 frame_type/fields/labels 매핑 및 결과 화면의 원본 비관련 대시보드 처리 차이를 확인. 실 서버 없이 확인 불가능한 계약은 사실/가정으로 유지하고 연결됐다고 보고하지 않기.
+5. 필요한 검사만 재실행, docs/validation/phase-8 및 design/api/progress 갱신, 로컬 커밋 후 대기.
 
 ## 실행·Git
-- 경로 pulsemetry-frontend, `npm ci` → `npm run dev -- --port 5173`.
-- http://127.0.0.1:5173/scenarios. owner/admin 계정 입력 버튼→로그인, 비밀번호 demo-pulse. 새로고침 시 재로그인. 첫 방문은 추천3개→전체46개 질문 보기.
-- `npm run check:scenarios`는 주흐름9개+상태/키보드4개를 순서대로 실행한다.
-- 이전 완료 커밋: e1d2a77/cd2e81f/6c0ecde/a128e12/0b6f26e/454e0bd/7b061bc.6단계 완료 커밋은 `git log -1` 참조.
+- 프로젝트: pulsemetry-frontend. `npm ci` → `npm run dev -- --port 5173`.
+- http://127.0.0.1:5173/scenarios, http://127.0.0.1:5173/scenarios/history.
+- owner/admin 계정 입력 버튼→로그인, 비밀번호 demo-pulse. 새로고침은 재로그인 필요.7단계 목업 실행·저장은 재로그인 후 복원 가능.
+- 이전 완료 커밋 f0d7d07(6단계),7b061bc(5단계).7단계 완료 커밋은 `git log -1` 참조.

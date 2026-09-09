@@ -1,4 +1,4 @@
-import { RunProvider } from '../pages/scenarios/RunProvider';
+import { RunProvider, useRuns } from '../pages/scenarios/RunProvider';
 import { ScenarioHeader } from '../pages/scenarios/Scenarios';
 import { OverviewCsv } from '../pages/overview/OverviewCsv';
 import { series } from '../widgets/model';
@@ -196,6 +196,10 @@ export function Shell() {
 }
 function GlobalHeader() {
   const location = useLocation();
+  const runView = location.pathname.startsWith('/runs/');
+  const run = useRuns().entries.find(
+    (e) => `/runs/${encodeURIComponent(e.run.run_id!)}` === location.pathname,
+  )?.run;
   const { profile } = useAuth();
   const { value, serialized, options, auto, setAuto, update } = useScopedFilters();
   const cache = useQueryClient();
@@ -210,8 +214,8 @@ function GlobalHeader() {
         },
         signal,
       ),
-    enabled: !!options.data,
-    refetchInterval: auto ? 300000 : false,
+    enabled: !!options.data && !runView,
+    refetchInterval: auto && !runView ? 300000 : false,
   });
   async function refresh() {
     await cache.invalidateQueries({ queryKey: ['filters'] });
@@ -219,7 +223,7 @@ function GlobalHeader() {
   }
   return (
     <>
-      {location.pathname === '/scenarios' ? (
+      {location.pathname.startsWith('/scenarios') ? (
         <ScenarioHeader />
       ) : location.pathname === '/settings' ? (
         <div className={s.settingsBar}>
@@ -230,7 +234,11 @@ function GlobalHeader() {
           <small>조회 전용 · 편집은 enrollment 관리 API에서</small>
         </div>
       ) : (
-        <div className={s.toolbar}>
+        <fieldset
+          className={s.toolbar}
+          disabled={runView}
+          title={runView ? '필터 변경은 시나리오 해제 후 가능합니다.' : undefined}
+        >
           <div className={s.inline}>
             <Segment
               label="기간"
@@ -238,7 +246,15 @@ function GlobalHeader() {
               value={value.to === 'now' ? value.from : ''}
               onChange={(from) => update({ from, to: 'now' })}
             />
-            <DateRange value={value} data={coverage.data} onChange={update} />
+            <DateRange
+              value={value}
+              data={
+                runView && run?.resolved_from && run.resolved_to
+                  ? { resolved_from: run.resolved_from, resolved_to: run.resolved_to }
+                  : coverage.data
+              }
+              onChange={update}
+            />
             <label className={s.inline}>
               비교
               <select
@@ -297,7 +313,7 @@ function GlobalHeader() {
               </Button>
             )}
           </div>
-        </div>
+        </fieldset>
       )}
       {options.isError && (
         <div className={s.notice} role="alert">
@@ -306,7 +322,9 @@ function GlobalHeader() {
       )}
       <div className={s.coverage} role="status" aria-label="텔레메트리 커버리지">
         <span className={s.dot} />
-        {coverage.isPending ? (
+        {runView ? (
+          '시나리오 실행 시점의 결과 · 현재 커버리지 재조회 없음'
+        ) : coverage.isPending ? (
           '커버리지를 불러오는 중…'
         ) : coverage.isError || coverage.data?.results.A?.status !== 200 ? (
           <span>
@@ -450,7 +468,7 @@ function DateRange({
   onChange,
 }: {
   value: Filters;
-  data?: QueryResponse;
+  data?: Pick<QueryResponse, 'resolved_from' | 'resolved_to'>;
   onChange: (p: Partial<Filters>) => void;
 }) {
   const [open, setOpen] = useState(false),

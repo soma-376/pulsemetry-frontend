@@ -1,0 +1,811 @@
+export default function P4L5() {
+  return (
+    <div className="bg-[var(--surface\/card,white)] relative size-full" data-node-id="56:4" data-name="P4 런처 · L5 이력 표">
+      <div className="absolute bg-[var(--surface\/bg,#f6f7f9)] h-[772px] left-px top-px w-[1440px]" data-node-id="56:5" data-name="App">
+        <div className="absolute bg-[var(--surface\/card,white)] border-[var(--border\/default,#e2e5ea)] border-r border-solid h-[772px] left-0 top-0 w-[240px]" data-node-id="56:6" data-name="box">
+          <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] left-[16px] rounded-[5px] size-[20px] top-[18px]" data-node-id="56:7" data-name="box" />
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[44px] not-italic text-[14px] text-[color:var(--text\/1,#111827)] top-[17.75px] tracking-[-0.14px] whitespace-nowrap" data-node-id="56:8">
+            Pulsemetry
+          </p>
+          <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid left-[199px] rounded-[6px] size-[24px] top-[16px]" data-node-id="56:9" data-name="box">
+            <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[11.5px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] text-center top-[4.05px] whitespace-nowrap" data-node-id="56:10">
+              ‹
+            </p>
+          </div>
+          <div className="absolute h-[34px] left-[8px] rounded-[6px] top-[52px] w-[223px]" data-node-id="56:11" data-name="box">
+            <div className="absolute border-[1.5px] border-[var(--text\/2,#4b5563)] border-solid left-[10px] opacity-85 rounded-[3px] size-[14px] top-[10px]" data-node-id="56:12" data-name="box" />
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[34px] not-italic text-[13px] text-[color:var(--text\/2,#4b5563)] top-[7.43px] whitespace-nowrap" data-node-id="56:13">
+              개요
+            </p>
+          </div>
+          <div className="absolute h-[34px] left-[8px] rounded-[6px] top-[88px] w-[223px]" data-node-id="56:14" data-name="box">
+            <div className="absolute border-[1.5px] border-[var(--text\/2,#4b5563)] border-solid left-[10px] opacity-85 rounded-[7px] size-[14px] top-[10px]" data-node-id="56:15" data-name="box" />
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[34px] not-italic text-[13px] text-[color:var(--text\/2,#4b5563)] top-[7.43px] whitespace-nowrap" data-node-id="56:16">
+              팀 분석
+            </p>
+          </div>
+          <div className="absolute h-[34px] left-[8px] rounded-[6px] top-[124px] w-[223px]" data-node-id="56:17" data-name="box">
+            <div className="absolute border-[1.5px] border-[var(--text\/2,#4b5563)] border-solid left-[10px] opacity-85 rounded-bl-[7px] rounded-br-[7px] rounded-tl-[3px] rounded-tr-[3px] size-[14px] top-[10px]" data-node-id="56:18" data-name="box" />
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[34px] not-italic text-[13px] text-[color:var(--text\/2,#4b5563)] top-[7.43px] whitespace-nowrap" data-node-id="56:19">
+              운영 · 보안
+            </p>
+          </div>
+          <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[34px] left-[8px] rounded-[6px] top-[160px] w-[223px]" data-node-id="56:20" data-name="box">
+            <div className="absolute border-[1.5px] border-[var(--accent\/blue,#1d4ed8)] border-solid left-[10px] opacity-85 rounded-bl-[3px] rounded-br-[7px] rounded-tl-[7px] rounded-tr-[3px] size-[14px] top-[10px]" data-node-id="56:21" data-name="box" />
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[34px] not-italic text-[13px] text-[color:var(--accent\/blue,#1d4ed8)] top-[7.43px] whitespace-nowrap" data-node-id="56:22">
+              시나리오
+            </p>
+            <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] h-[18px] left-[189.3px] rounded-[9px] top-[8px] w-[23.7px]" data-node-id="56:23" data-name="box">
+              <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[6px] not-italic text-[11px] text-[color:var(--misc\/on-accent,white)] top-0 whitespace-nowrap" data-node-id="56:24">
+                12
+              </p>
+            </div>
+          </div>
+          <div className="absolute h-[34px] left-[8px] rounded-[6px] top-[196px] w-[223px]" data-node-id="56:25" data-name="box">
+            <div className="absolute border-[1.5px] border-[var(--text\/2,#4b5563)] border-solid left-[10px] opacity-85 rounded-[7px] size-[14px] top-[10px]" data-node-id="56:26" data-name="box" />
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[34px] not-italic text-[13px] text-[color:var(--text\/2,#4b5563)] top-[7.43px] whitespace-nowrap" data-node-id="56:27">
+              설정
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-solid border-t h-[116.1px] left-[8px] top-[643.9px] w-[223px]" data-node-id="56:28" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[13px] text-[color:var(--text\/1,#111827)] top-[11.82px] whitespace-nowrap" data-node-id="56:29">
+              코드웍스
+            </p>
+            <div className="absolute h-[17.4px] left-[8px] overflow-clip top-[32.8px] w-[207px]" data-node-id="56:30" data-name="box">
+              <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[-0.45px] whitespace-nowrap" data-node-id="56:31">
+                admin@codeworks.io
+              </p>
+            </div>
+            <div className="absolute bg-[var(--surface\/sub,#eef0f3)] border border-[var(--border\/default,#e2e5ea)] border-solid h-[17px] left-[8px] rounded-[4px] top-[57.7px] w-[45.3px]" data-node-id="56:32" data-name="box">
+              <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[6px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[-0.48px] whitespace-nowrap" data-node-id="56:33">
+                owner
+              </p>
+            </div>
+            <div className="absolute bg-[var(--surface\/sub,#eef0f3)] border border-[var(--border\/default,#e2e5ea)] border-solid h-[30px] left-[4px] rounded-[6px] top-[85.1px] w-[215px]" data-node-id="56:34" data-name="box">
+              <div className="absolute bg-[var(--text\/1,#111827)] h-[24px] left-[2px] rounded-[4px] top-[2px] w-[103.5px]" data-node-id="56:35" data-name="box">
+                <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[51.75px] not-italic text-[11px] text-[color:var(--misc\/on-inverse,white)] text-center top-[5.5px] whitespace-nowrap" data-node-id="56:36">
+                  라이트
+                </p>
+              </div>
+              <div className="absolute h-[24px] left-[107.5px] rounded-[4px] top-[2px] w-[103.5px]" data-node-id="56:37" data-name="box">
+                <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[51.2px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] text-center top-[5.5px] whitespace-nowrap" data-node-id="56:38">
+                  다크
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="absolute bg-[var(--surface\/card,white)] border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[56px] left-[240px] top-0 w-[1200px]" data-node-id="56:39" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[24px] not-italic text-[16px] text-[color:var(--text\/1,#111827)] top-[15.8px] whitespace-nowrap" data-node-id="56:40">
+            시나리오
+          </p>
+          <div className="absolute h-[56px] left-[95.3px] top-[-0.5px] w-[49px]" data-node-id="56:41" data-name="box">
+            <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[24.5px] not-italic text-[13px] text-[color:var(--text\/3,#6b7280)] text-center top-[19.05px] whitespace-nowrap" data-node-id="56:42">
+              카탈로그
+            </p>
+          </div>
+          <div className="absolute border-[var(--text\/1,#111827)] border-b-2 border-solid h-[56px] left-[160.3px] top-[-0.5px] w-[106.8px]" data-node-id="56:43" data-name="box">
+            <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[53.9px] not-italic text-[13px] text-[color:var(--text\/1,#111827)] text-center top-[19.05px] whitespace-nowrap" data-node-id="56:44">
+              이력 · 저장된 리포트
+            </p>
+          </div>
+          <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid h-[32px] left-[836px] rounded-[6px] top-[11.5px] w-[340px]" data-node-id="56:45" data-name="box">
+            <div className="absolute border-[1.5px] border-[var(--accent\/gray,#6b7280)] border-solid left-[10px] rounded-[6px] size-[12px] top-[9px]" data-node-id="56:46" data-name="box" />
+            <div className="absolute h-[17.5px] left-[30px] top-[6.3px] w-[274.3px]" data-node-id="56:47" data-name="box" />
+            <div className="absolute border border-[var(--border\/default,#e2e5ea)] border-solid h-[18px] left-[312.3px] rounded-[4px] top-[6px] w-[15.7px]" data-node-id="56:48" data-name="box">
+              <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[5px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[-0.48px] whitespace-nowrap" data-node-id="56:49">
+                /
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[28px] left-[240px] overflow-clip top-[56px] w-[1200px]" data-node-id="56:50" data-name="box">
+          <div className="absolute bg-[var(--accent\/gray,#6b7280)] left-[24px] rounded-[3px] size-[6px] top-[10.5px]" data-node-id="56:51" data-name="box" />
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[38px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[4.35px] whitespace-nowrap" data-node-id="56:52">
+            텔레메트리 활성 기기 기준 · 활성 설치
+          </p>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[217.7px] not-italic text-[12px] text-[color:var(--text\/1,#111827)] top-[4.35px] whitespace-nowrap" data-node-id="56:53">
+            128
+          </p>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[238px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[4.35px] whitespace-nowrap" data-node-id="56:54">
+            / 활성 구성원
+          </p>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[305.9px] not-italic text-[12px] text-[color:var(--text\/1,#111827)] top-[4.35px] whitespace-nowrap" data-node-id="56:55">
+            154
+          </p>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[326.6px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[4.35px] whitespace-nowrap" data-node-id="56:56">
+            (
+          </p>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[333.7px] not-italic text-[12px] text-[color:var(--text\/1,#111827)] top-[4.35px] whitespace-nowrap" data-node-id="56:57">
+            83%
+          </p>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[360px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[4.35px] whitespace-nowrap" data-node-id="56:58">
+            ) · 마지막 적재 3분 전
+          </p>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[977.2px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[4.35px] whitespace-nowrap" data-node-id="56:59">
+            가용성은 커버리지·어댑터 기준으로 계산됨
+          </p>
+        </div>
+        <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid h-[329.6px] left-[264px] rounded-[8px] top-[104px] w-[1152px]" data-node-id="56:344" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[13px] text-[color:var(--text\/1,#111827)] top-[15.83px] whitespace-nowrap" data-node-id="56:345">
+            실행 이력
+          </p>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[67.1px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[17.05px] whitespace-nowrap" data-node-id="56:346">
+            · 최근 30일 · 같은 테넌트 관리자에게만 공유
+          </p>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[976px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[17.02px] whitespace-nowrap" data-node-id="56:347">
+            공유 링크 형식
+          </p>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-[1041.3px] not-italic text-[11.5px] text-[color:var(--text\/3,#6b7280)] top-[17.27px] whitespace-nowrap" data-node-id="56:348">{`/runs/{run_id}`}</p>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[30.6px] left-[16px] top-[44.9px] w-[105.5px]" data-node-id="56:349" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/3,#6b7280)] top-[5.93px] whitespace-nowrap" data-node-id="56:350">
+              실행 시각
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[30.6px] left-[121.5px] top-[44.9px] w-[208.8px]" data-node-id="56:351" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/3,#6b7280)] top-[5.93px] whitespace-nowrap" data-node-id="56:352">
+              시나리오
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[30.6px] left-[330.3px] top-[44.9px] w-[194.6px]" data-node-id="56:353" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/3,#6b7280)] top-[5.93px] whitespace-nowrap" data-node-id="56:354">
+              파라미터 요약
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[30.6px] left-[525px] top-[44.9px] w-[68.8px]" data-node-id="56:355" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/3,#6b7280)] top-[5.93px] whitespace-nowrap" data-node-id="56:356">
+              상태
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[30.6px] left-[593.7px] top-[44.9px] w-[231.9px]" data-node-id="56:357" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/3,#6b7280)] top-[5.93px] whitespace-nowrap" data-node-id="56:358">
+              실행자
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[30.6px] left-[825.7px] top-[44.9px] w-[168.2px]" data-node-id="56:359" data-name="box">
+            <p className="-translate-x-full [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[160.2px] not-italic text-[12.5px] text-[color:var(--text\/3,#6b7280)] text-right top-[5.93px] whitespace-nowrap" data-node-id="56:360">
+              findings
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[30.6px] left-[993.9px] top-[44.9px] w-[140.1px]" data-node-id="56:361" data-name="box" />
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[16px] top-[75.5px] w-[105.5px]" data-node-id="56:362" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/2,#4b5563)] top-[7.74px] whitespace-nowrap" data-node-id="56:363">
+              09-08 09:41
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] leading-[1.45] left-[121.5px] not-italic top-[75.5px] w-[208.8px] whitespace-nowrap" data-node-id="56:364" data-name="box">
+            <p className="absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] left-[8px] text-[11.5px] text-[color:var(--text\/3,#6b7280)] top-[9.57px]" data-node-id="56:365">
+              S1-3
+            </p>
+            <p className="absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] left-[40.5px] text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.74px]" data-node-id="56:366">
+              비용 스파이크·폭주 감지
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[330.3px] top-[75.5px] w-[194.6px]" data-node-id="56:367" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[7.75px] whitespace-nowrap" data-node-id="56:368">
+              28d · MA 7일 · +200% · 전사
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[525px] top-[75.5px] w-[68.8px]" data-node-id="56:369" data-name="box">
+            <div className="absolute bg-[var(--accent\/green,#15803d)] left-[8px] rounded-[3px] size-[6px] top-[15.1px]" data-node-id="56:370" data-name="box" />
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[19px] not-italic text-[11px] text-[color:var(--accent\/green,#15803d)] top-[9.73px] whitespace-nowrap" data-node-id="56:371">
+              완료
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[593.7px] top-[75.5px] w-[231.9px]" data-node-id="56:372" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-[8px] not-italic text-[11.5px] text-[color:var(--text\/2,#4b5563)] top-[8.16px] whitespace-nowrap" data-node-id="56:373">
+              admin@codeworks.io
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.7px] leading-[16px] left-[825.7px] not-italic text-[10.5px] text-right top-[75.5px] w-[168.2px] whitespace-nowrap" data-node-id="56:374" data-name="box">
+            <div className="absolute border border-[var(--accent\/red,#b91c1c)] border-solid h-[17.2px] left-[34.1px] rounded-[4px] text-[color:var(--accent\/red,#b91c1c)] top-[9px] w-[39.4px]" data-node-id="56:375" data-name="box">
+              <p className="-translate-x-full absolute left-[25.7px] top-[-0.37px]" data-node-id="56:376">
+                이상
+              </p>
+              <p className="-translate-x-full absolute left-[32.4px] top-[-0.37px]" data-node-id="56:377">
+                1
+              </p>
+            </div>
+            <div className="absolute border border-[var(--accent\/orange,#c2410c)] border-solid h-[17.2px] left-[77.4px] rounded-[4px] text-[color:var(--accent\/orange,#c2410c)] top-[9px] w-[39.4px]" data-node-id="56:378" data-name="box">
+              <p className="-translate-x-full absolute left-[25.7px] top-[-0.37px]" data-node-id="56:379">
+                주의
+              </p>
+              <p className="-translate-x-full absolute left-[32.4px] top-[-0.37px]" data-node-id="56:380">
+                1
+              </p>
+            </div>
+            <div className="absolute border border-[var(--accent\/blue,#1d4ed8)] border-solid h-[17.2px] left-[120.8px] rounded-[4px] text-[color:var(--accent\/blue,#1d4ed8)] top-[9px] w-[39.4px]" data-node-id="56:381" data-name="box">
+              <p className="-translate-x-full absolute left-[25.7px] top-[-0.37px]" data-node-id="56:382">
+                정보
+              </p>
+              <p className="-translate-x-full absolute left-[32.4px] top-[-0.37px]" data-node-id="56:383">
+                1
+              </p>
+            </div>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.7px] leading-[1.45] left-[993.9px] not-italic text-[11px] top-[75.5px] w-[140.1px] whitespace-nowrap" data-node-id="56:384" data-name="box">
+            <p className="-translate-x-full absolute left-[49.6px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.96px]" data-node-id="56:385">
+              열기
+            </p>
+            <p className="-translate-x-full absolute left-[102.3px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.96px]" data-node-id="56:386">
+              링크 복사
+            </p>
+            <p className="-translate-x-1/2 absolute left-[121.75px] text-[color:var(--text\/3,#6b7280)] text-center top-[10.3px]" data-node-id="56:387">
+              삭제
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[16px] top-[109.3px] w-[105.5px]" data-node-id="56:388" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/2,#4b5563)] top-[7.74px] whitespace-nowrap" data-node-id="56:389">
+              09-08 09:12
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] leading-[1.45] left-[121.5px] not-italic top-[109.3px] w-[208.8px] whitespace-nowrap" data-node-id="56:390" data-name="box">
+            <p className="absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] left-[8px] text-[11.5px] text-[color:var(--text\/3,#6b7280)] top-[9.57px]" data-node-id="56:391">
+              S3-4
+            </p>
+            <p className="absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] left-[40.5px] text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.74px]" data-node-id="56:392">
+              부서별 활용 격차 벤치마킹
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[330.3px] top-[109.3px] w-[194.6px]" data-node-id="56:393" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[7.75px] whitespace-nowrap" data-node-id="56:394">
+              28d · 전사
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[525px] top-[109.3px] w-[68.8px]" data-node-id="56:395" data-name="box">
+            <div className="absolute bg-[var(--accent\/green,#15803d)] left-[8px] rounded-[3px] size-[6px] top-[15.1px]" data-node-id="56:396" data-name="box" />
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[19px] not-italic text-[11px] text-[color:var(--accent\/green,#15803d)] top-[9.73px] whitespace-nowrap" data-node-id="56:397">
+              완료
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[593.7px] top-[109.3px] w-[231.9px]" data-node-id="56:398" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-[8px] not-italic text-[11.5px] text-[color:var(--text\/2,#4b5563)] top-[8.16px] whitespace-nowrap" data-node-id="56:399">
+              admin@codeworks.io
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.7px] leading-[16px] left-[825.7px] not-italic text-[10.5px] text-right top-[109.3px] w-[168.2px] whitespace-nowrap" data-node-id="56:400" data-name="box">
+            <div className="absolute border border-[var(--accent\/orange,#c2410c)] border-solid h-[17.2px] left-[77.4px] rounded-[4px] text-[color:var(--accent\/orange,#c2410c)] top-[9px] w-[39.4px]" data-node-id="56:401" data-name="box">
+              <p className="-translate-x-full absolute left-[25.7px] top-[-0.37px]" data-node-id="56:402">
+                주의
+              </p>
+              <p className="-translate-x-full absolute left-[32.4px] top-[-0.37px]" data-node-id="56:403">
+                2
+              </p>
+            </div>
+            <div className="absolute border border-[var(--accent\/blue,#1d4ed8)] border-solid h-[17.2px] left-[120.8px] rounded-[4px] text-[color:var(--accent\/blue,#1d4ed8)] top-[9px] w-[39.4px]" data-node-id="56:404" data-name="box">
+              <p className="-translate-x-full absolute left-[25.7px] top-[-0.37px]" data-node-id="56:405">
+                정보
+              </p>
+              <p className="-translate-x-full absolute left-[32.4px] top-[-0.37px]" data-node-id="56:406">
+                1
+              </p>
+            </div>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.7px] leading-[1.45] left-[993.9px] not-italic text-[11px] top-[109.3px] w-[140.1px] whitespace-nowrap" data-node-id="56:407" data-name="box">
+            <p className="-translate-x-full absolute left-[49.6px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.96px]" data-node-id="56:408">
+              열기
+            </p>
+            <p className="-translate-x-full absolute left-[102.3px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.96px]" data-node-id="56:409">
+              링크 복사
+            </p>
+            <p className="-translate-x-1/2 absolute left-[121.75px] text-[color:var(--text\/3,#6b7280)] text-center top-[10.3px]" data-node-id="56:410">
+              삭제
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[16px] top-[143px] w-[105.5px]" data-node-id="56:411" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/2,#4b5563)] top-[7.74px] whitespace-nowrap" data-node-id="56:412">
+              09-07 18:30
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] leading-[1.45] left-[121.5px] not-italic top-[143px] w-[208.8px] whitespace-nowrap" data-node-id="56:413" data-name="box">
+            <p className="absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] left-[8px] text-[11.5px] text-[color:var(--text\/3,#6b7280)] top-[9.57px]" data-node-id="56:414">
+              S2-2
+            </p>
+            <p className="absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] left-[40.5px] text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.74px]" data-node-id="56:415">
+              Rate Limit 상시 도달
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[330.3px] top-[143px] w-[194.6px]" data-node-id="56:416" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[7.75px] whitespace-nowrap" data-node-id="56:417">
+              7d · 데이터
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[525px] top-[143px] w-[68.8px]" data-node-id="56:418" data-name="box">
+            <div className="absolute bg-[var(--accent\/green,#15803d)] left-[8px] rounded-[3px] size-[6px] top-[15.1px]" data-node-id="56:419" data-name="box" />
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[19px] not-italic text-[11px] text-[color:var(--accent\/green,#15803d)] top-[9.73px] whitespace-nowrap" data-node-id="56:420">
+              완료
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[593.7px] top-[143px] w-[231.9px]" data-node-id="56:421" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-[8px] not-italic text-[11.5px] text-[color:var(--text\/2,#4b5563)] top-[8.16px] whitespace-nowrap" data-node-id="56:422">
+              secops@codeworks.io
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.7px] leading-[16px] left-[825.7px] not-italic text-[10.5px] text-right top-[143px] w-[168.2px] whitespace-nowrap" data-node-id="56:423" data-name="box">
+            <div className="absolute border border-[var(--accent\/red,#b91c1c)] border-solid h-[17.2px] left-[77.4px] rounded-[4px] text-[color:var(--accent\/red,#b91c1c)] top-[9px] w-[39.4px]" data-node-id="56:424" data-name="box">
+              <p className="-translate-x-full absolute left-[25.7px] top-[-0.37px]" data-node-id="56:425">
+                이상
+              </p>
+              <p className="-translate-x-full absolute left-[32.4px] top-[-0.37px]" data-node-id="56:426">
+                1
+              </p>
+            </div>
+            <div className="absolute border border-[var(--accent\/blue,#1d4ed8)] border-solid h-[17.2px] left-[120.8px] rounded-[4px] text-[color:var(--accent\/blue,#1d4ed8)] top-[9px] w-[39.4px]" data-node-id="56:427" data-name="box">
+              <p className="-translate-x-full absolute left-[25.7px] top-[-0.37px]" data-node-id="56:428">
+                정보
+              </p>
+              <p className="-translate-x-full absolute left-[32.4px] top-[-0.37px]" data-node-id="56:429">
+                1
+              </p>
+            </div>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.7px] leading-[1.45] left-[993.9px] not-italic text-[11px] top-[143px] w-[140.1px] whitespace-nowrap" data-node-id="56:430" data-name="box">
+            <p className="-translate-x-full absolute left-[49.6px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.96px]" data-node-id="56:431">
+              열기
+            </p>
+            <p className="-translate-x-full absolute left-[102.3px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.96px]" data-node-id="56:432">
+              링크 복사
+            </p>
+            <p className="-translate-x-1/2 absolute left-[121.75px] text-[color:var(--text\/3,#6b7280)] text-center top-[10.3px]" data-node-id="56:433">
+              삭제
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.5px] left-[16px] top-[176.7px] w-[105.5px]" data-node-id="56:434" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/2,#4b5563)] top-[7.64px] whitespace-nowrap" data-node-id="56:435">
+              09-07 17:02
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.5px] leading-[1.45] left-[121.5px] not-italic top-[176.7px] w-[208.8px] whitespace-nowrap" data-node-id="56:436" data-name="box">
+            <p className="absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] left-[8px] text-[11.5px] text-[color:var(--text\/3,#6b7280)] top-[9.48px]" data-node-id="56:437">
+              S1-1
+            </p>
+            <p className="absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] left-[40.5px] text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.64px]" data-node-id="56:438">
+              부서별 토큰 할당 불균형
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.5px] left-[330.3px] top-[176.7px] w-[194.6px]" data-node-id="56:439" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[7.55px] whitespace-nowrap" data-node-id="56:440">
+              28d · 6팀 · 예산표
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.5px] left-[525px] top-[176.7px] w-[68.8px]" data-node-id="56:441" data-name="box">
+            <div className="absolute bg-[var(--accent\/red,#b91c1c)] left-[8px] rounded-[3px] size-[6px] top-[15px]" data-node-id="56:442" data-name="box" />
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[19px] not-italic text-[11px] text-[color:var(--accent\/red,#b91c1c)] top-[9.52px] whitespace-nowrap" data-node-id="56:443">
+              실패
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.5px] left-[593.7px] top-[176.7px] w-[231.9px]" data-node-id="56:444" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-[8px] not-italic text-[11.5px] text-[color:var(--text\/2,#4b5563)] top-[8.06px] whitespace-nowrap" data-node-id="56:445">
+              lead.payments@codeworks.io
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.5px] left-[825.7px] top-[176.7px] w-[168.2px]" data-node-id="56:446" data-name="box" />
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.5px] leading-[1.45] left-[993.9px] not-italic text-[11px] top-[176.7px] w-[140.1px] whitespace-nowrap" data-node-id="56:447" data-name="box">
+            <p className="-translate-x-full absolute left-[49.6px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.86px]" data-node-id="56:448">
+              열기
+            </p>
+            <p className="-translate-x-full absolute left-[102.3px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.86px]" data-node-id="56:449">
+              링크 복사
+            </p>
+            <p className="-translate-x-1/2 absolute left-[121.75px] text-[color:var(--text\/3,#6b7280)] text-center top-[10.2px]" data-node-id="56:450">
+              삭제
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[16px] top-[210.2px] w-[105.5px]" data-node-id="56:451" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/2,#4b5563)] top-[7.74px] whitespace-nowrap" data-node-id="56:452">
+              09-07 11:20
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] leading-[1.45] left-[121.5px] not-italic top-[210.2px] w-[208.8px] whitespace-nowrap" data-node-id="56:453" data-name="box">
+            <p className="absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] left-[8px] text-[11.5px] text-[color:var(--text\/3,#6b7280)] top-[9.57px]" data-node-id="56:454">
+              S8-2
+            </p>
+            <p className="absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] left-[40.5px] text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.74px]" data-node-id="56:455">
+              예산 수립·비용 예측
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[330.3px] top-[210.2px] w-[194.6px]" data-node-id="56:456" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[7.75px] whitespace-nowrap" data-node-id="56:457">
+              90d · 성장 12%/월
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[525px] top-[210.2px] w-[68.8px]" data-node-id="56:458" data-name="box">
+            <div className="absolute bg-[var(--accent\/green,#15803d)] left-[8px] rounded-[3px] size-[6px] top-[15.1px]" data-node-id="56:459" data-name="box" />
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[19px] not-italic text-[11px] text-[color:var(--accent\/green,#15803d)] top-[9.73px] whitespace-nowrap" data-node-id="56:460">
+              완료
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[593.7px] top-[210.2px] w-[231.9px]" data-node-id="56:461" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-[8px] not-italic text-[11.5px] text-[color:var(--text\/2,#4b5563)] top-[8.16px] whitespace-nowrap" data-node-id="56:462">
+              admin@codeworks.io
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.7px] leading-[16px] left-[825.7px] not-italic text-[10.5px] text-right top-[210.2px] w-[168.2px] whitespace-nowrap" data-node-id="56:463" data-name="box">
+            <div className="absolute border border-[var(--accent\/orange,#c2410c)] border-solid h-[17.2px] left-[77.4px] rounded-[4px] text-[color:var(--accent\/orange,#c2410c)] top-[9px] w-[39.4px]" data-node-id="56:464" data-name="box">
+              <p className="-translate-x-full absolute left-[25.7px] top-[-0.37px]" data-node-id="56:465">
+                주의
+              </p>
+              <p className="-translate-x-full absolute left-[32.4px] top-[-0.37px]" data-node-id="56:466">
+                1
+              </p>
+            </div>
+            <div className="absolute border border-[var(--accent\/blue,#1d4ed8)] border-solid h-[17.2px] left-[120.8px] rounded-[4px] text-[color:var(--accent\/blue,#1d4ed8)] top-[9px] w-[39.4px]" data-node-id="56:467" data-name="box">
+              <p className="-translate-x-full absolute left-[25.7px] top-[-0.37px]" data-node-id="56:468">
+                정보
+              </p>
+              <p className="-translate-x-full absolute left-[32.4px] top-[-0.37px]" data-node-id="56:469">
+                2
+              </p>
+            </div>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.7px] leading-[1.45] left-[993.9px] not-italic text-[11px] top-[210.2px] w-[140.1px] whitespace-nowrap" data-node-id="56:470" data-name="box">
+            <p className="-translate-x-full absolute left-[49.6px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.96px]" data-node-id="56:471">
+              열기
+            </p>
+            <p className="-translate-x-full absolute left-[102.3px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.96px]" data-node-id="56:472">
+              링크 복사
+            </p>
+            <p className="-translate-x-1/2 absolute left-[121.75px] text-[color:var(--text\/3,#6b7280)] text-center top-[10.3px]" data-node-id="56:473">
+              삭제
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[16px] top-[243.9px] w-[105.5px]" data-node-id="56:474" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/2,#4b5563)] top-[7.74px] whitespace-nowrap" data-node-id="56:475">
+              09-06 16:48
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] leading-[1.45] left-[121.5px] not-italic top-[243.9px] w-[208.8px] whitespace-nowrap" data-node-id="56:476" data-name="box">
+            <p className="absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] left-[8px] text-[11.5px] text-[color:var(--text\/3,#6b7280)] top-[9.57px]" data-node-id="56:477">
+              S5-7
+            </p>
+            <p className="absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] left-[40.5px] text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.74px]" data-node-id="56:478">
+              AI 산출물 무검증 반출
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[330.3px] top-[243.9px] w-[194.6px]" data-node-id="56:479" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[7.75px] whitespace-nowrap" data-node-id="56:480">
+              28d · 2s 임계
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[525px] top-[243.9px] w-[68.8px]" data-node-id="56:481" data-name="box">
+            <div className="absolute bg-[var(--accent\/green,#15803d)] left-[8px] rounded-[3px] size-[6px] top-[15.1px]" data-node-id="56:482" data-name="box" />
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[19px] not-italic text-[11px] text-[color:var(--accent\/green,#15803d)] top-[9.73px] whitespace-nowrap" data-node-id="56:483">
+              완료
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[593.7px] top-[243.9px] w-[231.9px]" data-node-id="56:484" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-[8px] not-italic text-[11.5px] text-[color:var(--text\/2,#4b5563)] top-[8.16px] whitespace-nowrap" data-node-id="56:485">
+              secops@codeworks.io
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.7px] left-[825.7px] top-[243.9px] w-[168.2px]" data-node-id="56:486" data-name="box">
+            <div className="[word-break:break-word] absolute border border-[var(--accent\/orange,#c2410c)] border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[17.2px] leading-[16px] left-[120.8px] not-italic rounded-[4px] text-[10.5px] text-[color:var(--accent\/orange,#c2410c)] text-right top-[9px] w-[39.4px] whitespace-nowrap" data-node-id="56:487" data-name="box">
+              <p className="-translate-x-full absolute left-[25.7px] top-[-0.37px]" data-node-id="56:488">
+                주의
+              </p>
+              <p className="-translate-x-full absolute left-[32.4px] top-[-0.37px]" data-node-id="56:489">
+                1
+              </p>
+            </div>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.7px] leading-[1.45] left-[993.9px] not-italic text-[11px] top-[243.9px] w-[140.1px] whitespace-nowrap" data-node-id="56:490" data-name="box">
+            <p className="-translate-x-full absolute left-[49.6px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.96px]" data-node-id="56:491">
+              열기
+            </p>
+            <p className="-translate-x-full absolute left-[102.3px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.96px]" data-node-id="56:492">
+              링크 복사
+            </p>
+            <p className="-translate-x-1/2 absolute left-[121.75px] text-[color:var(--text\/3,#6b7280)] text-center top-[10.3px]" data-node-id="56:493">
+              삭제
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.5px] left-[16px] top-[277.6px] w-[105.5px]" data-node-id="56:494" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/2,#4b5563)] top-[7.64px] whitespace-nowrap" data-node-id="56:495">
+              09-06 10:05
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.5px] leading-[1.45] left-[121.5px] not-italic top-[277.6px] w-[208.8px] whitespace-nowrap" data-node-id="56:496" data-name="box">
+            <p className="absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] left-[8px] text-[11.5px] text-[color:var(--text\/3,#6b7280)] top-[9.48px]" data-node-id="56:497">
+              S4-4
+            </p>
+            <p className="absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] left-[40.5px] text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.64px]" data-node-id="56:498">
+              교육 효과 전후 비교
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.5px] left-[330.3px] top-[277.6px] w-[194.6px]" data-node-id="56:499" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[7.55px] whitespace-nowrap" data-node-id="56:500">
+              기준 08-18 · ±3주 · 결제
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.5px] left-[525px] top-[277.6px] w-[68.8px]" data-node-id="56:501" data-name="box">
+            <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] left-[8px] rounded-[3px] size-[6px] top-[15px]" data-node-id="56:502" data-name="box" />
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[19px] not-italic text-[11px] text-[color:var(--accent\/blue,#1d4ed8)] top-[9.52px] whitespace-nowrap" data-node-id="56:503">
+              실행 중
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.5px] left-[593.7px] top-[277.6px] w-[231.9px]" data-node-id="56:504" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-[8px] not-italic text-[11.5px] text-[color:var(--text\/2,#4b5563)] top-[8.06px] whitespace-nowrap" data-node-id="56:505">
+              lead.payments@codeworks.io
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.5px] left-[825.7px] top-[277.6px] w-[168.2px]" data-node-id="56:506" data-name="box" />
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.5px] leading-[1.45] left-[993.9px] not-italic text-[11px] top-[277.6px] w-[140.1px] whitespace-nowrap" data-node-id="56:507" data-name="box">
+            <p className="-translate-x-full absolute left-[49.6px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.86px]" data-node-id="56:508">
+              열기
+            </p>
+            <p className="-translate-x-full absolute left-[102.3px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.86px]" data-node-id="56:509">
+              링크 복사
+            </p>
+            <p className="-translate-x-1/2 absolute left-[121.75px] text-[color:var(--text\/3,#6b7280)] text-center top-[10.2px]" data-node-id="56:510">
+              삭제
+            </p>
+          </div>
+        </div>
+        <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid h-[259.9px] left-[264px] rounded-[8px] top-[449.6px] w-[1152px]" data-node-id="56:511" data-name="box">
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[13px] text-[color:var(--text\/1,#111827)] top-[15.83px] whitespace-nowrap" data-node-id="56:512">
+            저장된 리포트
+          </p>
+          <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[89.6px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[17.05px] whitespace-nowrap" data-node-id="56:513">
+            · 열 때 파라미터 고정 또는 상대 기간으로 재실행
+          </p>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[30.6px] left-[16px] top-[44.9px] w-[175.3px]" data-node-id="56:514" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/3,#6b7280)] top-[5.93px] whitespace-nowrap" data-node-id="56:515">
+              이름
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[30.6px] left-[191.3px] top-[44.9px] w-[251px]" data-node-id="56:516" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/3,#6b7280)] top-[5.93px] whitespace-nowrap" data-node-id="56:517">
+              시나리오
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[30.6px] left-[442.3px] top-[44.9px] w-[171.3px]" data-node-id="56:518" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/3,#6b7280)] top-[5.93px] whitespace-nowrap" data-node-id="56:519">
+              기간 모드
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[30.6px] left-[613.6px] top-[44.9px] w-[187.1px]" data-node-id="56:520" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/3,#6b7280)] top-[5.93px] whitespace-nowrap" data-node-id="56:521">
+              메모
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[30.6px] left-[800.7px] top-[44.9px] w-[246.7px]" data-node-id="56:522" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/3,#6b7280)] top-[5.93px] whitespace-nowrap" data-node-id="56:523">
+              저장
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[30.6px] left-[1047.4px] top-[44.9px] w-[86.6px]" data-node-id="56:524" data-name="box" />
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] left-[16px] top-[75.5px] w-[175.3px]" data-node-id="56:525" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.43px] whitespace-nowrap" data-node-id="56:526">
+              주간 비용 스파이크 점검
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] leading-[1.45] left-[191.3px] not-italic top-[75.5px] w-[251px] whitespace-nowrap" data-node-id="56:527" data-name="box">
+            <p className="absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] left-[8px] text-[11.5px] text-[color:var(--text\/3,#6b7280)] top-[9.27px]" data-node-id="56:528">
+              S1-3
+            </p>
+            <p className="absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] left-[40.5px] text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.43px]" data-node-id="56:529">
+              비용 스파이크·폭주 감지
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] left-[442.3px] top-[75.5px] w-[171.3px]" data-node-id="56:530" data-name="box">
+            <div className="absolute border border-[var(--border\/default,#e2e5ea)] border-solid h-[15px] left-[8px] rounded-[4px] top-[9.5px] w-[86px]" data-node-id="56:531" data-name="box">
+              <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[6px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[-1.47px] whitespace-nowrap" data-node-id="56:532">
+                상대(now-28d)
+              </p>
+            </div>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] left-[613.6px] top-[75.5px] w-[187.1px]" data-node-id="56:533" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[7.45px] whitespace-nowrap" data-node-id="56:534">
+              월요일 아침 확인용
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.2px] leading-[1.45] left-[800.7px] not-italic text-[12.5px] text-[color:var(--text\/2,#4b5563)] top-[75.5px] w-[246.7px] whitespace-nowrap" data-node-id="56:535" data-name="box">
+            <p className="absolute left-[8px] top-[7.43px]" data-node-id="56:536">
+              09-08
+            </p>
+            <p className="absolute left-[44.1px] top-[7.43px]" data-node-id="56:537">
+              ·
+            </p>
+            <p className="absolute left-[53.6px] top-[7.43px]" data-node-id="56:538">
+              admin@codeworks.io
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.2px] leading-[1.45] left-[1047.4px] not-italic text-[11px] top-[75.5px] w-[86.6px] whitespace-nowrap" data-node-id="56:539" data-name="box">
+            <p className="-translate-x-full absolute left-[48.7px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.66px]" data-node-id="56:540">
+              열기
+            </p>
+            <p className="-translate-x-1/2 absolute left-[68.15px] text-[color:var(--text\/3,#6b7280)] text-center top-[10px]" data-node-id="56:541">
+              삭제
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] left-[16px] top-[108.7px] w-[175.3px]" data-node-id="56:542" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.43px] whitespace-nowrap" data-node-id="56:543">
+              Q3 예산 vs 소진
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] leading-[1.45] left-[191.3px] not-italic top-[108.7px] w-[251px] whitespace-nowrap" data-node-id="56:544" data-name="box">
+            <p className="absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] left-[8px] text-[11.5px] text-[color:var(--text\/3,#6b7280)] top-[9.27px]" data-node-id="56:545">
+              S1-1
+            </p>
+            <p className="absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] left-[40.5px] text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.43px]" data-node-id="56:546">
+              부서별 토큰 할당 불균형
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] left-[442.3px] top-[108.7px] w-[171.3px]" data-node-id="56:547" data-name="box">
+            <div className="absolute border border-[var(--border\/default,#e2e5ea)] border-solid h-[15px] left-[8px] rounded-[4px] top-[9.5px] w-[114.1px]" data-node-id="56:548" data-name="box">
+              <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[6px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[-1.47px] whitespace-nowrap" data-node-id="56:549">
+                고정(07-01→09-30)
+              </p>
+            </div>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] left-[613.6px] top-[108.7px] w-[187.1px]" data-node-id="56:550" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[7.45px] whitespace-nowrap" data-node-id="56:551">
+              재무팀 공유
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.2px] leading-[1.45] left-[800.7px] not-italic text-[12.5px] text-[color:var(--text\/2,#4b5563)] top-[108.7px] w-[246.7px] whitespace-nowrap" data-node-id="56:552" data-name="box">
+            <p className="absolute left-[8px] top-[7.43px]" data-node-id="56:553">
+              09-02
+            </p>
+            <p className="absolute left-[44.1px] top-[7.43px]" data-node-id="56:554">
+              ·
+            </p>
+            <p className="absolute left-[53.6px] top-[7.43px]" data-node-id="56:555">
+              admin@codeworks.io
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.2px] leading-[1.45] left-[1047.4px] not-italic text-[11px] top-[108.7px] w-[86.6px] whitespace-nowrap" data-node-id="56:556" data-name="box">
+            <p className="-translate-x-full absolute left-[48.7px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.66px]" data-node-id="56:557">
+              열기
+            </p>
+            <p className="-translate-x-1/2 absolute left-[68.15px] text-[color:var(--text\/3,#6b7280)] text-center top-[10px]" data-node-id="56:558">
+              삭제
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] left-[16px] top-[141.9px] w-[175.3px]" data-node-id="56:559" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.43px] whitespace-nowrap" data-node-id="56:560">
+              429 재발 모니터
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] leading-[1.45] left-[191.3px] not-italic top-[141.9px] w-[251px] whitespace-nowrap" data-node-id="56:561" data-name="box">
+            <p className="absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] left-[8px] text-[11.5px] text-[color:var(--text\/3,#6b7280)] top-[9.27px]" data-node-id="56:562">
+              S2-2
+            </p>
+            <p className="absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] left-[40.5px] text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.43px]" data-node-id="56:563">
+              Rate Limit 상시 도달
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] left-[442.3px] top-[141.9px] w-[171.3px]" data-node-id="56:564" data-name="box">
+            <div className="absolute border border-[var(--border\/default,#e2e5ea)] border-solid h-[15px] left-[8px] rounded-[4px] top-[9.5px] w-[79.3px]" data-node-id="56:565" data-name="box">
+              <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[6px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[-1.47px] whitespace-nowrap" data-node-id="56:566">
+                상대(now-7d)
+              </p>
+            </div>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] left-[613.6px] top-[141.9px] w-[187.1px]" data-node-id="56:567" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[7.45px] whitespace-nowrap" data-node-id="56:568">
+              데이터 팀 인프라 이슈 추적
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.2px] leading-[1.45] left-[800.7px] not-italic text-[12.5px] text-[color:var(--text\/2,#4b5563)] top-[141.9px] w-[246.7px] whitespace-nowrap" data-node-id="56:569" data-name="box">
+            <p className="absolute left-[8px] top-[7.43px]" data-node-id="56:570">
+              09-07
+            </p>
+            <p className="absolute left-[44.1px] top-[7.43px]" data-node-id="56:571">
+              ·
+            </p>
+            <p className="absolute left-[53.6px] top-[7.43px]" data-node-id="56:572">
+              secops@codeworks.io
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.2px] leading-[1.45] left-[1047.4px] not-italic text-[11px] top-[141.9px] w-[86.6px] whitespace-nowrap" data-node-id="56:573" data-name="box">
+            <p className="-translate-x-full absolute left-[48.7px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.66px]" data-node-id="56:574">
+              열기
+            </p>
+            <p className="-translate-x-1/2 absolute left-[68.15px] text-[color:var(--text\/3,#6b7280)] text-center top-[10px]" data-node-id="56:575">
+              삭제
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] left-[16px] top-[175.1px] w-[175.3px]" data-node-id="56:576" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.43px] whitespace-nowrap" data-node-id="56:577">
+              온보딩 8월 코호트
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] leading-[1.45] left-[191.3px] not-italic top-[175.1px] w-[251px] whitespace-nowrap" data-node-id="56:578" data-name="box">
+            <p className="absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] left-[8px] text-[11.5px] text-[color:var(--text\/3,#6b7280)] top-[9.27px]" data-node-id="56:579">
+              S3-3
+            </p>
+            <p className="absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] left-[40.5px] text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.43px]" data-node-id="56:580">
+              신규 입사자·부서 온보딩 정착
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] left-[442.3px] top-[175.1px] w-[171.3px]" data-node-id="56:581" data-name="box">
+            <div className="absolute border border-[var(--border\/default,#e2e5ea)] border-solid h-[15px] left-[8px] rounded-[4px] top-[9.5px] w-[114.1px]" data-node-id="56:582" data-name="box">
+              <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[6px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[-1.47px] whitespace-nowrap" data-node-id="56:583">
+                고정(08-01→08-31)
+              </p>
+            </div>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] left-[613.6px] top-[175.1px] w-[187.1px]" data-node-id="56:584" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[7.45px] whitespace-nowrap" data-node-id="56:585">
+              —
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.2px] leading-[1.45] left-[800.7px] not-italic text-[12.5px] text-[color:var(--text\/2,#4b5563)] top-[175.1px] w-[246.7px] whitespace-nowrap" data-node-id="56:586" data-name="box">
+            <p className="absolute left-[8px] top-[7.43px]" data-node-id="56:587">
+              09-01
+            </p>
+            <p className="absolute left-[44.1px] top-[7.43px]" data-node-id="56:588">
+              ·
+            </p>
+            <p className="absolute left-[53.6px] top-[7.43px]" data-node-id="56:589">
+              admin@codeworks.io
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.2px] leading-[1.45] left-[1047.4px] not-italic text-[11px] top-[175.1px] w-[86.6px] whitespace-nowrap" data-node-id="56:590" data-name="box">
+            <p className="-translate-x-full absolute left-[48.7px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.66px]" data-node-id="56:591">
+              열기
+            </p>
+            <p className="-translate-x-1/2 absolute left-[68.15px] text-[color:var(--text\/3,#6b7280)] text-center top-[10px]" data-node-id="56:592">
+              삭제
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] left-[16px] top-[208.2px] w-[175.3px]" data-node-id="56:593" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.43px] whitespace-nowrap" data-node-id="56:594">
+              러버스탬프 추이
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] leading-[1.45] left-[191.3px] not-italic top-[208.2px] w-[251px] whitespace-nowrap" data-node-id="56:595" data-name="box">
+            <p className="absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] left-[8px] text-[11.5px] text-[color:var(--text\/3,#6b7280)] top-[9.27px]" data-node-id="56:596">
+              S5-7
+            </p>
+            <p className="absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] left-[40.5px] text-[12.5px] text-[color:var(--text\/1,#111827)] top-[7.43px]" data-node-id="56:597">
+              AI 산출물 무검증 반출
+            </p>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] left-[442.3px] top-[208.2px] w-[171.3px]" data-node-id="56:598" data-name="box">
+            <div className="absolute border border-[var(--border\/default,#e2e5ea)] border-solid h-[15px] left-[8px] rounded-[4px] top-[9.5px] w-[86px]" data-node-id="56:599" data-name="box">
+              <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[6px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[-1.47px] whitespace-nowrap" data-node-id="56:600">
+                상대(now-28d)
+              </p>
+            </div>
+          </div>
+          <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[33.2px] left-[613.6px] top-[208.2px] w-[187.1px]" data-node-id="56:601" data-name="box">
+            <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[8px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[7.45px] whitespace-nowrap" data-node-id="56:602">
+              보안 위클리
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.2px] leading-[1.45] left-[800.7px] not-italic text-[12.5px] text-[color:var(--text\/2,#4b5563)] top-[208.2px] w-[246.7px] whitespace-nowrap" data-node-id="56:603" data-name="box">
+            <p className="absolute left-[8px] top-[7.43px]" data-node-id="56:604">
+              08-30
+            </p>
+            <p className="absolute left-[44.1px] top-[7.43px]" data-node-id="56:605">
+              ·
+            </p>
+            <p className="absolute left-[53.6px] top-[7.43px]" data-node-id="56:606">
+              secops@codeworks.io
+            </p>
+          </div>
+          <div className="[word-break:break-word] absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid font-[family-name:var(--font\/ui,'Pretendard:Regular')] h-[33.2px] leading-[1.45] left-[1047.4px] not-italic text-[11px] top-[208.2px] w-[86.6px] whitespace-nowrap" data-node-id="56:607" data-name="box">
+            <p className="-translate-x-full absolute left-[48.7px] text-[color:var(--accent\/blue,#1d4ed8)] text-right top-[8.66px]" data-node-id="56:608">
+              열기
+            </p>
+            <p className="-translate-x-1/2 absolute left-[68.15px] text-[color:var(--text\/3,#6b7280)] text-center top-[10px]" data-node-id="56:609">
+              삭제
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+These styles are contained in the design: brand/14-sb: Font(family: "font/ui", style: Regular, size: 14, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: -1), sub/12: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), body/13-md: Font(family: "font/ui", style: Regular, size: 13, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), widget-title/13-sb: Font(family: "font/ui", style: Regular, size: 13, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11-sb: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11-md: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), h2/16-sb: Font(family: "font/ui", style: Regular, size: 16, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), sub/12-sb: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), mono/11-5: Font(family: "font/mono", style: Regular, size: 11.5, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), sub/12-5: Font(family: "font/ui", style: Regular, size: 12.5, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), badge/10-5-sb-16: Font(family: "font/ui", style: Regular, size: 10.5, weight: 400, lineHeight: 16, letterSpacing: 0).
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

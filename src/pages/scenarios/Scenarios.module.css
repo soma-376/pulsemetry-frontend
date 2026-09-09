@@ -18,7 +18,7 @@
   height: 56px;
   display: flex;
   align-items: center;
-  border-bottom: 2px solid var(--text-1);
+  border-bottom: 2px solid transparent;
   text-decoration: none;
 }
 .header > span {
@@ -648,4 +648,8 @@ button:focus-visible {
 }
 .welcome .card .tags {
   display: none;
+}
+
+.header > a[aria-current='page'] {
+  border-bottom-color: var(--text-1);
 }

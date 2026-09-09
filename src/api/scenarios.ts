@@ -3,6 +3,11 @@ import type { components, operations } from './schema';
 export type Scenario = components['schemas']['ScenarioSummary'];
 export type Detail = components['schemas']['ScenarioDetail'];
 export type Run = components['schemas']['ScenarioRun'];
+export type SavedReport = components['schemas']['SavedReport'];
+export type RunSummary = components['schemas']['ScenarioRunSummary'];
+export type SaveInput = operations['RUN-SAVE']['requestBody']['content']['application/json'];
+export type RunList = operations['RUN-LIST']['responses'][200]['content']['application/json'];
+export type SavedList = operations['SAVED-LIST']['responses'][200]['content']['application/json'];
 export type Category = components['schemas']['ScenarioCategory'];
 export type Catalog = operations['SCN-LIST']['responses'][200]['content']['application/json'];
 export type RunInput = operations['SCN-RUN']['requestBody']['content']['application/json'];
@@ -25,6 +30,36 @@ async function runRequest(path: string, options: RequestInit = {}) {
   return { run, retryMs };
 }
 export const scenarioApi = {
+  list: (cursor?: string, signal?: AbortSignal) =>
+    request<RunList>(
+      `/scenario-runs?${new URLSearchParams({ limit: '10', ...(cursor ? { cursor } : {}) })}`,
+      { signal },
+    ),
+  saved: (cursor?: string, signal?: AbortSignal) =>
+    request<SavedList>(
+      `/saved-reports?${new URLSearchParams({ limit: '10', ...(cursor ? { cursor } : {}) })}`,
+      { signal },
+    ),
+  save: (id: string, input: SaveInput, signal?: AbortSignal) =>
+    request<SavedReport>(`/scenario-runs/${encodeURIComponent(id)}/save`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+      signal,
+    }),
+  remove: (id: string, signal?: AbortSignal) =>
+    request<string>(
+      `/scenario-runs/${encodeURIComponent(id)}`,
+      { method: 'DELETE', signal },
+      undefined,
+      'text',
+    ),
+  removeSaved: (id: string, signal?: AbortSignal) =>
+    request<string>(
+      `/saved-reports/${encodeURIComponent(id)}`,
+      { method: 'DELETE', signal },
+      undefined,
+      'text',
+    ),
   catalog: (signal?: AbortSignal) => request<Catalog>('/scenarios', { signal }),
   detail: (id: string, signal?: AbortSignal) =>
     request<Detail>(`/scenarios/${encodeURIComponent(id)}`, { signal }),

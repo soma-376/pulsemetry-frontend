@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Badge, Button } from '../../components/ui';
 import { scenarioApi, activeRun, type Scenario, type Detail } from '../../api/scenarios';
@@ -18,11 +18,20 @@ export function Availability({ value }: { value: Scenario['availability'] }) {
 }
 export function ScenarioHeader() {
   const runs = useRuns();
+  const location = useLocation(),
+    navigate = useNavigate();
   return (
     <div className={s.header}>
       <h1>시나리오</h1>
-      <a href="#catalog">카탈로그</a>
-      <span title="7단계에서 제공">이력 · 저장된 리포트</span>
+      <Link to="/scenarios" aria-current={location.pathname === '/scenarios' ? 'page' : undefined}>
+        카탈로그
+      </Link>
+      <Link
+        to="/scenarios/history"
+        aria-current={location.pathname.endsWith('history') ? 'page' : undefined}
+      >
+        이력 · 저장된 리포트
+      </Link>
       <small aria-live="polite">
         {runs.entries.filter((e) => activeRun(e.run)).length > 0
           ? `${runs.entries.filter((e) => activeRun(e.run)).length}개 실행 중`
@@ -37,15 +46,20 @@ export function ScenarioHeader() {
           type="search"
           placeholder="질문·시나리오 검색"
           aria-label="시나리오 검색"
-          onChange={(e) =>
-            window.dispatchEvent(new CustomEvent('scenario-search', { detail: e.target.value }))
-          }
+          onChange={(e) => {
+            if (location.pathname !== '/scenarios')
+              navigate('/scenarios', { state: { search: e.target.value } });
+            else
+              window.dispatchEvent(new CustomEvent('scenario-search', { detail: e.target.value }));
+          }}
         />
       </label>
     </div>
   );
 }
 export function Scenarios() {
+  const navigate = useNavigate(),
+    location = useLocation();
   const { profile } = useAuth(),
     { options } = useScopedFilters(),
     runs = useRuns();
@@ -54,7 +68,7 @@ export function Scenarios() {
     queryFn: ({ signal }) => scenarioApi.catalog(signal),
   });
   const [category, setCategory] = useState('cost'),
-    [search, setSearch] = useState(''),
+    [search, setSearch] = useState((location.state as { search?: string } | null)?.search || ''),
     [selected, setSelected] = useState<string | null>(null),
     [runId, setRunId] = useState<string | null>(null),
     [welcome, setWelcome] = useState(
@@ -91,6 +105,10 @@ export function Scenarios() {
     ),
   );
   const current = runId ? runs.entries.find((e) => e.run.run_id === runId) : undefined;
+  useEffect(() => {
+    if (current?.run.status === 'succeeded' && selected)
+      navigate(`/runs/${encodeURIComponent(current.run.run_id!)}`);
+  }, [current?.run.status, current?.run.run_id, selected, navigate]);
   function visit() {
     setWelcome(false);
     sessionStorage.setItem('pulsemetry.scenarios.visited', '1');
@@ -265,7 +283,8 @@ export function Scenarios() {
         </section>
         <section>
           <h2>저장된 리포트</h2>
-          <p>결과 저장과 이력 조회는 다음 단계에서 제공됩니다.</p>
+          <p>저장한 결과와 이전 실행을 확인하세요.</p>
+          <Link to="/scenarios/history">이력 · 저장된 리포트 열기</Link>
         </section>
         {mockMode && <Link to="/dev/api">API 상태 검증 도구</Link>}
       </aside>
@@ -762,7 +781,7 @@ function RunView({
         {r.status === 'succeeded' && (
           <div className={s.notice}>
             <h3>분석이 완료되었습니다.</h3>
-            <p>결과 상세·위젯 강조·리포트 저장은 7단계에서 연결됩니다.</p>
+            <Link to={`/runs/${encodeURIComponent(r.run_id!)}`}>분석 결과 열기</Link>
           </div>
         )}
       </div>

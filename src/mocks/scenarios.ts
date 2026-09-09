@@ -1,3 +1,6 @@
+import { scenarioResult, resolveScenarioTime } from './scenarioResults';
+import type { SavedReport } from '../api/scenarios';
+import { resultRestricted } from '../pages/scenarios/resultModel';
 import { delay, http, HttpResponse } from 'msw';
 import data from './scenarioCatalog.json';
 import type { Category, Detail, Run, RunInput, Scenario } from '../api/scenarios';
@@ -164,10 +167,35 @@ export function scenarioDetail(s: Scenario): Detail {
     ],
   };
 }
-type Stored = { run: Run; started: number; mode: string; actor: string };
+type Stored = { run: Run; started: number; mode: string; actor: string; input: RunInput };
 const runs = new Map<string, Stored>();
+const saved = new Map<string, SavedReport>();
+// Synthetic mock database only; never used in real API mode. No auth tokens stored.
+const storageKey = 'pulsemetry.mock.scenario-db.v7';
+try {
+  if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    const db = JSON.parse(localStorage.getItem(storageKey) || '{}');
+    for (const entry of db.runs || []) runs.set(entry.run.run_id, entry);
+    for (const entry of db.saved || []) saved.set(entry.saved_id, entry);
+  }
+} catch {
+  /* Corrupt mock fixtures start empty. */
+}
+function persist() {
+  try {
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined')
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({ runs: [...runs.values()], saved: [...saved.values()] }),
+      );
+  } catch {
+    /* Browser storage may be disabled. */
+  }
+}
 export function resetScenarioRuns() {
   runs.clear();
+  saved.clear();
+  persist();
 }
 const err = (status: number, error: string, message: string) =>
   HttpResponse.json({ error, message, request_id: 'mock-scenario-request' }, { status });
@@ -186,32 +214,36 @@ function settle(r: Stored) {
       message: '쿼리 시간 초과 — 기간을 줄이거나 팀을 좁혀 다시 실행하세요.',
       request_id: 'mock-run-timeout',
     };
+    persist();
     return;
   }
   const s = catalog.find((s) => s.scenario_id === r.run.scenario_id)!;
   r.run.status = 'succeeded';
   r.run.progress = { step: 4, total: 4, label: '완료' };
-  r.run.result = {
-    target_page: s.target_page,
-    applied_filters: r.run.params,
-    highlight_widgets: s.highlight_widgets,
-    findings: [
-      {
-        rule_id: 'mock-rule',
-        severity: 'info',
-        title: '합성 데이터 분석이 완료되었습니다.',
-        action: '실제 운영 판단에는 연결된 서버 데이터를 확인하세요.',
-      },
-    ],
-    frames: {},
-  };
-  r.run.findings_count = { info: 1, warning: 0, anomaly: 0 };
+  r.run.result = scenarioResult(r.run, s, r.input, r.mode);
+  r.run.findings_count = { info: 0, warning: 0, anomaly: 0 };
+  for (const finding of r.run.result.findings || []) r.run.findings_count[finding.severity]!++;
+  persist();
 }
 export function scenarioHandlers(
   role: (r: Request) => 'owner' | 'admin' | undefined,
   ownTeam: string,
 ) {
-  const actor = (r: Request) => r.headers.get('Authorization') || '';
+  const actor = (r: Request) => role(r) || '';
+  const readable = (r: Stored, request: Request) =>
+    role(request) === 'owner' ||
+    (r.actor === actor(request) &&
+      !resultRestricted(
+        {
+          ...r.run,
+          result: r.run.result || {
+            target_page: catalog.find((s) => s.scenario_id === r.run.scenario_id)?.target_page,
+            applied_filters: { team_ids: r.run.params?.team_ids },
+          },
+        },
+        role(request),
+        [ownTeam],
+      ));
   const auth = (r: Request) => (role(r) ? null : err(401, 'unauthorized', '로그인이 필요합니다.'));
   return [
     http.get('*/v1/scenarios', async ({ request }) => {
@@ -257,7 +289,11 @@ export function scenarioHandlers(
       } catch {
         return err(400, 'invalid_request', '올바른 JSON이 필요합니다.');
       }
-      const errors = validateParams(scenarioDetail(s).params_schema as Schema, body.params || {});
+      const schema = scenarioDetail(s).params_schema as Schema;
+      const validatedParams = { ...body.params };
+      // Server-enforced scope is returned in Run.params even for scenarios with no team field.
+      if (!schema.properties?.team_ids) delete validatedParams.team_ids;
+      const errors = validateParams(schema, validatedParams);
       if (errors.length) return err(400, 'invalid_request', errors.join(' '));
       if (s.availability === 'unavailable')
         return err(
@@ -289,6 +325,18 @@ export function scenarioHandlers(
         status: 'queued',
         created_at: new Date().toISOString(),
         params: { ...body.params, ...(role(request) === 'admin' ? { team_ids: [ownTeam] } : {}) },
+        created_by: {
+          member_id:
+            role(request) === 'owner'
+              ? 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+              : 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+          display_name: role(request) === 'owner' ? '조직 관리자' : '결제 관리자',
+        },
+        resolved_from: resolveScenarioTime(
+          body.params.from || body.params.cohort_from || body.params.pivot_date || 'now-7d',
+          Date.now(),
+        ),
+        resolved_to: resolveScenarioTime(body.params.to || body.params.as_of || 'now', Date.now()),
         params_summary: `${body.params.from || body.params.as_of || body.params.pivot_date || '기간 지정'} → ${body.params.to || ''}`,
         progress: { step: 0, total: 4, label: '대기' },
       };
@@ -297,17 +345,125 @@ export function scenarioHandlers(
         started: Date.now(),
         mode: request.headers.get('X-Mock-Case') || 'normal',
         actor: actor(request),
+        input: structuredClone(body),
       });
+      persist();
       return HttpResponse.json(run, {
         status: 202,
         headers: { Location: `/v1/scenario-runs/${id}`, 'Retry-After': '2' },
       });
     }),
+    http.get('*/v1/scenario-runs', ({ request }) => {
+      const denied = auth(request);
+      if (denied) return denied;
+      if (request.headers.get('X-Mock-Case') === 'error')
+        return err(503, 'internal_error', '실행 이력을 불러오지 못했습니다.');
+      for (const r of runs.values()) settle(r);
+      const q = new URL(request.url).searchParams;
+      const all = [...runs.values()]
+        .filter(
+          (r) =>
+            readable(r, request) &&
+            (!q.get('scenario_id') || r.run.scenario_id === q.get('scenario_id')) &&
+            (!q.get('status') || r.run.status === q.get('status')) &&
+            (!q.get('created_by') || r.run.created_by?.member_id === q.get('created_by')),
+        )
+        .reverse()
+        .map((r) => {
+          const { params: _p, result: _r, ...summary } = r.run;
+          return summary;
+        });
+      return HttpResponse.json(page(all, request));
+    }),
+    http.get('*/v1/saved-reports', ({ request }) => {
+      const denied = auth(request);
+      if (denied) return denied;
+      if (request.headers.get('X-Mock-Case') === 'error')
+        return err(503, 'internal_error', '저장 리포트를 불러오지 못했습니다.');
+      const all = [...saved.values()].reverse().filter((s) => {
+        const r = runs.get(s.run_id!);
+        return r && readable(r, request);
+      });
+      return HttpResponse.json(page(all, request));
+    }),
+    http.post('*/v1/scenario-runs/:id/save', async ({ request, params }) => {
+      const denied = auth(request);
+      if (denied) return denied;
+      const r = runs.get(String(params.id));
+      if (!r || !readable(r, request)) return err(404, 'not_found', '실행이 없습니다.');
+      settle(r);
+      if (r.run.status !== 'succeeded')
+        return err(409, 'conflict', '완료된 실행만 저장할 수 있습니다.');
+      if (request.headers.get('X-Mock-Case') === 'error')
+        return err(503, 'internal_error', '저장에 실패했습니다. 다시 시도하세요.');
+      const body = (await request.json()) as { name?: string; note?: string; time_mode?: string };
+      if (
+        typeof body.name !== 'string' ||
+        !body.name.trim() ||
+        body.name.length > 100 ||
+        (body.note !== undefined && (typeof body.note !== 'string' || body.note.length > 2000)) ||
+        (body.time_mode !== undefined && !['fixed', 'relative'].includes(body.time_mode))
+      )
+        return err(400, 'invalid_request', '이름·메모·기간 모드를 확인하세요.');
+      const item: SavedReport = {
+        saved_id: crypto.randomUUID(),
+        run_id: r.run.run_id,
+        scenario_id: r.run.scenario_id,
+        name: body.name.trim(),
+        note: body.note || null,
+        time_mode: body.time_mode === 'relative' ? 'relative' : 'fixed',
+        created_by: {
+          member_id:
+            actor(request) === 'owner'
+              ? 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+              : 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+          display_name: actor(request) === 'owner' ? '조직 관리자' : '결제 관리자',
+        },
+        created_at: new Date().toISOString(),
+        share_path: `/runs/${r.run.run_id}`,
+      };
+      saved.set(item.saved_id!, item);
+      r.run.saved_id = item.saved_id;
+      persist();
+      return HttpResponse.json(item, { status: 201 });
+    }),
+    http.delete('*/v1/scenario-runs/:id', ({ request, params }) => {
+      const denied = auth(request);
+      if (denied) return denied;
+      const r = runs.get(String(params.id));
+      if (!r || !readable(r, request)) return err(404, 'not_found', '실행이 없습니다.');
+      if (role(request) !== 'owner' && r.actor !== actor(request))
+        return err(403, 'forbidden', '실행자 또는 owner만 삭제할 수 있습니다.');
+      settle(r);
+      if (activeRun(r.run)) return err(409, 'conflict', '실행을 취소한 뒤 삭제하세요.');
+      if ([...saved.values()].some((s) => s.run_id === r.run.run_id))
+        return err(409, 'conflict', '연결된 저장 리포트를 먼저 삭제하세요.');
+      runs.delete(String(params.id));
+      persist();
+      return new HttpResponse(null, { status: 204 });
+    }),
+    http.delete('*/v1/saved-reports/:id', ({ request, params }) => {
+      const denied = auth(request);
+      if (denied) return denied;
+      const item = saved.get(String(params.id));
+      const r = item && runs.get(item.run_id!);
+      if (!item || !r || !readable(r, request))
+        return err(404, 'not_found', '저장 리포트가 없습니다.');
+      if (
+        role(request) !== 'owner' &&
+        item.created_by?.member_id !== 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+      )
+        return err(403, 'forbidden', '저장자 또는 owner만 삭제할 수 있습니다.');
+      saved.delete(String(params.id));
+      r.run.saved_id = [...saved.values()].find((s) => s.run_id === r.run.run_id)?.saved_id || null;
+      persist();
+      return new HttpResponse(null, { status: 204 });
+    }),
     http.get('*/v1/scenario-runs/:id', ({ request, params }) => {
       const denied = auth(request);
       if (denied) return denied;
       const r = runs.get(String(params.id));
-      if (!r || r.actor !== actor(request)) return err(404, 'not_found', '실행이 없습니다.');
+      if (!r || !readable(r, request)) return err(404, 'not_found', '실행이 없습니다.');
       settle(r);
       return HttpResponse.json(r.run, { headers: activeRun(r.run) ? { 'Retry-After': '2' } : {} });
     }),
@@ -315,13 +471,25 @@ export function scenarioHandlers(
       const denied = auth(request);
       if (denied) return denied;
       const r = runs.get(String(params.id));
-      if (!r || r.actor !== actor(request)) return err(404, 'not_found', '실행이 없습니다.');
+      if (!r || !readable(r, request)) return err(404, 'not_found', '실행이 없습니다.');
       settle(r);
       if (!activeRun(r.run))
         return err(409, 'conflict', '이미 종료된 실행입니다. 상태를 새로 확인하세요.');
       r.run.status = 'cancelled';
       r.run.finished_at = new Date().toISOString();
+      persist();
       return HttpResponse.json(r.run);
     }),
   ];
+}
+
+function page<T>(items: T[], request: Request) {
+  const q = new URL(request.url).searchParams;
+  const start = Math.max(0, Number((q.get('cursor') || 'page:0').replace('page:', '')) || 0);
+  const limit = Math.min(100, Math.max(1, Number(q.get('limit')) || 10));
+  return {
+    items: items.slice(start, start + limit),
+    next_cursor: start + limit < items.length ? `page:${start + limit}` : null,
+    total: items.length,
+  };
 }

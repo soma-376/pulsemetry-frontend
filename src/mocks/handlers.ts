@@ -81,7 +81,10 @@ export const handlers = [
     const r = role(request);
     if (!r) return error(401, '로그인이 필요합니다.');
     return HttpResponse.json({
-      member_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      member_id:
+        r === 'owner'
+          ? 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+          : 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
       email: `${r}@pulsemetry.test`,
       display_name: '데모 관리자',
       role: r,

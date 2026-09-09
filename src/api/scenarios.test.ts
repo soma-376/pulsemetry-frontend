@@ -10,14 +10,12 @@ it('honors Retry-After and rejects invalid delays', () => {
 });
 it('starts a run with encoded path, exact params, abort and headers', async () => {
   vi.stubGlobal('sessionStorage', { getItem: () => null });
-  const fetch = vi
-    .fn()
-    .mockResolvedValue(
-      new Response(JSON.stringify({ run_id: 'r', status: 'queued' }), {
-        status: 202,
-        headers: { 'Retry-After': '4' },
-      }),
-    );
+  const fetch = vi.fn().mockResolvedValue(
+    new Response(JSON.stringify({ run_id: 'r', status: 'queued' }), {
+      status: 202,
+      headers: { 'Retry-After': '4' },
+    }),
+  );
   vi.stubGlobal('fetch', fetch);
   const c = new AbortController();
   const input = {
@@ -71,4 +69,38 @@ it('requires exclusive budget unit and selected team scope', () => {
   expect(validateParams(schema, { team_ids: ['a'], budget_by_team: { a: { usd: 1 } } })).toEqual(
     [],
   );
+});
+it('sends save input exactly and preserves opaque pagination cursors', async () => {
+  vi.stubGlobal('sessionStorage', { getItem: () => null });
+  const fetch = vi
+    .fn()
+    .mockImplementation(() => Promise.resolve(new Response(JSON.stringify({ items: [] }))));
+  vi.stubGlobal('fetch', fetch);
+  const c = new AbortController();
+  await scenarioApi.list('opaque+/=', c.signal);
+  expect(new URL(fetch.mock.calls[0][0], 'http://local').searchParams.get('cursor')).toBe(
+    'opaque+/=',
+  );
+  await scenarioApi.save(
+    'run/id',
+    { name: '보고서', note: '검증', time_mode: 'relative' },
+    c.signal,
+  );
+  expect(fetch.mock.calls[1][0]).toBe('/v1/scenario-runs/run%2Fid/save');
+  expect(JSON.parse(fetch.mock.calls[1][1].body)).toEqual({
+    name: '보고서',
+    note: '검증',
+    time_mode: 'relative',
+  });
+  expect(fetch.mock.calls[1][1].signal).toBe(c.signal);
+});
+it('handles 204 deletions without trying to parse empty JSON', async () => {
+  vi.stubGlobal('sessionStorage', { getItem: () => null });
+  const fetch = vi
+    .fn()
+    .mockImplementation(() => Promise.resolve(new Response(null, { status: 204 })));
+  vi.stubGlobal('fetch', fetch);
+  await expect(scenarioApi.remove('one')).resolves.toBe('');
+  await expect(scenarioApi.removeSaved('two')).resolves.toBe('');
+  expect(fetch.mock.calls.map((c) => c[1].method)).toEqual(['DELETE', 'DELETE']);
 });

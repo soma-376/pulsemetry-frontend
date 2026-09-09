@@ -89,3 +89,24 @@ Vitest: DataFrame 상태/평행 배열/필드 labels, URL 정규화·범위 제�
 - [목업] 카탈로그46개, 카테고리8개. source 제목/상황 일부+overview 목록. 동시 실행3개(단일 목업 테넌트), queued→running→약6.5초 후 succeeded. 실제 분석 엔진이 아니며 생성 결과는 info1개/frames={}이다. 전역 필터 적용/실제 프레임 결과는7단계 목업을 확장해야 한다. 종료 상태는 진행시간 기준으로 결정되므로 GET 횟수에 따라 분석이 빨라지지 않는다.
 - [목업 검증 모드] X-Mock-Case=empty/error/loading은 카탈로그 빈 목록/503/2.5초 지연. 실행 loading은 계속 진행 상태, run-failed는 query_timeout 실패를 합성한다. normal은 성공. 실제 API 오류에서 목업으로 전환하지 않는다. 준비 중409/입력400/타팀403/한도429/종료취소409/다른 로그인404를 검사했다.
 - 결과의 findings/frames/applied_filters는 수신 상태 그대로 RunProvider 메모리에 보관한다. 성공 후 지표 재조회·자동 페이지 이동은 아직 하지 않는다(7단계). 최근 패널은 RUN-LIST를 호출하지 않으며 영구 이력·저장·공유·삭제는 미구현이다. API 문서 안 백엔드 변경 지시를 실행하지 않았다.
+
+## 7단계 실행 결과·저장·이력 계약
+- 생성 OpenAPI 변경 없음. api/scenarios.ts에 RUN-LIST/RUN-SAVE/RUN-DELETE/SAVED-LIST/SAVED-DELETE 추가. cursor는 불투명 문자열 그대로 URLSearchParams 인코딩, limit10. 저장 body는 name/note/time_mode만. 삭제204는 text 응답 처리하여 빈 JSON 파싱 오류 없음. 공통 Bearer/401/AbortSignal/request_id 유지.
+- `/runs/:runId`는 로그인 리다이렉트 후 RUN-GET. 이미 RunProvider에 있는 실행이면 GET 중복 없이 사용. 새로 조회한 활성 실행은 Provider에 등록하여 Retry-After 폴링/취소 이어감. 종료 시 폴링 중지. background 완료는 자동 페이지 이동하지 않음.
+- 성공 응답의 target_page/applied_filters/highlight_widgets/findings/frames 사용. 결과 동안 **POST /query 없음**. META 필터 옵션은 역할·선택 표시용으로 조회 가능. 헤더 필터는 읽기 전용이며 해제 후 대상 일반 대시보드에서 편집/현재 지표 조회.
+- applied_filters 문서 설명은 QueryRequest 중첩 filters지만 예제는 team_ids/products/models가 평면이다. 두 모양을 지원하고 from/to/단가/팀/제품/모델을 허용 목록으로만 URL 반영. 개인 member_ids는 받지 않는다. 현재 UI timezone은 기존 정책대로 Asia/Seoul; 재실행 전송은 반환 tz가 있으면 보존.
+- 원래 RunInput이 메모리에 있으면 그대로 재실행. 이력/상대 리포트는 RUN-GET params 복사+applied_filters의 price_basis/tz를 새 SCN-RUN으로 보냄. 고정 저장 열기는 원래 run_id의 같은 결과 GET/메모리 조회이며 재실행하지 않음. 상대 저장은 원래 params의 상대식을 유지하여 매번 새 run_id 생성. 고정 저장이 별도 프레임 복사인지 서버의 실행 결과 참조인지는 저장소 구현 계약이며 UI가 결정하지 않는다.
+- share 링크는 현재 origin의 `/runs/{encodeURIComponent(run_id)}`만 생성. clipboard API로 복사하고 실패는 안내. 링크 자체가 인증·권한을 부여하지 않으며 공개 공유 API 호출 없음. SavedReport.share_path는 외부 URL로 그대로 따라가지 않는다.
+- 결과 접근: 기존 admin 자기 팀·P3 owner 정책 유지. admin 성공 결과의 대상 페이지와 명시적 team_ids를 검사하여 누락/타팀/P3/전사 refusals 응답을 표시 전에 차단. 기존 서버 권한을 대체하지 않는다. 불완전한 팀 scope 응답은 보수적으로 차단하므로 실제 서버 응답을 확인해야 한다.
+- 마스킹: 기존 adaptResult/series가 suppressed/n<5 payload를 버린 후 차트/표에 전달. table의 공개 그룹은 유지하고 비공개 수치는 null. finding.evidence.metric_id가 가리키는 프레임에 마스킹이 있으면 제목/근거/권장까지 비공개. metric_id가 없으면 전체 반환 프레임의 마스킹 여부로 보수적으로 처리. 임의 원문 JSON 출력 없음. 다중 수치 필드는 한 시계열로 섞지 않고 표로 보존.
+- saved/delete 진행 요청은 화면 종료 시 abort. 실행 POST는 RunProvider가 관리하며 페이지 이동 후에도 결과 추적 가능하지만 이전 결과 화면의 늦은 응답으로 자동 이동하지 않음. 로그아웃은 캐시·Provider 메모리·요청 정리. 실행 삭제 성공 시 Provider와 해당 RUN-GET 캐시도 제거.
+
+### 목업 및 실서버 확인 사항
+- scenarioResults.ts는 기존 operations/teamMetric 합성 fixture를 활용. 원래 params와 별개로 실행 시각 기준 resolved_from/to를 저장. 제공 가능한 프레임만 반환하며 아직 미구현한 fixture 조합은 빈 프레임이다. 실제46개 시나리오 분석/판정 엔진이 아니다. partial 모드는 두 번째 지표504를 합성한다.
+- Figma의 실제 이상 원인/추천 문구를 현재 합성 통계의 판정처럼 붙이지 않았다. S1-3은 cost timeseries/table+cost_anomaly+재시도 timeseries, 나머지는 지표별 합성 fixture 범위 내. cost 여러 frame_type은 결과 렌더러가 분리한다. source 가격/차원별 세부 프레임 매핑은 서버 META 확인 필요.
+- **6단계의 같은 로그인 토큰 제한을 대체:** 목업 DB는 역할별 고정 테스트 계정에 연결. owner는 목업 테넌트 전체, admin은 자기 실행·자기 팀만. owner가 admin 실행을 읽을 수 있음을 검사. 같은 테넌트의 다른 admin 간 공유/삭제 범위는 실서버 정책 확인 필요.
+- mock /me의 owner/admin member_id를 서로 다른 고정 UUID로 구분(이전에는 둘 다 같은 ID). created_by와 일치시켜 삭제 버튼 권한 적용. 역할이 서버 권한 검사의 최종 근거다.
+- 목업 DB만 localStorage `pulsemetry.mock.scenario-db.v7`에 저장. 합성 실행 params/frames/저장 메모·이름/계정 역할 포함, **인증 토큰 저장 안 함**. 새로고침 뒤 재로그인하여 이력 복원 가능. 실제 API 모드는 이 목업 모듈을 로드하지 않는다. 브라우저 저장소가 비활성/용량 초과면 현재 메모리 세션만 동작. 다중 탭 동기화/실 서버 영구 저장은 검증 범위 밖.
+- [가정] 활성 실행 삭제409(먼저 취소), 연결된 saved 항목이 있으면 run 삭제409(저장 항목 먼저 삭제). saved 삭제는 실행 유지. 첨부 명세에는 이런 충돌 정책이 명시되지 않아 실서버 확인 필요. UI는 반환409를 inline 표시하고 성공을 꾸미지 않는다.
+- [가정] 상대 재실행 시 Run.params에 서버가 강제한 team_ids가 들어 있어도 목업은 원래 시나리오 스키마에 없는 scope 필드를 분리 검증하고 동일한 팀 권한 검사를 적용. 실제 SCN-RUN 재입력 허용 계약 확인 필요.
+- 첨부 문서 안의 백엔드 변경 지시 미실행. 백엔드/다른 저장소 수정·외부 공유 게시·배포·원격 push 없음.

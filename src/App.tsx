@@ -6,6 +6,12 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { AuthProvider } from './app/auth';
 import { Shell, Login, PlannedPage, pages } from './app/Shell';
 import { mockMode } from './api/client';
+const History = lazy(() =>
+  import('./pages/scenarios/Reports').then((m) => ({ default: m.History })),
+);
+const RunReport = lazy(() =>
+  import('./pages/scenarios/Reports').then((m) => ({ default: m.RunReport })),
+);
 const Operations = lazy(() =>
   import('./pages/operations/Operations').then((m) => ({ default: m.Operations })),
 );
@@ -58,6 +64,8 @@ export function App() {
                         }
                       />
                     ))}
+                    <Route path="/runs/:runId" element={<RunReport />} />
+                    <Route path="/scenarios/history" element={<History />} />
                     {mockMode && <Route path="/dev/api" element={<ApiPreview />} />}
                     <Route path="*" element={<PlannedPage />} />
                   </Route>

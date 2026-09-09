@@ -570,3 +570,10 @@
     max-width: 180px;
   }
 }
+
+fieldset.toolbar {
+  border: 0;
+  border-bottom: 1px solid var(--border-default);
+  margin: 0;
+  min-width: 0;
+}
