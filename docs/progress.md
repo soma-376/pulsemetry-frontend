@@ -39,6 +39,7 @@
 6. 정상/빈 값/부분 실패/마스킹·필터URL·역할 동작 검증 후 문서 갱신/커밋.2단계는 다음 회차.
 
 ## 실행과 Git
-- 로컬 실행: npm ci → npm run dev -- --port5173 (실제 명령은 `--port 5173` 사용).
+- 로컬 실행: `npm ci` → `npm run dev -- --port 5173`.
 - 현재 개발 서버: http://127.0.0.1:5173. 서버 종료 시 위 명령으로 재실행.
-- 커밋 정보는 마무리 후 아래에 기록한다. 원격 저장소/배포는 생성하지 않았다.
+- 구현 완료 커밋: `e1d2a77` — feat: initialize Pulsemetry design foundations and component preview.
+- 원격 저장소/배포는 생성하지 않았다. 이후 인수인계 문서 커밋은 `git log -1`로 확인한다.
