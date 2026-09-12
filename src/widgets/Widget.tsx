@@ -1,3 +1,4 @@
+import { AuditDialog } from '../pages/operations/shared';
 import { useState, type ReactNode } from 'react';
 import { Button, WidgetCard, WidgetState } from '../components/ui';
 import { useWidget } from './useWidget';
@@ -122,7 +123,8 @@ export function Widget({
   size?: string;
   children: (data: Record<string, QueryResult>, retry: () => void) => ReactNode;
 }) {
-  const { ref, query } = useWidget(id, queries, recentWeeks, requestPatch);
+  const { ref, query, authorized, authorize } = useWidget(id, queries, recentWeeks, requestPatch);
+  const [auditOpen, setAuditOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const [tables, setTables] = useState(false);
   return (
@@ -169,6 +171,7 @@ export function Widget({
                 <div className={s.menuPanel}>
                   <Button
                     onClick={() => {
+                      if (!authorized) { setAuditOpen(true); setMenu(false); return; }
                       query.refetch();
                       setMenu(false);
                     }}
@@ -190,7 +193,9 @@ export function Widget({
         }
       >
         {controls}
-        {query.isPending ? (
+        {!authorized ? (
+          <Button onClick={() => setAuditOpen(true)}>조회 사유 입력</Button>
+        ) : query.isPending ? (
           <WidgetState status="loading" />
         ) : query.isError ? (
           <WidgetState status="error" onRetry={() => query.refetch()} />
@@ -198,6 +203,8 @@ export function Widget({
           children(query.data.results, () => query.refetch())
         )}
       </WidgetCard>
+      {auditOpen && <AuditDialog target={title} onCancel={() => setAuditOpen(false)}
+        onSubmit={reason => { authorize(reason); setAuditOpen(false); }} />}
     </div>
   );
 }

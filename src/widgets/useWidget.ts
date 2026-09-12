@@ -11,6 +11,11 @@ export function useWidget(
   requestPatch?: Partial<QueryRequest>,
 ) {
   const scope = useScopedFilters();
+  const needsAudit = queries.some(q => q.metric_id === 'vendor_account_mismatch' || q.metric_id === 'refusals');
+  const auditScope = JSON.stringify([scope.role, scope.serialized, queries, requestPatch]);
+  const [grant, setGrant] = useState<{ scope: string; reason: string; key: string }>();
+  const authorized = !needsAudit || grant?.scope === auditScope;
+  const authorize = (reason: string) => setGrant({ scope: auditScope, reason, key: crypto.randomUUID() });
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   useEffect(() => {
@@ -24,6 +29,7 @@ export function useWidget(
     queryKey: [
       'widget',
       id,
+      ...(needsAudit ? [authorized ? grant?.key : 'audit-required'] : []),
       scope.role,
       scope.serialized,
       ...(requestPatch ? [JSON.stringify(requestPatch)] : []),
@@ -37,9 +43,11 @@ export function useWidget(
           queries,
         },
         signal,
+        needsAudit && authorized ? grant?.reason : undefined,
       ),
-    enabled: visible && !!scope.options.data,
-    refetchInterval: visible && scope.auto ? 300000 : false,
+    enabled: visible && !!scope.options.data && authorized,
+    ...(needsAudit ? { retry: false, gcTime: 0 } : {}),
+    refetchInterval: !needsAudit && visible && scope.auto ? 300000 : false,
   });
-  return { ref, query, scope };
+  return { ref, query, scope, needsAudit, authorized, authorize };
 }

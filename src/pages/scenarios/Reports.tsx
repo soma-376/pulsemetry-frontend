@@ -242,10 +242,22 @@ function FrameView({ result }: { result: QueryResult }) {
         {adapted.frames.map((f, i) => (
           <div className={s.tableScroll} key={i}>
             <table>
+              {f.fields.some(field => field.labels?.cohort_week) && (
+                <caption>
+                  코호트 {f.fields.find(field => field.labels?.cohort_week)?.labels?.cohort_week}
+                  {' · '}주차 {f.fields.find(field => field.labels?.week_index)?.labels?.week_index ?? '전체'}
+                  {f.fields.some(field => field.labels?.cohort_week_compare) &&
+                    <> · 이전 코호트 {f.fields.find(field => field.labels?.cohort_week_compare)?.labels?.cohort_week_compare}</>}
+                </caption>
+              )}
               <thead>
                 <tr>
                   {f.fields.map((field, j) => (
-                    <th key={j}>{field.config?.display_name || field.name}</th>
+                    <th key={j}>{field.name.endsWith('_compare')
+                      ? `이전 ${field.config?.display_name || field.name.replace(/_compare$/, '')}`
+                      : f.fields.some(other => other.name === field.name + '_compare')
+                        ? `현재 ${field.config?.display_name || field.name}`
+                        : field.config?.display_name || field.name}</th>
                   ))}
                 </tr>
               </thead>

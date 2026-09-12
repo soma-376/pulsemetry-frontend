@@ -18,7 +18,8 @@ function CsvDialog() {
   const abort = useRef<AbortController | null>(null);
   const [selected, setSelected] = useState(0),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [reason, setReason] = useState('');
   useEffect(() => () => abort.current?.abort(), []);
   const choices: {
     label: string;
@@ -52,7 +53,10 @@ function CsvDialog() {
     { label: '훅 차단', query: overviewQueries.governance[1] },
     { label: '훅 실행 세션', query: overviewQueries.governance[2] },
   ];
+  const needsAudit = choices[selected]?.query.metric_id === 'refusals';
+  const validReason = reason.trim().length >= 10 && reason.trim().length <= 500;
   async function download() {
+    if (needsAudit && !validReason) return;
     const controller = new AbortController();
     abort.current = controller;
     setBusy(true);
@@ -69,6 +73,7 @@ function CsvDialog() {
           queries: [choices[selected].query],
         },
         controller.signal,
+        needsAudit ? reason.trim() : undefined,
       );
       if (controller.signal.aborted) return;
       const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
@@ -77,6 +82,7 @@ function CsvDialog() {
       a.download = `pulsemetry-${choices[selected].query.metric_id}.csv`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setReason('');
       dialog.current?.close();
     } catch (e) {
       if (!controller.signal.aborted) setError(e instanceof Error ? e.message : '내보내기 실패');
@@ -86,7 +92,7 @@ function CsvDialog() {
   }
   return (
     <>
-      <Button onClick={() => dialog.current?.showModal()} disabled={!options.data}>
+      <Button onClick={() => { setReason(''); dialog.current?.showModal(); }} disabled={!options.data}>
         CSV
       </Button>
       <dialog
@@ -106,7 +112,7 @@ function CsvDialog() {
           <select
             value={selected}
             disabled={busy}
-            onChange={(e) => setSelected(Number(e.target.value))}
+            onChange={(e) => { setSelected(Number(e.target.value)); setReason(''); }}
           >
             {choices.map((c, i) => (
               <option key={i} value={i}>
@@ -115,6 +121,11 @@ function CsvDialog() {
             ))}
           </select>
         </label>
+        {needsAudit && <label>사유 (10–500자)
+          <textarea required minLength={10} maxLength={500} value={reason}
+            disabled={busy} onChange={(e) => setReason(e.target.value)} />
+          <small>사유는 내보내기 감사 로그에 기록됩니다.</small>
+        </label>}
         {error && <p role="alert">{error}</p>}
         <footer>
           <Button
@@ -126,7 +137,7 @@ function CsvDialog() {
           >
             닫기
           </Button>
-          <Button variant="primary" disabled={busy} onClick={download}>
+          <Button variant="primary" disabled={busy || (needsAudit && !validReason)} onClick={download}>
             {busy ? '내보내는 중…' : '다운로드'}
           </Button>
         </footer>

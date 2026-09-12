@@ -1,3 +1,4 @@
+import { AuditDialog } from '../operations/shared';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { activeRun, scenarioApi, type Run, type RunInput } from '../../api/scenarios';
 import { ApiError } from '../../api/client';
@@ -11,6 +12,13 @@ export type RunEntry = {
   controller?: AbortController;
 };
 function useRunsState() {
+  const [auditTarget, setAuditTarget] = useState<string>();
+  const auditReply = useRef<((reason?: string) => void) | null>(null);
+  function finishAudit(reason?: string) {
+    auditReply.current?.(reason);
+    auditReply.current = null;
+    setAuditTarget(undefined);
+  }
   const entries = useRef(new Map<string, RunEntry>()),
     alive = useRef(true),
     submitting = useRef(false),
@@ -24,6 +32,8 @@ function useRunsState() {
     alive.current = true;
     return () => {
       alive.current = false;
+      auditReply.current?.();
+      auditReply.current = null;
       startController.current?.abort();
       for (const r of entries.current.values()) {
         clearTimeout(r.timer);
@@ -67,7 +77,18 @@ function useRunsState() {
     setPending(true);
     const controller = (startController.current = new AbortController());
     try {
-      const response = await scenarioApi.start(id, input, controller.signal);
+      // 최초 실행·실패 재시도·저장 리포트 재실행에 같은 감사 경계를 적용한다.
+      const detail = await scenarioApi.detail(id, controller.signal);
+      let reason: string | undefined;
+      if (detail.target_page === 'P3' || detail.metric_ids?.includes('refusals')) {
+        reason = await new Promise<string | undefined>((resolve) => {
+          auditReply.current = resolve;
+          setAuditTarget(`${id} · ${detail.title}`);
+        });
+        if (!reason) throw new Error('실행을 취소했습니다.');
+      }
+      if (controller.signal.aborted || !alive.current) throw new Error('로그인 세션이 종료되었습니다.');
+      const response = await scenarioApi.start(id, input, controller.signal, reason);
       if (!alive.current) throw new Error('로그인 세션이 종료되었습니다.');
       const entry: RunEntry = { run: response.run, input: structuredClone(input), revision: 0 };
       entries.current.set(response.run.run_id!, entry);
@@ -128,6 +149,8 @@ function useRunsState() {
     emit();
   }
   return {
+    auditTarget,
+    finishAudit,
     accept,
     forget,
     entries: [...entries.current.values()].reverse(),
@@ -141,7 +164,11 @@ function useRunsState() {
 const Context = createContext<ReturnType<typeof useRunsState> | null>(null);
 export function RunProvider({ children }: { children: ReactNode }) {
   const state = useRunsState();
-  return <Context.Provider value={state}>{children}</Context.Provider>;
+  return <Context.Provider value={state}>
+    {children}
+    {state.auditTarget && <AuditDialog target={state.auditTarget}
+      onCancel={() => state.finishAudit()} onSubmit={state.finishAudit} />}
+  </Context.Provider>;
 }
 export function useRuns() {
   const state = useContext(Context);

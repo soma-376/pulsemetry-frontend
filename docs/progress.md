@@ -51,3 +51,11 @@
 - 사용자의 후속 진행 요청에 따라 기존 backend 작업에서 확인한 frontend 결함 수정을 포함한다. 브랜치 feature/PROJ-156-dashboard-integration, 기준 52f7cb1. 기존 페이지·AuditDialog·표를 재사용한다.
 - queryCsv와 scenarioApi.start의 선택적 감사 사유를 공통 request에 전달한다. 본문 파라미터에 사유를 넣지 않으며 한글 헤더·AbortSignal·Retry-After 테스트를 보강했다.
 - 단위 91건·타입 검사·빌드 통과. 실제 backend E2E는 UI 변경과 함께 이어서 검증한다. push/배포는 하지 않는다.
+
+### 감사 입력과 결과 라벨 UI
+
+- RunProvider.start가 상세 메타데이터를 확인해 P3/refusals 시나리오의 최초·실패·저장 리포트 재실행에 동일한 AuditDialog를 제공한다. 매 실행 새 사유를 받고 취소·로그아웃 시 시작하지 않는다. 사유는 실행 입력·URL·영구 저장소에 보관하지 않는다.
+- 개인 조회 Widget은 사유 제출 전 비활성화한다. 필터/쿼리 변경 시 다시 사유를 요구하고, 캐시 키는 사유 대신 임의 식별자를 사용한다. 개인 조회의 자동 주기 갱신·자동 재시도를 끄고 gcTime=0으로 캐시 보존을 제한한다. 로그인 변경은 기존 RunProvider key와 인증 캐시 초기화를 따른다.
+- 개요 안전 거부 CSV에 사유 입력·길이 검증을 연결했다. 일반 CSV는 기존 흐름을 유지한다. 새로 열기/지표 변경 시 사유를 초기화한다.
+- 다중 수치 결과 표의 비교 헤더를 현재/이전으로 구분하고 잔존율의 cohort_week/week_index를 caption에 표시한다. 미관측·비공개·분모0 분기는 유지한다.
+- 기존 AuditDialog·WidgetCard·표 스타일을 재사용한 기능 보완이며 새 화면/Figma 재설계를 만들지 않았다. 실제 backend E2E 및 스크린샷 검토 대기다.
