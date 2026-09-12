@@ -68,10 +68,12 @@ it('CSV uses text negotiation with authentication and cancellation signal', asyn
     await api.queryCsv(
       { from: 'now-7d', to: 'now', queries: [{ ref_id: 'A', metric_id: 'cost' }] },
       signal,
+      'CSV 감사 사유 전달 검증',
     ),
   ).toContain('cost,12');
   const init = fetcher.mock.calls[0][1];
   expect(init.headers.get('Accept')).toBe('text/csv');
+  expect(init.headers.get('X-Audit-Reason')).toBe(encodeURIComponent('CSV 감사 사유 전달 검증'));
   expect(init.headers.get('Authorization')).toBe('Bearer csv-token');
   expect(init.signal).toBe(signal);
 });

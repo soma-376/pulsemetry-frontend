@@ -23,10 +23,11 @@ it('starts a run with encoded path, exact params, abort and headers', async () =
     price_basis: 'contract' as const,
     tz: 'Asia/Seoul',
   };
-  expect((await scenarioApi.start('S1/3', input, c.signal)).retryMs).toBe(4000);
+  expect((await scenarioApi.start('S1/3', input, c.signal, '시나리오 감사 연동 검증')).retryMs).toBe(4000);
   expect(fetch.mock.calls[0][0]).toBe('/v1/scenarios/S1%2F3/runs');
   expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual(input);
   expect(fetch.mock.calls[0][1].signal).toBe(c.signal);
+  expect(fetch.mock.calls[0][1].headers.get('X-Audit-Reason')).toBe(encodeURIComponent('시나리오 감사 연동 검증'));
 });
 it('defaults preserve zero and arrays without mutating schema', () => {
   const s: Schema = {

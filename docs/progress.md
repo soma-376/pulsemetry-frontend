@@ -45,3 +45,9 @@
 - http://127.0.0.1:5173/ · /teams · /operations · /settings · /scenarios · /scenarios/history.
 - owner/admin 계정 입력→로그인, 비밀번호 demo-pulse. 재로드 시 재로그인; 목업 실행·저장은 같은 브라우저에서 복원.
 - 직전 완료 ea86e20(7단계).8단계 완료 커밋은 `git log -1` 참조. 독립 로컬 Git 관리, 형제 저장소 변경/원격 push/배포/외부 메시지 없음.
+
+## PROJ-156 실제 백엔드 연동 보완
+
+- 사용자의 후속 진행 요청에 따라 기존 backend 작업에서 확인한 frontend 결함 수정을 포함한다. 브랜치 feature/PROJ-156-dashboard-integration, 기준 52f7cb1. 기존 페이지·AuditDialog·표를 재사용한다.
+- queryCsv와 scenarioApi.start의 선택적 감사 사유를 공통 request에 전달한다. 본문 파라미터에 사유를 넣지 않으며 한글 헤더·AbortSignal·Retry-After 테스트를 보강했다.
+- 단위 91건·타입 검사·빌드 통과. 실제 backend E2E는 UI 변경과 함께 이어서 검증한다. push/배포는 하지 않는다.

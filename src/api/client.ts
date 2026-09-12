@@ -49,11 +49,11 @@ export async function request<T>(
   return (responseType === 'text' ? response.text() : response.json()) as Promise<T>;
 }
 export const api = {
-  queryCsv: (body: QueryRequest, signal?: AbortSignal) =>
+  queryCsv: (body: QueryRequest, signal?: AbortSignal, auditReason?: string) =>
     request<string>(
       '/query',
       { method: 'POST', body: JSON.stringify(body), headers: { Accept: 'text/csv' }, signal },
-      undefined,
+      auditReason,
       'text',
     ),
   login: (email: string, password: string) =>

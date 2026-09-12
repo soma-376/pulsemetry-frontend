@@ -16,9 +16,9 @@ export function pollDelay(value: string | null) {
   const seconds = Number(value);
   return value && Number.isFinite(seconds) && seconds > 0 ? Math.max(1000, seconds * 1000) : 2000;
 }
-async function runRequest(path: string, options: RequestInit = {}) {
+async function runRequest(path: string, options: RequestInit = {}, auditReason?: string) {
   let retryMs = 2000;
-  const run = await request<Run>(path, options, undefined, 'json', (h) => {
+  const run = await request<Run>(path, options, auditReason, 'json', (h) => {
     retryMs = pollDelay(h.get('Retry-After'));
   });
   if (
@@ -63,12 +63,12 @@ export const scenarioApi = {
   catalog: (signal?: AbortSignal) => request<Catalog>('/scenarios', { signal }),
   detail: (id: string, signal?: AbortSignal) =>
     request<Detail>(`/scenarios/${encodeURIComponent(id)}`, { signal }),
-  start: (id: string, input: RunInput, signal?: AbortSignal) =>
+  start: (id: string, input: RunInput, signal?: AbortSignal, auditReason?: string) =>
     runRequest(`/scenarios/${encodeURIComponent(id)}/runs`, {
       method: 'POST',
       body: JSON.stringify(input),
       signal,
-    }),
+    }, auditReason),
   get: (id: string, signal?: AbortSignal) =>
     runRequest(`/scenario-runs/${encodeURIComponent(id)}`, { signal }),
   cancel: (id: string, signal?: AbortSignal) =>
