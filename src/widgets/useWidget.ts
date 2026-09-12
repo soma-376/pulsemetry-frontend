@@ -11,7 +11,8 @@ export function useWidget(
   requestPatch?: Partial<QueryRequest>,
 ) {
   const scope = useScopedFilters();
-  const needsAudit = queries.some(q => q.metric_id === 'vendor_account_mismatch' || q.metric_id === 'refusals');
+  const needsAudit = !!scope.value.filters?.member_ids?.length || queries.some(q =>
+    q.metric_id === 'vendor_account_mismatch' || !!q.filters?.member_ids?.length);
   const auditScope = JSON.stringify([scope.role, scope.serialized, queries, requestPatch]);
   const [grant, setGrant] = useState<{ scope: string; reason: string; key: string }>();
   const authorized = !needsAudit || grant?.scope === auditScope;

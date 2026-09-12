@@ -53,7 +53,9 @@ function CsvDialog() {
     { label: '훅 차단', query: overviewQueries.governance[1] },
     { label: '훅 실행 세션', query: overviewQueries.governance[2] },
   ];
-  const needsAudit = choices[selected]?.query.metric_id === 'refusals';
+  const needsAudit = !!value.filters?.member_ids?.length ||
+    !!choices[selected]?.query.filters?.member_ids?.length ||
+    choices[selected]?.query.metric_id === 'vendor_account_mismatch';
   const validReason = reason.trim().length >= 10 && reason.trim().length <= 500;
   async function download() {
     if (needsAudit && !validReason) return;
