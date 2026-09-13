@@ -1,0 +1,87 @@
+const imgChart = "https://www.figma.com/api/mcp/asset/dbb05ff9-83e0-4828-92aa-35f8f5a6ab0e.svg";
+const imgChart1 = "https://www.figma.com/api/mcp/asset/3706dfca-366f-4495-8eae-186c1be621b9.svg";
+
+export default function W18() {
+  return (
+    <div className="bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid relative rounded-[8px] size-full" data-node-id="26:60" data-name="W1.8 플랫폼 헬스">
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[13px] text-[color:var(--text\/1,#111827)] top-[17.67px] whitespace-nowrap" data-node-id="26:61">
+        플랫폼 헬스
+      </p>
+      <div className="absolute border border-[var(--accent\/gray,#6b7280)] border-solid left-[81.3px] rounded-[8px] size-[16px] top-[20px]" data-node-id="26:62" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[7.4px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[2px] whitespace-nowrap" data-node-id="26:63">
+          i
+        </p>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[107.3px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[19.52px] whitespace-nowrap" data-node-id="26:64">
+        최근 24h · 1h
+      </p>
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid left-[331.3px] rounded-[6px] size-[24px] top-[16px]" data-node-id="26:65" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-none left-[13.5px] not-italic text-[14px] text-[color:var(--text\/2,#4b5563)] text-center top-[4px] whitespace-nowrap" data-node-id="26:66">
+          ⋯
+        </p>
+      </div>
+      <div className="absolute bg-[var(--accent\/red,#b91c1c)] left-[16px] rounded-[2px] size-[8px] top-[56.7px]" data-node-id="26:67" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[29px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[52px] whitespace-nowrap" data-node-id="26:68">
+        API 에러율
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[208.1px] not-italic text-[12px] text-[color:var(--accent\/red,#b91c1c)] top-[52px] whitespace-nowrap" data-node-id="26:69">
+        0.4%
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[237.9px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[52px] whitespace-nowrap" data-node-id="26:70">
+        현재 · 최대 2.4% (07h)
+      </p>
+      <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[44px] left-[16px] top-[74.1px] w-[339.3px]" data-node-id="26:71" data-name="box">
+        <div className="absolute h-[43px] left-0 top-0 w-[339.3px]" data-node-id="26:72" data-name="chart">
+          <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChart} />
+        </div>
+      </div>
+      <div className="absolute border-[var(--accent\/blue,#1d4ed8)] border-solid border-t-2 h-[2px] left-[16px] top-[142.1px] w-[14px]" data-node-id="26:74" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[35px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[134.4px] whitespace-nowrap" data-node-id="26:75">
+        TTFT p50
+      </p>
+      <div className="absolute border-[var(--accent\/blue2,#0369a1)] border-dashed border-t-2 h-[2px] left-[96.4px] top-[142.1px] w-[14px]" data-node-id="26:76" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[115.4px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[134.4px] whitespace-nowrap" data-node-id="26:77">
+        p90
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[269.2px] not-italic text-[12px] text-[color:var(--accent\/blue,#1d4ed8)] top-[131.4px] whitespace-nowrap" data-node-id="26:78">
+        612
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[292.3px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[131.4px] whitespace-nowrap" data-node-id="26:79">
+        /
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[302.3px] not-italic text-[12px] text-[color:var(--accent\/blue2,#0369a1)] top-[131.4px] whitespace-nowrap" data-node-id="26:80">
+        1,480
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[336.3px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[131.4px] whitespace-nowrap" data-node-id="26:81">
+        ms
+      </p>
+      <div className="absolute border-[var(--border\/default,#e2e5ea)] border-b border-solid h-[44px] left-[16px] top-[155.8px] w-[339.3px]" data-node-id="26:82" data-name="box">
+        <div className="absolute h-[43px] left-0 top-0 w-[339.3px]" data-node-id="26:83" data-name="chart">
+          <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChart1} />
+        </div>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[203.32px] whitespace-nowrap" data-node-id="26:86">
+        −24h
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[176.2px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[203.32px] whitespace-nowrap" data-node-id="26:87">
+        −12h
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[336.3px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[203.32px] whitespace-nowrap" data-node-id="26:88">
+        지금
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[231.23px] whitespace-nowrap" data-node-id="26:89">
+        에러율 = 4xx/5xx 응답 ÷ 전체 API 호출 · 429 포함
+      </p>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+These styles are contained in the design: widget-title/13-sb: Font(family: "font/ui", style: Regular, size: 13, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/10: Font(family: "font/ui", style: Regular, size: 10, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), glyph/14: Font(family: "font/ui", style: Regular, size: 14, weight: 400, lineHeight: 1, letterSpacing: 0), sub/12: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), sub/12-sb: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0).
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

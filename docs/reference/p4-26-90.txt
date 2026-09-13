@@ -1,0 +1,69 @@
+export default function W19() {
+  return (
+    <div className="bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid relative rounded-[8px] size-full" data-node-id="26:90" data-name="W1.9 거버넌스 요약">
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[13px] text-[color:var(--text\/1,#111827)] top-[17.67px] whitespace-nowrap" data-node-id="26:91">
+        거버넌스 요약
+      </p>
+      <div className="absolute border border-[var(--accent\/gray,#6b7280)] border-solid left-[92.5px] rounded-[8px] size-[16px] top-[20px]" data-node-id="26:92" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[7.4px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[2px] whitespace-nowrap" data-node-id="26:93">
+          i
+        </p>
+      </div>
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid left-[331.3px] rounded-[6px] size-[24px] top-[16px]" data-node-id="26:94" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-none left-[13.5px] not-italic text-[14px] text-[color:var(--text\/2,#4b5563)] text-center top-[4px] whitespace-nowrap" data-node-id="26:95">
+          ⋯
+        </p>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[51.3px] whitespace-nowrap" data-node-id="26:96">
+        안전 거부
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[63.5px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[51.3px] whitespace-nowrap" data-node-id="26:97">
+        (전사 합만)
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.1] left-[16px] not-italic text-[28px] text-[color:var(--accent\/red,#b91c1c)] top-[73px] tracking-[-0.56px] whitespace-nowrap" data-node-id="26:98">
+        7
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[36.4px] not-italic text-[13px] text-[color:var(--text\/3,#6b7280)] top-[86.75px] whitespace-nowrap" data-node-id="26:99">
+        건
+      </p>
+      <div className="absolute bg-[var(--surface\/sub,#eef0f3)] border border-[var(--border\/default,#e2e5ea)] border-solid h-[21.9px] left-[57.7px] rounded-[4px] top-[77.8px] w-[91.4px]" data-node-id="26:100" data-name="box">
+        <div className="absolute border border-[var(--text\/2,#4b5563)] border-solid h-[9px] left-[7px] rounded-[2px] top-[6.5px] w-[8px]" data-node-id="26:101" data-name="box" />
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[20px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[1.97px] whitespace-nowrap" data-node-id="26:102">
+          부서 분해 없음
+        </p>
+      </div>
+      <div className="absolute border-[var(--border\/default,#e2e5ea)] border-solid border-t h-px left-[16px] top-[118.2px] w-[339.3px]" data-node-id="26:103" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[132.5px] whitespace-nowrap" data-node-id="26:104">
+        훅 차단
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.1] left-[16px] not-italic text-[28px] text-[color:var(--accent\/orange,#c2410c)] top-[154.2px] tracking-[-0.56px] whitespace-nowrap" data-node-id="26:105">
+        42
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[53.8px] not-italic text-[13px] text-[color:var(--text\/3,#6b7280)] top-[167.95px] whitespace-nowrap" data-node-id="26:106">
+        건
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[191.7px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[132.5px] whitespace-nowrap" data-node-id="26:107">
+        훅 실행 세션 비율
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.1] left-[191.7px] not-italic text-[28px] text-[color:var(--accent\/orange,#c2410c)] top-[154.2px] tracking-[-0.56px] whitespace-nowrap" data-node-id="26:108">
+        31
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[229.5px] not-italic text-[13px] text-[color:var(--text\/3,#6b7280)] top-[167.95px] whitespace-nowrap" data-node-id="26:109">
+        %
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[231.23px] whitespace-nowrap" data-node-id="26:110">
+        거부 = 모델 안전 정책 거절 응답 · 개인 식별 조회는 P3에서 사유 입력 후
+      </p>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+These styles are contained in the design: widget-title/13-sb: Font(family: "font/ui", style: Regular, size: 13, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/10: Font(family: "font/ui", style: Regular, size: 10, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), glyph/14: Font(family: "font/ui", style: Regular, size: 14, weight: 400, lineHeight: 1, letterSpacing: 0), sub/12: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), stat/28-sb: Font(family: "font/ui", style: Regular, size: 28, weight: 400, lineHeight: 1.100000023841858, letterSpacing: -2), body/13-md: Font(family: "font/ui", style: Regular, size: 13, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11-md: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0).
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

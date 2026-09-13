@@ -1,0 +1,74 @@
+export default function Modal() {
+  return (
+    <div className="bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid relative rounded-[8px] size-full" data-node-id="60:737" data-name="Modal · 리포트 저장">
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.3] left-[20px] not-italic text-[15px] text-[color:var(--text\/1,#111827)] top-[19.63px] whitespace-nowrap" data-node-id="60:738">
+        리포트 저장
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-[345.4px] not-italic text-[11.5px] text-[color:var(--text\/3,#6b7280)] top-[22.67px] whitespace-nowrap" data-node-id="60:739">
+        S1-3 · run_01J7R2
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[20px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[55.35px] whitespace-nowrap" data-node-id="60:740">
+        이름
+      </p>
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid h-[34px] left-[20px] rounded-[6px] top-[79.2px] w-[438px]" data-node-id="60:741" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[20px] not-italic text-[12px] text-[color:var(--text\/2,#4b5563)] top-[126.75px] whitespace-nowrap" data-node-id="60:742">
+        메모
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[20px] not-italic text-[12px] text-[color:var(--text\/3,#6b7280)] top-[150.15px] whitespace-nowrap" data-node-id="60:743">
+        (선택)
+      </p>
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid h-[49px] left-[20px] rounded-[6px] top-[174px] w-[438px]" data-node-id="60:744" data-name="box" />
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid h-[53px] left-[20px] rounded-[6px] top-[237px] w-[438px]" data-node-id="60:745" data-name="box">
+        <div className="absolute border-[1.5px] border-[var(--accent\/gray,#6b7280)] border-solid left-[12px] rounded-[7px] size-[14px] top-[12px]" data-node-id="60:746" data-name="box">
+          <div className="absolute left-[2px] rounded-[3.5px] size-[7px] top-[2px]" data-node-id="60:747" data-name="box" />
+        </div>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[36px] not-italic text-[12.5px] text-[color:var(--text\/1,#111827)] top-[10px] whitespace-nowrap" data-node-id="60:748">
+          파라미터 고정
+        </p>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[36px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[27px] whitespace-nowrap" data-node-id="60:749">
+          2026-08-11 → 09-07 절대 범위로 저장 · 열 때 같은 결과
+        </p>
+      </div>
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--accent\/blue,#1d4ed8)] border-solid h-[53px] left-[20px] rounded-[6px] top-[296px] w-[438px]" data-node-id="60:750" data-name="box">
+        <div className="absolute border-[1.5px] border-[var(--accent\/blue,#1d4ed8)] border-solid left-[12px] rounded-[7px] size-[14px] top-[12px]" data-node-id="60:751" data-name="box">
+          <div className="absolute bg-[var(--accent\/blue,#1d4ed8)] left-[2px] rounded-[3.5px] size-[7px] top-[2px]" data-node-id="60:752" data-name="box" />
+        </div>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[36px] not-italic text-[12.5px] text-[color:var(--text\/1,#111827)] top-[10px] whitespace-nowrap" data-node-id="60:753">
+          기간을 상대식으로 유지
+        </p>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[36px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[27px] whitespace-nowrap" data-node-id="60:754">
+          now-28d 로 저장 · 열 때마다 최신 28일로 재실행
+        </p>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[20px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[362.52px] whitespace-nowrap" data-node-id="60:755">
+        공유 링크
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/mono,'IBM_Plex_Mono:Regular')] leading-[1.45] left-[63.6px] not-italic text-[11.5px] text-[color:var(--text\/3,#6b7280)] top-[362.77px] whitespace-nowrap" data-node-id="60:756">
+        /runs/run_01J7R2
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[169.5px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[362.52px] whitespace-nowrap" data-node-id="60:757">
+        · 같은 테넌트 관리자만 열 수 있음
+      </p>
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid h-[32px] left-[350.8px] rounded-[6px] top-[392.9px] w-[47.6px]" data-node-id="60:758" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[22.8px] not-italic text-[12.5px] text-[color:var(--text\/1,#111827)] text-center top-[7.5px] whitespace-nowrap" data-node-id="60:759">
+          취소
+        </p>
+      </div>
+      <div className="absolute bg-[var(--text\/1,#111827)] border border-[var(--text\/1,#111827)] border-solid h-[32px] left-[406.4px] rounded-[6px] top-[392.9px] w-[51.6px]" data-node-id="60:760" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[24.8px] not-italic text-[12.5px] text-[color:var(--misc\/on-inverse,white)] text-center top-[7.5px] whitespace-nowrap" data-node-id="60:761">
+          저장
+        </p>
+      </div>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+These styles are contained in the design: h3/15-sb: Font(family: "font/ui", style: Regular, size: 15, weight: 400, lineHeight: 1.2999999523162842, letterSpacing: 0), mono/11-5: Font(family: "font/mono", style: Regular, size: 11.5, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), sub/12: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), sub/12-5-sb: Font(family: "font/ui", style: Regular, size: 12.5, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), sub/12-5: Font(family: "font/ui", style: Regular, size: 12.5, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0).
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

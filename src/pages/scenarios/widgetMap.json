@@ -1,0 +1,146 @@
+{
+  "active_users": [
+    "W1.1"
+  ],
+  "adoption_rate": [
+    "W1.1",
+    "W1.6"
+  ],
+  "cost": [
+    "W1.1",
+    "W1.2",
+    "W1.3",
+    "W2.5"
+  ],
+  "cost_per_active_user": [
+    "W1.1"
+  ],
+  "sessions": [
+    "W1.1",
+    "W2.1"
+  ],
+  "lines_of_code": [
+    "W1.1",
+    "W1.5",
+    "W2.4"
+  ],
+  "tokens": [
+    "W1.4",
+    "W2.6"
+  ],
+  "model_users": [
+    "W1.4"
+  ],
+  "commits": [
+    "W1.5",
+    "W2.4"
+  ],
+  "pull_requests": [
+    "W1.5",
+    "W2.4"
+  ],
+  "integration_depth": [
+    "W1.5",
+    "W2.4"
+  ],
+  "edit_acceptance_rate": [
+    "W1.7",
+    "W2.7"
+  ],
+  "auto_approval_ratio": [
+    "W1.7",
+    "W2.7"
+  ],
+  "api_error_rate": [
+    "W1.8",
+    "W3.1"
+  ],
+  "llm_ttft_ms": [
+    "W1.8",
+    "W3.1"
+  ],
+  "refusals": [
+    "W1.9",
+    "W3.3"
+  ],
+  "hook_blocking": [
+    "W1.9",
+    "W3.2"
+  ],
+  "hook_executions": [
+    "W1.9",
+    "W3.2"
+  ],
+  "active_time": [
+    "W2.0"
+  ],
+  "automation_ratio": [
+    "W2.0"
+  ],
+  "prompts_per_session": [
+    "W2.2",
+    "W2.8"
+  ],
+  "command_prompt_ratio": [
+    "W2.2",
+    "W2.8"
+  ],
+  "usage_heatmap": [
+    "W2.3"
+  ],
+  "rate_limit_events": [
+    "W2.3"
+  ],
+  "subagent_cost_ratio": [
+    "W2.5"
+  ],
+  "cache_read_ratio": [
+    "W2.6"
+  ],
+  "gate_wait_ms": [
+    "W2.7"
+  ],
+  "tool_rejections": [
+    "W2.7",
+    "W3.3"
+  ],
+  "mcp_connections": [
+    "W2.8",
+    "W3.2"
+  ],
+  "mcp_failure_ratio": [
+    "W2.8",
+    "W3.2"
+  ],
+  "tool_calls": [
+    "W2.8",
+    "W2.10",
+    "W3.1"
+  ],
+  "tool_failure_rate": [
+    "W2.8",
+    "W2.10",
+    "W3.1"
+  ],
+  "compactions": [
+    "W2.9"
+  ],
+  "compaction_reduction": [
+    "W2.9"
+  ],
+  "llm_duration_ms": [
+    "W3.1"
+  ],
+  "api_retry_attempts": [
+    "W3.1"
+  ],
+  "vendor_account_mismatch": [
+    "W3.3"
+  ],
+  "rubber_stamp_ratio": [
+    "W3.3"
+  ],
+  "cost_anomaly": [
+    "W1.2"
+  ]
+}

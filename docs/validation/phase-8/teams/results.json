@@ -1,0 +1,124 @@
+{
+  "checks": [
+    "Below-fold token widget is not requested before entering viewport",
+    "All 168 KST heat cells expose values and support selection",
+    "Data tables available as chart alternative",
+    "Compare-none hides deltas; contract price updates API-backed cost",
+    "Model filter reaches widgets and replaces previous data",
+    "Masked data never enters charts",
+    "Empty state distinct from numeric zero",
+    "Widget error retries its request and recovers",
+    "Partial query failure preserves successful output and cost groups",
+    "1024px: no horizontal overflow, single column layout",
+    "768px: no horizontal overflow, single column layout",
+    "Admin team picker only exposes authorized teams",
+    "No uncaught browser errors"
+  ],
+  "geometry": {
+    "kpi": [
+      {
+        "x": 264,
+        "y": 152,
+        "w": 217.59375,
+        "h": 136
+      },
+      {
+        "x": 497.59375,
+        "y": 152,
+        "w": 217.59375,
+        "h": 136
+      },
+      {
+        "x": 731.1875,
+        "y": 152,
+        "w": 217.609375,
+        "h": 136
+      },
+      {
+        "x": 964.796875,
+        "y": 152,
+        "w": 217.59375,
+        "h": 136
+      },
+      {
+        "x": 1198.390625,
+        "y": 152,
+        "w": 217.609375,
+        "h": 136
+      }
+    ],
+    "widgets": [
+      {
+        "id": "sessions",
+        "x": 264,
+        "y": 304,
+        "w": 373.328125,
+        "h": 274.375
+      },
+      {
+        "id": "prompts",
+        "x": 653.328125,
+        "y": 304,
+        "w": 373.328125,
+        "h": 274.375
+      },
+      {
+        "id": "heatmap",
+        "x": 1042.65625,
+        "y": 304,
+        "w": 373.34375,
+        "h": 274.375
+      },
+      {
+        "id": "output",
+        "x": 264,
+        "y": 594.375,
+        "w": 568,
+        "h": 437
+      },
+      {
+        "id": "cost",
+        "x": 848,
+        "y": 594.375,
+        "w": 568,
+        "h": 437
+      },
+      {
+        "id": "tokens",
+        "x": 264,
+        "y": 1047.375,
+        "w": 568,
+        "h": 326
+      },
+      {
+        "id": "friction-0",
+        "x": 848,
+        "y": 1047.375,
+        "w": 568,
+        "h": 326
+      },
+      {
+        "id": "features",
+        "x": 264,
+        "y": 1389.375,
+        "w": 762.65625,
+        "h": 363.046875
+      },
+      {
+        "id": "compaction",
+        "x": 1042.65625,
+        "y": 1389.375,
+        "w": 373.34375,
+        "h": 363.046875
+      },
+      {
+        "id": "quality",
+        "x": 264,
+        "y": 1768.421875,
+        "w": 1152,
+        "h": 319
+      }
+    ]
+  },
+  "errors": []
+}

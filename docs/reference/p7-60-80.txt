@@ -1,0 +1,881 @@
+<frame id="60:80" name="P1 개요 · 리포트 저장 모달 (L5)" x="3120" y="0" width="1440" height="1100">
+  <frame id="60:81" name="App" x="1" y="1" width="1440" height="1704.300048828125">
+    <frame id="60:82" name="box" x="0" y="0" width="240" height="1704.300048828125">
+      <frame id="60:83" name="box" x="16" y="18" width="20" height="20" />
+      <text id="60:84" name="Pulsemetry" x="44" y="17.75" width="70" height="20" />
+      <frame id="60:85" name="box" x="199" y="16" width="24" height="24">
+        <text id="60:86" name="‹" x="10" y="5.050000190734863" width="5" height="17" />
+      </frame>
+      <frame id="60:87" name="box" x="8" y="52" width="223" height="34">
+        <frame id="60:88" name="box" x="10" y="10" width="14" height="14" />
+        <text id="60:89" name="개요" x="34" y="7.425000190734863" width="23" height="19" />
+      </frame>
+      <frame id="60:90" name="box" x="8" y="88" width="223" height="34">
+        <frame id="60:91" name="box" x="10" y="10" width="14" height="14" />
+        <text id="60:92" name="팀 분석" x="34" y="7.425000190734863" width="37" height="19" />
+      </frame>
+      <frame id="60:93" name="box" x="8" y="124" width="223" height="34">
+        <frame id="60:94" name="box" x="10" y="10" width="14" height="14" />
+        <text id="60:95" name="운영 · 보안" x="34" y="7.425000190734863" width="55" height="19" />
+      </frame>
+      <frame id="60:96" name="box" x="8" y="160" width="223" height="34">
+        <frame id="60:97" name="box" x="10" y="10" width="14" height="14" />
+        <text id="60:98" name="시나리오" x="34" y="7.425000190734863" width="45" height="19" />
+        <frame id="60:99" name="box" x="186.89999389648438" y="8" width="26.100000381469727" height="18">
+          <text id="60:100" name="12" x="6" y="0" width="12" height="16" />
+        </frame>
+      </frame>
+      <frame id="60:101" name="box" x="8" y="196" width="223" height="34">
+        <frame id="60:102" name="box" x="10" y="10" width="14" height="14" />
+        <text id="60:103" name="설정" x="34" y="7.425000190734863" width="23" height="19" />
+      </frame>
+      <frame id="60:104" name="box" x="8" y="1576.300048828125" width="223" height="116.0999984741211">
+        <text id="60:105" name="코드웍스" x="8" y="12.824999809265137" width="45" height="19" />
+        <frame id="60:106" name="box" x="8" y="33.79999923706055" width="207" height="17.399999618530273">
+          <text id="60:107" name="admin@codeworks.io" x="0" y="-0.44999998807907104" width="115" height="17" />
+        </frame>
+        <frame id="60:108" name="box" x="8" y="58.70000076293945" width="45.29999923706055" height="17">
+          <text id="60:109" name="owner" x="7" y="0.5249999761581421" width="31" height="16" />
+        </frame>
+        <frame id="60:110" name="box" x="4" y="86.0999984741211" width="215" height="30">
+          <frame id="60:111" name="box" x="3" y="3" width="103.5" height="24">
+            <text id="60:112" name="라이트" x="37.25" y="5.5" width="29" height="16" />
+          </frame>
+          <frame id="60:113" name="box" x="108.5" y="3" width="103.5" height="24">
+            <text id="60:114" name="다크" x="41.20000076293945" y="5.5" width="20" height="16" />
+          </frame>
+        </frame>
+      </frame>
+    </frame>
+    <frame id="60:115" name="box" x="240" y="0" width="1200" height="56">
+      <frame id="60:116" name="box" x="16" y="12.5" width="173.1999969482422" height="30">
+        <frame id="60:117" name="box" x="3" y="3" width="42" height="24">
+          <text id="60:118" name="24h" x="10" y="5.050000190734863" width="22" height="17" />
+        </frame>
+        <frame id="60:119" name="box" x="47" y="3" width="34.70000076293945" height="24">
+          <text id="60:120" name="7d" x="9.850000381469727" y="5.050000190734863" width="14" height="17" />
+        </frame>
+        <frame id="60:121" name="box" x="83.69999694824219" y="3" width="42.20000076293945" height="24">
+          <text id="60:122" name="28d" x="10.100000381469727" y="5.050000190734863" width="22" height="17" />
+        </frame>
+        <frame id="60:123" name="box" x="127.9000015258789" y="3" width="42.20000076293945" height="24">
+          <text id="60:124" name="90d" x="10.100000381469727" y="5.050000190734863" width="22" height="17" />
+        </frame>
+      </frame>
+      <frame id="60:125" name="box" x="195.1999969482422" y="12.5" width="108.30000305175781" height="30">
+        <text id="60:126" name="08-31 → 09-07" x="12.649999618530273" y="8.050000190734863" width="83" height="17" />
+      </frame>
+      <text id="60:127" name="비교" x="309.5" y="18.350000381469727" width="21" height="17" />
+      <frame id="60:128" name="box" x="336.29998779296875" y="12.5" width="78.5" height="30" />
+      <text id="60:129" name="KST" x="420.79998779296875" y="19.024999618530273" width="21" height="16" />
+      <frame id="60:130" name="box" x="447" y="17.5" width="1" height="20" />
+      <frame id="60:131" name="box" x="454" y="12.5" width="70" height="30">
+        <text id="60:132" name="팀" x="10.699999809265137" y="8.050000190734863" width="11" height="17" />
+        <text id="60:133" name="전체" x="27.25" y="8.050000190734863" width="21" height="17" />
+        <text id="60:134" name="▾" x="54.5" y="9" width="4" height="15" />
+      </frame>
+      <frame id="60:135" name="box" x="529.9000244140625" y="12.5" width="113.5" height="30">
+        <frame id="60:136" name="box" x="11" y="12" width="6" height="6" />
+        <text id="60:137" name="claude_code" x="22.75" y="8" width="80" height="17" />
+      </frame>
+      <frame id="60:138" name="box" x="647.4000244140625" y="12.5" width="70.0999984741211" height="30">
+        <frame id="60:139" name="box" x="11" y="12" width="6" height="6" />
+        <text id="60:140" name="codex" x="23.049999237060547" y="8" width="36" height="17" />
+      </frame>
+      <frame id="60:141" name="box" x="723.5" y="12.5" width="80.30000305175781" height="30">
+        <text id="60:142" name="모델" x="10.850000381469727" y="8.050000190734863" width="21" height="17" />
+        <text id="60:143" name="전체" x="37.54999923706055" y="8.050000190734863" width="21" height="17" />
+        <text id="60:144" name="▾" x="64.9000015258789" y="9" width="4" height="15" />
+      </frame>
+      <frame id="60:145" name="box" x="809.9000244140625" y="12.5" width="83.80000305175781" height="30">
+        <frame id="60:146" name="box" x="3" y="3" width="37.900001525878906" height="24">
+          <text id="60:147" name="공시" x="8.5" y="7.5" width="21" height="17" />
+        </frame>
+        <frame id="60:148" name="box" x="42.900001525878906" y="3" width="37.900001525878906" height="24">
+          <text id="60:149" name="계약" x="8.5" y="7.5" width="21" height="17" />
+        </frame>
+      </frame>
+      <frame id="60:150" name="box" x="905.7000122070312" y="12.5" width="107.4000015258789" height="30">
+        <text id="60:151" name="답할 수 있는 질문" x="12.199999809265137" y="8.050000190734863" width="82" height="17" />
+      </frame>
+      <frame id="60:152" name="box" x="1019.0999755859375" y="12.5" width="113.5999984741211" height="30">
+        <text id="60:153" name="새로고침" x="10.75" y="8.050000190734863" width="42" height="17" />
+        <frame id="60:154" name="box" x="60.5" y="9" width="22" height="12">
+          <frame id="60:155" name="box" x="2" y="2" width="8" height="8" />
+        </frame>
+        <text id="60:156" name="5분" x="86.55000305175781" y="8.5" width="17" height="16" />
+      </frame>
+      <frame id="60:157" name="box" x="1138.5999755859375" y="12.5" width="45.400001525878906" height="30">
+        <text id="60:158" name="CSV" x="10.699999809265137" y="8.050000190734863" width="24" height="17" />
+      </frame>
+    </frame>
+    <frame id="60:159" name="box" x="240" y="56" width="1200" height="28">
+      <frame id="60:160" name="box" x="24" y="10.5" width="6" height="6" />
+      <text id="60:161" name="텔레메트리 활성 기기 기준 · 활성 설치" x="38" y="4.349999904632568" width="177" height="17" />
+      <text id="60:162" name="128" x="217.6999969482422" y="4.349999904632568" width="20" height="17" />
+      <text id="60:163" name="/ 활성 구성원" x="240.8000030517578" y="4.349999904632568" width="62" height="17" />
+      <text id="60:164" name="154" x="308.70001220703125" y="4.349999904632568" width="20" height="17" />
+      <text id="60:165" name="(" x="331.79998779296875" y="4.349999904632568" width="5" height="17" />
+      <text id="60:166" name="83%" x="338.8999938964844" y="4.349999904632568" width="26" height="17" />
+      <text id="60:167" name=") · 마지막 적재 3분 전" x="365.20001220703125" y="4.349999904632568" width="103" height="17" />
+      <text id="60:168" name="커버리지 상세" x="1110.800048828125" y="4.349999904632568" width="66" height="17" />
+    </frame>
+    <frame id="60:169" name="box" x="240" y="84" width="1200" height="36">
+      <frame id="60:170" name="box" x="24" y="13.5" width="8" height="8" />
+      <text id="60:171" name="시나리오 적용 중: S1-3 비용 스파이크·" x="42" y="8.335000038146973" width="235" height="18" />
+      <text id="60:172" name="· 필터 자동 적용 — 기간 28d(now-" x="287.20001220703125" y="8.335000038146973" width="536" height="18" />
+      <text id="60:173" name="해제" x="1155.300048828125" y="8.350000381469727" width="21" height="17" />
+    </frame>
+    <text id="60:174" name="개요" x="264" y="139.6999969482422" width="31" height="26" />
+    <text id="60:175" name="조직 전체 · 2026-08-31 ~ 202" x="304.79998779296875" y="146.0500030517578" width="207" height="17" />
+    <text id="60:176" name="공시" x="513.9000244140625" y="146.0500030517578" width="21" height="17" />
+    <text id="60:177" name="단가" x="534.7000122070312" y="146.0500030517578" width="21" height="17" />
+    <text id="60:178" name="개인 이름·개인 순위 없음 · 그룹 5명 미" x="772.7000122070312" y="146.0500030517578" width="201" height="17" />
+    <frame id="60:179" name="box" x="976" y="147.5" width="29.899999618530273" height="16">
+      <text id="60:180" name="n&lt;5" x="5" y="-0.22499999403953552" width="21" height="17" />
+    </frame>
+    <text id="60:181" name="마스킹" x="1005.9000244140625" y="146.0500030517578" width="32" height="17" />
+    <frame id="60:182" name="box" x="264" y="520" width="116" height="180.89999389648438">
+      <frame id="60:183" name="box" x="17" y="17" width="54.900001525878906" height="17.399999618530273">
+        <text id="60:184" name="활성 사용자" x="0" y="-0.44999998807907104" width="55" height="17" />
+      </frame>
+      <frame id="60:185" name="box" x="83" y="17.700000762939453" width="16" height="16">
+        <text id="60:186" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <text id="60:187" name="117" x="17" y="40.150001525878906" width="42" height="33" />
+      <text id="60:188" name="명" x="17" y="81.05000305175781" width="11" height="17" />
+      <text id="60:189" name="▲" x="17" y="100.1500015258789" width="12" height="17" />
+      <text id="60:190" name="+8.3%" x="17" y="117.55000305175781" width="36" height="17" />
+      <text id="60:191" name="전주 대비" x="64.0999984741211" y="108.8499984741211" width="45" height="17" />
+      <frame id="60:192" name="box" x="17" y="141.39999389648438" width="82" height="16">
+        <text id="60:193" name="user 활성시간&gt;0" x="0" y="-0.4749999940395355" width="76" height="16" />
+      </frame>
+    </frame>
+    <frame id="60:194" name="box" x="396" y="520" width="116" height="180.89999389648438">
+      <frame id="60:195" name="box" x="17" y="17" width="31.100000381469727" height="17.399999618530273">
+        <text id="60:196" name="도입률" x="0" y="-0.44999998807907104" width="32" height="17" />
+      </frame>
+      <frame id="60:197" name="box" x="83" y="17.700000762939453" width="16" height="16">
+        <text id="60:198" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <text id="60:199" name="76.0" x="17" y="40.150001525878906" width="57" height="33" />
+      <text id="60:200" name="%" x="17" y="81.05000305175781" width="11" height="17" />
+      <text id="60:201" name="▲" x="17" y="100.1500015258789" width="12" height="17" />
+      <text id="60:202" name="+4.1pt" x="17" y="117.55000305175781" width="33" height="17" />
+      <text id="60:203" name="전주 대비" x="64.19999694824219" y="108.8499984741211" width="45" height="17" />
+      <frame id="60:204" name="box" x="17" y="141.39999389648438" width="82" height="16">
+        <text id="60:205" name="분모: 활성 구성원 154" x="0" y="-0.4749999940395355" width="96" height="16" />
+      </frame>
+    </frame>
+    <frame id="60:206" name="box" x="528" y="520" width="116" height="180.89999389648438">
+      <frame id="60:207" name="box" x="17" y="17" width="20.700000762939453" height="17.399999618530273">
+        <text id="60:208" name="비용" x="0" y="-0.44999998807907104" width="21" height="17" />
+      </frame>
+      <frame id="60:209" name="box" x="83" y="17.700000762939453" width="16" height="16">
+        <text id="60:210" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <text id="60:211" name="$4,812.37" x="17" y="40.150001525878906" width="130" height="33" />
+      <text id="60:212" name="USD" x="25" y="81.05000305175781" width="24" height="17" />
+      <text id="60:213" name="▲" x="17" y="100.1500015258789" width="12" height="17" />
+      <text id="60:214" name="+12.4%" x="17" y="117.55000305175781" width="41" height="17" />
+      <text id="60:215" name="전주 대비" x="68.19999694824219" y="108.8499984741211" width="45" height="17" />
+      <frame id="60:216" name="box" x="17" y="141.39999389648438" width="82" height="16">
+        <text id="60:217" name="청구액 아님(공시 단가 추정)" x="0" y="-0.4749999940395355" width="121" height="16" />
+      </frame>
+    </frame>
+    <frame id="60:218" name="box" x="660" y="520" width="116" height="180.89999389648438">
+      <frame id="60:219" name="box" x="17" y="17" width="60" height="17.399999618530273">
+        <text id="60:220" name="활성 사용자당 비용" x="0" y="-0.44999998807907104" width="89" height="17" />
+      </frame>
+      <frame id="60:221" name="box" x="83" y="17.700000762939453" width="16" height="16">
+        <text id="60:222" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <text id="60:223" name="$41.13" x="17" y="40.150001525878906" width="83" height="33" />
+      <text id="60:224" name="USD/명" x="25" y="81.05000305175781" width="38" height="17" />
+      <text id="60:225" name="▲" x="17" y="100.1500015258789" width="12" height="17" />
+      <text id="60:226" name="+3.8%" x="17" y="117.55000305175781" width="35" height="17" />
+      <text id="60:227" name="전주 대비" x="64.0999984741211" y="108.8499984741211" width="45" height="17" />
+      <frame id="60:228" name="box" x="17" y="141.39999389648438" width="82" height="16">
+        <text id="60:229" name="공시 기준 · 청구액 아님" x="0" y="-0.4749999940395355" width="100" height="16" />
+      </frame>
+    </frame>
+    <frame id="60:230" name="box" x="792" y="520" width="116" height="180.89999389648438">
+      <frame id="60:231" name="box" x="17" y="17" width="20.700000762939453" height="17.399999618530273">
+        <text id="60:232" name="세션" x="0" y="-0.44999998807907104" width="21" height="17" />
+      </frame>
+      <frame id="60:233" name="box" x="83" y="17.700000762939453" width="16" height="16">
+        <text id="60:234" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <text id="60:235" name="2,341" x="17" y="40.150001525878906" width="73" height="33" />
+      <text id="60:236" name="▲" x="17" y="86.94999694824219" width="12" height="17" />
+      <text id="60:237" name="+9.6%" x="17" y="104.3499984741211" width="36" height="17" />
+      <text id="60:238" name="전주 대비" x="64.0999984741211" y="95.6500015258789" width="45" height="17" />
+      <frame id="60:239" name="box" x="17" y="128.1999969482422" width="82" height="16">
+        <text id="60:240" name="fresh 62% · resume 38%" x="0" y="-0.4749999940395355" width="122" height="16" />
+      </frame>
+    </frame>
+    <frame id="60:241" name="box" x="924" y="520" width="116" height="180.89999389648438">
+      <frame id="60:242" name="box" x="17" y="17" width="59" height="17.399999618530273">
+        <text id="60:243" name="AI 관여 LoC" x="0" y="-0.44999998807907104" width="59" height="17" />
+      </frame>
+      <frame id="60:244" name="box" x="83" y="17.700000762939453" width="16" height="16">
+        <text id="60:245" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <text id="60:246" name="+48,210" x="17" y="40.150001525878906" width="108" height="33" />
+      <text id="60:247" name="−19,884" x="17" y="81.25" width="66" height="26" />
+      <text id="60:248" name="▲" x="17" y="106.75" width="12" height="17" />
+      <text id="60:249" name="+7.9%" x="17" y="124.1500015258789" width="34" height="17" />
+      <text id="60:250" name="전주 대비" x="64.0999984741211" y="115.44999694824219" width="45" height="17" />
+      <frame id="60:251" name="box" x="17" y="148" width="82" height="16">
+        <text id="60:252" name="추가 / 삭제 · 순증 +28,326" x="0" y="-0.4749999940395355" width="120" height="16" />
+      </frame>
+    </frame>
+    <frame id="60:253" name="box" x="264" y="182.10000610351562" width="512" height="321.8999938964844">
+      <text id="60:254" name="비용 추세" x="17" y="19.424999237060547" width="49" height="19" />
+      <frame id="60:255" name="box" x="71" y="21" width="16" height="16">
+        <text id="60:256" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <text id="60:257" name="일 단위 · USD" x="97" y="20.524999618530273" width="62" height="16" />
+      <frame id="60:258" name="box" x="255.89999389648438" y="28" width="14" height="2" />
+      <text id="60:259" name="공시" x="274.8999938964844" y="20.524999618530273" width="20" height="16" />
+      <frame id="60:260" name="box" x="305.8999938964844" y="28" width="14" height="2" />
+      <text id="60:261" name="계약" x="324.8999938964844" y="20.524999618530273" width="20" height="16" />
+      <frame id="60:262" name="box" x="356" y="28" width="14" height="2" />
+      <text id="60:263" name="전주" x="375" y="20.524999618530273" width="20" height="16" />
+      <frame id="60:264" name="box" x="406" y="25" width="8" height="8" />
+      <text id="60:265" name="스파이크" x="419" y="20.524999618530273" width="39" height="16" />
+      <frame id="60:266" name="box" x="471" y="17" width="24" height="24">
+        <text id="60:267" name="⋯" x="7.349999904632568" y="5" width="11" height="14" />
+      </frame>
+      <text id="60:268" name="$1,400" x="35" y="52.525001525878906" width="34" height="16" />
+      <text id="60:269" name="$700" x="43.099998474121094" y="144.52499389648438" width="26" height="16" />
+      <text id="60:270" name="$0" x="55.099998474121094" y="236.625" width="14" height="16" />
+      <frame id="60:271" name="box" x="77" y="53" width="418" height="1" />
+      <frame id="60:272" name="box" x="77" y="153" width="418" height="1" />
+      <frame id="60:273" name="box" x="77" y="252" width="418" height="1" />
+      <frame id="60:274" name="chart" x="77" y="53" width="418" height="200">
+        <vector id="60:275" name="Vector" x="0" y="12.479999542236328" width="418" height="129.9600067138672" />
+        <vector id="60:276" name="Vector" x="0" y="46.2400016784668" width="418" height="106.55999755859375" />
+        <vector id="60:277" name="Vector" x="0" y="125.69999694824219" width="418" height="20" />
+      </frame>
+      <frame id="60:278" name="box" x="251.1999969482422" y="60.5" width="10" height="10" />
+      <text id="60:279" name="데이터 팀 스파이크 · 이동평균 +340%" x="264.20001220703125" y="57.025001525878906" width="168" height="16" />
+      <text id="60:280" name="8/31" x="77" y="260.5249938964844" width="22" height="16" />
+      <text id="60:281" name="9/1" x="140.10000610351562" y="260.5249938964844" width="16" height="16" />
+      <text id="60:282" name="9/2" x="196.3000030517578" y="260.5249938964844" width="17" height="16" />
+      <text id="60:283" name="9/3" x="252.60000610351562" y="260.5249938964844" width="18" height="16" />
+      <text id="60:284" name="9/4" x="308.8999938964844" y="260.5249938964844" width="18" height="16" />
+      <text id="60:285" name="9/5" x="365.20001220703125" y="260.5249938964844" width="17" height="16" />
+      <text id="60:286" name="9/6" x="421.5" y="260.5249938964844" width="18" height="16" />
+      <text id="60:287" name="9/7" x="477.79998779296875" y="260.5249938964844" width="17" height="16" />
+      <text id="60:288" name="청구액 아님(공시 단가 추정) · 스파이크 " x="17" y="288.5249938964844" width="296" height="16" />
+    </frame>
+    <frame id="60:289" name="box" x="792" y="182.10000610351562" width="248" height="321.8999938964844">
+      <text id="60:290" name="팀별 비용" x="17" y="19.424999237060547" width="49" height="19" />
+      <frame id="60:291" name="box" x="71" y="21" width="16" height="16">
+        <text id="60:292" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <text id="60:293" name="상위 10팀 ·" x="97" y="20.524999618530273" width="49" height="16" />
+      <text id="60:294" name="공시" x="148" y="20.524999618530273" width="20" height="16" />
+      <frame id="60:295" name="box" x="207" y="17" width="24" height="24">
+        <text id="60:296" name="⋯" x="7.349999904632568" y="5" width="11" height="14" />
+      </frame>
+      <frame id="60:297" name="box" x="13" y="53" width="222" height="21.399999618530273">
+        <frame id="60:298" name="box" x="4" y="2" width="72" height="17.399999618530273">
+          <text id="60:299" name="플랫폼" x="0" y="-0.44999998807907104" width="32" height="17" />
+        </frame>
+        <frame id="60:300" name="box" x="84" y="2.700000047683716" width="62" height="16">
+          <frame id="60:301" name="box" x="0" y="0" width="62" height="16" />
+        </frame>
+        <text id="60:302" name="$1,284.10" x="166" y="1.5499999523162842" width="52" height="17" />
+      </frame>
+      <frame id="60:303" name="box" x="13" y="80.4000015258789" width="222" height="21.399999618530273">
+        <frame id="60:304" name="box" x="4" y="2" width="72" height="17.399999618530273">
+          <text id="60:305" name="데이터" x="0" y="-0.44999998807907104" width="32" height="17" />
+        </frame>
+        <frame id="60:306" name="box" x="84" y="2.700000047683716" width="62" height="16">
+          <frame id="60:307" name="box" x="0" y="0" width="53.29999923706055" height="16" />
+        </frame>
+        <text id="60:308" name="$1,102.55" x="167" y="1.5499999523162842" width="51" height="17" />
+      </frame>
+      <frame id="60:309" name="box" x="13" y="107.80000305175781" width="222" height="21.399999618530273">
+        <frame id="60:310" name="box" x="4" y="2" width="72" height="17.399999618530273">
+          <text id="60:311" name="결제" x="0" y="-0.44999998807907104" width="21" height="17" />
+        </frame>
+        <frame id="60:312" name="box" x="84" y="2.700000047683716" width="62" height="16">
+          <frame id="60:313" name="box" x="0" y="0" width="39.20000076293945" height="16" />
+        </frame>
+        <text id="60:314" name="$812.40" x="173" y="1.5499999523162842" width="45" height="17" />
+      </frame>
+      <frame id="60:315" name="box" x="13" y="135.1999969482422" width="222" height="21.399999618530273">
+        <frame id="60:316" name="box" x="4" y="2" width="72" height="17.399999618530273">
+          <text id="60:317" name="프론트엔드" x="0" y="-0.44999998807907104" width="52" height="17" />
+        </frame>
+        <frame id="60:318" name="box" x="84" y="2.700000047683716" width="62" height="16">
+          <frame id="60:319" name="box" x="0" y="0" width="30.899999618530273" height="16" />
+        </frame>
+        <text id="60:320" name="$640.22" x="171" y="1.5499999523162842" width="47" height="17" />
+      </frame>
+      <frame id="60:321" name="box" x="13" y="162.60000610351562" width="222" height="21.399999618530273">
+        <frame id="60:322" name="box" x="4" y="2" width="72" height="17.399999618530273">
+          <text id="60:323" name="모바일" x="0" y="-0.44999998807907104" width="32" height="17" />
+        </frame>
+        <frame id="60:324" name="box" x="84" y="2.700000047683716" width="62" height="16">
+          <frame id="60:325" name="box" x="0" y="0" width="24.100000381469727" height="16" />
+        </frame>
+        <text id="60:326" name="$498.70" x="172" y="1.5499999523162842" width="46" height="17" />
+      </frame>
+      <frame id="60:327" name="box" x="13" y="190" width="222" height="21.399999618530273">
+        <frame id="60:328" name="box" x="4" y="2" width="72" height="17.399999618530273">
+          <text id="60:329" name="인프라" x="0" y="-0.44999998807907104" width="32" height="17" />
+        </frame>
+        <frame id="60:330" name="box" x="84" y="2.700000047683716" width="62" height="16">
+          <frame id="60:331" name="box" x="0" y="0" width="11.199999809265137" height="16">
+            <instance id="60:332" name="hatch" x="0" y="0" width="640" height="360" />
+          </frame>
+        </frame>
+        <frame id="60:333" name="box" x="188.10000610351562" y="3" width="29.899999618530273" height="16">
+          <text id="60:334" name="n&lt;5" x="3.9000000953674316" y="-0.22499999403953552" width="21" height="17" />
+        </frame>
+      </frame>
+      <frame id="60:335" name="box" x="13" y="217.39999389648438" width="222" height="21.399999618530273">
+        <frame id="60:336" name="box" x="4" y="2" width="72" height="17.399999618530273">
+          <text id="60:337" name="기타" x="0" y="-0.44999998807907104" width="21" height="17" />
+        </frame>
+        <frame id="60:338" name="box" x="84" y="2.700000047683716" width="62" height="16">
+          <frame id="60:339" name="box" x="0" y="0" width="14.600000381469727" height="16" />
+        </frame>
+        <text id="60:340" name="$302.10" x="174" y="1.5499999523162842" width="44" height="17" />
+      </frame>
+      <text id="60:341" name="청구액 아님(공시 단가 추정) · 클릭 → " x="17" y="288.5249938964844" width="195" height="16" />
+    </frame>
+    <frame id="60:342" name="box" x="264" y="716.9000244140625" width="248" height="301.8999938964844">
+      <text id="60:343" name="모델 점유율" x="17" y="19.424999237060547" width="60" height="19" />
+      <frame id="60:344" name="box" x="82.30000305175781" y="21" width="16" height="16">
+        <text id="60:345" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <text id="60:346" name="토큰 비중" x="108.30000305175781" y="20.524999618530273" width="41" height="16" />
+      <frame id="60:347" name="box" x="207" y="17" width="24" height="24">
+        <text id="60:348" name="⋯" x="7.349999904632568" y="5" width="11" height="14" />
+      </frame>
+      <text id="60:349" name="1.24B" x="58.5" y="138.85000610351562" width="44" height="26" />
+      <text id="60:350" name="토큰" x="73.5" y="158.75" width="20" height="16" />
+      <frame id="60:351" name="box" x="165" y="112.9000015258789" width="8" height="8" />
+      <frame id="60:352" name="box" x="181" y="108.5" width="0.009999999776482582" height="16.700000762939453">
+        <text id="60:353" name="claude-sonnet-4-5" x="0" y="-0.3400000035762787" width="118" height="17" />
+      </frame>
+      <text id="60:354" name="46%" x="189.5" y="107.75" width="26" height="17" />
+      <text id="60:355" name="·" x="220.60000610351562" y="107.75" width="4" height="17" />
+      <text id="60:356" name="104" x="226.6999969482422" y="107.75" width="20" height="17" />
+      <text id="60:357" name="명" x="246.10000610351562" y="107.75" width="11" height="17" />
+      <frame id="60:358" name="box" x="165" y="138.3000030517578" width="8" height="8" />
+      <frame id="60:359" name="box" x="181" y="133.89999389648438" width="0.009999999776482582" height="16.700000762939453">
+        <text id="60:360" name="claude-opus-4-1" x="0" y="-0.3400000035762787" width="104" height="17" />
+      </frame>
+      <text id="60:361" name="27%" x="190.5" y="133.14999389648438" width="25" height="17" />
+      <text id="60:362" name="·" x="220.60000610351562" y="133.14999389648438" width="4" height="17" />
+      <text id="60:363" name="61" x="226.3000030517578" y="133.14999389648438" width="13" height="17" />
+      <text id="60:364" name="명" x="238.6999969482422" y="133.14999389648438" width="11" height="17" />
+      <frame id="60:365" name="box" x="165" y="163.6999969482422" width="8" height="8" />
+      <frame id="60:366" name="box" x="181" y="159.3000030517578" width="0.009999999776482582" height="16.700000762939453">
+        <text id="60:367" name="gpt-5-codex" x="0" y="-0.3400000035762787" width="76" height="17" />
+      </frame>
+      <text id="60:368" name="17%" x="192.5" y="158.5500030517578" width="23" height="17" />
+      <text id="60:369" name="·" x="220.60000610351562" y="158.5500030517578" width="4" height="17" />
+      <text id="60:370" name="38" x="224.3000030517578" y="158.5500030517578" width="15" height="17" />
+      <text id="60:371" name="명" x="238.6999969482422" y="158.5500030517578" width="11" height="17" />
+      <frame id="60:372" name="box" x="165" y="189.10000610351562" width="8" height="8" />
+      <frame id="60:373" name="box" x="181" y="184.6999969482422" width="0.009999999776482582" height="16.700000762939453">
+        <text id="60:374" name="claude-haiku-4-5" x="0" y="-0.3400000035762787" width="111" height="17" />
+      </frame>
+      <text id="60:375" name="10%" x="192.5" y="183.9499969482422" width="23" height="17" />
+      <text id="60:376" name="·" x="220.60000610351562" y="183.9499969482422" width="4" height="17" />
+      <text id="60:377" name="72" x="225.3000030517578" y="183.9499969482422" width="14" height="17" />
+      <text id="60:378" name="명" x="238.6999969482422" y="183.9499969482422" width="11" height="17" />
+      <text id="60:379" name="입력+출력 토큰 합 · 사용자 수는 모델별 " x="17" y="268.5249938964844" width="213" height="16" />
+      <frame id="60:380" name="donut" x="17" y="89" width="132" height="132" />
+    </frame>
+    <frame id="60:385" name="box" x="528" y="716.9000244140625" width="512" height="301.8999938964844">
+      <text id="60:386" name="산출 추세" x="17" y="19.424999237060547" width="49" height="19" />
+      <frame id="60:387" name="box" x="71" y="21" width="16" height="16">
+        <text id="60:388" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <text id="60:389" name="주 단위 · 최근 8주" x="97" y="20.524999618530273" width="78" height="16" />
+      <frame id="60:390" name="box" x="237.60000610351562" y="24" width="10" height="10" />
+      <text id="60:391" name="LoC 추가" x="252.60000610351562" y="20.524999618530273" width="42" height="16" />
+      <frame id="60:392" name="box" x="306.1000061035156" y="24" width="10" height="10">
+        <instance id="60:393" name="hatch" x="0" y="0" width="640" height="360" />
+      </frame>
+      <text id="60:394" name="LoC 삭제" x="321.1000061035156" y="20.524999618530273" width="42" height="16" />
+      <frame id="60:395" name="box" x="374.70001220703125" y="28" width="14" height="2" />
+      <text id="60:396" name="커밋" x="393.70001220703125" y="20.524999618530273" width="20" height="16" />
+      <frame id="60:397" name="box" x="424.70001220703125" y="28" width="14" height="2" />
+      <text id="60:398" name="PR" x="443.70001220703125" y="20.524999618530273" width="14" height="16" />
+      <frame id="60:399" name="box" x="471" y="17" width="24" height="24">
+        <text id="60:400" name="⋯" x="7.349999904632568" y="5" width="11" height="14" />
+      </frame>
+      <text id="60:401" name="+50k" x="35" y="52.525001525878906" width="26" height="16" />
+      <text id="60:402" name="0" x="54" y="160.52499389648438" width="7" height="16" />
+      <text id="60:403" name="−20k" x="35" y="216.625" width="26" height="16" />
+      <frame id="60:404" name="box" x="69" y="53" width="226" height="1" />
+      <frame id="60:405" name="box" x="69" y="170" width="226" height="1" />
+      <frame id="60:406" name="box" x="69" y="232" width="226" height="1" />
+      <frame id="60:407" name="box" x="74.0999984741211" y="96.9000015258789" width="12.899999618530273" height="73.0999984741211" />
+      <frame id="60:408" name="box" x="74.0999984741211" y="170" width="12.899999618530273" height="38.20000076293945">
+        <instance id="60:409" name="hatch" x="0" y="0" width="640" height="360" />
+      </frame>
+      <frame id="60:410" name="box" x="103.0999984741211" y="88.5999984741211" width="12.899999618530273" height="81.4000015258789" />
+      <frame id="60:411" name="box" x="103.0999984741211" y="170" width="12.899999618530273" height="43.70000076293945">
+        <instance id="60:412" name="hatch" x="0" y="0" width="640" height="360" />
+      </frame>
+      <frame id="60:413" name="box" x="132.10000610351562" y="100.9000015258789" width="12.899999618530273" height="69.0999984741211" />
+      <frame id="60:414" name="box" x="132.10000610351562" y="170" width="12.899999618530273" height="37.29999923706055">
+        <instance id="60:415" name="hatch" x="0" y="0" width="640" height="360" />
+      </frame>
+      <frame id="60:416" name="box" x="161.10000610351562" y="80.9000015258789" width="12.899999618530273" height="89.0999984741211" />
+      <frame id="60:417" name="box" x="161.10000610351562" y="170" width="12.899999618530273" height="47.900001525878906">
+        <instance id="60:418" name="hatch" x="0" y="0" width="640" height="360" />
+      </frame>
+      <frame id="60:419" name="box" x="190.10000610351562" y="74.0999984741211" width="12.899999618530273" height="95.9000015258789" />
+      <frame id="60:420" name="box" x="190.10000610351562" y="170" width="12.899999618530273" height="55.400001525878906">
+        <instance id="60:421" name="hatch" x="0" y="0" width="640" height="360" />
+      </frame>
+      <frame id="60:422" name="box" x="219.10000610351562" y="84.9000015258789" width="12.899999618530273" height="85.0999984741211" />
+      <frame id="60:423" name="box" x="219.10000610351562" y="170" width="12.899999618530273" height="47">
+        <instance id="60:424" name="hatch" x="0" y="0" width="640" height="360" />
+      </frame>
+      <frame id="60:425" name="box" x="248.10000610351562" y="65.4000015258789" width="12.899999618530273" height="104.5999984741211" />
+      <frame id="60:426" name="box" x="248.10000610351562" y="170" width="12.899999618530273" height="57.599998474121094">
+        <instance id="60:427" name="hatch" x="0" y="0" width="640" height="360" />
+      </frame>
+      <frame id="60:428" name="box" x="277.1000061035156" y="57.099998474121094" width="12.899999618530273" height="112.9000015258789" />
+      <frame id="60:429" name="box" x="277.1000061035156" y="170" width="12.899999618530273" height="62.599998474121094">
+        <instance id="60:430" name="hatch" x="0" y="0" width="640" height="360" />
+      </frame>
+      <frame id="60:431" name="chart" x="69" y="53" width="226" height="180" />
+      <text id="60:434" name="600 · 150" x="303" y="52.525001525878906" width="47" height="16" />
+      <text id="60:435" name="300 · 75" x="303" y="134.52499389648438" width="41" height="16" />
+      <text id="60:436" name="0" x="303" y="216.625" width="7" height="16" />
+      <frame id="60:437" name="box" x="367" y="53" width="128" height="180">
+        <text id="60:438" name="통합 깊이" x="17" y="42.75" width="45" height="17" />
+        <text id="60:439" name="0.39" x="17" y="64.44999694824219" width="56" height="31" />
+        <text id="60:440" name="커밋 / fresh 세션" x="17" y="98.92500305175781" width="76" height="16" />
+        <text id="60:441" name="▲ +0.03" x="17" y="118.94999694824219" width="47" height="17" />
+        <text id="60:442" name="전주 대비" x="68.80000305175781" y="118.94999694824219" width="45" height="17" />
+      </frame>
+      <text id="60:443" name="7/13" x="70" y="240.52499389648438" width="22" height="16" />
+      <text id="60:444" name="7/20" x="99.5" y="240.52499389648438" width="23" height="16" />
+      <text id="60:445" name="7/27" x="129.89999389648438" y="240.52499389648438" width="23" height="16" />
+      <text id="60:446" name="8/3" x="158.39999389648438" y="240.52499389648438" width="18" height="16" />
+      <text id="60:447" name="8/10" x="182.5" y="240.52499389648438" width="22" height="16" />
+      <text id="60:448" name="8/17" x="213" y="240.52499389648438" width="22" height="16" />
+      <text id="60:449" name="8/24" x="241.89999389648438" y="240.52499389648438" width="24" height="16" />
+      <text id="60:450" name="8/31" x="272.3999938964844" y="240.52499389648438" width="22" height="16" />
+      <text id="60:451" name="AI 관여 LoC = 도구가 편집한 파일의 " x="17" y="268.5249938964844" width="373" height="16" />
+    </frame>
+    <frame id="60:452" name="팀 × 주 도입률" x="264" y="1034.800048828125" width="776" height="331.8999938964844">
+      <text id="60:453" name="팀 × 주 도입률" x="17" y="19.424999237060547" width="75" height="19" />
+      <frame id="60:454" name="box" x="96.80000305175781" y="21" width="16" height="16">
+        <text id="60:455" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <text id="60:456" name="행 = 팀(활성 인원순) · 열 = 주" x="122.80000305175781" y="20.524999618530273" width="129" height="16" />
+      <text id="60:457" name="&lt;45" x="529.2000122070312" y="20.524999618530273" width="21" height="16" />
+      <frame id="60:458" name="box" x="555.5" y="24" width="14" height="10" />
+      <frame id="60:459" name="box" x="571.5" y="24" width="14" height="10" />
+      <frame id="60:460" name="box" x="587.5" y="24" width="14" height="10" />
+      <frame id="60:461" name="box" x="603.5" y="24" width="14" height="10" />
+      <frame id="60:462" name="box" x="619.5" y="24" width="14" height="10" />
+      <text id="60:463" name="≥75%" x="639.5" y="20.524999618530273" width="29" height="16" />
+      <frame id="60:464" name="n&lt;5 masked" x="682.4000244140625" y="24" width="14" height="10">
+        <instance id="60:465" name="hatch" x="0" y="0" width="640" height="360" />
+      </frame>
+      <text id="60:466" name="n&lt;5" x="701.4000244140625" y="20.524999618530273" width="20" height="16" />
+      <frame id="60:467" name="box" x="735" y="17" width="24" height="24">
+        <text id="60:468" name="⋯" x="7.349999904632568" y="5" width="11" height="14" />
+      </frame>
+      <frame id="60:469" name="box" x="17" y="53" width="742" height="234">
+        <text id="60:470" name="7/13" x="149.89999389648438" y="-0.4749999940395355" width="22" height="16" />
+        <text id="60:471" name="7/20" x="227.1999969482422" y="-0.4749999940395355" width="23" height="16" />
+        <text id="60:472" name="7/27" x="305.3999938964844" y="-0.4749999940395355" width="23" height="16" />
+        <text id="60:473" name="8/3" x="385.1000061035156" y="-0.4749999940395355" width="18" height="16" />
+        <text id="60:474" name="8/10" x="460.3999938964844" y="-0.4749999940395355" width="22" height="16" />
+        <text id="60:475" name="8/17" x="538.7000122070312" y="-0.4749999940395355" width="22" height="16" />
+        <text id="60:476" name="8/24" x="615.4000244140625" y="-0.4749999940395355" width="24" height="16" />
+        <text id="60:477" name="8/31" x="693.7000122070312" y="-0.4749999940395355" width="22" height="16" />
+        <frame id="60:478" name="box" x="0" y="29.299999237060547" width="31.100000381469727" height="17.399999618530273">
+          <text id="60:479" name="플랫폼" x="0" y="-0.44999998807907104" width="32" height="17" />
+        </frame>
+        <text id="60:480" name="34명" x="89" y="29.524999618530273" width="24" height="16" />
+        <frame id="60:481" name="box" x="124" y="22" width="73.80000305175781" height="32">
+          <text id="60:482" name="62%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:483" name="box" x="201.8000030517578" y="22" width="73.80000305175781" height="32">
+          <text id="60:484" name="65%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:485" name="box" x="279.5" y="22" width="73.80000305175781" height="32">
+          <text id="60:486" name="68%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:487" name="box" x="357.29998779296875" y="22" width="73.80000305175781" height="32">
+          <text id="60:488" name="71%" x="24" y="6.849999904632568" width="23" height="17" />
+        </frame>
+        <frame id="60:489" name="box" x="435" y="22" width="73.80000305175781" height="32">
+          <text id="60:490" name="74%" x="24" y="6.849999904632568" width="24" height="17" />
+        </frame>
+        <frame id="60:491" name="box" x="512.7999877929688" y="22" width="73.80000305175781" height="32">
+          <text id="60:492" name="76%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:493" name="box" x="590.5" y="22" width="73.80000305175781" height="32">
+          <text id="60:494" name="79%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:495" name="box" x="668.2999877929688" y="22" width="73.80000305175781" height="32">
+          <text id="60:496" name="82%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:497" name="box" x="0" y="65.30000305175781" width="20.700000762939453" height="17.399999618530273">
+          <text id="60:498" name="결제" x="0" y="-0.44999998807907104" width="21" height="17" />
+        </frame>
+        <text id="60:499" name="29명" x="89" y="65.5250015258789" width="23" height="16" />
+        <frame id="60:500" name="box" x="124" y="58" width="73.80000305175781" height="32">
+          <text id="60:501" name="48%" x="24" y="6.849999904632568" width="26" height="17" />
+        </frame>
+        <frame id="60:502" name="box" x="201.8000030517578" y="58" width="73.80000305175781" height="32">
+          <text id="60:503" name="51%" x="24" y="6.849999904632568" width="23" height="17" />
+        </frame>
+        <frame id="60:504" name="box" x="279.5" y="58" width="73.80000305175781" height="32">
+          <text id="60:505" name="55%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:506" name="box" x="357.29998779296875" y="58" width="73.80000305175781" height="32">
+          <text id="60:507" name="58%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:508" name="box" x="435" y="58" width="73.80000305175781" height="32">
+          <text id="60:509" name="60%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:510" name="box" x="512.7999877929688" y="58" width="73.80000305175781" height="32">
+          <text id="60:511" name="63%" x="24" y="6.849999904632568" width="26" height="17" />
+        </frame>
+        <frame id="60:512" name="box" x="590.5" y="58" width="73.80000305175781" height="32">
+          <text id="60:513" name="67%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:514" name="box" x="668.2999877929688" y="58" width="73.80000305175781" height="32">
+          <text id="60:515" name="70%" x="24" y="6.849999904632568" width="24" height="17" />
+        </frame>
+        <frame id="60:516" name="box" x="0" y="101.30000305175781" width="31.100000381469727" height="17.399999618530273">
+          <text id="60:517" name="데이터" x="0" y="-0.44999998807907104" width="32" height="17" />
+        </frame>
+        <text id="60:518" name="26명" x="89" y="101.5250015258789" width="23" height="16" />
+        <frame id="60:519" name="box" x="124" y="94" width="73.80000305175781" height="32">
+          <text id="60:520" name="70%" x="24" y="6.849999904632568" width="24" height="17" />
+        </frame>
+        <frame id="60:521" name="box" x="201.8000030517578" y="94" width="73.80000305175781" height="32">
+          <text id="60:522" name="72%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:523" name="box" x="279.5" y="94" width="73.80000305175781" height="32">
+          <text id="60:524" name="69%" x="24" y="6.849999904632568" width="26" height="17" />
+        </frame>
+        <frame id="60:525" name="box" x="357.29998779296875" y="94" width="73.80000305175781" height="32">
+          <text id="60:526" name="75%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:527" name="box" x="435" y="94" width="73.80000305175781" height="32">
+          <text id="60:528" name="78%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:529" name="box" x="512.7999877929688" y="94" width="73.80000305175781" height="32">
+          <text id="60:530" name="80%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:531" name="box" x="590.5" y="94" width="73.80000305175781" height="32">
+          <text id="60:532" name="83%" x="24" y="6.849999904632568" width="26" height="17" />
+        </frame>
+        <frame id="60:533" name="box" x="668.2999877929688" y="94" width="73.80000305175781" height="32">
+          <text id="60:534" name="85%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:535" name="box" x="0" y="137.3000030517578" width="51.900001525878906" height="17.399999618530273">
+          <text id="60:536" name="프론트엔드" x="0" y="-0.44999998807907104" width="52" height="17" />
+        </frame>
+        <text id="60:537" name="24명" x="89" y="137.52499389648438" width="23" height="16" />
+        <frame id="60:538" name="box" x="124" y="130" width="73.80000305175781" height="32">
+          <text id="60:539" name="40%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:540" name="box" x="201.8000030517578" y="130" width="73.80000305175781" height="32">
+          <text id="60:541" name="44%" x="24" y="6.849999904632568" width="26" height="17" />
+        </frame>
+        <frame id="60:542" name="box" x="279.5" y="130" width="73.80000305175781" height="32">
+          <text id="60:543" name="47%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:544" name="box" x="357.29998779296875" y="130" width="73.80000305175781" height="32">
+          <text id="60:545" name="52%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:546" name="box" x="435" y="130" width="73.80000305175781" height="32">
+          <text id="60:547" name="55%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:548" name="box" x="512.7999877929688" y="130" width="73.80000305175781" height="32">
+          <text id="60:549" name="58%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:550" name="box" x="590.5" y="130" width="73.80000305175781" height="32">
+          <text id="60:551" name="61%" x="24" y="6.849999904632568" width="23" height="17" />
+        </frame>
+        <frame id="60:552" name="box" x="668.2999877929688" y="130" width="73.80000305175781" height="32">
+          <text id="60:553" name="66%" x="24" y="6.849999904632568" width="26" height="17" />
+        </frame>
+        <frame id="60:554" name="box" x="0" y="173.3000030517578" width="31.100000381469727" height="17.399999618530273">
+          <text id="60:555" name="모바일" x="0" y="-0.44999998807907104" width="32" height="17" />
+        </frame>
+        <text id="60:556" name="22명" x="89" y="173.52499389648438" width="23" height="16" />
+        <frame id="60:557" name="box" x="124" y="166" width="73.80000305175781" height="32">
+          <text id="60:558" name="35%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:559" name="box" x="201.8000030517578" y="166" width="73.80000305175781" height="32">
+          <text id="60:560" name="38%" x="24" y="6.849999904632568" width="26" height="17" />
+        </frame>
+        <frame id="60:561" name="box" x="279.5" y="166" width="73.80000305175781" height="32">
+          <text id="60:562" name="42%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:563" name="box" x="357.29998779296875" y="166" width="73.80000305175781" height="32">
+          <text id="60:564" name="45%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:565" name="box" x="435" y="166" width="73.80000305175781" height="32">
+          <text id="60:566" name="49%" x="24" y="6.849999904632568" width="26" height="17" />
+        </frame>
+        <frame id="60:567" name="box" x="512.7999877929688" y="166" width="73.80000305175781" height="32">
+          <text id="60:568" name="53%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:569" name="box" x="590.5" y="166" width="73.80000305175781" height="32">
+          <text id="60:570" name="56%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:571" name="box" x="668.2999877929688" y="166" width="73.80000305175781" height="32">
+          <text id="60:572" name="60%" x="24" y="6.849999904632568" width="25" height="17" />
+        </frame>
+        <frame id="60:573" name="box" x="0" y="209.3000030517578" width="31.100000381469727" height="17.399999618530273">
+          <text id="60:574" name="인프라" x="0" y="-0.44999998807907104" width="32" height="17" />
+        </frame>
+        <text id="60:575" name="n&lt;5" x="92.19999694824219" y="209.52499389648438" width="20" height="16" />
+        <frame id="60:576" name="n&lt;5 masked" x="124" y="202" width="73.80000305175781" height="32">
+          <instance id="60:577" name="hatch" x="0" y="0" width="640" height="360" />
+          <text id="60:578" name="n&lt;5" x="25.899999618530273" y="6.849999904632568" width="22" height="17" />
+        </frame>
+        <frame id="60:579" name="n&lt;5 masked" x="201.8000030517578" y="202" width="73.80000305175781" height="32">
+          <instance id="60:580" name="hatch" x="0" y="0" width="640" height="360" />
+          <text id="60:581" name="n&lt;5" x="25.899999618530273" y="6.849999904632568" width="22" height="17" />
+        </frame>
+        <frame id="60:582" name="n&lt;5 masked" x="279.5" y="202" width="73.80000305175781" height="32">
+          <instance id="60:583" name="hatch" x="0" y="0" width="640" height="360" />
+          <text id="60:584" name="n&lt;5" x="25.899999618530273" y="6.849999904632568" width="22" height="17" />
+        </frame>
+        <frame id="60:585" name="n&lt;5 masked" x="357.29998779296875" y="202" width="73.80000305175781" height="32">
+          <instance id="60:586" name="hatch" x="0" y="0" width="640" height="360" />
+          <text id="60:587" name="n&lt;5" x="25.899999618530273" y="6.849999904632568" width="22" height="17" />
+        </frame>
+        <frame id="60:588" name="n&lt;5 masked" x="435" y="202" width="73.80000305175781" height="32">
+          <instance id="60:589" name="hatch" x="0" y="0" width="640" height="360" />
+          <text id="60:590" name="n&lt;5" x="25.899999618530273" y="6.849999904632568" width="22" height="17" />
+        </frame>
+        <frame id="60:591" name="n&lt;5 masked" x="512.7999877929688" y="202" width="73.80000305175781" height="32">
+          <instance id="60:592" name="hatch" x="0" y="0" width="640" height="360" />
+          <text id="60:593" name="n&lt;5" x="25.899999618530273" y="6.849999904632568" width="22" height="17" />
+        </frame>
+        <frame id="60:594" name="n&lt;5 masked" x="590.5" y="202" width="73.80000305175781" height="32">
+          <instance id="60:595" name="hatch" x="0" y="0" width="640" height="360" />
+          <text id="60:596" name="n&lt;5" x="25.899999618530273" y="6.849999904632568" width="22" height="17" />
+        </frame>
+        <frame id="60:597" name="n&lt;5 masked" x="668.2999877929688" y="202" width="73.80000305175781" height="32">
+          <instance id="60:598" name="hatch" x="0" y="0" width="640" height="360" />
+          <text id="60:599" name="n&lt;5" x="25.899999618530273" y="6.849999904632568" width="22" height="17" />
+        </frame>
+      </frame>
+      <text id="60:600" name="도입률 = 주간 활성 사용자 / 활성 구성원" x="17" y="298.5249938964844" width="306" height="16" />
+    </frame>
+    <frame id="60:601" name="신뢰" x="264" y="1382.699951171875" width="248" height="281.6000061035156">
+      <text id="60:602" name="신뢰" x="17" y="19.424999237060547" width="23" height="19" />
+      <frame id="60:603" name="box" x="45.5" y="21" width="16" height="16">
+        <text id="60:604" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <frame id="60:605" name="box" x="207" y="17" width="24" height="24">
+        <text id="60:606" name="⋯" x="7.349999904632568" y="5" width="11" height="14" />
+      </frame>
+      <text id="60:607" name="편집 수락률" x="17" y="52.54999923706055" width="55" height="17" />
+      <text id="60:608" name="(사람 결정만)" x="79" y="52.54999923706055" width="64" height="17" />
+      <text id="60:609" name="74.2%" x="17" y="89.6500015258789" width="76" height="31" />
+      <text id="60:610" name="▲ +1.4pt" x="109.69999694824219" y="101.8499984741211" width="49" height="17" />
+      <frame id="60:611" name="chart" x="121" y="77.0999984741211" width="110" height="36" />
+      <text id="60:613" name="자동 승인 비율" x="17" y="150.64999389648438" width="69" height="17" />
+      <text id="60:614" name="23.8%" x="17" y="170.35000610351562" width="79" height="31" />
+      <text id="60:615" name="▲ +2.1pt" x="109.69999694824219" y="182.5500030517578" width="48" height="17" />
+      <frame id="60:616" name="chart" x="121" y="166.39999389648438" width="110" height="36" />
+      <text id="60:618" name="수락률은 KPI가 아님 · D-2와 세트로 " x="17" y="248.22500610351562" width="190" height="16" />
+    </frame>
+    <frame id="60:619" name="플랫폼 헬스" x="528" y="1382.699951171875" width="248" height="281.6000061035156">
+      <text id="60:620" name="플랫폼 헬스" x="17" y="19.424999237060547" width="60" height="19" />
+      <frame id="60:621" name="box" x="82.30000305175781" y="21" width="16" height="16">
+        <text id="60:622" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <text id="60:623" name="최근 24h · 1h" x="108.30000305175781" y="20.524999618530273" width="61" height="16" />
+      <frame id="60:624" name="box" x="207" y="17" width="24" height="24">
+        <text id="60:625" name="⋯" x="7.349999904632568" y="5" width="11" height="14" />
+      </frame>
+      <frame id="60:626" name="box" x="17" y="57.70000076293945" width="8" height="8" />
+      <text id="60:627" name="API 에러율" x="30" y="52.54999923706055" width="53" height="17" />
+      <text id="60:628" name="0.4%" x="83.80000305175781" y="52.75" width="28" height="17" />
+      <text id="60:629" name="현재 · 최대 2.4% (07h)" x="113.5999984741211" y="52.75" width="113" height="17" />
+      <frame id="60:630" name="box" x="17" y="74.5999984741211" width="214" height="44">
+        <frame id="60:631" name="chart" x="0" y="0" width="214" height="43" />
+      </frame>
+      <frame id="60:633" name="box" x="17" y="143.10000610351562" width="14" height="2" />
+      <text id="60:634" name="TTFT p50" x="36" y="134.9499969482422" width="53" height="17" />
+      <frame id="60:635" name="box" x="97.4000015258789" y="143.10000610351562" width="14" height="2" />
+      <text id="60:636" name="p90" x="116.4000015258789" y="134.9499969482422" width="22" height="17" />
+      <text id="60:637" name="612" x="144.89999389648438" y="132.14999389648438" width="20" height="17" />
+      <text id="60:638" name="/" x="168" y="132.14999389648438" width="5" height="17" />
+      <text id="60:639" name="1,480" x="178" y="132.14999389648438" width="30" height="17" />
+      <text id="60:640" name="ms" x="212" y="132.14999389648438" width="16" height="17" />
+      <frame id="60:641" name="box" x="17" y="156.8000030517578" width="214" height="44">
+        <frame id="60:642" name="chart" x="0" y="0" width="214" height="43" />
+      </frame>
+      <text id="60:645" name="−24h" x="17" y="204.3249969482422" width="26" height="16" />
+      <text id="60:646" name="−12h" x="114.5" y="204.3249969482422" width="25" height="16" />
+      <text id="60:647" name="지금" x="212" y="204.3249969482422" width="20" height="16" />
+      <text id="60:648" name="에러율 = 4xx/5xx 응답 ÷ 전체 AP" x="17" y="240.22500610351562" width="206" height="32" />
+    </frame>
+    <frame id="60:649" name="거버넌스 요약" x="792" y="1382.699951171875" width="248" height="281.6000061035156">
+      <text id="60:650" name="거버넌스 요약" x="17" y="19.424999237060547" width="71" height="19" />
+      <frame id="60:651" name="box" x="93.5" y="21" width="16" height="16">
+        <text id="60:652" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <frame id="60:653" name="box" x="207" y="17" width="24" height="24">
+        <text id="60:654" name="⋯" x="7.349999904632568" y="5" width="11" height="14" />
+      </frame>
+      <text id="60:655" name="안전 거부" x="17" y="52.54999923706055" width="45" height="17" />
+      <text id="60:656" name="(전사 합만)" x="64.5" y="52.54999923706055" width="53" height="17" />
+      <text id="60:657" name="7" x="17" y="74.25" width="16" height="31" />
+      <text id="60:658" name="건" x="37.400001525878906" y="87.5" width="12" height="19" />
+      <frame id="60:659" name="box" x="58.599998474121094" y="78.80000305175781" width="91.4000015258789" height="22">
+        <frame id="60:660" name="box" x="8" y="7.5" width="8" height="9" />
+        <text id="60:661" name="부서 분해 없음" x="21" y="2.5250000953674316" width="63" height="16" />
+      </frame>
+      <frame id="60:662" name="box" x="17" y="119.19999694824219" width="214" height="1" />
+      <text id="60:663" name="훅 차단" x="17" y="133.75" width="35" height="17" />
+      <text id="60:664" name="42" x="17" y="155.4499969482422" width="34" height="31" />
+      <text id="60:665" name="건" x="54.79999923706055" y="168.6999969482422" width="12" height="19" />
+      <text id="60:666" name="훅 실행 세션 비율" x="130" y="133.75" width="82" height="17" />
+      <text id="60:667" name="31" x="130" y="155.4499969482422" width="29" height="31" />
+      <text id="60:668" name="%" x="167.8000030517578" y="168.6999969482422" width="12" height="19" />
+      <text id="60:669" name="거부 = 모델 안전 정책 거절 응답 · 개인" x="17" y="240.22500610351562" width="211" height="32" />
+    </frame>
+    <frame id="60:670" name="findings aside" x="1056" y="140" width="360" height="652">
+      <frame id="60:671" name="box" x="1" y="1" width="358" height="69.80000305175781">
+        <text id="60:672" name="판정 · findings" x="16" y="13.824999809265137" width="79" height="19" />
+        <text id="60:673" name="run_01J7R2 · 09-08 09:41" x="183.10000610351562" y="15.274999618530273" width="166" height="17" />
+        <frame id="60:674" name="box" x="16" y="36.79999923706055" width="38.70000076293945" height="18">
+          <text id="60:675" name="이상 1" x="6" y="0.5249999761581421" width="27" height="16" />
+        </frame>
+        <frame id="60:676" name="box" x="60.70000076293945" y="36.79999923706055" width="38.70000076293945" height="18">
+          <text id="60:677" name="주의 1" x="6" y="0.5249999761581421" width="27" height="16" />
+        </frame>
+        <frame id="60:678" name="box" x="105.4000015258789" y="36.79999923706055" width="38.70000076293945" height="18">
+          <text id="60:679" name="정보 1" x="6" y="0.5249999761581421" width="27" height="16" />
+        </frame>
+        <text id="60:680" name="S1-3 · 28d · 청구액 아님(공시 추" x="184.1999969482422" y="36.32500076293945" width="158" height="16" />
+      </frame>
+      <frame id="60:681" name="box" x="1" y="70.80000305175781" width="358" height="523.2000122070312">
+        <frame id="60:682" name="box" x="16" y="12" width="326" height="237.3000030517578">
+          <frame id="60:683" name="box" x="13" y="13" width="32.20000076293945" height="18">
+            <text id="60:684" name="이상" x="7" y="0.75" width="19" height="16" />
+          </frame>
+          <text id="60:685" name="W1.2" x="53.20000076293945" y="13.774999618530273" width="28" height="17" />
+          <text id="60:686" name="9/3 비용이 이동평균 대비 +340%" x="13" y="38.974998474121094" width="178" height="19" />
+          <text id="60:687" name="cost 9/3" x="13" y="64.26000213623047" width="56" height="17" />
+          <text id="60:688" name="$1,312.66" x="254.10000610351562" y="64.1500015258789" width="53" height="17" />
+          <text id="60:689" name="MA(7d) 9/2" x="13" y="84.66000366210938" width="69" height="17" />
+          <text id="60:690" name="$298.41" x="264.79998779296875" y="84.55000305175781" width="45" height="17" />
+          <text id="60:691" name="team" x="13" y="105.05999755859375" width="28" height="17" />
+          <text id="60:692" name="데이터 (+$856)" x="232.8000030517578" y="104.94999694824219" width="79" height="17" />
+          <frame id="60:693" name="box" x="13" y="130.6999969482422" width="300" height="68.19999694824219">
+            <text id="60:694" name="권장" x="10" y="7.550000190734863" width="21" height="17" />
+            <text id="60:695" name="·" x="30.700000762939453" y="7.550000190734863" width="4" height="17" />
+            <text id="60:696" name="query_source=subagent 비중" x="10" y="37.25" width="279" height="51" />
+          </frame>
+          <text id="60:697" name="관련 위젯으로 이동 →" x="13" y="206.4499969482422" width="103" height="17" />
+          <text id="60:698" name="W1.2" x="119" y="206.4499969482422" width="26" height="17" />
+        </frame>
+        <frame id="60:699" name="box" x="16" y="259.29998779296875" width="326" height="199.5">
+          <frame id="60:700" name="box" x="13" y="13" width="32.20000076293945" height="18">
+            <text id="60:701" name="주의" x="7" y="0.75" width="19" height="16" />
+          </frame>
+          <text id="60:702" name="W1.3" x="53.20000076293945" y="13.774999618530273" width="28" height="17" />
+          <text id="60:703" name="데이터 팀 비용이 활성 사용자당 2.1×(전" x="13" y="38.974998474121094" width="269" height="19" />
+          <text id="60:704" name="cost_per_active_user" x="13" y="64.26000213623047" width="138" height="17" />
+          <text id="60:705" name="$42.41 vs $19.98" x="213.1999969482422" y="64.1500015258789" width="94" height="17" />
+          <text id="60:706" name="model" x="13" y="84.66000366210938" width="35" height="17" />
+          <text id="60:707" name="claude-opus-4-1 58%" x="190.10000610351562" y="84.55000305175781" width="119" height="17" />
+          <frame id="60:708" name="box" x="13" y="110.30000305175781" width="300" height="50.79999923706055">
+            <text id="60:709" name="권장" x="10" y="7.550000190734863" width="21" height="17" />
+            <text id="60:710" name="·" x="30.700000762939453" y="7.550000190734863" width="4" height="17" />
+            <text id="60:711" name="모델 티어 확인 — S1-2 모델 티어 미스" x="39.79999923706055" y="7.550000190734863" width="274" height="17" />
+          </frame>
+          <text id="60:712" name="관련 위젯으로 이동 →" x="13" y="168.64999389648438" width="103" height="17" />
+          <text id="60:713" name="W1.3" x="119" y="168.64999389648438" width="26" height="17" />
+        </frame>
+        <frame id="60:714" name="box" x="16" y="468.8999938964844" width="326" height="182.10000610351562">
+          <frame id="60:715" name="box" x="13" y="13" width="32.20000076293945" height="18">
+            <text id="60:716" name="정보" x="7" y="0.75" width="19" height="16" />
+          </frame>
+          <text id="60:717" name="W1.2" x="53.20000076293945" y="13.774999618530273" width="28" height="17" />
+          <text id="60:718" name="계약 단가 기준 스파이크 폭은 +279%" x="13" y="38.974998474121094" width="193" height="19" />
+          <text id="60:719" name="price_basis" x="13" y="64.26000213623047" width="76" height="17" />
+          <text id="60:720" name="contract ×0.82" x="230.8000030517578" y="64.1500015258789" width="80" height="17" />
+          <text id="60:721" name="임계" x="13" y="84.66000366210938" width="22" height="17" />
+          <text id="60:722" name="+200% (초과)" x="239.8000030517578" y="84.55000305175781" width="71" height="17" />
+          <frame id="60:723" name="box" x="13" y="110.30000305175781" width="300" height="33.400001525878906">
+            <text id="60:724" name="권장" x="10" y="7.550000190734863" width="21" height="17" />
+            <text id="60:725" name="·" x="30.700000762939453" y="7.550000190734863" width="4" height="17" />
+            <text id="60:726" name="두 금액 체계 모두 임계 초과 · 청구액 아" x="39.79999923706055" y="7.550000190734863" width="197" height="17" />
+          </frame>
+          <text id="60:727" name="관련 위젯으로 이동 →" x="13" y="151.25" width="103" height="17" />
+          <text id="60:728" name="W1.2" x="119" y="151.25" width="26" height="17" />
+        </frame>
+      </frame>
+      <frame id="60:729" name="box" x="1" y="594" width="358" height="57">
+        <frame id="60:730" name="box" x="16" y="13" width="47.599998474121094" height="32">
+          <text id="60:731" name="저장" x="12.800000190734863" y="8.5" width="22" height="18" />
+        </frame>
+        <frame id="60:732" name="box" x="71.5999984741211" y="13" width="97.0999984741211" height="32">
+          <text id="60:733" name="공유 링크 복사" x="12.050000190734863" y="8.5" width="72" height="18" />
+        </frame>
+        <frame id="60:734" name="box" x="269.70001220703125" y="13" width="72.4000015258789" height="32">
+          <text id="60:735" name="다시 실행" x="13" y="6.835000038146973" width="47" height="18" />
+        </frame>
+      </frame>
+    </frame>
+    <frame id="60:736" name="box" x="0" y="0" width="1440" height="1704.300048828125">
+      <frame id="60:737" name="Modal · 리포트 저장" x="480" y="140" width="480" height="446.8999938964844">
+        <text id="60:738" name="리포트 저장" x="21" y="20.625" width="69" height="19" />
+        <text id="60:739" name="S1-3 · run_01J7R2" x="346.3999938964844" y="23.674999237060547" width="118" height="17" />
+        <text id="60:740" name="이름" x="21" y="56.349998474121094" width="21" height="17" />
+        <frame id="60:741" name="box" x="21" y="80.19999694824219" width="438" height="34" />
+        <text id="60:742" name="메모" x="21" y="127.75" width="21" height="17" />
+        <text id="60:743" name="(선택)" x="21" y="151.14999389648438" width="29" height="17" />
+        <frame id="60:744" name="box" x="21" y="175" width="438" height="49" />
+        <frame id="60:745" name="box" x="21" y="238" width="438" height="53">
+          <frame id="60:746" name="box" x="13" y="13" width="14" height="14">
+            <frame id="60:747" name="box" x="3.5" y="3.5" width="7" height="7" />
+          </frame>
+          <text id="60:748" name="파라미터 고정" x="37" y="11" width="68" height="18" />
+          <text id="60:749" name="2026-08-11 → 09-07 절대 범위" x="37" y="28" width="254" height="16" />
+        </frame>
+        <frame id="60:750" name="box" x="21" y="297" width="438" height="53">
+          <frame id="60:751" name="box" x="13" y="13" width="14" height="14">
+            <frame id="60:752" name="box" x="3.5" y="3.5" width="7" height="7" />
+          </frame>
+          <text id="60:753" name="기간을 상대식으로 유지" x="37" y="11" width="115" height="18" />
+          <text id="60:754" name="now-28d 로 저장 · 열 때마다 최신 " x="37" y="28" width="216" height="16" />
+        </frame>
+        <text id="60:755" name="공유 링크" x="21" y="363.5249938964844" width="41" height="16" />
+        <text id="60:756" name="/runs/run_01J7R2" x="64.5999984741211" y="363.7749938964844" width="111" height="17" />
+        <text id="60:757" name="· 같은 테넌트 관리자만 열 수 있음" x="170.5" y="363.5249938964844" width="143" height="16" />
+        <frame id="60:758" name="box" x="351.79998779296875" y="393.8999938964844" width="47.599998474121094" height="32">
+          <text id="60:759" name="취소" x="12.800000190734863" y="8.5" width="22" height="18" />
+        </frame>
+        <frame id="60:760" name="box" x="407.3999938964844" y="393.8999938964844" width="51.599998474121094" height="32">
+          <text id="60:761" name="저장" x="14.800000190734863" y="8.5" width="22" height="18" />
+        </frame>
+      </frame>
+    </frame>
+  </frame>
+</frame>
+IMPORTANT: The design was too large to fit into context with get_design_context. Instead you have received a sparse metadata response, you MUST call get_design_context on the IDs of the sublayers to get the full code. Split up the calls to ensure the sublayers do not also exceed the context limit.

@@ -1,0 +1,1047 @@
+<canvas id="1:2" name="01 Components" x="0" y="0" width="0" height="0">
+  <symbol id="4:4" name="pattern/hatch-gray" x="0" y="0" width="640" height="360" />
+  <frame id="7:39" name="Badge" x="0" y="440" width="640" height="94">
+    <symbol id="7:4" name="type=masking" x="20" y="20.5" width="33" height="19" />
+    <symbol id="7:6" name="type=pending" x="69" y="21" width="44" height="18" />
+    <symbol id="7:8" name="type=role" x="129" y="21" width="43" height="18" />
+    <symbol id="7:10" name="type=count" x="188" y="21" width="24" height="18" />
+    <symbol id="7:12" name="type=scope" x="228" y="21" width="29" height="18" />
+    <symbol id="7:14" name="type=headcount" x="273" y="20" width="44" height="20" />
+    <symbol id="7:16" name="type=over-threshold" x="333" y="21" width="53" height="18" />
+    <symbol id="7:18" name="type=severity-anomaly" x="402" y="21" width="31" height="18" />
+    <symbol id="7:20" name="type=severity-warn" x="449" y="21" width="31" height="18" />
+    <symbol id="7:22" name="type=severity-info" x="496" y="21" width="31" height="18" />
+    <symbol id="7:24" name="type=availability-ready" x="543" y="21" width="30" height="18" />
+    <symbol id="7:26" name="type=availability-partial" x="589" y="21" width="30" height="18" />
+    <symbol id="7:28" name="type=availability-blocked" x="20" y="56" width="41" height="18" />
+    <symbol id="7:30" name="type=status-active" x="77" y="56" width="43" height="18" />
+    <symbol id="7:33" name="type=status-invited" x="136" y="56" width="52" height="18" />
+    <symbol id="7:36" name="type=status-inactive" x="204" y="56" width="52" height="18" />
+  </frame>
+  <frame id="8:48" name="Button" x="0" y="580" width="640" height="176">
+    <symbol id="8:4" name="kind=primary, size=h26" x="20" y="25" width="42" height="26" />
+    <symbol id="8:6" name="kind=primary, size=h30" x="76" y="23" width="42" height="30" />
+    <symbol id="8:8" name="kind=primary, size=h32" x="132" y="22" width="46" height="32" />
+    <symbol id="8:10" name="kind=primary, size=h36" x="192" y="20" width="46" height="36" />
+    <symbol id="8:12" name="kind=secondary, size=h26" x="252" y="25" width="88" height="26" />
+    <symbol id="8:14" name="kind=secondary, size=h30" x="354" y="23" width="88" height="30" />
+    <symbol id="8:16" name="kind=secondary, size=h32" x="456" y="22" width="92" height="32" />
+    <symbol id="8:18" name="kind=secondary, size=h36" x="20" y="70" width="92" height="36" />
+    <symbol id="8:20" name="kind=dropdown, size=h26" x="126" y="75" width="65" height="26" />
+    <symbol id="8:23" name="kind=dropdown, size=h30" x="205" y="73" width="65" height="30" />
+    <symbol id="8:26" name="kind=dropdown, size=h32" x="284" y="72" width="69" height="32" />
+    <symbol id="8:29" name="kind=dropdown, size=h36" x="367" y="70" width="69" height="36" />
+    <symbol id="8:32" name="kind=ghost, size=h26" x="450" y="75" width="86" height="26" />
+    <symbol id="8:34" name="kind=ghost, size=h30" x="20" y="123" width="86" height="30" />
+    <symbol id="8:36" name="kind=ghost, size=h32" x="120" y="122" width="90" height="32" />
+    <symbol id="8:38" name="kind=ghost, size=h36" x="224" y="120" width="90" height="36" />
+    <symbol id="8:40" name="kind=disabled, size=h26" x="328" y="125" width="41" height="26" />
+    <symbol id="8:42" name="kind=disabled, size=h30" x="383" y="123" width="41" height="30" />
+    <symbol id="8:44" name="kind=disabled, size=h32" x="438" y="122" width="45" height="32" />
+    <symbol id="8:46" name="kind=disabled, size=h36" x="497" y="120" width="45" height="36" />
+  </frame>
+  <frame id="8:65" name="IconButton" x="680" y="580" width="300" height="110">
+    <symbol id="8:49" name="glyph=menu, size=24" x="20" y="22" width="24" height="24" />
+    <symbol id="8:51" name="glyph=menu, size=28" x="58" y="20" width="28" height="28" />
+    <symbol id="8:53" name="glyph=close, size=24" x="100" y="22" width="24" height="24" />
+    <symbol id="8:55" name="glyph=close, size=28" x="138" y="20" width="28" height="28" />
+    <symbol id="8:57" name="glyph=collapse, size=24" x="180" y="22" width="24" height="24" />
+    <symbol id="8:59" name="glyph=collapse, size=28" x="218" y="20" width="28" height="28" />
+    <symbol id="8:61" name="glyph=expand, size=24" x="20" y="64" width="24" height="24" />
+    <symbol id="8:63" name="glyph=expand, size=28" x="58" y="62" width="28" height="28" />
+  </frame>
+  <symbol id="8:66" name="InfoIconButton" x="1020" y="580" width="16" height="16" />
+  <frame id="9:16" name="Switch" x="0" y="800" width="264" height="54">
+    <symbol id="9:4" name="size=sm, state=on" x="20" y="21" width="22" height="12" />
+    <symbol id="9:6" name="size=sm, state=off" x="58" y="21" width="22" height="12" />
+    <symbol id="9:8" name="size=sm, state=disabled" x="96" y="21" width="22" height="12" />
+    <symbol id="9:10" name="size=md, state=on" x="134" y="20" width="26" height="14" />
+    <symbol id="9:12" name="size=md, state=off" x="176" y="20" width="26" height="14" />
+    <symbol id="9:14" name="size=md, state=disabled" x="218" y="20" width="26" height="14" />
+  </frame>
+  <frame id="9:23" name="ProductToggle" x="260" y="800" width="272" height="70">
+    <symbol id="9:17" name="state=on" x="20" y="20" width="108" height="30" />
+    <symbol id="9:20" name="state=off" x="144" y="20" width="108" height="30" />
+  </frame>
+  <frame id="9:36" name="SegmentItem" x="520" y="800" width="360" height="66">
+    <symbol id="9:24" name="size=h22, state=active" x="20" y="22" width="41" height="22" />
+    <symbol id="9:26" name="size=h22, state=inactive" x="75" y="22" width="41" height="22" />
+    <symbol id="9:28" name="size=h24, state=active" x="130" y="21" width="41" height="24" />
+    <symbol id="9:30" name="size=h24, state=inactive" x="185" y="21" width="41" height="24" />
+    <symbol id="9:32" name="size=h26, state=active" x="240" y="20" width="41" height="26" />
+    <symbol id="9:34" name="size=h26, state=inactive" x="295" y="20" width="41" height="26" />
+  </frame>
+  <frame id="9:49" name="Tab" x="920" y="800" width="420" height="142">
+    <symbol id="9:37" name="size=h26, state=active" x="20" y="23" width="69" height="26" />
+    <symbol id="9:39" name="size=h26, state=inactive" x="103" y="23" width="67" height="26" />
+    <symbol id="9:41" name="size=h32, state=active" x="184" y="20" width="69" height="32" />
+    <symbol id="9:43" name="size=h32, state=inactive" x="267" y="20" width="67" height="32" />
+    <symbol id="9:45" name="size=h56, state=active" x="20" y="66" width="69" height="56" />
+    <symbol id="9:47" name="size=h56, state=inactive" x="103" y="66" width="67" height="56" />
+  </frame>
+  <frame id="10:21" name="NavItem" x="0" y="940" width="264" height="304">
+    <symbol id="10:4" name="state=default, layout=expanded" x="20" y="20" width="224" height="34" />
+    <symbol id="10:7" name="state=default, layout=collapsed" x="20" y="66" width="40" height="34" />
+    <symbol id="10:9" name="state=current, layout=expanded" x="20" y="112" width="224" height="34" />
+    <symbol id="10:12" name="state=current, layout=collapsed" x="20" y="158" width="40" height="34" />
+    <symbol id="10:14" name="state=accent, layout=expanded" x="20" y="204" width="224" height="34" />
+    <symbol id="10:19" name="state=accent, layout=collapsed" x="20" y="250" width="40" height="34" />
+  </frame>
+  <frame id="11:99" name="KPICard" x="320" y="940" width="880" height="304">
+    <symbol id="11:5" name="value=single, delta=up-good" x="20" y="20" width="190" height="111" />
+    <symbol id="11:16" name="value=single, delta=down-bad" x="226" y="20" width="190" height="111" />
+    <symbol id="11:27" name="value=single, delta=neutral" x="432" y="20" width="190" height="111" />
+    <symbol id="11:38" name="value=single, delta=none" x="638" y="20" width="190" height="88" />
+    <symbol id="11:46" name="value=dual, delta=up-good" x="20" y="147" width="190" height="137" />
+    <symbol id="11:60" name="value=dual, delta=down-bad" x="226" y="147" width="190" height="137" />
+    <symbol id="11:74" name="value=dual, delta=neutral" x="432" y="147" width="190" height="137" />
+    <symbol id="11:88" name="value=dual, delta=none" x="638" y="147" width="190" height="114" />
+  </frame>
+  <frame id="11:160" name="StatBlock" x="1240" y="940" width="520" height="378">
+    <symbol id="11:100" name="size=28, tone=purple" x="20" y="20" width="140" height="72" />
+    <symbol id="11:105" name="size=28, tone=blue" x="176" y="20" width="140" height="72" />
+    <symbol id="11:110" name="size=28, tone=green" x="332" y="20" width="140" height="72" />
+    <symbol id="11:115" name="size=28, tone=orange" x="20" y="108" width="140" height="72" />
+    <symbol id="11:120" name="size=28, tone=red" x="176" y="108" width="140" height="72" />
+    <symbol id="11:125" name="size=28, tone=neutral" x="332" y="108" width="140" height="72" />
+    <symbol id="11:130" name="size=22, tone=purple" x="20" y="196" width="140" height="73" />
+    <symbol id="11:135" name="size=22, tone=blue" x="176" y="196" width="140" height="73" />
+    <symbol id="11:140" name="size=22, tone=green" x="332" y="196" width="140" height="73" />
+    <symbol id="11:145" name="size=22, tone=orange" x="20" y="285" width="140" height="73" />
+    <symbol id="11:150" name="size=22, tone=red" x="176" y="285" width="140" height="73" />
+    <symbol id="11:155" name="size=22, tone=neutral" x="332" y="285" width="140" height="73" />
+  </frame>
+  <frame id="12:52" name="HeatmapCell" x="0" y="1320" width="560" height="204">
+    <symbol id="12:13" name="level=1, size=h32-text" x="20" y="20" width="110" height="32" />
+    <symbol id="12:15" name="level=1, size=h28-text" x="142" y="22" width="110" height="28" />
+    <symbol id="12:17" name="level=1, size=h18-plain" x="264" y="27" width="40" height="18" />
+    <symbol id="12:18" name="level=2, size=h32-text" x="316" y="20" width="110" height="32" />
+    <symbol id="12:20" name="level=2, size=h28-text" x="20" y="66" width="110" height="28" />
+    <symbol id="12:22" name="level=2, size=h18-plain" x="142" y="71" width="40" height="18" />
+    <symbol id="12:23" name="level=3, size=h32-text" x="194" y="64" width="110" height="32" />
+    <symbol id="12:25" name="level=3, size=h28-text" x="316" y="66" width="110" height="28" />
+    <symbol id="12:27" name="level=3, size=h18-plain" x="438" y="71" width="40" height="18" />
+    <symbol id="12:28" name="level=4, size=h32-text" x="20" y="108" width="110" height="32" />
+    <symbol id="12:30" name="level=4, size=h28-text" x="142" y="110" width="110" height="28" />
+    <symbol id="12:32" name="level=4, size=h18-plain" x="264" y="115" width="40" height="18" />
+    <symbol id="12:33" name="level=5, size=h32-text" x="316" y="108" width="110" height="32" />
+    <symbol id="12:35" name="level=5, size=h28-text" x="20" y="154" width="110" height="28" />
+    <symbol id="12:37" name="level=5, size=h18-plain" x="142" y="159" width="40" height="18" />
+    <symbol id="12:38" name="level=masked, size=h32-text" x="194" y="152" width="110" height="32" />
+    <symbol id="12:43" name="level=masked, size=h28-text" x="316" y="154" width="110" height="28" />
+    <symbol id="12:48" name="level=masked, size=h18-plain" x="438" y="159" width="40" height="18" />
+  </frame>
+  <frame id="12:77" name="TableCell" x="620" y="1320" width="640" height="154">
+    <symbol id="12:53" name="kind=text, state=normal" x="20" y="20" width="140" height="30" />
+    <symbol id="12:55" name="kind=text, state=masked" x="172" y="20" width="140" height="29" />
+    <symbol id="12:57" name="kind=text, state=over-threshold" x="324" y="20" width="140" height="29" />
+    <symbol id="12:59" name="kind=mono, state=normal" x="476" y="20" width="140" height="29" />
+    <symbol id="12:61" name="kind=mono, state=masked" x="20" y="62" width="140" height="29" />
+    <symbol id="12:63" name="kind=mono, state=over-threshold" x="172" y="62" width="140" height="29" />
+    <symbol id="12:65" name="kind=number, state=normal" x="324" y="62" width="140" height="30" />
+    <symbol id="12:67" name="kind=number, state=masked" x="476" y="62" width="140" height="29" />
+    <symbol id="12:69" name="kind=number, state=over-threshold" x="20" y="104" width="140" height="29" />
+    <symbol id="12:71" name="kind=link, state=normal" x="172" y="104" width="140" height="30" />
+    <symbol id="12:73" name="kind=link, state=masked" x="324" y="104" width="140" height="29" />
+    <symbol id="12:75" name="kind=link, state=over-threshold" x="476" y="104" width="140" height="29" />
+  </frame>
+  <frame id="12:82" name="TableHeaderCell" x="1300" y="1320" width="332" height="69">
+    <symbol id="12:78" name="align=left" x="20" y="20" width="140" height="29" />
+    <symbol id="12:80" name="align=right" x="172" y="20" width="140" height="29" />
+  </frame>
+  <frame id="13:79" name="WidgetCard" x="0" y="1580" width="1320" height="612">
+    <symbol id="13:19" name="mode=chart, emphasis=default" x="24" y="24" width="400" height="292" />
+    <symbol id="13:29" name="mode=chart, emphasis=dimmed" x="444" y="24" width="400" height="292" />
+    <symbol id="13:39" name="mode=chart, emphasis=highlighted" x="864" y="24" width="400" height="292" />
+    <symbol id="13:49" name="mode=table, emphasis=default" x="24" y="336" width="400" height="252" />
+    <symbol id="13:59" name="mode=table, emphasis=dimmed" x="444" y="336" width="400" height="252" />
+    <symbol id="13:69" name="mode=table, emphasis=highlighted" x="864" y="336" width="400" height="252" />
+  </frame>
+  <symbol id="13:80" name="CoverageStrip" x="0" y="2100" width="1200" height="28" />
+  <symbol id="13:85" name="ScenarioBanner" x="0" y="2160" width="1200" height="36" />
+  <frame id="14:55" name="FindingCard" x="0" y="2240" width="1064" height="173">
+    <symbol id="14:31" name="severity=anomaly" x="20" y="20" width="328" height="133" />
+    <symbol id="14:39" name="severity=warn" x="368" y="20" width="328" height="133" />
+    <symbol id="14:47" name="severity=info" x="716" y="20" width="328" height="133" />
+  </frame>
+  <frame id="14:68" name="Alert" x="1100" y="2240" width="480" height="180">
+    <symbol id="14:56" name="kind=error" x="20" y="20" width="440" height="62" />
+    <symbol id="14:62" name="kind=info" x="20" y="98" width="440" height="62" />
+  </frame>
+  <frame id="14:97" name="StepperStep" x="1620" y="2240" width="400" height="236">
+    <symbol id="14:69" name="state=done" x="20" y="20" width="360" height="37" />
+    <symbol id="14:76" name="state=active" x="20" y="73" width="360" height="37" />
+    <symbol id="14:83" name="state=failed" x="20" y="126" width="360" height="37" />
+    <symbol id="14:90" name="state=pending" x="20" y="179" width="360" height="37" />
+  </frame>
+  <frame id="15:87" name="ScenarioCard" x="0" y="2560" width="980" height="206">
+    <symbol id="15:34" name="state=enabled" x="20" y="20" width="300" height="140" />
+    <symbol id="15:51" name="state=recommended" x="340" y="20" width="300" height="140" />
+    <symbol id="15:68" name="state=disabled" x="660" y="20" width="300" height="166" />
+  </frame>
+  <symbol id="15:88" name="EmptyState" x="1100" y="2560" width="560" height="258" />
+  <symbol id="15:94" name="SkeletonCard" x="1700" y="2560" width="300" height="150" />
+  <frame id="16:94" name="SideNav" x="0" y="2900" width="368" height="948">
+    <symbol id="16:38" name="layout=expanded" x="24" y="24" width="240" height="900" />
+    <symbol id="16:75" name="layout=collapsed" x="288" y="24" width="56" height="900" />
+  </frame>
+  <symbol id="17:60" name="FilterToolbar" x="0" y="3900" width="1200" height="56" />
+  <frame id="62:80" name="컴포넌트 시트" x="-1560" y="0" width="1440" height="3145.199951171875">
+    <text id="62:81" name="Pulsemetry 컴포넌트 시트" x="40" y="31.5" width="229" height="32" />
+    <text id="62:82" name="토큰 · 기본(턴 1) · 추가(턴 2) ·" x="270.70001220703125" y="40.29999923706055" width="281" height="17" />
+    <frame id="62:83" name="box" x="1292.0999755859375" y="34" width="107.9000015258789" height="30">
+      <frame id="62:84" name="box" x="3" y="3" width="55.099998474121094" height="24">
+        <text id="62:85" name="라이트" x="11.050000190734863" y="5" width="32" height="17" />
+      </frame>
+      <frame id="62:86" name="box" x="60.099998474121094" y="3" width="44.79999923706055" height="24">
+        <text id="62:87" name="다크" x="11.899999618530273" y="5" width="21" height="17" />
+      </frame>
+    </frame>
+    <text id="62:88" name="색 토큰 · 의미 규칙" x="40" y="95.8499984741211" width="101" height="20" />
+    <text id="62:89" name="혼용 금지 · 두 테마 모두 카드 배경 대비" x="145.1999969482422" y="98.30000305175781" width="235" height="17" />
+    <frame id="62:90" name="box" x="40" y="128.39999389648438" width="184" height="151.1999969482422">
+      <frame id="62:91" name="box" x="13" y="13" width="158" height="36" />
+      <text id="62:92" name="파랑" x="13" y="56.29999923706055" width="21" height="17" />
+      <text id="62:93" name="사용량·활동 (세션, 활성 사용자, 토큰)" x="13" y="89.875" width="137" height="32" />
+      <text id="62:94" name="--blue" x="13" y="121.82499694824219" width="42" height="17" />
+    </frame>
+    <frame id="62:95" name="box" x="236" y="128.39999389648438" width="184" height="151.1999969482422">
+      <frame id="62:96" name="box" x="13" y="13" width="158" height="36" />
+      <text id="62:97" name="보라" x="13" y="56.29999923706055" width="21" height="17" />
+      <text id="62:98" name="비용(공시) · 연보라 점선 = 계약 단가" x="13" y="81.92500305175781" width="158" height="16" />
+      <text id="62:99" name="--purple / --lav" x="13" y="105.82499694824219" width="111" height="17" />
+    </frame>
+    <frame id="62:100" name="box" x="432" y="128.39999389648438" width="184" height="151.1999969482422">
+      <frame id="62:101" name="box" x="13" y="13" width="158" height="36" />
+      <text id="62:102" name="초록" x="13" y="56.29999923706055" width="21" height="17" />
+      <text id="62:103" name="산출 (LoC 추가, 커밋, PR, 성공)" x="13" y="81.92500305175781" width="139" height="16" />
+      <text id="62:104" name="--green" x="13" y="105.82499694824219" width="49" height="17" />
+    </frame>
+    <frame id="62:105" name="box" x="628" y="128.39999389648438" width="184" height="151.1999969482422">
+      <frame id="62:106" name="box" x="13" y="13" width="158" height="36" />
+      <text id="62:107" name="주황" x="13" y="56.29999923706055" width="21" height="17" />
+      <text id="62:108" name="마찰·대기 (권한 대기, 자동 승인, 거절)" x="13" y="89.875" width="140" height="32" />
+      <text id="62:109" name="--orange" x="13" y="121.82499694824219" width="56" height="17" />
+    </frame>
+    <frame id="62:110" name="box" x="824" y="128.39999389648438" width="184" height="151.1999969482422">
+      <frame id="62:111" name="box" x="13" y="13" width="158" height="36" />
+      <text id="62:112" name="빨강" x="13" y="56.29999923706055" width="21" height="17" />
+      <text id="62:113" name="이상 탐지·실패·정책 위반만 (에러율, 거부" x="13" y="89.875" width="156" height="32" />
+      <text id="62:114" name="--red" x="13" y="121.82499694824219" width="35" height="17" />
+    </frame>
+    <frame id="62:115" name="box" x="1020" y="128.39999389648438" width="184" height="151.1999969482422">
+      <frame id="62:116" name="n&lt;5 masked" x="13" y="13" width="158" height="36">
+        <instance id="62:117" name="hatch" x="0" y="0" width="640" height="360" />
+      </frame>
+      <text id="62:120" name="회색" x="13" y="56.29999923706055" width="21" height="17" />
+      <text id="62:121" name="미관측 · n&lt;5 마스킹 · 준비 중" x="13" y="81.92500305175781" width="128" height="16" />
+      <text id="62:122" name="--gray / --gray-tint" x="13" y="105.82499694824219" width="138" height="17" />
+    </frame>
+    <frame id="62:123" name="box" x="1216" y="128.39999389648438" width="184" height="151.1999969482422">
+      <frame id="62:124" name="box" x="13" y="13" width="158" height="36" />
+      <text id="62:125" name="표면" x="13" y="56.29999923706055" width="21" height="17" />
+      <text id="62:126" name="배경 / 카드 / 서브 / 보더" x="13" y="81.92500305175781" width="104" height="16" />
+      <text id="62:127" name="--bg --card --sub --bord" x="13" y="113.7750015258789" width="135" height="34" />
+    </frame>
+    <frame id="62:128" name="box" x="40" y="291.6000061035156" width="445.29998779296875" height="99.30000305175781">
+      <text id="62:129" name="파랑 순차(사용량 · 도넛/누적 영역)" x="13" y="12.300000190734863" width="163" height="17" />
+      <frame id="62:130" name="box" x="13" y="38.400001525878906" width="101.80000305175781" height="24" />
+      <frame id="62:131" name="box" x="118.80000305175781" y="38.400001525878906" width="101.80000305175781" height="24" />
+      <frame id="62:132" name="box" x="224.6999969482422" y="38.400001525878906" width="101.80000305175781" height="24" />
+      <frame id="62:133" name="box" x="330.5" y="38.400001525878906" width="101.80000305175781" height="24" />
+      <text id="62:134" name="--seq1 … --seq4" x="13" y="69.92500305175781" width="104" height="17" />
+    </frame>
+    <frame id="62:135" name="box" x="497.29998779296875" y="291.6000061035156" width="445.29998779296875" height="99.30000305175781">
+      <text id="62:136" name="보라 순차(비용 · 누적 막대)" x="13" y="12.300000190734863" width="127" height="17" />
+      <frame id="62:137" name="box" x="13" y="38.400001525878906" width="101.80000305175781" height="24" />
+      <frame id="62:138" name="box" x="118.80000305175781" y="38.400001525878906" width="101.80000305175781" height="24" />
+      <frame id="62:139" name="box" x="224.6999969482422" y="38.400001525878906" width="101.80000305175781" height="24" />
+      <frame id="62:140" name="box" x="330.5" y="38.400001525878906" width="101.80000305175781" height="24" />
+      <text id="62:141" name="--vio1 … --vio4" x="13" y="69.92500305175781" width="104" height="17" />
+    </frame>
+    <frame id="62:142" name="box" x="954.7000122070312" y="291.6000061035156" width="445.29998779296875" height="99.30000305175781">
+      <text id="62:143" name="히트맵 5단계(도입률 · 활동량)" x="13" y="12.300000190734863" width="142" height="17" />
+      <frame id="62:144" name="box" x="13" y="38.400001525878906" width="80.69999694824219" height="24" />
+      <frame id="62:145" name="box" x="97.69999694824219" y="38.400001525878906" width="80.69999694824219" height="24" />
+      <frame id="62:146" name="box" x="182.3000030517578" y="38.400001525878906" width="80.69999694824219" height="24" />
+      <frame id="62:147" name="box" x="267" y="38.400001525878906" width="80.69999694824219" height="24" />
+      <frame id="62:148" name="box" x="351.70001220703125" y="38.400001525878906" width="80.69999694824219" height="24" />
+      <text id="62:149" name="--heat1 … --heat5 · n&lt;5 " x="13" y="69.92500305175781" width="229" height="17" />
+    </frame>
+    <text id="62:150" name="타이포 · 간격" x="40" y="422.75" width="71" height="20" />
+    <frame id="62:151" name="box" x="40" y="455.20001220703125" width="1360" height="93.5999984741211">
+      <text id="62:152" name="4,812.37" x="17" y="21.200000762939453" width="112" height="33" />
+      <text id="62:153" name="KPI 28–32px semibold · t" x="17" y="60.224998474121094" width="237" height="16" />
+      <text id="62:154" name="위젯 제목 13px semibold" x="352.5" y="16.075000762939453" width="136" height="19" />
+      <text id="62:155" name="본문 13–14px · Pretendard " x="352.5" y="34.875" width="198" height="19" />
+      <text id="62:156" name="본문 / 제목" x="352.5" y="60.224998474121094" width="48" height="16" />
+      <text id="62:157" name="보조 12px · --text2" x="688" y="20.700000762939453" width="97" height="17" />
+      <text id="62:158" name="캡션 11px · --text3 · &quot;청구액" x="688" y="38.32500076293945" width="154" height="16" />
+      <text id="62:159" name="보조 / 캡션" x="688" y="60.224998474121094" width="48" height="16" />
+      <text id="62:160" name="claude-sonnet-4-5 · quer" x="1023.5" y="37.65999984741211" width="221" height="17" />
+      <text id="62:161" name="식별자·코드 = 모노스페이스 11.5px ·" x="1023.5" y="60.224998474121094" width="181" height="16" />
+    </frame>
+    <frame id="62:162" name="box" x="40" y="560.7999877929688" width="266.3999938964844" height="21.899999618530273">
+      <text id="62:163" name="그리드 12컬럼 · 거터 16px · 최대 " x="9" y="2.5250000953674316" width="249" height="16" />
+    </frame>
+    <frame id="62:164" name="box" x="318.3999938964844" y="560.7999877929688" width="248.1999969482422" height="21.899999618530273">
+      <text id="62:165" name="카드 패딩 16px · 라운드 8px · 1" x="9" y="2.5250000953674316" width="231" height="16" />
+    </frame>
+    <frame id="62:166" name="box" x="578.5999755859375" y="560.7999877929688" width="171.10000610351562" height="21.899999618530273">
+      <text id="62:167" name="포커스 링 2px --blue · offse" x="9" y="2.5250000953674316" width="154" height="16" />
+    </frame>
+    <frame id="62:168" name="box" x="761.7000122070312" y="560.7999877929688" width="149.60000610351562" height="21.899999618530273">
+      <text id="62:169" name="비교 기간 = 같은 색 50% 점선" x="9" y="2.5250000953674316" width="132" height="16" />
+    </frame>
+    <text id="62:170" name="기본 컴포넌트" x="40" y="614.6500244140625" width="76" height="20" />
+    <text id="62:171" name="턴 1" x="119.30000305175781" y="617.0999755859375" width="19" height="17" />
+    <frame id="62:172" name="box" x="40" y="647.2000122070312" width="328" height="209.89999389648438">
+      <text id="62:173" name="활성 사용자" x="17" y="16.299999237060547" width="55" height="17" />
+      <frame id="62:174" name="box" x="295" y="17.700000762939453" width="16" height="16">
+        <text id="62:175" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <text id="62:176" name="117" x="17" y="39.900001525878906" width="42" height="33" />
+      <text id="62:177" name="명" x="76.9000015258789" y="56.79999923706055" width="11" height="17" />
+      <text id="62:178" name="▲ +8.3%" x="17" y="78.69999694824219" width="50" height="17" />
+      <text id="62:179" name="전주 대비" x="71.5999984741211" y="78.69999694824219" width="45" height="17" />
+      <text id="62:180" name="·" x="116.0999984741211" y="78.69999694824219" width="4" height="17" />
+      <text id="62:181" name="▲ +12.4%" x="125.19999694824219" y="78.69999694824219" width="56" height="17" />
+      <text id="62:182" name="중립(비용·LoC)" x="185.60000610351562" y="78.69999694824219" width="75" height="17" />
+      <text id="62:183" name="KPI 카드 · 비교 화살표 색: 좋음/나쁨" x="17" y="102.32499694824219" width="288" height="16" />
+    </frame>
+    <frame id="62:184" name="box" x="384" y="647.2000122070312" width="557.2999877929688" height="209.89999389648438">
+      <text id="62:185" name="위젯 헤더 + 시계열" x="17" y="18.674999237060547" width="97" height="19" />
+      <frame id="62:186" name="box" x="119.30000305175781" y="21" width="16" height="16">
+        <text id="62:187" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <frame id="62:188" name="box" x="516.2999877929688" y="17" width="24" height="24">
+        <text id="62:189" name="⋯" x="7.349999904632568" y="5" width="11" height="14" />
+      </frame>
+      <frame id="62:190" name="box" x="380.29998779296875" y="45" width="160" height="118">
+        <frame id="62:191" name="box" x="5" y="5" width="150" height="27">
+          <text id="62:192" name="표로 보기" x="10" y="5.5" width="49" height="19" />
+        </frame>
+        <frame id="62:193" name="box" x="5" y="32" width="150" height="27">
+          <text id="62:194" name="CSV 내보내기" x="10" y="5.5" width="74" height="19" />
+        </frame>
+        <frame id="62:195" name="box" x="5" y="59" width="150" height="27">
+          <text id="62:196" name="관련 시나리오" x="10" y="5.5" width="71" height="19" />
+        </frame>
+        <frame id="62:197" name="box" x="5" y="86" width="150" height="27">
+          <text id="62:198" name="정의 복사" x="10" y="5.5" width="49" height="19" />
+        </frame>
+      </frame>
+      <frame id="62:199" name="box" x="17" y="51" width="523.2999877929688" height="90">
+        <frame id="62:200" name="chart" x="0" y="0" width="523.2999877929688" height="89">
+          <vector id="62:201" name="Vector" x="0" y="5.5980000495910645" width="523.2999877929688" height="57.85000228881836" />
+          <vector id="62:202" name="Vector" x="0" y="20.604000091552734" width="523.2999877929688" height="47.4370002746582" />
+          <vector id="62:203" name="Vector" x="0" y="55.94499969482422" width="523.2999877929688" height="8.900001525878906" />
+        </frame>
+        <frame id="62:204" name="box" x="219.3000030517578" y="2.0999999046325684" width="10" height="10" />
+      </frame>
+      <frame id="62:205" name="box" x="17" y="158" width="14" height="2" />
+      <text id="62:206" name="공시" x="36" y="150.52499389648438" width="20" height="16" />
+      <frame id="62:207" name="box" x="67" y="158" width="14" height="2" />
+      <text id="62:208" name="계약" x="86" y="150.52499389648438" width="20" height="16" />
+      <frame id="62:209" name="box" x="117" y="158" width="14" height="2" />
+      <text id="62:210" name="비교 기간" x="136" y="150.52499389648438" width="41" height="16" />
+      <frame id="62:211" name="box" x="188.8000030517578" y="155" width="8" height="8" />
+      <text id="62:212" name="스파이크(이상)" x="201.8000030517578" y="150.52499389648438" width="65" height="16" />
+      <text id="62:213" name="청구액 아님(공시 단가 추정) ← 비용 위젯" x="17" y="176.4250030517578" width="243" height="16" />
+    </frame>
+    <frame id="62:214" name="box" x="957.2999877929688" y="647.2000122070312" width="442.70001220703125" height="209.89999389648438">
+      <text id="62:215" name="가로 막대 · 배지" x="17" y="16.075000762939453" width="81" height="19" />
+      <text id="62:216" name="플랫폼" x="17" y="45.099998474121094" width="32" height="17" />
+      <frame id="62:217" name="box" x="89" y="46.5" width="256.70001220703125" height="16">
+        <frame id="62:218" name="box" x="0" y="0" width="256.70001220703125" height="16" />
+      </frame>
+      <text id="62:219" name="$1,284.10" x="373.70001220703125" y="45.099998474121094" width="52" height="17" />
+      <text id="62:220" name="데이터" x="17" y="72.5" width="32" height="17" />
+      <frame id="62:221" name="box" x="89" y="73.9000015258789" width="256.70001220703125" height="16">
+        <frame id="62:222" name="box" x="0" y="0" width="220.6999969482422" height="16" />
+      </frame>
+      <text id="62:223" name="$1,102.55" x="374.70001220703125" y="72.5" width="51" height="17" />
+      <text id="62:224" name="인프라" x="17" y="99.9000015258789" width="32" height="17" />
+      <frame id="62:225" name="box" x="89" y="101.30000305175781" width="256.70001220703125" height="16">
+        <frame id="62:226" name="n&lt;5 masked" x="0" y="0" width="46.20000076293945" height="16">
+          <instance id="62:227" name="hatch" x="0" y="0" width="640" height="360" />
+        </frame>
+      </frame>
+      <text id="62:230" name="n&lt;5" x="403.70001220703125" y="99.9000015258789" width="22" height="17" />
+      <frame id="62:231" name="box" x="17" y="132" width="31.899999618530273" height="19.899999618530273">
+        <text id="62:232" name="n&lt;5" x="6" y="0.5249999761581421" width="21" height="17" />
+      </frame>
+      <frame id="62:233" name="box" x="54.900001525878906" y="132" width="43.20000076293945" height="19.899999618530273">
+        <text id="62:234" name="준비 중" x="6" y="0.5249999761581421" width="32" height="16" />
+      </frame>
+      <frame id="62:235" name="box" x="104.0999984741211" y="132" width="45.29999923706055" height="19.899999618530273">
+        <text id="62:236" name="owner" x="7" y="1.524999976158142" width="31" height="16" />
+      </frame>
+      <frame id="62:237" name="box" x="155.39999389648438" y="132" width="23.700000762939453" height="19.899999618530273">
+        <text id="62:238" name="12" x="6" y="-0.5" width="12" height="16" />
+      </frame>
+      <frame id="62:239" name="box" x="185.10000610351562" y="132" width="44" height="19.899999618530273">
+        <frame id="62:240" name="box" x="7" y="7" width="6" height="6" />
+        <text id="62:241" name="활성" x="18" y="1.524999976158142" width="20" height="16" />
+      </frame>
+      <text id="62:242" name="마스킹 배지 · 준비 중 배지 · 역할 칩 " x="17" y="161.52499389648438" width="250" height="16" />
+    </frame>
+    <frame id="62:243" name="box" x="40" y="873.0999755859375" width="442.70001220703125" height="154.8000030517578">
+      <text id="62:245" name="1.24B" x="49.099998474121094" y="67.1500015258789" width="34" height="20" />
+      <text id="62:246" name="도넛" x="133" y="20.274999618530273" width="23" height="19" />
+      <frame id="62:247" name="box" x="133" y="50.79999923706055" width="8" height="8" />
+      <text id="62:248" name="claude-sonnet-4-5" x="147" y="46.060001373291016" width="118" height="17" />
+      <text id="62:249" name="46" x="270.70001220703125" y="45.400001525878906" width="15" height="17" />
+      <text id="62:250" name="%" x="286.1000061035156" y="45.400001525878906" width="11" height="17" />
+      <frame id="62:251" name="box" x="133" y="74.0999984741211" width="8" height="8" />
+      <text id="62:252" name="claude-opus-4-1" x="147" y="69.45999908447266" width="104" height="17" />
+      <text id="62:253" name="27" x="256.8999938964844" y="68.80000305175781" width="14" height="17" />
+      <text id="62:254" name="%" x="272.29998779296875" y="68.80000305175781" width="11" height="17" />
+      <frame id="62:255" name="box" x="133" y="97.5" width="8" height="8" />
+      <text id="62:256" name="gpt-5-codex" x="147" y="92.86000061035156" width="76" height="17" />
+      <text id="62:257" name="17" x="229.1999969482422" y="92.19999694824219" width="12" height="17" />
+      <text id="62:258" name="%" x="244.60000610351562" y="92.19999694824219" width="11" height="17" />
+      <frame id="62:259" name="box" x="133" y="120.9000015258789" width="8" height="8" />
+      <text id="62:260" name="claude-haiku-4-5" x="147" y="116.26000213623047" width="111" height="17" />
+      <text id="62:261" name="10" x="263.79998779296875" y="115.5" width="13" height="17" />
+      <text id="62:262" name="%" x="279.20001220703125" y="115.5" width="11" height="17" />
+      <frame id="62:445" name="donut" x="17" y="27.399999618530273" width="100" height="100" />
+    </frame>
+    <frame id="62:263" name="box" x="498.70001220703125" y="873.0999755859375" width="901.2999877929688" height="154.8000030517578">
+      <text id="62:264" name="히트맵" x="17" y="16.075000762939453" width="34" height="19" />
+      <text id="62:265" name="셀 텍스트 필수(넓은 셀) · n&lt;5 회색 " x="53.79999923706055" y="17.299999237060547" width="189" height="17" />
+      <text id="62:266" name="플랫폼" x="17" y="50.400001525878906" width="32" height="17" />
+      <frame id="62:267" name="box" x="111" y="45.79999923706055" width="125.5999984741211" height="28">
+        <text id="62:268" name="62%" x="49.900001525878906" y="4.599999904632568" width="25" height="17" />
+      </frame>
+      <frame id="62:269" name="box" x="240.60000610351562" y="45.79999923706055" width="125.5999984741211" height="28">
+        <text id="62:270" name="68%" x="49.900001525878906" y="4.599999904632568" width="25" height="17" />
+      </frame>
+      <frame id="62:271" name="box" x="370.1000061035156" y="45.79999923706055" width="125.5999984741211" height="28">
+        <text id="62:272" name="74%" x="49.900001525878906" y="4.599999904632568" width="24" height="17" />
+      </frame>
+      <frame id="62:273" name="box" x="499.70001220703125" y="45.79999923706055" width="125.5999984741211" height="28">
+        <text id="62:274" name="76%" x="49.900001525878906" y="4.599999904632568" width="25" height="17" />
+      </frame>
+      <frame id="62:275" name="box" x="629.2000122070312" y="45.79999923706055" width="125.5999984741211" height="28">
+        <text id="62:276" name="79%" x="49.900001525878906" y="4.599999904632568" width="25" height="17" />
+      </frame>
+      <frame id="62:277" name="box" x="758.7999877929688" y="45.79999923706055" width="125.5999984741211" height="28">
+        <text id="62:278" name="82%" x="49.900001525878906" y="4.599999904632568" width="25" height="17" />
+      </frame>
+      <text id="62:279" name="모바일" x="17" y="82.4000015258789" width="32" height="17" />
+      <frame id="62:280" name="box" x="111" y="77.80000305175781" width="125.5999984741211" height="28">
+        <text id="62:281" name="35%" x="49.900001525878906" y="4.599999904632568" width="25" height="17" />
+      </frame>
+      <frame id="62:282" name="box" x="240.60000610351562" y="77.80000305175781" width="125.5999984741211" height="28">
+        <text id="62:283" name="42%" x="49.900001525878906" y="4.599999904632568" width="25" height="17" />
+      </frame>
+      <frame id="62:284" name="box" x="370.1000061035156" y="77.80000305175781" width="125.5999984741211" height="28">
+        <text id="62:285" name="49%" x="49.900001525878906" y="4.599999904632568" width="26" height="17" />
+      </frame>
+      <frame id="62:286" name="box" x="499.70001220703125" y="77.80000305175781" width="125.5999984741211" height="28">
+        <text id="62:287" name="53%" x="49.900001525878906" y="4.599999904632568" width="25" height="17" />
+      </frame>
+      <frame id="62:288" name="box" x="629.2000122070312" y="77.80000305175781" width="125.5999984741211" height="28">
+        <text id="62:289" name="56%" x="49.900001525878906" y="4.599999904632568" width="25" height="17" />
+      </frame>
+      <frame id="62:290" name="box" x="758.7999877929688" y="77.80000305175781" width="125.5999984741211" height="28">
+        <text id="62:291" name="60%" x="49.900001525878906" y="4.599999904632568" width="25" height="17" />
+      </frame>
+      <text id="62:292" name="인프라" x="17" y="114.4000015258789" width="32" height="17" />
+      <frame id="62:293" name="n&lt;5 masked" x="111" y="109.80000305175781" width="125.5999984741211" height="28">
+        <instance id="62:294" name="hatch" x="0" y="0" width="640" height="360" />
+        <text id="62:297" name="n&lt;5" x="51.79999923706055" y="4.599999904632568" width="22" height="17" />
+      </frame>
+      <frame id="62:298" name="n&lt;5 masked" x="240.60000610351562" y="109.80000305175781" width="125.5999984741211" height="28">
+        <instance id="62:299" name="hatch" x="0" y="0" width="640" height="360" />
+        <text id="62:302" name="n&lt;5" x="51.79999923706055" y="4.599999904632568" width="22" height="17" />
+      </frame>
+      <frame id="62:303" name="n&lt;5 masked" x="370.1000061035156" y="109.80000305175781" width="125.5999984741211" height="28">
+        <instance id="62:304" name="hatch" x="0" y="0" width="640" height="360" />
+        <text id="62:307" name="n&lt;5" x="51.79999923706055" y="4.599999904632568" width="22" height="17" />
+      </frame>
+      <frame id="62:308" name="n&lt;5 masked" x="499.70001220703125" y="109.80000305175781" width="125.5999984741211" height="28">
+        <instance id="62:309" name="hatch" x="0" y="0" width="640" height="360" />
+        <text id="62:312" name="n&lt;5" x="51.79999923706055" y="4.599999904632568" width="22" height="17" />
+      </frame>
+      <frame id="62:313" name="n&lt;5 masked" x="629.2000122070312" y="109.80000305175781" width="125.5999984741211" height="28">
+        <instance id="62:314" name="hatch" x="0" y="0" width="640" height="360" />
+        <text id="62:317" name="n&lt;5" x="51.79999923706055" y="4.599999904632568" width="22" height="17" />
+      </frame>
+      <frame id="62:318" name="n&lt;5 masked" x="758.7999877929688" y="109.80000305175781" width="125.5999984741211" height="28">
+        <instance id="62:319" name="hatch" x="0" y="0" width="640" height="360" />
+        <text id="62:322" name="n&lt;5" x="51.79999923706055" y="4.599999904632568" width="22" height="17" />
+      </frame>
+    </frame>
+    <text id="62:323" name="추가 컴포넌트" x="40" y="1059.75" width="76" height="20" />
+    <text id="62:324" name="턴 2 · P2/P5에서 처음 사용" x="119.30000305175781" y="1062.199951171875" width="131" height="17" />
+    <frame id="62:325" name="box" x="40" y="1092.300048828125" width="442.70001220703125" height="208.6999969482422">
+      <text id="62:326" name="히스토그램" x="17" y="16.075000762939453" width="57" height="19" />
+      <text id="62:327" name="버킷 · 중앙값/p90 마커" x="76.30000305175781" y="17.299999237060547" width="111" height="17" />
+      <frame id="62:328" name="box" x="17" y="43.79999923706055" width="408.70001220703125" height="100">
+        <text id="62:329" name="62" x="31.100000381469727" y="23.725000381469727" width="14" height="16" />
+        <frame id="62:330" name="box" x="0" y="43.20000076293945" width="75.30000305175781" height="55.79999923706055" />
+        <text id="62:331" name="98" x="114.30000305175781" y="-0.4749999940395355" width="14" height="16" />
+        <frame id="62:332" name="box" x="83.30000305175781" y="18.899999618530273" width="75.30000305175781" height="80.0999984741211" />
+        <text id="62:333" name="84" x="197.60000610351562" y="3.924999952316284" width="14" height="16" />
+        <frame id="62:334" name="box" x="166.6999969482422" y="23.399999618530273" width="75.30000305175781" height="75.5999984741211" />
+        <frame id="62:335" name="box" x="204.3000030517578" y="0" width="2" height="99" />
+        <text id="62:336" name="51" x="282" y="33.625" width="12" height="16" />
+        <frame id="62:337" name="box" x="250" y="53.099998474121094" width="75.30000305175781" height="45.900001525878906" />
+        <frame id="62:338" name="box" x="287.70001220703125" y="0" width="2" height="99" />
+        <text id="62:339" name="23" x="364.3999938964844" y="58.92499923706055" width="14" height="16" />
+        <frame id="62:340" name="box" x="333.29998779296875" y="78.30000305175781" width="75.30000305175781" height="20.700000762939453" />
+      </frame>
+      <text id="62:341" name="1" x="52.70000076293945" y="151.3249969482422" width="5" height="16" />
+      <text id="62:342" name="2–3" x="129" y="151.3249969482422" width="19" height="16" />
+      <text id="62:343" name="4–7" x="212.35000610351562" y="151.3249969482422" width="19" height="16" />
+      <text id="62:344" name="8–15" x="292.6499938964844" y="151.3249969482422" width="24" height="16" />
+      <text id="62:345" name="16+" x="378.54998779296875" y="151.3249969482422" width="19" height="16" />
+      <text id="62:346" name="x = 버킷, y = 건수 · 개인 축 금지" x="17" y="175.3249969482422" width="267" height="16" />
+    </frame>
+    <frame id="62:347" name="box" x="498.70001220703125" y="1092.300048828125" width="442.70001220703125" height="208.6999969482422">
+      <text id="62:348" name="박스(p50 → p90)" x="17" y="16.075000762939453" width="97" height="19" />
+      <text id="62:349" name="평균 표시 금지" x="118.80000305175781" y="17.299999237060547" width="69" height="17" />
+      <text id="62:350" name="accept" x="17" y="56.400001525878906" width="44" height="17" />
+      <frame id="62:351" name="box" x="83" y="65.80000305175781" width="342.70001220703125" height="1" />
+      <frame id="62:352" name="box" x="107" y="54.79999923706055" width="81.69999694824219" height="22" />
+      <text id="62:353" name="p50" x="84.4000015258789" y="45.32500076293945" width="20" height="16" />
+      <text id="62:354" name="4.2s" x="106.69999694824219" y="45.32500076293945" width="22" height="16" />
+      <text id="62:355" name="p90" x="163.5" y="45.32500076293945" width="20" height="16" />
+      <text id="62:356" name="18.5s" x="185.89999389648438" y="45.32500076293945" width="26" height="16" />
+      <text id="62:357" name="reject" x="17" y="106.4000015258789" width="44" height="17" />
+      <frame id="62:358" name="box" x="83" y="115.80000305175781" width="342.70001220703125" height="1" />
+      <frame id="62:359" name="n&lt;5 masked" x="139" y="104.80000305175781" width="179.3000030517578" height="22">
+        <instance id="62:360" name="hatch" x="0" y="0" width="640" height="360" />
+      </frame>
+      <text id="62:363" name="p50" x="116.5999984741211" y="95.32499694824219" width="20" height="16" />
+      <text id="62:364" name="9.8s" x="138.8000030517578" y="95.32499694824219" width="22" height="16" />
+      <text id="62:365" name="p90" x="293.29998779296875" y="95.32499694824219" width="20" height="16" />
+      <text id="62:366" name="41.2s" x="315.70001220703125" y="95.32499694824219" width="26" height="16" />
+      <text id="62:367" name="0s" x="83" y="145.3249969482422" width="13" height="16" />
+      <text id="62:368" name="30s" x="241.60000610351562" y="145.3249969482422" width="19" height="16" />
+      <text id="62:369" name="60s" x="406.8999938964844" y="145.3249969482422" width="19" height="16" />
+      <text id="62:370" name="결정별(accept 채움 / reject 빗" x="17" y="171.3249969482422" width="231" height="16" />
+    </frame>
+    <frame id="62:371" name="box" x="957.2999877929688" y="1092.300048828125" width="442.70001220703125" height="208.6999969482422">
+      <text id="62:372" name="누적 가로 막대(100%)" x="17" y="16.075000762939453" width="116" height="19" />
+      <text id="62:373" name="비용 = 보라 순차" x="138" y="17.299999237060547" width="79" height="17" />
+      <text id="62:374" name="모델별" x="17" y="45.099998474121094" width="32" height="17" />
+      <text id="62:375" name="model" x="392.5" y="45.32500076293945" width="35" height="17" />
+      <frame id="62:376" name="box" x="17" y="68.19999694824219" width="408.70001220703125" height="18">
+        <frame id="62:377" name="box" x="0" y="0" width="211" height="18">
+          <text id="62:378" name="52%" x="94.69999694824219" y="1.5499999523162842" width="21" height="16" />
+        </frame>
+        <frame id="62:379" name="box" x="212" y="0" width="125.80000305175781" height="18">
+          <text id="62:380" name="31%" x="52.79999923706055" y="1.5499999523162842" width="20" height="16" />
+        </frame>
+        <frame id="62:381" name="box" x="338.70001220703125" y="0" width="44.599998474121094" height="18">
+          <text id="62:382" name="11%" x="13.100000381469727" y="1.5499999523162842" width="18" height="16" />
+        </frame>
+        <frame id="62:383" name="box" x="384.29998779296875" y="0" width="24.299999237060547" height="18" />
+      </frame>
+      <text id="62:384" name="쿼리 출처별" x="17" y="95.5" width="55" height="17" />
+      <text id="62:385" name="query_source" x="346.20001220703125" y="95.7249984741211" width="83" height="17" />
+      <frame id="62:386" name="box" x="17" y="118.5999984741211" width="408.70001220703125" height="18">
+        <frame id="62:387" name="box" x="0" y="0" width="256.20001220703125" height="18">
+          <text id="62:388" name="63%" x="117.0999984741211" y="1.5499999523162842" width="21" height="16" />
+        </frame>
+        <frame id="62:389" name="box" x="257.20001220703125" y="0" width="117.9000015258789" height="18">
+          <text id="62:390" name="29%" x="48.099998474121094" y="1.5499999523162842" width="21" height="16" />
+        </frame>
+        <frame id="62:391" name="box" x="376.1000061035156" y="0" width="32.5" height="18">
+          <text id="62:392" name="8%" x="8.5" y="1.5499999523162842" width="15" height="16" />
+        </frame>
+      </frame>
+      <text id="62:393" name="세그먼트 ≥8%만 값 텍스트 · 나머지는 범" x="17" y="146.125" width="297" height="16" />
+    </frame>
+    <frame id="62:394" name="box" x="40" y="1317" width="442.70001220703125" height="214.6999969482422">
+      <text id="62:395" name="누적 영역" x="17" y="16.075000762939453" width="49" height="19" />
+      <text id="62:396" name="토큰 구성 = 파랑 순차" x="68.0999984741211" y="17.299999237060547" width="103" height="17" />
+      <frame id="62:397" name="box" x="17" y="45.79999923706055" width="408.70001220703125" height="100">
+        <frame id="62:398" name="chart" x="0" y="0" width="408.70001220703125" height="99">
+          <vector id="62:399" name="Vector" x="0" y="87.04100036621094" width="408.70001220703125" height="11.958999633789062" />
+          <vector id="62:400" name="Vector" x="0" y="80.43800354003906" width="408.70001220703125" height="14.849998474121094" />
+          <vector id="62:401" name="Vector" x="0" y="29.284000396728516" width="408.70001220703125" height="63.94399642944336" />
+          <vector id="62:402" name="Vector" x="0" y="11.137999534606934" width="408.70001220703125" height="67.23999786376953" />
+        </frame>
+      </frame>
+      <frame id="62:403" name="box" x="17" y="159.8000030517578" width="8" height="8" />
+      <text id="62:404" name="input" x="29" y="155.3249969482422" width="25" height="16" />
+      <frame id="62:405" name="box" x="63.70000076293945" y="159.8000030517578" width="8" height="8" />
+      <text id="62:406" name="output" x="75.69999694824219" y="155.3249969482422" width="33" height="16" />
+      <frame id="62:407" name="box" x="118" y="159.8000030517578" width="8" height="8" />
+      <text id="62:408" name="cacheRead" x="130" y="155.3249969482422" width="55" height="16" />
+      <frame id="62:409" name="box" x="194.89999389648438" y="159.8000030517578" width="8" height="8" />
+      <text id="62:410" name="cacheCreation" x="206.89999389648438" y="155.3249969482422" width="72" height="16" />
+      <text id="62:411" name="층 경계 1px 카드색 선 · 순서 고정(아" x="17" y="181.3249969482422" width="393" height="16" />
+    </frame>
+    <frame id="62:412" name="box" x="498.70001220703125" y="1317" width="442.70001220703125" height="214.6999969482422">
+      <text id="62:413" name="탭 패널" x="17" y="16.075000762939453" width="37" height="19" />
+      <text id="62:414" name="위젯 내부 · 언더라인 탭" x="56.900001525878906" y="17.299999237060547" width="109" height="17" />
+      <frame id="62:415" name="box" x="17" y="45.79999923706055" width="408.70001220703125" height="32">
+        <frame id="62:416" name="box" x="0" y="0" width="71.80000305175781" height="32">
+          <text id="62:417" name="언어별 수락률" x="1.899999976158142" y="7.5" width="68" height="18" />
+        </frame>
+        <frame id="62:418" name="box" x="87.80000305175781" y="0" width="74.9000015258789" height="32">
+          <text id="62:419" name="자동 승인 비율" x="0.9500000476837158" y="7.5" width="72" height="18" />
+        </frame>
+        <frame id="62:420" name="box" x="178.6999969482422" y="0" width="74.9000015258789" height="32">
+          <text id="62:421" name="권한 대기 시간" x="0.9500000476837158" y="7.5" width="72" height="18" />
+        </frame>
+        <frame id="62:422" name="box" x="269.70001220703125" y="0" width="50.29999923706055" height="32">
+          <text id="62:423" name="거절 출처" x="2.1500000953674316" y="7.5" width="47" height="18" />
+        </frame>
+      </frame>
+      <text id="62:424" name="선택된 탭:" x="17" y="93.0999984741211" width="48" height="17" />
+      <text id="62:425" name="언어별 수락률" x="67.5999984741211" y="93.0999984741211" width="66" height="17" />
+      <frame id="62:426" name="box" x="17" y="127.19999694824219" width="153.1999969482422" height="32">
+        <frame id="62:427" name="box" x="3" y="3" width="68.4000015258789" height="26">
+          <text id="62:428" name="결제 코어" x="12" y="3.5999999046325684" width="45" height="17" />
+        </frame>
+        <text id="62:429" name="정산" x="85.4000015258789" y="6.599999904632568" width="21" height="17" />
+        <frame id="62:430" name="box" x="112.19999694824219" y="8.800000190734863" width="26.100000381469727" height="14.5">
+          <text id="62:431" name="n&lt;5" x="4" y="-0.75" width="21" height="17" />
+        </frame>
+      </frame>
+      <text id="62:432" name="위: 위젯 탭(언더라인) · 아래: 페이지 " x="17" y="168.72500610351562" width="293" height="16" />
+    </frame>
+    <frame id="62:433" name="box" x="957.2999877929688" y="1317" width="442.70001220703125" height="214.6999969482422">
+      <text id="62:434" name="게이지" x="17" y="16.075000762939453" width="34" height="19" />
+      <text id="62:435" name="약정 소진률 · 반원" x="53.79999923706055" y="17.299999237060547" width="85" height="17" />
+      <frame id="62:436" name="box" x="17" y="45.79999923706055" width="130" height="74" />
+      <text id="62:437" name="58%" x="55.5" y="94.5999984741211" width="45" height="32" />
+      <text id="62:438" name="소진" x="163" y="45.79999923706055" width="21" height="17" />
+      <text id="62:439" name="$69,840" x="186.8000030517578" y="45.79999923706055" width="47" height="17" />
+      <text id="62:440" name="약정" x="163" y="67.19999694824219" width="21" height="17" />
+      <text id="62:441" name="$120,000" x="186.8000030517578" y="67.19999694824219" width="51" height="17" />
+      <frame id="62:442" name="box" x="163" y="93.30000305175781" width="120" height="6">
+        <frame id="62:443" name="box" x="0" y="0" width="69.5999984741211" height="6" />
+        <frame id="62:444" name="box" x="82.80000305175781" y="-3" width="2" height="12" />
+      </frame>
+      <text id="63:98" name="세로선 = 기간 경과" x="163" y="102.82499694824219" width="82" height="16" />
+    </frame>
+    <frame id="63:99" name="box" x="40" y="1547.699951171875" width="1360" height="219.3000030517578">
+      <text id="63:100" name="데이터 표" x="17" y="16.075000762939453" width="49" height="19" />
+      <text id="63:101" name="12.5px · 숫자 우측 정렬 tabula" x="68.0999984741211" y="17.299999237060547" width="427" height="17" />
+      <frame id="63:102" name="box" x="17" y="45.79999923706055" width="264.29998779296875" height="30.600000381469727">
+        <text id="63:103" name="서버명" x="8" y="5.434999942779541" width="33" height="18" />
+      </frame>
+      <frame id="63:104" name="box" x="281.29998779296875" y="45.79999923706055" width="230.6999969482422" height="30.600000381469727">
+        <text id="63:105" name="scope" x="8" y="5.434999942779541" width="35" height="18" />
+      </frame>
+      <frame id="63:106" name="box" x="512" y="45.79999923706055" width="255.5" height="30.600000381469727">
+        <text id="63:107" name="transport" x="8" y="5.434999942779541" width="52" height="18" />
+      </frame>
+      <frame id="63:108" name="box" x="767.5" y="45.79999923706055" width="190.60000610351562" height="30.600000381469727">
+        <text id="63:109" name="연결 수" x="146.60000610351562" y="5.434999942779541" width="36" height="18" />
+      </frame>
+      <frame id="63:110" name="box" x="958.0999755859375" y="45.79999923706055" width="179.3000030517578" height="30.600000381469727">
+        <text id="63:111" name="실패율" x="138.3000030517578" y="5.434999942779541" width="33" height="18" />
+      </frame>
+      <frame id="63:112" name="box" x="1137.300048828125" y="45.79999923706055" width="205.60000610351562" height="30.600000381469727">
+        <text id="63:113" name="상태" x="8" y="5.434999942779541" width="22" height="18" />
+      </frame>
+      <frame id="63:114" name="box" x="17" y="76.5" width="264.29998779296875" height="33.099998474121094">
+        <text id="63:115" name="github" x="8" y="7.860000133514404" width="42" height="17" />
+      </frame>
+      <frame id="63:116" name="box" x="281.29998779296875" y="76.5" width="230.6999969482422" height="33.099998474121094">
+        <frame id="63:117" name="box" x="8" y="9.5" width="28.299999237060547" height="15">
+          <text id="63:118" name="org" x="6" y="-0.4749999940395355" width="17" height="16" />
+        </frame>
+      </frame>
+      <frame id="63:119" name="box" x="512" y="76.5" width="255.5" height="33.099998474121094">
+        <text id="63:120" name="http" x="8" y="7.860000133514404" width="28" height="17" />
+      </frame>
+      <frame id="63:121" name="box" x="767.5" y="76.5" width="190.60000610351562" height="33.099998474121094">
+        <text id="63:122" name="11" x="171.60000610351562" y="6.934999942779541" width="11" height="18" />
+      </frame>
+      <frame id="63:123" name="box" x="958.0999755859375" y="76.5" width="179.3000030517578" height="33.099998474121094">
+        <text id="63:124" name="1.2%" x="144.3000030517578" y="6.934999942779541" width="27" height="18" />
+      </frame>
+      <frame id="63:125" name="box" x="1137.300048828125" y="76.5" width="205.60000610351562" height="33.099998474121094">
+        <frame id="63:126" name="box" x="8" y="14.5" width="6" height="6" />
+        <text id="63:127" name="활성" x="19" y="9.024999618530273" width="20" height="16" />
+      </frame>
+      <frame id="63:128" name="box" x="17" y="109.5999984741211" width="264.29998779296875" height="33.099998474121094">
+        <text id="63:129" name="postgres" x="8" y="7.860000133514404" width="56" height="17" />
+      </frame>
+      <frame id="63:130" name="box" x="281.29998779296875" y="109.5999984741211" width="230.6999969482422" height="33.099998474121094">
+        <frame id="63:131" name="box" x="8" y="9.5" width="28.299999237060547" height="15">
+          <text id="63:132" name="org" x="6" y="-0.4749999940395355" width="17" height="16" />
+        </frame>
+      </frame>
+      <frame id="63:133" name="box" x="512" y="109.5999984741211" width="255.5" height="33.099998474121094">
+        <text id="63:134" name="stdio" x="8" y="7.860000133514404" width="35" height="17" />
+      </frame>
+      <frame id="63:135" name="box" x="767.5" y="109.5999984741211" width="190.60000610351562" height="33.099998474121094">
+        <text id="63:136" name="6" x="174.60000610351562" y="6.934999942779541" width="8" height="18" />
+      </frame>
+      <frame id="63:137" name="box" x="958.0999755859375" y="109.5999984741211" width="179.3000030517578" height="33.099998474121094">
+        <text id="63:138" name="3.8%" x="142.3000030517578" y="6.934999942779541" width="29" height="18" />
+      </frame>
+      <frame id="63:139" name="box" x="1137.300048828125" y="109.5999984741211" width="205.60000610351562" height="33.099998474121094">
+        <frame id="63:140" name="box" x="8" y="14.5" width="6" height="6" />
+        <text id="63:141" name="활성" x="19" y="9.024999618530273" width="20" height="16" />
+      </frame>
+      <frame id="63:142" name="box" x="17" y="142.6999969482422" width="264.29998779296875" height="33.099998474121094">
+        <text id="63:143" name="figma" x="8" y="7.860000133514404" width="35" height="17" />
+      </frame>
+      <frame id="63:144" name="box" x="281.29998779296875" y="142.6999969482422" width="230.6999969482422" height="33.099998474121094">
+        <frame id="63:145" name="box" x="8" y="9.5" width="46.29999923706055" height="15">
+          <text id="63:146" name="project" x="6" y="-0.4749999940395355" width="35" height="16" />
+        </frame>
+      </frame>
+      <frame id="63:147" name="box" x="512" y="142.6999969482422" width="255.5" height="33.099998474121094">
+        <text id="63:148" name="sse" x="8" y="7.860000133514404" width="21" height="17" />
+      </frame>
+      <frame id="63:149" name="box" x="767.5" y="142.6999969482422" width="190.60000610351562" height="33.099998474121094">
+        <text id="63:150" name="n&lt;5" x="159.60000610351562" y="6.934999942779541" width="23" height="18" />
+      </frame>
+      <frame id="63:151" name="box" x="958.0999755859375" y="142.6999969482422" width="179.3000030517578" height="33.099998474121094">
+        <text id="63:152" name="—" x="159.3000030517578" y="6.934999942779541" width="12" height="18" />
+      </frame>
+      <frame id="63:153" name="box" x="1137.300048828125" y="142.6999969482422" width="205.60000610351562" height="33.099998474121094">
+        <frame id="63:154" name="box" x="8" y="14.5" width="6" height="6" />
+        <text id="63:155" name="미관측" x="19" y="9.024999618530273" width="29" height="16" />
+      </frame>
+      <text id="63:156" name="마스킹 셀은 값 대신 n&lt;5 배지 · 임계 " x="17" y="185.8249969482422" width="402" height="16" />
+    </frame>
+    <text id="63:157" name="런처 컴포넌트" x="40" y="1798.8499755859375" width="76" height="20" />
+    <text id="63:158" name="턴 4 · P4 시나리오 런처" x="119.30000305175781" y="1801.300048828125" width="113" height="17" />
+    <frame id="63:159" name="box" x="40" y="1831.4000244140625" width="442.70001220703125" height="224.60000610351562">
+      <text id="63:160" name="시나리오 카드" x="17" y="16.075000762939453" width="71" height="19" />
+      <text id="63:161" name="가능 / 준비 중(비활성)" x="90.5999984741211" y="17.299999237060547" width="105" height="17" />
+      <frame id="63:162" name="box" x="17" y="45.79999923706055" width="199.3000030517578" height="130.89999389648438">
+        <text id="63:163" name="★ S1-3" x="13" y="13.524999618530273" width="46" height="17" />
+        <frame id="63:164" name="box" x="155" y="13" width="31.299999237060547" height="18">
+          <text id="63:165" name="가능" x="7" y="1" width="18" height="16" />
+        </frame>
+        <text id="63:166" name="비용 스파이크·폭주 감지" x="13" y="36.724998474121094" width="123" height="19" />
+        <text id="63:167" name="어느 날 비용이 갑자기 튀었는데 원인을 모를" x="13" y="68.61000061035156" width="166" height="38" />
+        <frame id="63:168" name="box" x="13" y="99.9000015258789" width="20.799999237060547" height="18">
+          <text id="63:169" name="P1" x="5" y="0" width="11" height="16" />
+        </frame>
+        <frame id="63:170" name="box" x="37.79999923706055" y="99.9000015258789" width="32.20000076293945" height="18">
+          <text id="63:171" name="기간" x="7" y="0.5" width="18" height="15" />
+        </frame>
+        <frame id="63:172" name="box" x="73.9000015258789" y="99.9000015258789" width="43.79999923706055" height="18">
+          <text id="63:173" name="임계 %" x="7" y="0.5" width="29" height="15" />
+        </frame>
+      </frame>
+      <frame id="63:174" name="box" x="226.3000030517578" y="45.79999923706055" width="199.3000030517578" height="130.89999389648438">
+        <text id="63:175" name="★ S5-1" x="13" y="13.524999618530273" width="46" height="17" />
+        <frame id="63:176" name="box" x="144" y="13" width="42.29999923706055" height="18">
+          <text id="63:177" name="준비 중" x="7" y="1" width="29" height="16" />
+        </frame>
+        <text id="63:178" name="프롬프트 내 민감정보 유출" x="13" y="36.724998474121094" width="134" height="19" />
+        <text id="63:179" name="프롬프트 본문 미수집으로 대리 측정 불가" x="13" y="68.61000061035156" width="163" height="38" />
+        <frame id="63:180" name="box" x="13" y="99.9000015258789" width="22.5" height="18">
+          <text id="63:181" name="P3" x="5" y="0" width="13" height="16" />
+        </frame>
+        <frame id="63:182" name="box" x="39.5" y="99.9000015258789" width="52.900001525878906" height="18">
+          <text id="63:183" name="입력 없음" x="7" y="0.5" width="38" height="15" />
+        </frame>
+      </frame>
+    </frame>
+    <frame id="63:184" name="box" x="498.70001220703125" y="1831.4000244140625" width="442.70001220703125" height="224.60000610351562">
+      <text id="63:185" name="가용성 배지 3종 · 심각도 칩 3종" x="17" y="16.075000762939453" width="163" height="19" />
+      <frame id="63:186" name="box" x="17" y="47.79999923706055" width="31.299999237060547" height="18">
+        <text id="63:187" name="가능" x="7" y="1" width="18" height="16" />
+      </frame>
+      <frame id="63:188" name="box" x="56.29999923706055" y="47.79999923706055" width="31.299999237060547" height="18">
+        <text id="63:189" name="부분" x="7" y="1" width="18" height="16" />
+      </frame>
+      <frame id="63:190" name="box" x="95.5999984741211" y="47.79999923706055" width="42.29999923706055" height="18">
+        <text id="63:191" name="준비 중" x="7" y="1" width="29" height="16" />
+      </frame>
+      <text id="63:192" name="가능=파랑 · 부분(일부 지표 대리 측정)=" x="17" y="73.32499694824219" width="336" height="16" />
+      <frame id="63:193" name="box" x="17" y="101.80000305175781" width="32.20000076293945" height="18">
+        <text id="63:194" name="정보" x="7" y="0.5" width="19" height="16" />
+      </frame>
+      <frame id="63:195" name="box" x="57.20000076293945" y="101.80000305175781" width="32.20000076293945" height="18">
+        <text id="63:196" name="주의" x="7" y="0.5" width="19" height="16" />
+      </frame>
+      <frame id="63:197" name="box" x="97.30000305175781" y="101.80000305175781" width="32.20000076293945" height="18">
+        <text id="63:198" name="이상" x="7" y="0.5" width="19" height="16" />
+      </frame>
+      <text id="63:199" name="심각도: 정보=파랑 · 주의=주황 · 이상=" x="137.5" y="102.32499694824219" width="244" height="16" />
+      <frame id="63:200" name="box" x="17" y="132.8000030517578" width="20.799999237060547" height="16">
+        <text id="63:201" name="P1" x="5" y="0" width="11" height="16" />
+      </frame>
+      <frame id="63:202" name="box" x="45.79999923706055" y="132.8000030517578" width="22.200000762939453" height="16">
+        <text id="63:203" name="P2" x="5" y="0" width="12" height="16" />
+      </frame>
+      <frame id="63:204" name="box" x="76" y="132.8000030517578" width="22.5" height="16">
+        <text id="63:205" name="P3" x="5" y="0" width="13" height="16" />
+      </frame>
+      <frame id="63:206" name="box" x="106.5" y="131.8000030517578" width="32.20000076293945" height="18">
+        <text id="63:207" name="기간" x="7" y="0.5" width="18" height="15" />
+      </frame>
+      <frame id="63:208" name="box" x="146.60000610351562" y="131.8000030517578" width="23.100000381469727" height="18">
+        <text id="63:209" name="팀" x="7" y="0.5" width="9" height="15" />
+      </frame>
+      <frame id="63:210" name="box" x="177.6999969482422" y="131.8000030517578" width="41.20000076293945" height="18">
+        <text id="63:211" name="예산표" x="7" y="0.5" width="26" height="15" />
+      </frame>
+      <text id="63:212" name="대상 화면 칩 · 필요한 입력 칩" x="226.89999389648438" y="132.3249969482422" width="124" height="16" />
+    </frame>
+    <frame id="63:213" name="box" x="957.2999877929688" y="1831.4000244140625" width="442.70001220703125" height="224.60000610351562">
+      <text id="63:214" name="findings 카드" x="17" y="16.075000762939453" width="72" height="19" />
+      <frame id="63:215" name="box" x="17" y="45.79999923706055" width="408.70001220703125" height="161.6999969482422">
+        <frame id="63:216" name="box" x="13" y="13" width="32.20000076293945" height="18">
+          <text id="63:217" name="이상" x="7" y="0.5" width="19" height="16" />
+        </frame>
+        <text id="63:218" name="W1.2" x="53.20000076293945" y="13.524999618530273" width="28" height="17" />
+        <text id="63:219" name="9/3 비용이 이동평균 대비 +340%" x="13" y="38.724998474121094" width="178" height="19" />
+        <text id="63:220" name="cost 9/3" x="13" y="64.26000213623047" width="56" height="17" />
+        <text id="63:221" name="$1,312.66" x="336.79998779296875" y="63.900001525878906" width="53" height="17" />
+        <frame id="63:222" name="box" x="13" y="89.9000015258789" width="382.70001220703125" height="33.400001525878906">
+          <text id="63:223" name="권장" x="10" y="7.300000190734863" width="21" height="17" />
+          <text id="63:224" name="· query_source=subagent " x="30.799999237060547" y="7.300000190734863" width="291" height="17" />
+        </frame>
+        <text id="63:225" name="관련 위젯으로 이동 → W1.2" x="13" y="130.60000610351562" width="132" height="17" />
+      </frame>
+    </frame>
+    <frame id="63:226" name="box" x="40" y="2072" width="557.2999877929688" height="282.79998779296875">
+      <text id="63:227" name="스텝퍼(실행 진행)" x="17" y="16.075000762939453" width="91" height="19" />
+      <text id="63:228" name="완료 초록 · 진행 파랑 · 실패 빨강 · " x="111.5999984741211" y="17.299999237060547" width="206" height="17" />
+      <frame id="63:229" name="box" x="17" y="53.79999923706055" width="24" height="24">
+        <text id="63:230" name="✓" x="7.300000190734863" y="3.5250000953674316" width="10" height="16" />
+      </frame>
+      <text id="63:231" name="대기" x="53" y="52.875" width="23" height="19" />
+      <text id="63:232" name="큐 진입" x="53" y="74.36000061035156" width="37" height="19" />
+      <text id="63:233" name="0.4s" x="518.9000244140625" y="53.32500076293945" width="22" height="16" />
+      <frame id="63:234" name="box" x="28" y="77.80000305175781" width="2" height="29.5" />
+      <frame id="63:235" name="box" x="17" y="107.4000015258789" width="24" height="24">
+        <text id="63:236" name="2" x="8.600000381469727" y="3.5250000953674316" width="7" height="16" />
+      </frame>
+      <text id="63:237" name="쿼리 실행 3/5" x="53" y="106.4749984741211" width="72" height="19" />
+      <text id="63:238" name="비용 · 팀별 비용 …" x="53" y="127.86000061035156" width="94" height="19" />
+      <text id="63:239" name="34s" x="521.2000122070312" y="106.92500305175781" width="20" height="16" />
+      <frame id="63:240" name="box" x="28" y="131.39999389648438" width="2" height="29.5" />
+      <frame id="63:241" name="box" x="17" y="160.89999389648438" width="24" height="24">
+        <text id="63:242" name="3" x="8.5" y="3.5250000953674316" width="7" height="16" />
+      </frame>
+      <text id="63:243" name="판정" x="53" y="159.97500610351562" width="23" height="19" />
+      <text id="63:244" name="이동평균 +200% 규칙" x="53" y="181.36000061035156" width="116" height="19" />
+      <frame id="63:245" name="box" x="28" y="184.89999389648438" width="2" height="29.5" />
+      <frame id="63:246" name="box" x="17" y="214.39999389648438" width="24" height="24">
+        <text id="63:247" name="4" x="8.399999618530273" y="3.5250000953674316" width="7" height="16" />
+      </frame>
+      <text id="63:248" name="완료" x="53" y="213.47500610351562" width="23" height="19" />
+      <text id="63:249" name="결과 뷰 열기" x="53" y="234.86000061035156" width="63" height="19" />
+    </frame>
+    <frame id="63:250" name="box" x="613.2999877929688" y="2072" width="786.7000122070312" height="282.79998779296875">
+      <text id="63:251" name="드로어(우측 480px)" x="17" y="16.075000762939453" width="106" height="19" />
+      <text id="63:252" name="헤더 · 스크롤 본문 · 고정 푸터(실행 /" x="128.5" y="17.299999237060547" width="230" height="17" />
+      <frame id="63:253" name="box" x="17" y="45.79999923706055" width="752.7000122070312" height="220">
+        <frame id="63:254" name="box" x="1" y="1" width="750.7000122070312" height="218" />
+        <frame id="63:255" name="box" x="301.29998779296875" y="1" width="450.3999938964844" height="218">
+          <frame id="63:256" name="box" x="1" y="0" width="449.3999938964844" height="56.599998474121094">
+            <text id="63:257" name="S1-3 ·" x="12" y="9.25" width="42" height="17" />
+            <text id="63:258" name="가능" x="54.20000076293945" y="9.25" width="22" height="17" />
+            <text id="63:259" name="· P1" x="71.5" y="9.25" width="28" height="17" />
+            <text id="63:260" name="비용 스파이크·폭주 감지" x="12" y="26.934999465942383" width="118" height="18" />
+            <frame id="63:261" name="box" x="417.3999938964844" y="10" width="20" height="20">
+              <text id="63:262" name="×" x="6.599999904632568" y="1.524999976158142" width="7" height="16" />
+            </frame>
+          </frame>
+          <frame id="63:263" name="box" x="13" y="66.5999984741211" width="212.6999969482422" height="8" />
+          <frame id="63:264" name="box" x="13" y="80.5999984741211" width="340.29998779296875" height="8" />
+          <frame id="63:265" name="box" x="13" y="94.5999984741211" width="255.1999969482422" height="22" />
+          <frame id="63:266" name="box" x="13" y="122.5999984741211" width="170.1999969482422" height="8" />
+          <frame id="63:267" name="box" x="1" y="177" width="449.3999938964844" height="41">
+            <frame id="63:268" name="box" x="12" y="9" width="39" height="24">
+              <text id="63:269" name="실행" x="10" y="3.5250000953674316" width="20" height="16" />
+            </frame>
+            <frame id="63:270" name="box" x="57" y="9" width="65.5999984741211" height="24">
+              <text id="63:271" name="기본값으로" x="9" y="3.5250000953674316" width="48" height="16" />
+            </frame>
+          </frame>
+        </frame>
+      </frame>
+    </frame>
+    <text id="63:272" name="셸 · 표 · 모달" x="40" y="2386.64990234375" width="69" height="20" />
+    <text id="63:273" name="턴 5 정리 · 이름 붙인 컴포넌트" x="112.69999694824219" y="2389.10009765625" width="143" height="17" />
+    <text id="63:274" name="캡션 바(커버리지) · 시나리오 적용 배너" x="40" y="2418.5" width="182" height="17" />
+    <frame id="63:275" name="box" x="40" y="2444.60009765625" width="1360" height="28">
+      <frame id="63:276" name="box" x="17" y="11" width="6" height="6" />
+      <text id="63:277" name="텔레메트리 활성 기기 기준 · 활성 설치" x="31" y="4.599999904632568" width="177" height="17" />
+      <text id="63:278" name="128" x="215.6999969482422" y="4.599999904632568" width="20" height="17" />
+      <text id="63:279" name="/ 활성 구성원" x="244" y="4.599999904632568" width="62" height="17" />
+      <text id="63:280" name="154" x="313.8999938964844" y="4.599999904632568" width="20" height="17" />
+      <text id="63:281" name="(" x="342.6000061035156" y="4.599999904632568" width="5" height="17" />
+      <text id="63:282" name="83%" x="354.70001220703125" y="4.599999904632568" width="26" height="17" />
+      <text id="63:283" name=") · 마지막 적재 3분 전" x="388.8999938964844" y="4.599999904632568" width="103" height="17" />
+      <text id="63:284" name="커버리지 상세" x="1277.800048828125" y="4.599999904632568" width="66" height="17" />
+    </frame>
+    <frame id="63:285" name="box" x="40" y="2480.60009765625" width="1360" height="36">
+      <frame id="63:286" name="box" x="17" y="14" width="8" height="8" />
+      <text id="63:287" name="시나리오 적용 중: S1-3 비용 스파이크·" x="35" y="8.335000038146973" width="235" height="18" />
+      <text id="63:288" name="· 필터 자동 적용 — 28d · MA 7일" x="280.20001220703125" y="8.335000038146973" width="217" height="18" />
+      <text id="63:289" name="해제" x="1322.300048828125" y="8.600000381469727" width="21" height="17" />
+    </frame>
+    <frame id="63:290" name="box" x="40" y="2532.60009765625" width="557.2999877929688" height="248.10000610351562">
+      <text id="63:291" name="위젯 헤더" x="17" y="16.299999237060547" width="45" height="17" />
+      <text id="63:292" name="ⓘ 정의 툴팁 · 메뉴(표로 보기 · CSV" x="64.19999694824219" y="16.299999237060547" width="380" height="17" />
+      <text id="63:293" name="비용 추세" x="17" y="46.07500076293945" width="49" height="19" />
+      <frame id="63:294" name="box" x="71.0999984741211" y="48.400001525878906" width="16" height="16">
+        <text id="63:295" name="i" x="6.5" y="3" width="3" height="15" />
+      </frame>
+      <text id="63:296" name="일 단위 · USD" x="97.0999984741211" y="47.92499923706055" width="62" height="16" />
+      <frame id="63:297" name="box" x="424.29998779296875" y="55.400001525878906" width="12" height="2" />
+      <text id="63:298" name="공시" x="440.29998779296875" y="47.92499923706055" width="20" height="16" />
+      <frame id="63:299" name="box" x="469.29998779296875" y="55.400001525878906" width="12" height="2" />
+      <text id="63:300" name="계약" x="485.29998779296875" y="47.92499923706055" width="20" height="16" />
+      <frame id="63:301" name="box" x="516.2999877929688" y="44.400001525878906" width="24" height="24">
+        <text id="63:302" name="⋯" x="7.349999904632568" y="5" width="11" height="14" />
+      </frame>
+      <frame id="63:303" name="box" x="17" y="78.4000015258789" width="523.2999877929688" height="56">
+        <text id="63:304" name="본문 슬롯(차트 / 표)" x="218.6999969482422" y="19.524999618530273" width="87" height="16" />
+      </frame>
+      <text id="63:305" name="청구액 아님(공시 단가 추정) ← 캡션 슬롯" x="17" y="143.9250030517578" width="177" height="16" />
+    </frame>
+    <frame id="63:306" name="box" x="613.2999877929688" y="2532.60009765625" width="786.7000122070312" height="248.10000610351562">
+      <text id="63:307" name="데이터 표" x="17" y="16.299999237060547" width="45" height="17" />
+      <text id="63:308" name="정렬 헤더(▲▼) · n&lt;5 행은 정렬과 무" x="64.19999694824219" y="16.299999237060547" width="257" height="17" />
+      <frame id="63:309" name="box" x="17" y="44.400001525878906" width="125.0999984741211" height="30.600000381469727">
+        <text id="63:310" name="팀" x="8" y="5.434999942779541" width="11" height="18" />
+      </frame>
+      <frame id="63:311" name="box" x="142.10000610351562" y="44.400001525878906" width="196.39999389648438" height="30.600000381469727">
+        <text id="63:312" name="비용" x="156.39999389648438" y="5.434999942779541" width="22" height="18" />
+        <text id="63:313" name="▼" x="178.39999389648438" y="7.75" width="10" height="16" />
+      </frame>
+      <frame id="63:314" name="box" x="338.5" y="44.400001525878906" width="247.39999389648438" height="30.600000381469727">
+        <text id="63:315" name="활성 사용자" x="161.8000030517578" y="5.434999942779541" width="58" height="18" />
+        <frame id="63:316" name="box" x="219.8000030517578" y="9" width="19.600000381469727" height="12">
+          <text id="63:317" name="▲▼" x="-0.4000000059604645" y="-1.25" width="20" height="15" />
+        </frame>
+      </frame>
+      <frame id="63:318" name="box" x="585.9000244140625" y="44.400001525878906" width="183.8000030517578" height="30.600000381469727">
+        <text id="63:319" name="도입률" x="123.19999694824219" y="5.434999942779541" width="33" height="18" />
+        <frame id="63:320" name="box" x="156.10000610351562" y="9" width="19.600000381469727" height="12">
+          <text id="63:321" name="▲▼" x="-0.4000000059604645" y="-1.25" width="20" height="15" />
+        </frame>
+      </frame>
+      <frame id="63:322" name="box" x="17" y="75" width="125.0999984741211" height="31.100000381469727">
+        <text id="63:323" name="플랫폼" x="8" y="5.934999942779541" width="33" height="18" />
+      </frame>
+      <frame id="63:324" name="box" x="142.10000610351562" y="75" width="196.39999389648438" height="31.100000381469727">
+        <text id="63:325" name="$1,284.10" x="134.39999389648438" y="5.934999942779541" width="54" height="18" />
+      </frame>
+      <frame id="63:326" name="box" x="338.5" y="75" width="247.39999389648438" height="31.100000381469727">
+        <text id="63:327" name="34" x="223.5" y="5.934999942779541" width="16" height="18" />
+      </frame>
+      <frame id="63:328" name="box" x="585.9000244140625" y="75" width="183.8000030517578" height="31.100000381469727">
+        <text id="63:329" name="82%" x="149.6999969482422" y="5.934999942779541" width="26" height="18" />
+      </frame>
+      <frame id="63:330" name="box" x="17" y="106.19999694824219" width="125.0999984741211" height="31.100000381469727">
+        <text id="63:331" name="데이터" x="8" y="5.934999942779541" width="33" height="18" />
+      </frame>
+      <frame id="63:332" name="box" x="142.10000610351562" y="106.19999694824219" width="196.39999389648438" height="31.100000381469727">
+        <text id="63:333" name="$1,102.55" x="135.39999389648438" y="5.934999942779541" width="53" height="18" />
+      </frame>
+      <frame id="63:334" name="box" x="338.5" y="106.19999694824219" width="247.39999389648438" height="31.100000381469727">
+        <text id="63:335" name="26" x="223.5" y="5.934999942779541" width="16" height="18" />
+      </frame>
+      <frame id="63:336" name="box" x="585.9000244140625" y="106.19999694824219" width="183.8000030517578" height="31.100000381469727">
+        <text id="63:337" name="85%" x="149.6999969482422" y="5.934999942779541" width="26" height="18" />
+      </frame>
+      <frame id="63:338" name="box" x="17" y="137.3000030517578" width="125.0999984741211" height="31.100000381469727">
+        <text id="63:339" name="결제" x="8" y="5.934999942779541" width="22" height="18" />
+      </frame>
+      <frame id="63:340" name="box" x="142.10000610351562" y="137.3000030517578" width="196.39999389648438" height="31.100000381469727">
+        <text id="63:341" name="$812.40" x="141.39999389648438" y="5.934999942779541" width="47" height="18" />
+      </frame>
+      <frame id="63:342" name="box" x="338.5" y="137.3000030517578" width="247.39999389648438" height="31.100000381469727">
+        <text id="63:343" name="29" x="223.5" y="5.934999942779541" width="16" height="18" />
+      </frame>
+      <frame id="63:344" name="box" x="585.9000244140625" y="137.3000030517578" width="183.8000030517578" height="31.100000381469727">
+        <text id="63:345" name="70%" x="150.6999969482422" y="5.934999942779541" width="25" height="18" />
+      </frame>
+      <frame id="63:346" name="box" x="17" y="168.39999389648438" width="125.0999984741211" height="31.100000381469727">
+        <text id="63:347" name="모바일" x="8" y="5.934999942779541" width="33" height="18" />
+      </frame>
+      <frame id="63:348" name="box" x="142.10000610351562" y="168.39999389648438" width="196.39999389648438" height="31.100000381469727">
+        <text id="63:349" name="$498.70" x="140.39999389648438" y="5.934999942779541" width="48" height="18" />
+      </frame>
+      <frame id="63:350" name="box" x="338.5" y="168.39999389648438" width="247.39999389648438" height="31.100000381469727">
+        <text id="63:351" name="22" x="224.5" y="5.934999942779541" width="15" height="18" />
+      </frame>
+      <frame id="63:352" name="box" x="585.9000244140625" y="168.39999389648438" width="183.8000030517578" height="31.100000381469727">
+        <text id="63:353" name="60%" x="149.6999969482422" y="5.934999942779541" width="26" height="18" />
+      </frame>
+      <frame id="63:354" name="box" x="17" y="199.5" width="125.0999984741211" height="31.100000381469727">
+        <text id="63:355" name="인프라" x="8" y="5.934999942779541" width="33" height="18" />
+      </frame>
+      <frame id="63:356" name="box" x="142.10000610351562" y="199.5" width="196.39999389648438" height="31.100000381469727">
+        <frame id="63:357" name="box" x="158.5" y="9.5" width="29.899999618530273" height="13">
+          <text id="63:358" name="n&lt;5" x="3.9000000953674316" y="-1.475000023841858" width="21" height="17" />
+        </frame>
+      </frame>
+      <frame id="63:359" name="box" x="338.5" y="199.5" width="247.39999389648438" height="31.100000381469727">
+        <frame id="63:360" name="box" x="209.60000610351562" y="9.5" width="29.899999618530273" height="13">
+          <text id="63:361" name="n&lt;5" x="3.9000000953674316" y="-1.475000023841858" width="21" height="17" />
+        </frame>
+      </frame>
+      <frame id="63:362" name="box" x="585.9000244140625" y="199.5" width="183.8000030517578" height="31.100000381469727">
+        <frame id="63:363" name="box" x="145.89999389648438" y="9.5" width="29.899999618530273" height="13">
+          <text id="63:364" name="n&lt;5" x="3.9000000953674316" y="-1.475000023841858" width="21" height="17" />
+        </frame>
+      </frame>
+    </frame>
+    <frame id="63:365" name="box" x="40" y="2796.699951171875" width="672" height="284.5">
+      <text id="63:366" name="모달 · 조회 사유(P3)" x="17" y="16.299999237060547" width="98" height="17" />
+      <text id="63:367" name="10자 미만 → 확인 비활성" x="117.9000015258789" y="16.299999237060547" width="119" height="17" />
+      <frame id="63:368" name="box" x="17" y="44.400001525878906" width="638" height="213.60000610351562">
+        <text id="63:369" name="조회 사유 입력" x="17" y="16.850000381469727" width="79" height="20" />
+        <frame id="63:370" name="box" x="544.7000122070312" y="18.200000762939453" width="76.30000305175781" height="17.899999618530273">
+          <text id="63:371" name="개인 식별 조회" x="7" y="0.5249999761581421" width="63" height="16" />
+        </frame>
+        <text id="63:372" name="사유는 감사 로그에 남습니다" x="17" y="46.599998474121094" width="134" height="17" />
+        <text id="63:373" name="(조회자 · 시각 · 대상 · 사유)." x="150" y="46.599998474121094" width="132" height="17" />
+        <frame id="63:374" name="box" x="17" y="74.69999694824219" width="604" height="56">
+          <text id="63:375" name="INC-2291 429 급증" x="11" y="8.4350004196167" width="105" height="18" />
+        </frame>
+        <text id="63:376" name="13 / 10자 이상 필요" x="17" y="140.22500610351562" width="86" height="16" />
+        <frame id="63:377" name="box" x="461.1000061035156" y="166.60000610351562" width="46.79999923706055" height="30">
+          <text id="63:378" name="취소" x="13" y="5.599999904632568" width="21" height="17" />
+        </frame>
+        <frame id="63:379" name="box" x="515.7999877929688" y="166.60000610351562" width="105.19999694824219" height="30">
+          <text id="63:380" name="사유 기록 후 조회" x="12" y="5.599999904632568" width="82" height="17" />
+        </frame>
+      </frame>
+    </frame>
+    <frame id="63:381" name="box" x="728" y="2796.699951171875" width="672" height="284.5">
+      <text id="63:382" name="모달 · 리포트 저장(P4/L5)" x="17" y="16.299999237060547" width="126" height="17" />
+      <text id="63:383" name="파라미터 고정 / 상대식 유지 라디오" x="146.60000610351562" y="16.299999237060547" width="165" height="17" />
+      <frame id="63:384" name="box" x="17" y="44.400001525878906" width="638" height="223.10000610351562">
+        <text id="63:385" name="리포트 저장" x="17" y="16.850000381469727" width="64" height="20" />
+        <text id="63:386" name="S1-3 · run_01J7R2" x="508.3999938964844" y="18.725000381469727" width="118" height="17" />
+        <frame id="63:387" name="box" x="17" y="47.29999923706055" width="604" height="32">
+          <text id="63:388" name="주간 비용 스파이크 점검" x="11" y="5.675000190734863" width="123" height="19" />
+        </frame>
+        <frame id="63:389" name="box" x="17" y="89.30000305175781" width="604" height="35.400001525878906">
+          <frame id="63:390" name="box" x="11" y="9" width="14" height="14" />
+          <text id="63:391" name="파라미터 고정" x="35" y="8.300000190734863" width="66" height="17" />
+          <text id="63:392" name="· 절대 범위로 저장" x="103.0999984741211" y="8.300000190734863" width="85" height="17" />
+        </frame>
+        <frame id="63:393" name="box" x="17" y="130.6999969482422" width="604" height="35.400001525878906">
+          <frame id="63:394" name="box" x="11" y="9" width="14" height="14">
+            <frame id="63:395" name="box" x="3.5" y="3.5" width="7" height="7" />
+          </frame>
+          <text id="63:396" name="기간을 상대식으로 유지" x="35" y="8.300000190734863" width="110" height="17" />
+          <text id="63:397" name="· now-28d" x="147.39999389648438" y="8.300000190734863" width="55" height="17" />
+        </frame>
+        <frame id="63:398" name="box" x="521.5" y="176.10000610351562" width="46.79999923706055" height="30">
+          <text id="63:399" name="취소" x="13" y="5.599999904632568" width="21" height="17" />
+        </frame>
+        <frame id="63:400" name="box" x="576.2999877929688" y="176.10000610351562" width="44.79999923706055" height="30">
+          <text id="63:401" name="저장" x="12" y="5.599999904632568" width="21" height="17" />
+        </frame>
+      </frame>
+    </frame>
+  </frame>
+</canvas>

@@ -1,0 +1,14 @@
+{
+  "checks": [
+    "First visit and 46 item catalog",
+    "Search and unavailable gate",
+    "Validation, background route persistence and cancellation",
+    "Budget exclusive units, queued to success, terminal polling stopped",
+    "Failed run and explicit retry",
+    "Polling failure pauses with recoverable state and cancellation",
+    "Concurrent three-run limit surfaced and all runs cancelled",
+    "Dark and 1024/768 no document overflow",
+    "Logout clears run state, admin team scope and owner result restriction"
+  ],
+  "errors": []
+}

@@ -1,0 +1,120 @@
+{
+  "checks": [
+    "Scenario drawer Tab and Shift+Tab stay inside",
+    "owner / 라이트 1440: no overflow",
+    "owner / 라이트 1024: no overflow",
+    "owner / 라이트 768: no overflow",
+    "owner / 다크 1440: no overflow",
+    "owner / 다크 1024: no overflow",
+    "owner / 다크 768: no overflow",
+    "owner /teams 라이트 1440: no overflow",
+    "owner /teams 라이트 1024: no overflow",
+    "owner /teams 라이트 768: no overflow",
+    "owner /teams 다크 1440: no overflow",
+    "owner /teams 다크 1024: no overflow",
+    "owner /teams 다크 768: no overflow",
+    "owner /operations 라이트 1440: no overflow",
+    "owner /operations 라이트 1024: no overflow",
+    "owner /operations 라이트 768: no overflow",
+    "owner /operations 다크 1440: no overflow",
+    "owner /operations 다크 1024: no overflow",
+    "owner /operations 다크 768: no overflow",
+    "owner /scenarios 라이트 1440: no overflow",
+    "owner /scenarios 라이트 1024: no overflow",
+    "owner /scenarios 라이트 768: no overflow",
+    "owner /scenarios 다크 1440: no overflow",
+    "owner /scenarios 다크 1024: no overflow",
+    "owner /scenarios 다크 768: no overflow",
+    "owner /settings 라이트 1440: no overflow",
+    "owner /settings 라이트 1024: no overflow",
+    "owner /settings 라이트 768: no overflow",
+    "owner /settings 다크 1440: no overflow",
+    "owner /settings 다크 1024: no overflow",
+    "owner /settings 다크 768: no overflow",
+    "admin / 라이트 1440: no overflow",
+    "admin / 라이트 1024: no overflow",
+    "admin / 라이트 768: no overflow",
+    "admin / 다크 1440: no overflow",
+    "admin / 다크 1024: no overflow",
+    "admin / 다크 768: no overflow",
+    "admin /teams 라이트 1440: no overflow",
+    "admin /teams 라이트 1024: no overflow",
+    "admin /teams 라이트 768: no overflow",
+    "admin /teams 다크 1440: no overflow",
+    "admin /teams 다크 1024: no overflow",
+    "admin /teams 다크 768: no overflow",
+    "admin /scenarios 라이트 1440: no overflow",
+    "admin /scenarios 라이트 1024: no overflow",
+    "admin /scenarios 라이트 768: no overflow",
+    "admin /scenarios 다크 1440: no overflow",
+    "admin /scenarios 다크 1024: no overflow",
+    "admin /scenarios 다크 768: no overflow",
+    "admin /settings 라이트 1440: no overflow",
+    "admin /settings 라이트 1024: no overflow",
+    "admin /settings 라이트 768: no overflow",
+    "admin /settings 다크 1440: no overflow",
+    "admin /settings 다크 1024: no overflow",
+    "admin /settings 다크 768: no overflow",
+    "Skip link focuses main",
+    "No runtime errors"
+  ],
+  "failures": [
+    {
+      "name": "Date Escape restores trigger focus",
+      "message": "expect(locator).toBeFocused() failed\n\nLocator:  getByRole('button', { name: '사용자 지정 기간' })\nExpected: focused\nReceived: inactive\nTimeout:  5000ms\n\n"
+    },
+    {
+      "name": "Date cancel restores trigger focus",
+      "message": "expect(locator).toBeFocused() failed\n\nLocator:  getByRole('button', { name: '사용자 지정 기간' })\nExpected: focused\nReceived: inactive\nTimeout:  5000ms\n\n"
+    },
+    {
+      "name": "Scenario Escape restores opener",
+      "message": "expect(locator).toBeFocused() failed\n\nLocator:  locator('button').filter({ has: locator('code').filter({ hasText: /^★? ?S1-3$/ }) }).first()\nExpected: focused\nReceived: inactive\nTimeout:  5000ms\n\n"
+    },
+    {
+      "name": "Audit modal Tab and Shift+Tab stay inside",
+      "message": "expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false"
+    },
+    {
+      "name": "Audit Escape restores opener",
+      "message": "expect(locator).toBeFocused() failed\n\nLocator:  getByRole('button', { name: '조회 · 사유 입력', exact: true })\nExpected: focused\nReceived: inactive\nTimeout:  5000ms\n\n"
+    },
+    {
+      "name": "owner /: page title",
+      "message": "expect(page).toHaveTitle(expected) failed\n\nExpected: \"개요 · Pulsemetry\"\nReceived: \"Pulsemetry · 디자인 시스템\"\nTimeout:  5000ms\n\n"
+    },
+    {
+      "name": "owner /teams: page title",
+      "message": "expect(page).toHaveTitle(expected) failed\n\nExpected: \"팀 분석 · Pulsemetry\"\nReceived: \"Pulsemetry · 디자인 시스템\"\nTimeout:  5000ms\n\n"
+    },
+    {
+      "name": "owner /operations: page title",
+      "message": "expect(page).toHaveTitle(expected) failed\n\nExpected: \"운영 · 보안 · Pulsemetry\"\nReceived: \"Pulsemetry · 디자인 시스템\"\nTimeout:  5000ms\n\n"
+    },
+    {
+      "name": "owner /scenarios: page title",
+      "message": "expect(page).toHaveTitle(expected) failed\n\nExpected: \"시나리오 · Pulsemetry\"\nReceived: \"Pulsemetry · 디자인 시스템\"\nTimeout:  5000ms\n\n"
+    },
+    {
+      "name": "owner /settings: page title",
+      "message": "expect(page).toHaveTitle(expected) failed\n\nExpected: \"설정 · Pulsemetry\"\nReceived: \"Pulsemetry · 디자인 시스템\"\nTimeout:  5000ms\n\n"
+    },
+    {
+      "name": "admin /: page title",
+      "message": "expect(page).toHaveTitle(expected) failed\n\nExpected: \"개요 · Pulsemetry\"\nReceived: \"Pulsemetry · 디자인 시스템\"\nTimeout:  5000ms\n\n"
+    },
+    {
+      "name": "admin /teams: page title",
+      "message": "expect(page).toHaveTitle(expected) failed\n\nExpected: \"팀 분석 · Pulsemetry\"\nReceived: \"Pulsemetry · 디자인 시스템\"\nTimeout:  5000ms\n\n"
+    },
+    {
+      "name": "admin /scenarios: page title",
+      "message": "expect(page).toHaveTitle(expected) failed\n\nExpected: \"시나리오 · Pulsemetry\"\nReceived: \"Pulsemetry · 디자인 시스템\"\nTimeout:  5000ms\n\n"
+    },
+    {
+      "name": "admin /settings: page title",
+      "message": "expect(page).toHaveTitle(expected) failed\n\nExpected: \"설정 · Pulsemetry\"\nReceived: \"Pulsemetry · 디자인 시스템\"\nTimeout:  5000ms\n\n"
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,92 @@
+function InfoIconButton({ className }: { className?: string }) {
+  return (
+    <div className={className || "border border-[var(--text\\/3,#6b7280)] border-solid content-stretch flex items-center justify-center relative rounded-[8px] size-[16px]"} data-node-id="8:66" data-name="InfoIconButton">
+      <p className="[word-break:break-word] font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] not-italic relative shrink-0 text-[10px] text-[color:var(--text\/3,#6b7280)] whitespace-nowrap" data-node-id="8:67">
+        i
+      </p>
+    </div>
+  );
+}
+
+type KpiCardProps = {
+  className?: string;
+  delta?: "up-good" | "down-bad" | "neutral" | "none";
+  value?: "single" | "dual";
+};
+
+export default function KpiCard({ className, delta = "up-good", value = "single" }: KpiCardProps) {
+  const isDownBad = delta === "down-bad";
+  const isDual = value === "dual";
+  const isDualAndDownBad = value === "dual" && delta === "down-bad";
+  const isDualAndNeutral = value === "dual" && delta === "neutral";
+  const isDualAndNone = value === "dual" && delta === "none";
+  const isDualAndUpGood = value === "dual" && delta === "up-good";
+  const isNeutral = delta === "neutral";
+  const isSingleAndDownBad = value === "single" && delta === "down-bad";
+  const isSingleAndNeutral = value === "single" && delta === "neutral";
+  const isSingleAndNone = value === "single" && delta === "none";
+  return (
+    <div className={className || "bg-[var(--surface\\/card,white)] border border-[var(--border\\/default,#e2e5ea)] border-solid content-stretch flex flex-col gap-[6px] items-start p-[16px] relative rounded-[8px] w-[190px]"} id={isDualAndNone ? "node-11_88" : isDualAndNeutral ? "node-11_74" : isDualAndDownBad ? "node-11_60" : isDualAndUpGood ? "node-11_46" : isSingleAndNone ? "node-11_38" : isSingleAndNeutral ? "node-11_27" : isSingleAndDownBad ? "node-11_16" : "node-11_5"}>
+      <div className="content-stretch flex items-center justify-between overflow-clip relative shrink-0 w-full" id={isDualAndNone ? "node-11_89" : isDualAndNeutral ? "node-11_75" : isDualAndDownBad ? "node-11_61" : isDualAndUpGood ? "node-11_47" : isSingleAndNone ? "node-11_39" : isSingleAndNeutral ? "node-11_28" : isSingleAndDownBad ? "node-11_17" : "node-11_6"} data-name="Frame">
+        <p className="[word-break:break-word] font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] not-italic relative shrink-0 text-[12px] text-[color:var(--text\/2,#4b5563)] whitespace-nowrap" id={isDualAndNone ? "node-11_90" : isDualAndNeutral ? "node-11_76" : isDualAndDownBad ? "node-11_62" : isDualAndUpGood ? "node-11_48" : isSingleAndNone ? "node-11_40" : isSingleAndNeutral ? "node-11_29" : isSingleAndDownBad ? "node-11_18" : "node-11_7"}>
+          활성 사용자
+        </p>
+        <InfoIconButton className="border border-[var(--text\/3,#6b7280)] border-solid content-stretch flex items-center justify-center relative rounded-[8px] shrink-0 size-[16px]" />
+      </div>
+      <div className="[word-break:break-word] content-stretch flex font-[family-name:var(--font\/ui,'Pretendard:Regular')] gap-[4px] items-baseline not-italic overflow-clip relative shrink-0 w-full whitespace-nowrap" id={isDualAndNone ? "node-11_93" : isDualAndNeutral ? "node-11_79" : isDualAndDownBad ? "node-11_65" : isDualAndUpGood ? "node-11_51" : isSingleAndNone ? "node-11_43" : isSingleAndNeutral ? "node-11_32" : isSingleAndDownBad ? "node-11_21" : "node-11_10"} data-name="Frame">
+        <p className="leading-[1.1] relative shrink-0 text-[30px] text-[color:var(--text\/1,#111827)] tracking-[-0.6px]" id={isDualAndNone ? "node-11_94" : isDualAndNeutral ? "node-11_80" : isDualAndDownBad ? "node-11_66" : isDualAndUpGood ? "node-11_52" : isSingleAndNone ? "node-11_44" : isSingleAndNeutral ? "node-11_33" : isSingleAndDownBad ? "node-11_22" : "node-11_11"}>
+          117
+        </p>
+        <p className="leading-[1.45] relative shrink-0 text-[12px] text-[color:var(--text\/3,#6b7280)]" id={isDualAndNone ? "node-11_95" : isDualAndNeutral ? "node-11_81" : isDualAndDownBad ? "node-11_67" : isDualAndUpGood ? "node-11_53" : isSingleAndNone ? "node-11_45" : isSingleAndNeutral ? "node-11_34" : isSingleAndDownBad ? "node-11_23" : "node-11_12"}>
+          명
+        </p>
+      </div>
+      {(["up-good", "down-bad", "neutral"].includes(delta) || isDualAndNone) && (
+        <div className={`${String.raw`[word-break:break-word] content-stretch flex font-[family-name:var(--font\/ui,"Pretendard:Regular")] gap-[4px] items-baseline not-italic overflow-clip relative shrink-0 w-full whitespace-nowrap `}${isDual ? "" : "leading-[1.45] text-[12px]"}`} id={isDualAndNone ? "node-11_96" : isDualAndNeutral ? "node-11_82" : isDualAndDownBad ? "node-11_68" : isDualAndUpGood ? "node-11_54" : isSingleAndNeutral ? "node-11_35" : isSingleAndDownBad ? "node-11_24" : "node-11_13"} data-name="Frame">
+          <p className={`relative shrink-0 ${isDual ? String.raw`leading-[1.1] text-[18px] text-[color:var(--text\/2,#4b5563)] tracking-[-0.36px]` : isSingleAndNeutral ? String.raw`text-[color:var(--accent\/gray,#6b7280)]` : isSingleAndDownBad ? String.raw`text-[color:var(--accent\/red,#b91c1c)]` : String.raw`text-[color:var(--accent\/green,#15803d)]`}`} id={isDualAndNone ? "node-11_97" : isDualAndNeutral ? "node-11_83" : isDualAndDownBad ? "node-11_69" : isDualAndUpGood ? "node-11_55" : isSingleAndNeutral ? "node-11_36" : isSingleAndDownBad ? "node-11_25" : "node-11_14"}>
+            {isDual ? "−19,884" : isSingleAndNeutral ? "▲ +12.4%" : isSingleAndDownBad ? "▼ −4.1%" : "▲ +8.3%"}
+          </p>
+          <p className={`${String.raw`relative shrink-0 text-[color:var(--text\/3,#6b7280)] `}${isDual ? "leading-[1.45] text-[11px]" : ""}`} id={isDualAndNone ? "node-11_98" : isDualAndNeutral ? "node-11_84" : isDualAndDownBad ? "node-11_70" : isDualAndUpGood ? "node-11_56" : isSingleAndNeutral ? "node-11_37" : isSingleAndDownBad ? "node-11_26" : "node-11_15"}>
+            {isDual ? "삭제" : value === "single" && ["down-bad", "neutral"].includes(delta) ? "전주 대비" : "전주 대비"}
+          </p>
+        </div>
+      )}
+      {value === "dual" && ["up-good", "down-bad", "neutral"].includes(delta) && (
+        <div className="[word-break:break-word] content-stretch flex font-[family-name:var(--font\/ui,'Pretendard:Regular')] gap-[4px] items-baseline leading-[1.45] not-italic overflow-clip relative shrink-0 text-[12px] w-full whitespace-nowrap" id={isNeutral ? "node-11_85" : isDownBad ? "node-11_71" : "node-11_57"} data-name="Frame">
+          <p className={`relative shrink-0 ${isNeutral ? String.raw`text-[color:var(--accent\/gray,#6b7280)]` : isDownBad ? String.raw`text-[color:var(--accent\/red,#b91c1c)]` : String.raw`text-[color:var(--accent\/green,#15803d)]`}`} id={isNeutral ? "node-11_86" : isDownBad ? "node-11_72" : "node-11_58"}>
+            {isNeutral ? "▲ +12.4%" : isDownBad ? "▼ −4.1%" : delta === "up-good" ? "▲ +8.3%" : ""}
+          </p>
+          <p className="relative shrink-0 text-[color:var(--text\/3,#6b7280)]" id={isNeutral ? "node-11_87" : isDownBad ? "node-11_73" : "node-11_59"}>
+            전주 대비
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+
+These styles are contained in the design: sub/12: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/10: Font(family: "font/ui", style: Regular, size: 10, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), kpi/30-sb: Font(family: "font/ui", style: Regular, size: 30, weight: 400, lineHeight: 1.100000023841858, letterSpacing: -2), sub/12-md: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), sub/12-sb: Font(family: "font/ui", style: Regular, size: 12, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), donut/18-sb: Font(family: "font/ui", style: Regular, size: 18, weight: 400, lineHeight: 1.100000023841858, letterSpacing: -2), caption/11: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0).
+
+Component descriptions: The following components have usage descriptions or documentation links defined in Figma. These descriptions provide important context about the intended usage, best practices, and any constraints for each component. Follow these guidelines when implementing or using these components.
+
+## KPICard
+**Node ID:** 11:99
+
+span 2 KPI 카드. 델타 색 규칙: 좋아짐=초록, 나빠짐=빨강, 방향 중립(비용·LoC)=회색. compare=none 이면 delta=none. dual은 P1 "AI 관여 LoC"처럼 추가/삭제 두 값을 쓰는 경우.
+
+## InfoIconButton
+**Node ID:** 8:66
+
+지표 정의 보기. 16×16 원, cursor:help. title 속성의 정의문은 Figma로 넘어오지 않으니 Foundations 표를 참고하세요.
+
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

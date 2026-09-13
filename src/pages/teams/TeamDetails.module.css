@@ -1,0 +1,398 @@
+.friction {
+  grid-column: span 3;
+  min-width: 0;
+}
+.friction > div {
+  height: 100%;
+}
+.tabs {
+  display: flex;
+  gap: 16px;
+  border-bottom: 1px solid var(--border-default);
+  height: 34px;
+  margin-top: 2px;
+  overflow: auto;
+}
+.tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  padding: 0 0 6px;
+  font-size: 12.5px;
+  white-space: nowrap;
+  color: var(--text-3);
+}
+.tabs button[data-state='active'] {
+  border-bottom-color: var(--text-1);
+  color: var(--text-1);
+}
+.tabContent {
+  padding-top: 12px;
+}
+.tableScroll {
+  overflow: auto;
+}
+.tableScroll table,
+.sourceTable table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+}
+.tableScroll th,
+.tableScroll td {
+  font-weight: 400;
+}
+.tableScroll th,
+.tableScroll td,
+.sourceTable td {
+  border-bottom: 1px solid var(--border-default);
+  padding: 6px 8px;
+  text-align: right;
+  white-space: nowrap;
+  height: 30.4px;
+}
+.tableScroll th {
+  color: var(--text-3);
+}
+.tableScroll th:first-child,
+.tableScroll td:first-child {
+  text-align: left;
+}
+.tableScroll code,
+.bars code,
+.rejections code,
+.wait code {
+  font: 11.5px var(--font-mono);
+}
+.acceptance td:nth-child(3) {
+  width: 34%;
+  min-width: 90px;
+}
+.track {
+  display: block;
+  height: 10px;
+  background: var(--surface-sub);
+  border-radius: 2px;
+  overflow: hidden;
+  min-width: 0;
+}
+.track > span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+}
+.acceptance .track {
+  height: 8px;
+}
+.largeNumber {
+  font-size: 28px;
+  color: var(--accent-orange);
+  margin: 0 0 4px;
+}
+.muted {
+  font-size: 11px;
+  color: var(--text-3);
+  margin: 8px 0 12px;
+}
+.bars {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+  font-size: 12px;
+}
+.bars > div {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) 38px;
+  gap: 8px;
+  align-items: center;
+}
+.bars > div > span:last-child {
+  text-align: right;
+}
+.scale {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 38px 0 138px;
+  font-size: 10px;
+  color: var(--text-3);
+}
+.wait {
+  margin-top: 14px;
+}
+.wait > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+}
+.waitTrack {
+  position: relative;
+  height: 22px;
+  background: var(--surface-sub);
+  margin-top: 6px;
+}
+.waitTrack span {
+  position: absolute;
+  height: 100%;
+  background: var(--accent-orange-tint);
+  border-left: 2px solid var(--accent-orange);
+  border-right: 2px solid var(--accent-orange);
+}
+.rejections {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 12px;
+}
+.rejections > div {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr) 30px;
+  gap: 12px;
+  align-items: center;
+}
+.stack {
+  display: flex;
+  height: 14px;
+  background: var(--surface-sub);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.stack span {
+  height: 100%;
+}
+.sourceTable {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 10px;
+}
+.features {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 20px;
+}
+.features h3 {
+  font-size: 12px;
+  font-weight: 400;
+}
+.features h3,
+.quality h3 {
+  margin: 0 0 8px;
+  color: var(--text-2);
+  font-weight: 400;
+  font-size: 12px;
+}
+.features table td:nth-child(2),
+.features table th:nth-child(2),
+.features table td:nth-child(3),
+.features table th:nth-child(3) {
+  text-align: left;
+}
+.scope {
+  border: 1px solid var(--border-default);
+  border-radius: 3px;
+  font-size: 11px;
+  padding: 0 4px;
+  color: var(--text-2);
+}
+.unavailable {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 14px;
+}
+.unavailable > div {
+  border: 1px dashed var(--border-default);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+  color: var(--text-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+}
+.unavailable p {
+  font-size: 11px;
+  line-height: 1.45;
+  width: 100%;
+}
+.featureAside {
+  border-left: 1px solid var(--border-default);
+  padding-left: 20px;
+  min-width: 0;
+}
+.featureAside .bars > div {
+  grid-template-columns: 48px minmax(0, 1fr) 36px;
+}
+.command {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  margin-bottom: 16px;
+}
+.command strong {
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--accent-blue);
+}
+.command small {
+  font-size: 10px;
+  color: var(--text-3);
+}
+.legend {
+  display: flex;
+  gap: 12px;
+  font-size: 10px;
+  color: var(--text-2);
+  margin: 0 0 6px;
+}
+.legend span:before {
+  content: '';
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  background: var(--accent-blue);
+  margin-right: 4px;
+  border-radius: 2px;
+}
+.legend span:nth-child(2):before {
+  background: var(--chart-seq4);
+}
+.legend span:nth-child(3):before {
+  background: var(--accent-green);
+  height: 2px;
+  vertical-align: middle;
+}
+.compactionChart {
+  height: 160px;
+}
+.compactionStat {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--text-2);
+  flex-wrap: wrap;
+}
+.compactionStat strong {
+  font-size: 22px;
+  color: var(--accent-green);
+  font-weight: 400;
+}
+.quality {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px minmax(0, 1fr);
+  gap: 24px;
+}
+.quality small {
+  font-size: 10px;
+  color: var(--text-3);
+}
+.qualityStat {
+  border-left: 1px solid var(--border-default);
+  border-right: 1px solid var(--border-default);
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+.qualityStat strong {
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--accent-orange);
+}
+.qualityStat h3 {
+  margin: 0;
+}
+.mcpQuality .bars > div {
+  grid-template-columns: 96px minmax(0, 1fr) 42px;
+}
+.mcpQuality .scale {
+  margin-left: 104px;
+}
+@media (max-width: 1279px) {
+  .friction {
+    grid-column: 1;
+  }
+  .quality {
+    grid-template-columns: minmax(0, 1fr) 140px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .quality .bars > div {
+    grid-template-columns: 100px minmax(0, 1fr) 34px;
+  }
+  .quality .bars code {
+    font-size: 10px;
+  }
+  .quality .scale {
+    margin-left: 108px;
+  }
+}
+@media (max-width: 1023px) {
+  .features {
+    grid-template-columns: 1.5fr 1fr;
+    gap: 12px;
+  }
+  .featureAside {
+    padding-left: 12px;
+  }
+  .quality {
+    grid-template-columns: minmax(0, 1fr) 140px;
+  }
+  .mcpQuality {
+    grid-column: 1/-1;
+    border-top: 1px solid var(--border-default);
+    padding-top: 14px;
+  }
+  .command {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+}
+
+.waitTrack[data-decision='accept'] span {
+  background: var(--accent-orange);
+}
+.waitTrack[data-decision='reject'] span {
+  background: var(--surface-card) url('/assets/friction-stripes.svg') 0 0 / 640px 360px;
+  border: 1px solid var(--accent-orange);
+}
+.stack span:nth-child(2) {
+  background: var(--surface-card) url('/assets/friction-stripes.svg') 0 0 / 640px 360px !important;
+}
+.stack span:nth-child(3) {
+  background: var(--surface-card) !important;
+  border: 1px solid var(--accent-orange);
+}
+
+.tabContent:has(.largeNumber) .bars > div:nth-child(2) .track > span {
+  background: var(--surface-card) url('/assets/friction-stripes.svg') 0 0 / 640px 360px !important;
+}
+.tabContent:has(.largeNumber) .track {
+  height: 18px;
+}
+
+.featureAside .bars {
+  gap: 6px;
+}
+.quality .bars {
+  gap: 8px;
+}
+
+.waitTrack {
+  margin-left: 80px;
+}
+.tabContent:has(.wait) > .scale {
+  margin-left: 80px;
+  margin-right: 0;
+}
+.features .tableScroll th,
+.features .tableScroll td {
+  height: 29px;
+  padding: 5px 8px;
+}
+.unavailable > div {
+  padding: 10px 12px;
+}

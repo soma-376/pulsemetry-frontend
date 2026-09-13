@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-09-09T11:05:34.944Z",
+  "checks": [
+    "1440px: no page horizontal overflow",
+    "KPI definition is accessible by keyboard",
+    "Retry demo replaces error with empty state",
+    "Tabs support keyboard navigation",
+    "Theme persists across reload",
+    "1024px: no page horizontal overflow",
+    "768px: no page horizontal overflow",
+    "390px: no page horizontal overflow",
+    "Small-screen support message is shown",
+    "No browser console errors"
+  ],
+  "kpiDimensions": {
+    "width": 190,
+    "height": 113.78125,
+    "padding": "16px",
+    "radius": "8px",
+    "font": "Pretendard, sans-serif"
+  },
+  "errors": []
+}

@@ -1,0 +1,67 @@
+const imgEllipse = "https://www.figma.com/api/mcp/asset/69ae5e62-c0dc-41af-af9c-a2182fb1d33c.svg";
+const imgEllipse1 = "https://www.figma.com/api/mcp/asset/d4281197-1e5a-4197-885b-6ba5d08c1a7f.svg";
+const imgEllipse2 = "https://www.figma.com/api/mcp/asset/3b374458-a85f-42cf-ab43-27184c372b34.svg";
+
+type BadgeProps = {
+  className?: string;
+  type?: "masking" | "pending" | "role" | "count" | "scope" | "headcount" | "over-threshold" | "severity-anomaly" | "severity-warn" | "severity-info" | "availability-ready" | "availability-partial" | "availability-blocked" | "status-active" | "status-invited" | "status-inactive";
+};
+
+export default function Badge({ className, type = "masking" }: BadgeProps) {
+  const isAvailabilityBlocked = type === "availability-blocked";
+  const isAvailabilityPartial = type === "availability-partial";
+  const isAvailabilityReady = type === "availability-ready";
+  const isCount = type === "count";
+  const isHeadcount = type === "headcount";
+  const isOverThreshold = type === "over-threshold";
+  const isPending = type === "pending";
+  const isRole = type === "role";
+  const isScope = type === "scope";
+  const isSeverityAnomaly = type === "severity-anomaly";
+  const isSeverityInfo = type === "severity-info";
+  const isSeverityWarn = type === "severity-warn";
+  const isStatusActive = type === "status-active";
+  const isStatusActiveOrStatusInvitedOrStatusInactive = ["status-active", "status-invited", "status-inactive"].includes(type);
+  const isStatusInactive = type === "status-inactive";
+  const isStatusInvited = type === "status-invited";
+  return (
+    <div className={className || `content-stretch flex items-center relative ${isStatusActiveOrStatusInvitedOrStatusInactive ? String.raw`border border-[var(--border\/default,#e2e5ea)] border-solid gap-[5px] px-[6px] py-px rounded-[4px]` : isAvailabilityBlocked ? String.raw`bg-[var(--accent\/gray-tint,#e5e7eb)] border border-[var(--accent\/gray-tint,#e5e7eb)] border-solid px-[6px] py-px rounded-[4px]` : ["severity-info", "availability-ready"].includes(type) ? String.raw`bg-[var(--accent\/blue-tint,#eff4ff)] border border-[var(--accent\/blue,#1d4ed8)] border-solid px-[6px] py-px rounded-[4px]` : ["severity-warn", "availability-partial"].includes(type) ? String.raw`bg-[var(--accent\/orange-tint,#fff1e7)] border border-[var(--accent\/orange,#c2410c)] border-solid px-[6px] py-px rounded-[4px]` : isSeverityAnomaly ? String.raw`bg-[var(--accent\/red-tint,#fef2f2)] border border-[var(--accent\/red,#b91c1c)] border-solid px-[6px] py-px rounded-[4px]` : isOverThreshold ? String.raw`border border-[var(--accent\/red,#b91c1c)] border-solid px-[6px] py-px rounded-[4px]` : isHeadcount ? String.raw`bg-[var(--surface\/sub,#eef0f3)] border border-[var(--border\/default,#e2e5ea)] border-solid px-[10px] py-[2px] rounded-[12px]` : isScope ? String.raw`border border-[var(--border\/default,#e2e5ea)] border-solid px-[6px] py-px rounded-[4px]` : isCount ? String.raw`bg-[var(--accent\/blue,#1d4ed8)] px-[6px] rounded-[10px]` : isRole ? String.raw`bg-[var(--surface\/sub,#eef0f3)] border border-[var(--border\/default,#e2e5ea)] border-solid px-[6px] py-px rounded-[4px]` : String.raw`bg-[var(--accent\/gray-tint,#e5e7eb)] px-[6px] py-px rounded-[4px]`}`} id={isStatusInactive ? "node-7_36" : isStatusInvited ? "node-7_33" : isStatusActive ? "node-7_30" : isAvailabilityBlocked ? "node-7_28" : isAvailabilityPartial ? "node-7_26" : isAvailabilityReady ? "node-7_24" : isSeverityInfo ? "node-7_22" : isSeverityWarn ? "node-7_20" : isSeverityAnomaly ? "node-7_18" : isOverThreshold ? "node-7_16" : isHeadcount ? "node-7_14" : isScope ? "node-7_12" : isCount ? "node-7_10" : isRole ? "node-7_8" : isPending ? "node-7_6" : "node-7_4"}>
+      {["masking", "pending", "role", "count", "scope", "headcount", "over-threshold", "severity-anomaly", "severity-warn", "severity-info", "availability-ready", "availability-partial", "availability-blocked"].includes(type) && (
+        <p className={`[word-break:break-word] not-italic relative shrink-0 whitespace-nowrap ${isAvailabilityBlocked ? String.raw`font-[family-name:var(--font\/ui,"Pretendard:Regular")] leading-[16px] text-[10px] text-[color:var(--accent\/gray,#6b7280)]` : isAvailabilityPartial ? String.raw`font-[family-name:var(--font\/ui,"Pretendard:Regular")] leading-[16px] text-[10px] text-[color:var(--accent\/orange,#c2410c)]` : isAvailabilityReady ? String.raw`font-[family-name:var(--font\/ui,"Pretendard:Regular")] leading-[16px] text-[10px] text-[color:var(--accent\/blue,#1d4ed8)]` : isSeverityInfo ? String.raw`font-[family-name:var(--font\/ui,"Pretendard:Regular")] leading-[16px] text-[10.5px] text-[color:var(--accent\/blue,#1d4ed8)]` : isSeverityWarn ? String.raw`font-[family-name:var(--font\/ui,"Pretendard:Regular")] leading-[16px] text-[10.5px] text-[color:var(--accent\/orange,#c2410c)]` : isSeverityAnomaly ? String.raw`font-[family-name:var(--font\/ui,"Pretendard:Regular")] leading-[16px] text-[10.5px] text-[color:var(--accent\/red,#b91c1c)]` : isOverThreshold ? String.raw`font-[family-name:var(--font\/ui,"Pretendard:Regular")] leading-[1.45] text-[11px] text-[color:var(--accent\/red,#b91c1c)]` : isCount ? String.raw`font-[family-name:var(--font\/ui,"Pretendard:Regular")] leading-[18px] text-[11px] text-[color:var(--misc\/on-accent,white)]` : ["role", "scope", "headcount"].includes(type) ? String.raw`font-[family-name:var(--font\/ui,"Pretendard:Regular")] leading-[1.45] text-[11px] text-[color:var(--text\/2,#4b5563)]` : isPending ? String.raw`font-[family-name:var(--font\/ui,"Pretendard:Regular")] leading-[1.45] text-[11px] text-[color:var(--accent\/gray,#6b7280)]` : String.raw`font-[family-name:var(--font\/mono,"IBM_Plex_Mono:Regular")] leading-[1.45] text-[11.5px] text-[color:var(--accent\/gray,#6b7280)]`}`} id={isAvailabilityBlocked ? "node-7_29" : isAvailabilityPartial ? "node-7_27" : isAvailabilityReady ? "node-7_25" : isSeverityInfo ? "node-7_23" : isSeverityWarn ? "node-7_21" : isSeverityAnomaly ? "node-7_19" : isOverThreshold ? "node-7_17" : isHeadcount ? "node-7_15" : isScope ? "node-7_13" : isCount ? "node-7_11" : isRole ? "node-7_9" : isPending ? "node-7_7" : "node-7_5"}>
+          {isAvailabilityPartial ? "부분" : isAvailabilityReady ? "가능" : isSeverityInfo ? "정보" : isSeverityWarn ? "주의" : isSeverityAnomaly ? "이상" : isOverThreshold ? "임계 초과" : isHeadcount ? "34명" : isScope ? "org" : isCount ? "12" : isRole ? "owner" : ["pending", "availability-blocked"].includes(type) ? "준비 중" : "n<5"}
+        </p>
+      )}
+      {isStatusActiveOrStatusInvitedOrStatusInactive && (
+        <>
+          <div className="relative shrink-0 size-[6px]" id={isStatusInactive ? "node-7_37" : isStatusInvited ? "node-7_34" : "node-7_31"} data-name="Ellipse">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={isStatusInactive ? imgEllipse2 : isStatusInvited ? imgEllipse1 : imgEllipse} />
+          </div>
+          <p className={`${String.raw`[word-break:break-word] font-[family-name:var(--font\/ui,"Pretendard:Regular")] leading-[1.45] not-italic relative shrink-0 text-[11px] whitespace-nowrap `}${isStatusInactive ? String.raw`text-[color:var(--accent\/gray,#6b7280)]` : isStatusInvited ? String.raw`text-[color:var(--accent\/orange,#c2410c)]` : String.raw`text-[color:var(--accent\/green,#15803d)]`}`} id={isStatusInactive ? "node-7_38" : isStatusInvited ? "node-7_35" : "node-7_32"}>
+            {isStatusInactive ? "미관측" : isStatusInvited ? "초대됨" : isStatusActive ? "활성" : ""}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+
+These styles are contained in the design: mono/11-5: Font(family: "font/mono", style: Regular, size: 11.5, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11-md: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), badge/11-sb-18: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 18, letterSpacing: 0), badge/10-5-sb-16: Font(family: "font/ui", style: Regular, size: 10.5, weight: 400, lineHeight: 16, letterSpacing: 0), badge/10-sb-16: Font(family: "font/ui", style: Regular, size: 10, weight: 400, lineHeight: 16, letterSpacing: 0).
+
+Component descriptions: The following components have usage descriptions or documentation links defined in Figma. These descriptions provide important context about the intended usage, best practices, and any constraints for each component. Follow these guidelines when implementing or using these components.
+
+## Badge
+**Node ID:** 7:39
+
+배지·칩 전체. masking(n<5) / pending(준비 중) / role / count(내비) / scope / headcount / over-threshold / severity 3종 / availability 3종 / status 3종. 빨강은 이상·실패·정책 위반 전용입니다.
+
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

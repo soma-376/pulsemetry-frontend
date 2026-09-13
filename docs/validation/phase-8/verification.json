@@ -1,0 +1,25 @@
+{
+  "date": "2026-09-09",
+  "unit": {
+    "passed": 91,
+    "files": 13
+  },
+  "browser": {
+    "passed": 182,
+    "suites": 11
+  },
+  "real_build_http_stubs": {
+    "passed": 4,
+    "live_backend": false
+  },
+  "total": 277,
+  "builds": {
+    "mock": "passed",
+    "real": "passed",
+    "final_dist_mode": "mock"
+  },
+  "openapi_generated_matches": true,
+  "schema_sha256": "db0126a2b2a2ee0d6c746676df3d25ddfec661d4b1ca05c2a23d552ccbd93b40",
+  "post_visual_change": "team-details 12 checks passed again; mock/real builds and real HTTP stubs passed again",
+  "limitations": "Chromium automation, not full WCAG certification or real backend integration"
+}

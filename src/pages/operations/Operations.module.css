@@ -1,0 +1,563 @@
+.page {
+  margin-top: -4px;
+}
+.title,
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.title h1 {
+  font-size: 18px;
+  font-weight: 400;
+}
+.title > small {
+  margin-left: auto;
+  color: var(--text-3);
+  font-size: 11px;
+}
+.tabs {
+  display: flex;
+  padding: 3px;
+  background: var(--surface-sub);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+}
+.tabs button {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 4px;
+  color: var(--text-2);
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+}
+.tabs [data-state='active'] {
+  background: var(--text-1);
+  color: var(--surface-card);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 16px;
+}
+.grid > * {
+  grid-column: span 3;
+  min-width: 0;
+}
+.grid > .wide {
+  grid-column: span 4;
+}
+.grid > .narrow {
+  grid-column: span 2;
+}
+.grid > .full {
+  grid-column: 1/-1;
+}
+.grid > div > article,
+.grid > article {
+  height: 100%;
+}
+.grid > [data-widget] > article {
+  min-height: 236px;
+}
+.grid > div:not([data-widget]) > [data-widget] + [data-widget] {
+  margin-top: 16px;
+}
+.chart {
+  height: 154px;
+  min-width: 0;
+}
+.caption {
+  color: var(--text-3);
+  font-size: 11px;
+  margin: 8px 0 0;
+}
+.stat {
+  display: block;
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1.3;
+  margin: 8px 0 16px;
+}
+.stat small {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.scroll {
+  overflow: auto;
+  max-width: 100%;
+}
+.scroll table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.scroll th,
+.scroll td {
+  text-align: left;
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--border-default);
+  vertical-align: middle;
+  font-weight: 400;
+}
+.scroll th {
+  font-size: 11px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.scroll td {
+  overflow-wrap: anywhere;
+}
+.scroll code {
+  font-size: 11px;
+}
+.scroll small {
+  display: block;
+  color: var(--text-3);
+}
+.inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.inline button[aria-pressed='true'] {
+  background: var(--text-1);
+  color: var(--surface-card);
+}
+.pager {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+progress {
+  width: 100%;
+  height: 8px;
+  accent-color: var(--accent-blue);
+  margin: 10px 0 16px;
+}
+.barRow {
+  display: grid;
+  grid-template-columns: 145px 1fr 24px;
+  gap: 12px;
+  align-items: center;
+  margin: 9px 0;
+  font-size: 12px;
+}
+.barRow code {
+  font-size: 11px;
+}
+.barRow > div {
+  height: 12px;
+  background: var(--surface-sub);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.barRow i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+}
+.search {
+  display: flex;
+  gap: 8px;
+}
+.search input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+}
+.search select {
+  max-width: 180px;
+}
+.page input,
+.page select,
+.settings input,
+.dialog textarea {
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  padding: 8px;
+  background: var(--surface-card);
+  color: var(--text-1);
+  font-size: 12px;
+}
+.empty {
+  min-height: 360px;
+  margin-top: 16px;
+  border: 1px dashed var(--border-default);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  background: var(--surface-card);
+  text-align: center;
+  padding: 24px;
+}
+.empty h2 {
+  font-size: 15px;
+  font-weight: 400;
+}
+.empty p,
+.empty small {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.circle {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--text-3);
+  border-radius: 50%;
+}
+.dialog {
+  width: 520px;
+  max-width: calc(100vw - 32px);
+  padding: 20px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: var(--surface-card);
+  color: var(--text-1);
+}
+.dialog::backdrop {
+  background: rgba(17, 24, 39, 0.45);
+}
+.dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  gap: 10px;
+}
+.dialog h2 {
+  font-size: 15px;
+  font-weight: 400;
+}
+.dialog p,
+.dialog label {
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.dialog textarea {
+  display: block;
+  width: 100%;
+  height: 76px;
+  margin: 6px 0 12px;
+  resize: vertical;
+}
+.dialog small {
+  font-size: 11px;
+  color: var(--text-3);
+}
+.dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+.auditBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+  margin: 16px 0;
+  background: var(--surface-sub);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.sessionGrid {
+  display: grid;
+  grid-template-columns: minmax(250px, 1fr) minmax(0, 2.5fr);
+  gap: 16px;
+  align-items: start;
+}
+.timeline {
+  overflow: auto;
+}
+.event {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(120px, 1fr) 45px;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-default);
+  font-size: 11px;
+}
+.event code {
+  font-size: 11px;
+}
+.event small {
+  display: block;
+  color: var(--text-3);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+.track {
+  height: 18px;
+  border-bottom: 1px solid var(--border-default);
+  position: relative;
+}
+.track i {
+  position: absolute;
+  top: 4px;
+  height: 8px;
+  border-radius: 2px;
+  max-width: 100%;
+}
+.settings {
+  display: grid;
+  gap: 32px;
+  margin-top: -4px;
+}
+.settings section {
+  scroll-margin-top: 100px;
+}
+.sectionTitle {
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.sectionTitle h2 {
+  font-size: 15px;
+  font-weight: 400;
+}
+.sectionTitle span {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.subTitle {
+  font-size: 13px;
+  font-weight: 400;
+  margin: 20px 0 10px;
+}
+.membersGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 16px;
+}
+.membersGrid > article {
+  min-height: 360px;
+}
+.memberGate {
+  min-height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+.gauge {
+  height: 80px;
+  width: 160px;
+  position: relative;
+  border-radius: 160px 160px 0 0;
+  margin: 36px auto 20px;
+  overflow: hidden;
+}
+.gauge > div {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: var(--surface-card);
+  text-align: center;
+  padding-top: 15px;
+}
+.gauge strong {
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--accent-purple);
+}
+.gauge small {
+  display: block;
+  font-size: 11px;
+  color: var(--text-3);
+}
+@media (max-width: 1279px) {
+  .grid > *,
+  .grid > .wide,
+  .grid > .narrow {
+    grid-column: 1/-1;
+  }
+  .membersGrid {
+    grid-template-columns: 1fr;
+  }
+  .sessionGrid {
+    grid-template-columns: 1fr;
+  }
+  .title > small {
+    width: 100%;
+    margin-left: 0;
+  }
+  .chart {
+    height: 190px;
+  }
+}
+@media (max-width: 900px) {
+  .search {
+    flex-wrap: wrap;
+  }
+  .search input {
+    min-width: 250px;
+  }
+  .event {
+    grid-template-columns: 210px 170px 45px;
+  }
+  .scroll table {
+    min-width: 420px;
+  }
+}
+
+.chartWithAside {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 125px;
+  gap: 16px;
+  align-items: center;
+}
+.rubber {
+  font-size: 11px;
+  color: var(--text-3);
+  border-left: 1px solid var(--border-default);
+  padding-left: 16px;
+}
+.rubber .stat {
+  font-size: 26px;
+  margin: 5px 0;
+}
+.failureValue {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.failureBar {
+  display: inline-block;
+  position: relative;
+  min-width: 100px;
+  flex: 1;
+  height: 8px;
+  background: var(--surface-sub);
+  border-radius: 2px;
+}
+.failureBar i {
+  display: block;
+  height: 8px;
+  border-radius: 2px;
+}
+.failureBar b {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  height: 12px;
+  border-left: 1px dashed var(--text-3);
+}
+.scatter {
+  padding-top: 20px;
+  min-height: 142px;
+}
+.scatterRow {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-height: 38px;
+}
+.scatterRow code {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  color: var(--text-3);
+}
+.scatterRow > div {
+  position: relative;
+  height: 32px;
+  border-bottom: 1px solid var(--border-default);
+}
+.scatterRow button {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent-red);
+  cursor: pointer;
+}
+.scatterAxis {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0 16px 130px;
+  color: var(--text-3);
+}
+.title {
+  min-height: 32px;
+}
+.tabs button {
+  font-weight: 400;
+  padding: 4px 10px;
+}
+.grid > [data-widget] > article {
+  min-height: 262px;
+}
+@media (min-width: 1280px) {
+  .grid > [data-widget='ops-errors'] > article,
+  .grid > [data-widget='ops-latency'] > article,
+  .grid > [data-widget='ops-ttft'] > article,
+  .grid > [data-widget='ops-retries'] > article {
+    min-height: 236px;
+  }
+  .chart {
+    height: 146px;
+  }
+}
+
+.grid > .narrow > [data-widget] {
+  height: 100%;
+}
+.settings .scroll th,
+.settings .scroll td {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+@media (min-width: 1280px) {
+  .page [data-widget='ops-errors'] .chart,
+  .page [data-widget='ops-latency'] .chart,
+  .page [data-widget='ops-ttft'] .chart,
+  .page [data-widget='ops-retries'] .chart {
+    height: 124px;
+  }
+}
+
+.compactPolicy {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 16px;
+  font-size: 12px;
+  min-height: 170px;
+  padding-top: 8px;
+  align-content: start;
+}
+.compactPolicy small {
+  font-size: 11px;
+  color: var(--text-3);
+  display: block;
+  margin: 5px 0;
+}
+.compactPolicy p {
+  margin: 6px 0 12px;
+}
+.compactPolicy .full {
+  grid-column: 1/-1;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}

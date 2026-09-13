@@ -1,0 +1,9 @@
+{
+  "checks": [
+    "Empty catalog",
+    "Catalog error retry and loading skeleton",
+    "Partial available form, native dialog focus trap and Escape restoration",
+    "Keyboard search shortcut"
+  ],
+  "errors": []
+}

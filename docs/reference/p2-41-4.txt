@@ -1,0 +1,259 @@
+export default function Component() {
+  return (
+    <div className="bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid relative rounded-[8px] size-full" data-node-id="41:4" data-name="시간대 × 요일">
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[13px] text-[color:var(--text\/1,#111827)] top-[18.42px] whitespace-nowrap" data-node-id="41:5">
+        시간대 × 요일
+      </p>
+      <div className="absolute border border-[var(--accent\/gray,#6b7280)] border-solid left-[92.7px] rounded-[8px] size-[16px] top-[20px]" data-node-id="41:6" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[7px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] text-center top-[2px] whitespace-nowrap" data-node-id="41:7">
+          i
+        </p>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[118.7px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[19.52px] whitespace-nowrap" data-node-id="41:8">
+        프롬프트 수 · KST
+      </p>
+      <div className="absolute bg-[var(--surface\/card,white)] border border-[var(--border\/default,#e2e5ea)] border-solid left-[331.3px] rounded-[6px] size-[24px] top-[16px]" data-node-id="41:9" data-name="box">
+        <p className="-translate-x-1/2 [word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-none left-[11.85px] not-italic text-[14px] text-[color:var(--text\/2,#4b5563)] text-center top-[4px] whitespace-nowrap" data-node-id="41:10">
+          ⋯
+        </p>
+      </div>
+      <div className="absolute h-[154.5px] left-[16px] overflow-clip top-[52px] w-[339.3px]" data-node-id="41:11" data-name="box">
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[0.52px] whitespace-nowrap" data-node-id="41:12">
+          월
+        </p>
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[26px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:13" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[48.3px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:14" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[70.7px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:15" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[93px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:16" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[115.3px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:17" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[137.7px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:18" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[160px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:19" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[182.3px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:20" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[204.7px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:21" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[227px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:22" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[249.3px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:23" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[271.7px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:24" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[294px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:25" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[316.3px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:26" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[338.7px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:27" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[361px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:28" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[383.3px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:29" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[405.7px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:30" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[428px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:31" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[450.3px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:32" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[472.7px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:33" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[495px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:34" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[517.3px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:35" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[539.7px] rounded-[2px] top-0 w-[20.3px]" data-node-id="41:36" data-name="box" />
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[20.52px] whitespace-nowrap" data-node-id="41:37">
+          화
+        </p>
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[26px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:38" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[48.3px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:39" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[70.7px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:40" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[93px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:41" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[115.3px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:42" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[137.7px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:43" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[160px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:44" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[182.3px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:45" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[204.7px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:46" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[227px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:47" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[249.3px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:48" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[271.7px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:49" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[294px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:50" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[316.3px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:51" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[338.7px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:52" data-name="box">
+          <div className="absolute bg-[var(--accent\/red,#b91c1c)] border border-[var(--surface\/card,white)] border-solid left-[13.3px] rounded-[2.5px] size-[5px] top-[2px]" data-node-id="41:53" data-name="box" />
+        </div>
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[361px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:54" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[383.3px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:55" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[405.7px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:56" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[428px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:57" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[450.3px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:58" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[472.7px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:59" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[495px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:60" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[517.3px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:61" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[539.7px] rounded-[2px] top-[20px] w-[20.3px]" data-node-id="41:62" data-name="box" />
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[40.53px] whitespace-nowrap" data-node-id="41:63">
+          수
+        </p>
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[26px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:64" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[48.3px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:65" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[70.7px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:66" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[93px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:67" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[115.3px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:68" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[137.7px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:69" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[160px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:70" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[182.3px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:71" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[204.7px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:72" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[227px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:73" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[249.3px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:74" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[271.7px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:75" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[294px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:76" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[316.3px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:77" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[338.7px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:78" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[361px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:79" data-name="box">
+          <div className="absolute bg-[var(--accent\/red,#b91c1c)] border border-[var(--surface\/card,white)] border-solid left-[13.3px] rounded-[2.5px] size-[5px] top-[2px]" data-node-id="41:80" data-name="box" />
+        </div>
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[383.3px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:81" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[405.7px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:82" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[428px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:83" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[450.3px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:84" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[472.7px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:85" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[495px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:86" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[517.3px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:87" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[539.7px] rounded-[2px] top-[40px] w-[20.3px]" data-node-id="41:88" data-name="box" />
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[60.53px] whitespace-nowrap" data-node-id="41:89">
+          목
+        </p>
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[26px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:90" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[48.3px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:91" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[70.7px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:92" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[93px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:93" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[115.3px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:94" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[137.7px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:95" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[160px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:96" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[182.3px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:97" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[204.7px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:98" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[227px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:99" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[249.3px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:100" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[271.7px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:101" data-name="box">
+          <div className="absolute bg-[var(--accent\/red,#b91c1c)] border border-[var(--surface\/card,white)] border-solid left-[13.3px] rounded-[2.5px] size-[5px] top-[2px]" data-node-id="41:102" data-name="box" />
+        </div>
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[294px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:103" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[316.3px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:104" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[338.7px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:105" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[361px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:106" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[383.3px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:107" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[405.7px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:108" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[428px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:109" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[450.3px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:110" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[472.7px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:111" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[495px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:112" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[517.3px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:113" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[539.7px] rounded-[2px] top-[60px] w-[20.3px]" data-node-id="41:114" data-name="box" />
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[80.53px] whitespace-nowrap" data-node-id="41:115">
+          금
+        </p>
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[26px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:116" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[48.3px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:117" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[70.7px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:118" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[93px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:119" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[115.3px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:120" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[137.7px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:121" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[160px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:122" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[182.3px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:123" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[204.7px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:124" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[227px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:125" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[249.3px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:126" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[271.7px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:127" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[294px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:128" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[316.3px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:129" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[338.7px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:130" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[361px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:131" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[383.3px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:132" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[18px] left-[405.7px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:133" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[428px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:134" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[450.3px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:135" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[18px] left-[472.7px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:136" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[18px] left-[495px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:137" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[517.3px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:138" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[539.7px] rounded-[2px] top-[80px] w-[20.3px]" data-node-id="41:139" data-name="box" />
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[100.53px] whitespace-nowrap" data-node-id="41:140">
+          토
+        </p>
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[26px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:141" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[48.3px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:142" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[70.7px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:143" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[93px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:144" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[115.3px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:145" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[137.7px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:146" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[160px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:147" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[182.3px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:148" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[204.7px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:149" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[227px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:150" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[249.3px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:151" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[271.7px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:152" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[18px] left-[294px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:153" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[316.3px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:154" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[338.7px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:155" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[18px] left-[361px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:156" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[383.3px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:157" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[405.7px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:158" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[18px] left-[428px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:159" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[450.3px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:160" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[472.7px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:161" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[18px] left-[495px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:162" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[517.3px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:163" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[539.7px] rounded-[2px] top-[100px] w-[20.3px]" data-node-id="41:164" data-name="box" />
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-0 not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[120.53px] whitespace-nowrap" data-node-id="41:165">
+          일
+        </p>
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[26px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:166" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[48.3px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:167" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[70.7px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:168" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[93px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:169" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[115.3px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:170" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[137.7px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:171" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[160px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:172" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[182.3px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:173" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[204.7px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:174" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[227px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:175" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[249.3px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:176" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[18px] left-[271.7px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:177" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[294px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:178" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[316.3px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:179" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[18px] left-[338.7px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:180" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[361px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:181" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[383.3px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:182" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[18px] left-[405.7px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:183" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[428px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:184" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[450.3px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:185" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[18px] left-[472.7px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:186" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[495px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:187" data-name="box" />
+        <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[18px] left-[517.3px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:188" data-name="box" />
+        <div className="absolute bg-[var(--surface\/sub,#eef0f3)] h-[18px] left-[539.7px] rounded-[2px] top-[120px] w-[20.3px]" data-node-id="41:189" data-name="box" />
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[26px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] top-[139.75px] whitespace-nowrap" data-node-id="41:190">
+          0h
+        </p>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[160px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] top-[139.75px] whitespace-nowrap" data-node-id="41:191">
+          6h
+        </p>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[294px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] top-[139.75px] whitespace-nowrap" data-node-id="41:192">
+          12h
+        </p>
+        <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[428px] not-italic text-[10px] text-[color:var(--text\/3,#6b7280)] top-[139.75px] whitespace-nowrap" data-node-id="41:193">
+          18h
+        </p>
+      </div>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[212.02px] whitespace-nowrap" data-node-id="41:194">
+        적음
+      </p>
+      <div className="absolute bg-[var(--chart\/heat1,#dbeafe)] h-[8px] left-[41px] rounded-[2px] top-[216.5px] w-[12px]" data-node-id="41:195" data-name="box" />
+      <div className="absolute bg-[var(--chart\/heat2,#93c5fd)] h-[8px] left-[55px] rounded-[2px] top-[216.5px] w-[12px]" data-node-id="41:196" data-name="box" />
+      <div className="absolute bg-[var(--chart\/heat3,#3b82f6)] h-[8px] left-[69px] rounded-[2px] top-[216.5px] w-[12px]" data-node-id="41:197" data-name="box" />
+      <div className="absolute bg-[var(--chart\/heat4,#1d4ed8)] h-[8px] left-[83px] rounded-[2px] top-[216.5px] w-[12px]" data-node-id="41:198" data-name="box" />
+      <div className="absolute bg-[var(--chart\/heat5,#1e3a8a)] h-[8px] left-[97px] rounded-[2px] top-[216.5px] w-[12px]" data-node-id="41:199" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[115px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[212.02px] whitespace-nowrap" data-node-id="41:200">
+        많음
+      </p>
+      <div className="absolute bg-[var(--accent\/red,#b91c1c)] left-[148px] rounded-[3px] size-[6px] top-[217.5px]" data-node-id="41:201" data-name="box" />
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[159px] not-italic text-[11px] text-[color:var(--text\/2,#4b5563)] top-[212.02px] whitespace-nowrap" data-node-id="41:202">
+        429 발생 셀
+      </p>
+      <p className="[word-break:break-word] absolute font-[family-name:var(--font\/ui,'Pretendard:Regular')] leading-[1.45] left-[16px] not-italic text-[11px] text-[color:var(--text\/3,#6b7280)] top-[240.02px] whitespace-nowrap" data-node-id="41:203">
+        셀 값은 툴팁·표로 보기 · 팀 합산만(개인 축 없음)
+      </p>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+These styles are contained in the design: widget-title/13-sb: Font(family: "font/ui", style: Regular, size: 13, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/10: Font(family: "font/ui", style: Regular, size: 10, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), caption/11: Font(family: "font/ui", style: Regular, size: 11, weight: 400, lineHeight: 1.4500000476837158, letterSpacing: 0), glyph/14: Font(family: "font/ui", style: Regular, size: 14, weight: 400, lineHeight: 1, letterSpacing: 0).
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

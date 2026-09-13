@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "partial errors preserve successful refs; masked payload and finding hidden; zero/null distinct",
+    "save dialog Tab trap and Escape focus restoration",
+    "opaque next cursor and previous page with 12 server runs",
+    "history network error and explicit retry",
+    "logout clears memory and admin cannot list owner org runs",
+    "admin result guard rejects over-broad server snapshot before rendering"
+  ],
+  "errors": []
+}

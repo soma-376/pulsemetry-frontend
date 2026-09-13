@@ -1,0 +1,28 @@
+{
+  "checks": [
+    "Protected deep link restored after login",
+    "Team/product/model/compare/price filters survive navigation and reach request",
+    "Browser back restores route and filter state",
+    "Custom range preserves KST and exclusive end",
+    "Manual refresh issues new query; 5-minute toggle works",
+    "Sidebar collapse and expand",
+    "Memory-only login expires on reload; theme persists",
+    "1440px no horizontal overflow",
+    "1024px no horizontal overflow",
+    "768px no horizontal overflow",
+    "Narrow-screen message",
+    "empty state displays correctly",
+    "masked state displays correctly",
+    "partial state displays correctly",
+    "error state displays correctly",
+    "Metadata error recovers independently",
+    "Admin team scope and direct-route guard",
+    "No uncaught browser errors"
+  ],
+  "dimensions": {
+    "sidebar": 240,
+    "toolbar": 56,
+    "coverage": 28
+  },
+  "errors": []
+}

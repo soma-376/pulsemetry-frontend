@@ -1,0 +1,21 @@
+{
+  "checks": [
+    "Stability four charts and eight tools",
+    "TTFT percentile separation, widget error retry, empty and masked states",
+    "Installations domain masking and inactivity filter",
+    "Hook partial failure preserves execution bars",
+    "Organization refusal query excludes selected team",
+    "Security refusal categories, mismatch, policy and rate limits",
+    "No events before valid Korean audit reason",
+    "Session opaque cursor pagination",
+    "Cancelled request cannot restore personal result",
+    "Close purges result and missing session error",
+    "Filter change purges personal result",
+    "Settings contracts multiplier and member audit gate",
+    "Member audited pagination and current page search",
+    "Settings 1024 and 768 no overflow",
+    "Operations 768 no overflow",
+    "Admin blocked from P3 and member identities"
+  ],
+  "errors": []
+}
