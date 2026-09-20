@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
@@ -8,7 +9,12 @@ import { ROLE_HINT, ROLE_LABEL, TEAM_OPTIONS } from "@/lib/metrics/members";
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-type Override = { team?: string; role?: string };
+type InviteForm = {
+  draft: string;
+  team: string;
+  role: string;
+  invitees: { email: string; team: string | null; role: string | null }[];
+};
 
 /**
  * 구성원 초대.
@@ -26,38 +32,61 @@ export function InviteModal({
   onClose: () => void;
   seatStatus: string;
 }) {
-  const [emails, setEmails] = useState<string[]>([]);
-  const [draft, setDraft] = useState("");
-  const [team, setTeam] = useState("");
-  const [role, setRole] = useState("member");
-  const [overrides, setOverrides] = useState<Record<string, Override>>({});
+  const formId = useId();
+  const emailHintId = `${formId}-email-hint`;
+  const {
+    control,
+    register,
+    getValues,
+    handleSubmit,
+    trigger,
+    reset,
+    resetField,
+    setError,
+    setFocus,
+    formState: { errors, isSubmitting },
+  } = useForm<InviteForm>({
+    mode: "onChange",
+    defaultValues: { draft: "", team: "", role: "member", invitees: [] },
+  });
+  const { fields: invitees, append, remove } = useFieldArray({
+    control,
+    name: "invitees",
+  });
+  const [team, role] = useWatch({ control, name: ["team", "role"] });
   const [sent, setSent] = useState<string | null>(null);
 
-  const invalid = draft.trim().length > 0 && !EMAIL.test(draft.trim());
-  const multi = emails.length > 1;
+  const invalid = Boolean(errors.draft);
+  const multi = invitees.length > 1;
 
-  const commit = () => {
-    const value = draft.trim();
-    if (!EMAIL.test(value)) return;
-    setEmails((list) => (list.includes(value) ? list : [...list, value]));
-    setDraft("");
+  const commit = async () => {
+    if (!(await trigger("draft", { shouldFocus: true }))) return;
+    const email = getValues("draft").trim();
+    if (!email || getValues("invitees").some((entry) => entry.email === email)) {
+      return;
+    }
+    append({ email, team: null, role: null }, { shouldFocus: false });
+    resetField("draft");
+    setSent(null);
   };
 
-  const remove = (email: string) =>
-    setEmails((list) => list.filter((x) => x !== email));
-
-  const setOverride = (email: string, key: keyof Override, value: string) =>
-    setOverrides((prev) => ({ ...prev, [email]: { ...prev[email], [key]: value } }));
-
-  const send = () => {
+  const send = (values: InviteForm) => {
+    if (values.draft.trim()) {
+      setError("draft", {
+        message: "Enter 또는 쉼표로 이메일을 추가한 뒤 초대하세요",
+      });
+      setFocus("draft");
+      return;
+    }
+    if (values.invitees.length === 0) return;
     // 배정 요약을 만들어 "몇 명을 어디로 보냈는지"를 닫기 전에 확인시킵니다
     const byTeam: Record<string, number> = {};
     const roles = new Set<string>();
-    for (const email of emails) {
-      const t = overrides[email]?.team ?? team;
+    for (const invitee of values.invitees) {
+      const t = invitee.team ?? values.team;
       const key = t || "팀 미배정";
       byTeam[key] = (byTeam[key] ?? 0) + 1;
-      roles.add(ROLE_LABEL[overrides[email]?.role ?? role]);
+      roles.add(ROLE_LABEL[invitee.role ?? values.role]);
     }
     const teamPart = Object.entries(byTeam)
       .map(([k, v]) => `${k} ${v}명`)
@@ -65,11 +94,9 @@ export function InviteModal({
     const rolePart = roles.size === 1 ? [...roles][0] : `역할 ${roles.size}종`;
 
     setSent(
-      `${emails.length}명에게 초대 메일을 보냈습니다 — ${teamPart} · ${rolePart} · 7일 후 만료 · 수락 전에는 좌석을 차지하지 않습니다`,
+      `${values.invitees.length}명에게 초대 메일을 보냈습니다 — ${teamPart} · ${rolePart} · 7일 후 만료 · 수락 전에는 좌석을 차지하지 않습니다`,
     );
-    setEmails([]);
-    setDraft("");
-    setOverrides({});
+    reset({ draft: "", team: values.team, role: values.role, invitees: [] });
   };
 
   return (
@@ -84,28 +111,38 @@ export function InviteModal({
           <Button>CSV 업로드</Button>
           <div className="flex-1" />
           <Button onClick={onClose}>취소</Button>
-          <Button variant="primary" disabled={emails.length === 0} onClick={send}>
-            {emails.length ? `${emails.length}명 초대` : "초대"}
+          <Button
+            type="submit"
+            form={formId}
+            variant="primary"
+            disabled={invitees.length === 0 || isSubmitting}
+          >
+            {invitees.length ? `${invitees.length}명 초대` : "초대"}
           </Button>
         </>
       }
     >
-      <div className="flex flex-col gap-4">
+      <form
+        id={formId}
+        onSubmit={handleSubmit(send)}
+        noValidate
+        className="flex flex-col gap-4"
+      >
         <div className="flex flex-col gap-1.5">
           <span className="text-[12px] font-medium">이메일</span>
           <div
             className="flex flex-wrap items-center gap-1.5 rounded-md border bg-card p-1.5"
             style={{ borderColor: invalid ? "var(--red)" : "var(--border)" }}
           >
-            {emails.map((email) => (
+            {invitees.map(({ id, email }, index) => (
               <span
-                key={email}
+                key={id}
                 className="flex items-center gap-1 rounded bg-sub px-2 py-1 text-[11.5px]"
               >
                 {email}
                 <button
                   type="button"
-                  onClick={() => remove(email)}
+                  onClick={() => remove(index)}
                   aria-label={`${email} 제거`}
                   className="cursor-pointer text-text3 hover:text-text"
                 >
@@ -114,26 +151,38 @@ export function InviteModal({
               </span>
             ))}
             <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              {...register("draft", {
+                validate: (value) => {
+                  const email = value.trim();
+                  if (!email) return true;
+                  if (!EMAIL.test(email)) return "이메일 형식이 아닙니다";
+                  if (getValues("invitees").some((entry) => entry.email === email)) {
+                    return "이미 추가한 이메일입니다";
+                  }
+                  return true;
+                },
+              })}
               onKeyDown={(e) => {
+                if (e.nativeEvent.isComposing) return;
                 if (e.key === "Enter" || e.key === ",") {
                   e.preventDefault();
-                  commit();
+                  void commit();
                 }
               }}
               placeholder="name@codeworks.io"
               aria-label="초대할 이메일"
+              aria-invalid={invalid}
+              aria-describedby={emailHintId}
               className="h-7 min-w-40 flex-1 border-0 bg-transparent px-1 text-[12px] text-text outline-none placeholder:text-text3"
             />
           </div>
           <span
+            id={emailHintId}
+            aria-live="polite"
             className="text-[11px]"
             style={{ color: invalid ? "var(--red)" : "var(--text3)" }}
           >
-            {invalid
-              ? "이메일 형식이 아닙니다"
-              : "Enter 또는 쉼표로 추가 · 여러 명 가능"}
+            {errors.draft?.message ?? "Enter 또는 쉼표로 추가 · 여러 명 가능"}
           </span>
         </div>
 
@@ -149,11 +198,7 @@ export function InviteModal({
             )}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Select
-              value={team}
-              onChange={(e) => setTeam(e.target.value)}
-              aria-label="팀"
-            >
+            <Select {...register("team")} aria-label="팀">
               <option value="">팀 미배정</option>
               {TEAM_OPTIONS.map((t) => (
                 <option key={t} value={t}>
@@ -161,11 +206,7 @@ export function InviteModal({
                 </option>
               ))}
             </Select>
-            <Select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              aria-label="역할"
-            >
+            <Select {...register("role")} aria-label="역할">
               <option value="member">구성원</option>
               <option value="lead">팀 리드 (자기 팀만)</option>
               <option value="viewer">조회 전용</option>
@@ -176,38 +217,50 @@ export function InviteModal({
 
           {multi && (
             <div className="mt-1 flex flex-col gap-1.5 border-t border-border pt-2">
-              {emails.map((email) => (
-                <div key={email} className="flex flex-wrap items-center gap-1.5">
+              {invitees.map(({ id, email }, index) => (
+                <div key={id} className="flex flex-wrap items-center gap-1.5">
                   <span className="min-w-0 flex-1 basis-40 overflow-hidden text-[11.5px] text-ellipsis whitespace-nowrap">
                     {email}
                   </span>
-                  <Select
-                    value={overrides[email]?.team ?? team}
-                    onChange={(e) => setOverride(email, "team", e.target.value)}
-                    aria-label={`${email} 팀`}
-                    className="h-7"
-                  >
-                    <option value="">팀 미배정</option>
-                    {TEAM_OPTIONS.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </Select>
-                  <Select
-                    value={overrides[email]?.role ?? role}
-                    onChange={(e) => setOverride(email, "role", e.target.value)}
-                    aria-label={`${email} 역할`}
-                    className="h-7"
-                  >
-                    <option value="member">구성원</option>
-                    <option value="lead">팀 리드</option>
-                    <option value="viewer">조회 전용</option>
-                    <option value="admin">관리자</option>
-                  </Select>
+                  <Controller
+                    control={control}
+                    name={`invitees.${index}.team`}
+                    render={({ field }) => (
+                      <Select
+                        {...field}
+                        value={field.value ?? team}
+                        aria-label={`${email} 팀`}
+                        className="h-7"
+                      >
+                        <option value="">팀 미배정</option>
+                        {TEAM_OPTIONS.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name={`invitees.${index}.role`}
+                    render={({ field }) => (
+                      <Select
+                        {...field}
+                        value={field.value ?? role}
+                        aria-label={`${email} 역할`}
+                        className="h-7"
+                      >
+                        <option value="member">구성원</option>
+                        <option value="lead">팀 리드</option>
+                        <option value="viewer">조회 전용</option>
+                        <option value="admin">관리자</option>
+                      </Select>
+                    )}
+                  />
                   <button
                     type="button"
-                    onClick={() => remove(email)}
+                    onClick={() => remove(index)}
                     aria-label={`${email} 제거`}
                     className="h-7 w-7 shrink-0 cursor-pointer rounded-md border border-border text-text2 hover:bg-hover"
                   >
@@ -232,7 +285,7 @@ export function InviteModal({
           SSO 자동 프로비저닝이 켜져 있습니다 — 사내 계정은 초대 없이 첫 로그인 시
           생성됩니다. 외부 협력사만 여기서 초대하세요.
         </p>
-      </div>
+      </form>
     </Modal>
   );
 }
