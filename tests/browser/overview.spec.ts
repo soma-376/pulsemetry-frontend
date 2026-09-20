@@ -1,20 +1,28 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+async function selectCalendarPreset(page: Page, preset: string) {
+  await page.getByRole("toolbar", { name: "전역 필터" }).getByRole("button", { name: /^\d{4}\.\d{2}\.\d{2} ~ / }).click();
+  const calendar = page.getByRole("dialog", { name: "기간 선택" });
+  await calendar.getByRole("button", { name: preset, exact: true }).click();
+  await calendar.getByRole("button", { name: "적용", exact: true }).click();
+}
 
 test.beforeEach(async ({ page }) => { await page.goto("/overview"); });
 
 test("filters update data and chart; incomplete and empty queries are explicit", async ({ page }) => {
   const chart = page.getByRole("slider");
   await expect(chart).toHaveAttribute("aria-valuemax", "7");
-  await page.getByRole("button", { name: "24h", exact: true }).click();
+  await selectCalendarPreset(page, "오늘");
   await expect(chart).toHaveAttribute("aria-valuemax", "1");
+  await expect(page.getByRole("button", { name: "2026.09.13 ~ 2026.09.13", exact: true })).toBeVisible();
   await expect(page.getByText("조직 전체 · 2026-09-13 ~ 2026-09-13")).toBeVisible();
-  await page.getByRole("button", { name: "28d", exact: true }).click();
-  await expect(chart).toHaveAttribute("aria-valuemax", "28");
-  await page.getByRole("button", { name: "90d", exact: true }).click();
+  await selectCalendarPreset(page, "이번 달");
+  await expect(chart).toHaveAttribute("aria-valuemax", "13");
+  await selectCalendarPreset(page, "최근 1년");
   await expect(page.getByText("관측 범위가 부족해 좌석 효율을 판정할 수 없습니다")).toBeVisible();
   await expect(chart).toHaveAttribute("aria-valuemax", "63");
-  await page.getByRole("button", { name: "7d", exact: true }).click();
-  await page.getByRole("button", { name: "9.7 ~ 9.13", exact: true }).click();
+  await selectCalendarPreset(page, "이번 주");
+  await page.getByRole("button", { name: "2026.09.07 ~ 2026.09.13", exact: true }).click();
   const calendar = page.getByRole("dialog", { name: "기간 선택" });
   await calendar.getByRole("button", { name: "다음 달" }).click();
   await calendar.locator('[title="2026-10-05"]').click();
@@ -22,8 +30,8 @@ test("filters update data and chart; incomplete and empty queries are explicit",
   await calendar.locator('[title="2026-10-07"]').click();
   await expect(chart).toHaveAttribute("aria-valuemax", "7"); // Draft has not been applied.
   await calendar.getByRole("button", { name: "적용" }).click();
+  await expect(page.getByRole("button", { name: "2026.10.05 ~ 2026.10.07", exact: true })).toBeVisible();
   await expect(page.getByText("선택한 기간에 데이터가 없습니다")).toBeVisible();
-  await expect(page.getByRole("button", { name: "7d", exact: true })).toHaveAttribute("aria-pressed", "false");
 });
 
 test("chart supports pointer inspection and keyboard date navigation", async ({ page }) => {
@@ -86,8 +94,8 @@ test("small viewport and reduced motion keep content usable", async ({ page }) =
   await page.setViewportSize({ width: 760, height: 700 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.getByRole("button", { name: "내비게이션 접기/펼치기" }).click();
-  await page.getByRole("button", { name: "28d", exact: true }).click();
-  await expect(page.getByRole("slider")).toHaveAttribute("aria-valuemax", "28");
+  await selectCalendarPreset(page, "이번 달");
+  await expect(page.getByRole("slider")).toHaveAttribute("aria-valuemax", "13");
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   expect(overflow).toBe(false);
   await page.getByRole("link", { name: /전체 5팀 보기/ }).click();
@@ -99,7 +107,7 @@ test("small viewport and reduced motion keep content usable", async ({ page }) =
   await page.screenshot({ path: "test-results/teams-small.png", fullPage: true });
 });
 
-test("unassigned row has no persistent highlight and trend toggles are separate from details", async ({ page }) => {
+test("team rows open details across the row while trend checkboxes stay independent", async ({ page }) => {
   await page.goto("/teams");
   const analysis = page.getByRole("region", { name: "팀별 사용량 비교" });
   const checkbox = analysis.getByRole("checkbox", { name: "미배정 추이 선 표시" });
@@ -108,13 +116,27 @@ test("unassigned row has no persistent highlight and trend toggles are separate 
   await expect(row).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await row.hover();
   await expect(row).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(row).toHaveCSS("cursor", "pointer");
+  const trigger = analysis.getByRole("button", { name: "미배정", exact: true });
+  const dialog = page.getByRole("dialog", { name: "미배정", exact: true });
+  const size = await row.boundingBox();
+  // Clicking the numeric area and the far-right arrow both opens the same drawer.
+  await row.click({ position: { x: size!.width / 2, y: size!.height / 2 } });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toBeVisible();
+  await expect(trigger).toBeFocused();
+  await expect(checkbox).toBeChecked();
+  await expect(row.locator(":scope > span").last()).toHaveText("›");
+  await row.click({ position: { x: size!.width - 12, y: size!.height / 2 } });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toBeVisible();
   await checkbox.uncheck();
   await expect(checkbox).not.toBeChecked();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  const trigger = analysis.getByRole("button", { name: "미배정", exact: true });
+  await expect(dialog).not.toBeVisible();
   await trigger.focus();
   await trigger.press("Enter");
-  const dialog = page.getByRole("dialog", { name: "미배정", exact: true });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText("팀에 배정되지 않은 사용량입니다.")).toBeVisible();
   await page.keyboard.press("Escape");
@@ -124,6 +146,12 @@ test("unassigned row has no persistent highlight and trend toggles are separate 
   await checkbox.focus();
   await checkbox.press("Space");
   await expect(checkbox).toBeChecked();
+  await expect(dialog).not.toBeVisible();
+  await trigger.focus();
+  await trigger.press("Space");
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toBeVisible();
   await page.getByRole("heading", { name: "팀 분석", exact: true }).hover();
   await expect(row).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 });

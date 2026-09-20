@@ -33,20 +33,24 @@ const TIER_COLS =
  * 조직 전체 지출과 좌석 효율을 바꾸기 때문입니다.
  */
 export function VendorDrawer({
+  open,
   row,
   isNew,
   draft,
   onChange,
   onClose,
+  onAfterClose,
   onSave,
   onDelete,
   stdFeeOf,
 }: {
+  open: boolean;
   row: VendorRow | null;
   isNew: boolean;
   draft: VendorDraft;
   onChange: (patch: VendorDraft) => void;
   onClose: () => void;
+  onAfterClose: () => void;
   onSave: (tiers: DraftTier[], plan: string | null, name: string) => void;
   onDelete: () => void;
   /** 미사용 좌석 금액을 매길 기준 단가 */
@@ -121,8 +125,9 @@ export function VendorDrawer({
 
   return (
     <DetailDrawer
-      open
+      open={open}
       onClose={onClose}
+      onAfterClose={onAfterClose}
       title={isNew ? "벤더 추가" : `${shownName} 계약 설정`}
       subtitle={planDef ? planDef.label : "플랜 미선택"}
       footer={

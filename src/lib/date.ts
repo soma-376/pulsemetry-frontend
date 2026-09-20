@@ -35,10 +35,9 @@ export function shortDate(iso: string, withYear = false) {
 }
 
 export function rangeText(range: DateRange) {
-  if (!range.end) return `${shortDate(range.start)} ~ …`;
-  const crossYear =
-    fromIso(range.start).getUTCFullYear() !== fromIso(range.end).getUTCFullYear();
-  return `${shortDate(range.start, crossYear)} ~ ${shortDate(range.end, crossYear)}`;
+  const start = range.start.replaceAll("-", ".");
+  const end = range.end?.replaceAll("-", ".") ?? "…";
+  return `${start} ~ ${end}`;
 }
 
 export function dayCount(range: DateRange) {

@@ -3,17 +3,9 @@
 import { DateRangePicker } from "@/components/layout/DateRangePicker";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Button } from "@/components/ui/Button";
-import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Select } from "@/components/ui/Select";
 import { useFilters } from "@/lib/filters";
-import type { CompareKey, RangeKey } from "@/types/domain";
-
-const RANGES: { value: RangeKey; label: string }[] = [
-  { value: "24h", label: "24h" },
-  { value: "7d", label: "7d" },
-  { value: "28d", label: "28d" },
-  { value: "90d", label: "90d" },
-];
+import type { CompareKey } from "@/types/domain";
 
 /**
  * 전역 필터 툴바.
@@ -22,8 +14,6 @@ const RANGES: { value: RangeKey; label: string }[] = [
  */
 export function FilterToolbar() {
   const {
-    range,
-    setRange,
     compare,
     setCompare,
     dates,
@@ -38,13 +28,6 @@ export function FilterToolbar() {
       aria-label="전역 필터"
       className="sticky top-0 z-30 flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border bg-card px-4 py-2 @min-[1180px]:h-14 @min-[1180px]:flex-nowrap @min-[1180px]:py-0"
     >
-      <SegmentedControl
-        label="기간"
-        options={RANGES}
-        value={range}
-        onChange={setRange}
-      />
-
       <DateRangePicker value={dates} onChange={setDates} />
 
       <label className="flex items-center gap-1.5 text-[12px] whitespace-nowrap text-text2">

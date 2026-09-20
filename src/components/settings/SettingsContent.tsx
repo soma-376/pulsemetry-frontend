@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { CoverageBar } from "@/components/layout/CoverageBar";
 import { FilterToolbar } from "@/components/layout/FilterToolbar";
 import { SettingRow, SettingSection } from "@/components/settings/SettingRow";
@@ -30,6 +30,7 @@ import {
   type PolicyAsk,
   type VendorDraft,
   type VendorEdits,
+  type VendorRow,
 } from "@/lib/settings";
 import { COVERAGE, INGEST } from "@/mocks/overview";
 import type { VendorRecord } from "@/mocks/vendors";
@@ -47,6 +48,8 @@ export function SettingsContent() {
   const [edits, setEdits] = useState<VendorEdits>({});
   const [added, setAdded] = useState<VendorRecord[]>([]);
   const [drawerId, setDrawerId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerRow, setDrawerRow] = useState<VendorRow | null>(null);
   const [draft, setDraft] = useState<VendorDraft>({});
 
   const [promptRaw, setPromptRaw] = useState(true);
@@ -62,59 +65,66 @@ export function SettingsContent() {
   const ingest = ingestBadge(INGEST);
 
   const isNew = drawerId === NEW_VENDOR_ID;
-  const drawerRow = isNew
-    ? ({
-        id: NEW_VENDOR_ID,
-        short: "",
-        product: "수동 추가 · 신호 없음",
-        family: "generic" as const,
-        manual: true,
-        users: 0,
-        distinct30: 0,
-        firstSeen: "—",
-        noSignal: true,
-        plan: null,
-        planDef: null,
-        plans: [],
-        billing: null,
-        isSeat: false,
-        seats: 0,
-        seatSpend: 0,
-        metered: 0,
-        spendMonthly: 0,
-        setUp: false,
-        confirmed: false,
-        contract: {},
-        dot: "var(--gray)",
-        statusLabel: "",
-        statusFg: "",
-        seatsText: "",
-        spendText: "",
-        spendFg: "",
-        openLabel: "",
-      } as (typeof rows)[number])
-    : (rows.find((r) => r.id === drawerId) ?? null);
 
   const openVendor = (id: string) => {
     const row = rows.find((r) => r.id === id);
+    if (!row) return;
     setDrawerId(id);
+    setDrawerRow(row);
+    setDrawerOpen(true);
     setDraft({
-      plan: row?.plan ?? null,
-      tiers: row ? toDraftTiers(row.contract) : [],
-      term: row?.contract.term ?? "",
-      name: row?.short,
+      plan: row.plan,
+      tiers: toDraftTiers(row.contract),
+      term: row.contract.term ?? "",
+      name: row.short,
     });
   };
 
   const openNew = () => {
     setDrawerId(NEW_VENDOR_ID);
+    setDrawerOpen(true);
+    setDrawerRow({
+      id: NEW_VENDOR_ID,
+      short: "",
+      product: "수동 추가 · 신호 없음",
+      family: "generic",
+      manual: true,
+      users: 0,
+      distinct30: 0,
+      firstSeen: "—",
+      noSignal: true,
+      plan: null,
+      planDef: null,
+      plans: [],
+      billing: null,
+      isSeat: false,
+      seats: 0,
+      seatSpend: 0,
+      metered: 0,
+      spendMonthly: 0,
+      setUp: false,
+      confirmed: false,
+      contract: {},
+      dot: "var(--gray)",
+      statusLabel: "",
+      statusFg: "",
+      seatsText: "",
+      spendText: "",
+      spendFg: "",
+      openLabel: "",
+    });
     setDraft({ kind: "copilot", plan: "seat_flat", tiers: [EMPTY_TIER], term: "" });
   };
 
   const closeDrawer = () => {
-    setDrawerId(null);
-    setDraft({});
+    setDrawerOpen(false);
   };
+
+  const clearDrawer = useCallback(() => {
+    setDrawerId(null);
+    setDrawerRow(null);
+    setDraft({});
+  }, []);
 
   /** 문자열 초안을 계약 형태로 되돌립니다 — 빈 줄은 버립니다 */
   const commitTiers = (tiers: DraftTier[]) =>
@@ -333,11 +343,13 @@ export function SettingsContent() {
 
       {drawerId && (
         <VendorDrawer
+          open={drawerOpen}
           row={drawerRow}
           isNew={isNew}
           draft={draft}
           onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch }))}
           onClose={closeDrawer}
+          onAfterClose={clearDrawer}
           onSave={saveVendor}
           onDelete={deleteVendor}
           stdFeeOf={(tiers) => num(tiers[0]?.fee ?? "0")}
