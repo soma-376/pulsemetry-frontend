@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { StatCard } from "@/components/ui/StatCard";
+import { SortHeader } from "@/components/ui/SortHeader";
+import { nextSort, sortRows, type SortState } from "@/lib/sort";
 import type { TeamsModel } from "@/lib/metrics/teams";
 
 /**
@@ -22,12 +24,16 @@ const COLS =
   "@max-[620px]:grid-cols-[minmax(0,1.3fr)_96px_76px] " +
   "@max-[620px]:[&>*:nth-child(3)]:hidden @max-[620px]:[&>*:nth-child(7)]:hidden";
 
+type SortKey = "account" | "sessionCount" | "tokenValue" | "costValue" | "cacheValue" | "idleDays";
+
 export function UserUsageCard({ model }: { model: TeamsModel }) {
   const [team, setTeam] = useState(model.teams[0]?.team ?? "");
   const [limit, setLimit] = useState(model.userPageSize);
+  const [sort, setSort] = useState<SortState<SortKey>>({ key: "costValue", direction: "desc" });
 
   const data = useMemo(() => model.users(team), [model, team]);
-  const rows = data.rows.slice(0, limit);
+  const ordered = sortRows(data.rows, (row) => sort.key === "idleDays" ? -row.idleDays : row[sort.key], sort.direction, (row) => row.account);
+  const rows = ordered.slice(0, limit);
   const hasMore = data.rows.length > limit;
 
   const pick = (next: string) => {
@@ -75,14 +81,15 @@ export function UserUsageCard({ model }: { model: TeamsModel }) {
       </div>
 
       <div className={`${COLS} border-b border-border px-0.5 pb-2 text-[11px] text-text3`}>
-        <span>계정</span>
-        <span className="text-right">세션</span>
-        <span className="text-right">총 토큰</span>
-        <span className="text-right">환산 금액</span>
+        {([
+          ["account", "계정"], ["sessionCount", "세션"], ["tokenValue", "총 토큰"], ["costValue", "환산 금액"],
+        ] as const).map(([key, label]) => <SortHeader key={key} label={label} align={key === "account" ? "left" : "right"}
+          initial={key === "account" ? "asc" : "desc"} direction={sort.key === key ? sort.direction : undefined}
+          onClick={() => setSort(nextSort(sort, key, key === "account" ? "asc" : "desc"))} />)}
         <span className="text-right">평균 대비</span>
         <span>주 사용 모델</span>
-        <span className="text-right">캐시 적중</span>
-        <span className="text-right">마지막 사용</span>
+        <SortHeader label="캐시 적중" align="right" initial="desc" direction={sort.key === "cacheValue" ? sort.direction : undefined} onClick={() => setSort(nextSort(sort, "cacheValue", "desc"))} />
+        <SortHeader label="마지막 사용" align="right" initial="desc" direction={sort.key === "idleDays" ? sort.direction : undefined} onClick={() => setSort(nextSort(sort, "idleDays", "desc"))} />
       </div>
 
       {rows.map((u) => (
@@ -119,7 +126,7 @@ export function UserUsageCard({ model }: { model: TeamsModel }) {
         )}
         <div className="flex-1" />
         <span className="tnum text-[11.5px] whitespace-nowrap text-text2">
-          {data.sumNote(rows.length)}
+          {data.sumNote(rows)}
         </span>
       </div>
     </section>

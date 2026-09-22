@@ -19,13 +19,14 @@ import {
 } from "@/mocks/overview";
 import { SEAT_TIERS, STD_SEAT_FEE } from "@/mocks/vendors";
 import type { CompareKey } from "@/types/domain";
+import { SEED_TEAMS, teamLabel, type Team } from "@/lib/organization";
 
 /** 도넛에 색을 줄 상위 모델 수. 넘어가면 읽을 수 없어 "기타"로 묶습니다 */
 const MIX_TOP_N = 4;
 
 export type OverviewModel = ReturnType<typeof buildOverview>;
 
-export function buildOverview(compare: CompareKey = "prev_week", dates: DateRange = { start: "2026-09-07", end: SAMPLE_END }) {
+export function buildOverview(compare: CompareKey = "prev_week", dates: DateRange = { start: "2026-09-07", end: SAMPLE_END }, catalog: Team[] = SEED_TEAMS) {
   const current = aggregateActivity(dates);
   const previous = aggregateActivity(comparisonRange(dates, compare));
   const RANGE_DAYS = dayCount(dates);
@@ -248,7 +249,7 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
   const attrRows = teams.map((t) => {
     const models = MODEL_META.map((m) => ({ name: m.name, share: (t.models[m.v] ?? 0) / (t.cost || 1) * 100, color: MODEL_COLORS[m.v] ?? "var(--gray)" })).sort((a, b) => b.share - a.share);
     return {
-      team: t.team, users: int(t.users),
+      team: teamLabel(catalog, t.team), users: int(t.users),
       userCount: t.users, cost: t.cost,
       perUser: t.cost / (t.users || 1), contrib: t.contrib,
       cause: `${models[0].name.replace("claude-", "")} 비중 ${models[0].share.toFixed(0)}%`,

@@ -1,3 +1,4 @@
+import { openDashboard } from "./helpers";
 import { expect, test, type Page } from "@playwright/test";
 
 async function addVendor(page: Page, name: string, fee = "10") {
@@ -11,7 +12,7 @@ async function addVendor(page: Page, name: string, fee = "10") {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/settings");
+  await openDashboard(page, "/settings");
 });
 
 test("deleting a middle vendor then adding another keeps edit and delete targets separate", async ({ page }) => {

@@ -3,7 +3,8 @@
 import { Button } from "@/components/ui/Button";
 import { Widget } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
-import { TEAM_OPTIONS, type MembersModel } from "@/lib/metrics/members";
+import type { MembersModel } from "@/lib/metrics/members";
+import type { Team } from "@/lib/organization";
 
 /**
  * 팀 미배정 사용자.
@@ -17,11 +18,13 @@ export function UnassignedCard({
   picks,
   onPick,
   onApply,
+  teams,
 }: {
   model: MembersModel;
   picks: Record<string, string>;
   onPick: (account: string, team: string) => void;
   onApply: () => void;
+  teams: Team[];
 }) {
   const count = model.unassignedRows.filter((u) => picks[u.account]).length;
 
@@ -71,9 +74,9 @@ export function UnassignedCard({
               className="h-7 shrink-0"
             >
               <option value="">팀 선택</option>
-              {TEAM_OPTIONS.map((t) => (
-                <option key={t} value={t}>
-                  {t}
+              {teams.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
                 </option>
               ))}
             </Select>

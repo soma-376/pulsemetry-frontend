@@ -6,6 +6,10 @@ import { FilterToolbar } from "@/components/layout/FilterToolbar";
 import { SettingRow, SettingSection } from "@/components/settings/SettingRow";
 import { VendorDrawer } from "@/components/settings/VendorDrawer";
 import { VendorTable } from "@/components/settings/VendorTable";
+import { NEW_CONTRACT_ROW, createManualContract } from "@/lib/contracts";
+import { contractSchema } from "@/lib/schemas/contract";
+import { PromptCollectionField } from "./PromptCollectionField";
+import { useOrganization } from "@/lib/organization-store";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
@@ -45,14 +49,24 @@ import type { VendorRecord } from "@/mocks/vendors";
  * 확인 단계를 두고, 나머지는 즉시 적용합니다.
  */
 export function SettingsContent() {
-  const [edits, setEdits] = useState<VendorEdits>({});
-  const [added, setAdded] = useState<VendorRecord[]>([]);
+  const { state: organization, update } = useOrganization();
+  const edits = organization.vendorEdits;
+  const added = organization.addedVendors;
+  const setEdits = (change: (previous: VendorEdits) => VendorEdits) => update((previous) => {
+    const vendorEdits = change(previous.vendorEdits);
+    return { ...previous, vendorEdits };
+  });
+  const setAdded = (change: (previous: VendorRecord[]) => VendorRecord[]) => update((previous) => {
+    const addedVendors = change(previous.addedVendors);
+    return { ...previous, addedVendors };
+  });
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerRow, setDrawerRow] = useState<VendorRow | null>(null);
   const [draft, setDraft] = useState<VendorDraft>({});
 
-  const [promptRaw, setPromptRaw] = useState(true);
+  const promptRaw = organization.promptRaw ?? false;
+  const setPromptRaw = (value: boolean) => update((previous) => ({ ...previous, promptRaw: value }));
   const [idleDays, setIdleDays] = useState("14");
   const [keepMonths, setKeepMonths] = useState("24");
   const [rules, setRules] = useState<Record<string, boolean>>({});
@@ -83,36 +97,7 @@ export function SettingsContent() {
   const openNew = () => {
     setDrawerId(NEW_VENDOR_ID);
     setDrawerOpen(true);
-    setDrawerRow({
-      id: NEW_VENDOR_ID,
-      short: "",
-      product: "수동 추가 · 신호 없음",
-      family: "generic",
-      manual: true,
-      users: 0,
-      distinct30: 0,
-      firstSeen: "—",
-      noSignal: true,
-      plan: null,
-      planDef: null,
-      plans: [],
-      billing: null,
-      isSeat: false,
-      seats: 0,
-      seatSpend: 0,
-      metered: 0,
-      spendMonthly: 0,
-      setUp: false,
-      confirmed: false,
-      contract: {},
-      dot: "var(--gray)",
-      statusLabel: "",
-      statusFg: "",
-      seatsText: "",
-      spendText: "",
-      spendFg: "",
-      openLabel: "",
-    });
+    setDrawerRow(NEW_CONTRACT_ROW);
     setDraft({ kind: "copilot", plan: "seat_flat", tiers: [EMPTY_TIER], term: "" });
   };
 
@@ -127,6 +112,7 @@ export function SettingsContent() {
   }, []);
 
   const saveVendor = (tiers: DraftTier[], plan: string | null, name: string) => {
+    if (!contractSchema(drawerRow?.family).safeParse({ ...draft, tiers, plan, name }).success) return;
     const planDef = PLAN_SETS[drawerRow?.family ?? "generic"].find((item) => item.v === plan);
     if (!planDef) return;
     const committedTiers = planDef.bill === "seat" ? validateTiers(tiers).tiers : [];
@@ -143,22 +129,8 @@ export function SettingsContent() {
 
     if (isNew) {
       const id = `manual_${crypto.randomUUID()}`;
-      setAdded((prev) => [
-        ...prev,
-        {
-          id,
-          name,
-          short: name,
-          product: "수동 추가 · 신호 없음",
-          family: "generic",
-          plan,
-          manual: true,
-          users: 0,
-          distinct30: 0,
-          firstSeen: "—",
-          c: { tiers: contract.tiers, term: contract.term, reviewedAt: TODAY, reviewer: ADMIN_EMAIL },
-        },
-      ]);
+      const vendor = createManualContract({ ...draft, tiers, plan, name }, id);
+      setAdded((prev) => [...prev, vendor]);
     } else if (drawerId) {
       setEdits((prev) => ({ ...prev, [drawerId]: { ...prev[drawerId], ...contract } }));
     }
@@ -260,12 +232,7 @@ export function SettingsContent() {
                   : "본문은 저장하지 않고 길이와 토큰 수만 집계합니다 · 도구 인수, 파일 경로, 오류 메시지 본문도 보내지 않습니다"
               }
             >
-              <Toggle
-                on={promptRaw}
-                label="프롬프트 원문 수집"
-                onColor="var(--red)"
-                onChange={() => setAsk({ kind: "prompt", value: !promptRaw })}
-              />
+              <PromptCollectionField compact value={promptRaw} onChange={(value) => setAsk({ kind: "prompt", value })} />
             </SettingRow>
 
             <SettingRow

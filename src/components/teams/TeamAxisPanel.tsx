@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { SortHeader } from "@/components/ui/SortHeader";
+import { nextSort, sortRows, type SortState } from "@/lib/sort";
 import { LineAreaChart } from "@/components/charts/LineAreaChart";
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import type { AxisKey, TeamsModel } from "@/lib/metrics/teams";
@@ -12,6 +15,9 @@ const AXIS_TABS: { key: AxisKey; label: string }[] = [
 
 const COLS =
   "grid grid-cols-[minmax(132px,1fr)_minmax(0,2fr)_minmax(74px,1fr)_minmax(74px,1fr)_minmax(66px,0.9fr)_24px] items-center gap-2.5";
+
+type SortKey = "team" | "totalValue" | "perUserValue" | "unitValue" | "deltaValue";
+const DEFAULT_SORT: SortState<SortKey> = { key: "totalValue", direction: "desc" };
 
 /**
  * 축 탭 + 팀별 누적 추이 + 팀 표.
@@ -34,7 +40,10 @@ export function TeamAxisPanel({
   onToggleTeam: (team: string) => void;
   onOpenTeam: (team: string) => void;
 }) {
+  const [sort, setSort] = useState(DEFAULT_SORT);
+  const activeSort = sort.key === "deltaValue" && !model.showDelta ? DEFAULT_SORT : sort;
   const ax = model.axes[axis];
+  const rows = sortRows(ax.rows, (row) => row[activeSort.key], activeSort.direction, (row) => row.team);
   const shown = model.trend[axis].filter((s) => !hidden[s.team]);
   const isEmpty = shown.length === 0;
   const max =
@@ -56,7 +65,7 @@ export function TeamAxisPanel({
                 type="button"
                 role="tab"
                 aria-selected={active}
-                onClick={() => onAxisChange(t.key)}
+                onClick={() => { if (t.key !== axis) { setSort(DEFAULT_SORT); onAxisChange(t.key); } }}
                 className="h-7 cursor-pointer rounded-md border-0 px-3.5 text-[12px] font-semibold whitespace-nowrap"
                 style={{
                   background: active ? "var(--text)" : "transparent",
@@ -129,15 +138,15 @@ export function TeamAxisPanel({
       </div>
 
       <div className={`${COLS} border-b border-border px-0.5 pb-2 text-[11px] text-text3`}>
-        <span>팀</span>
-        <span>{ax.c1}</span>
-        <span className="text-right">{ax.c2}</span>
-        <span className="text-right">{ax.c3}</span>
-        <span className="text-right">{model.compareLabel || "증감"}</span>
+        {([
+          ["team", "팀"], ["totalValue", ax.c1], ["perUserValue", ax.c2], ["unitValue", ax.c3], ["deltaValue", model.compareLabel || "증감"],
+        ] as const).map(([key, label], index) => <SortHeader key={key} label={label} align={index < 2 ? "left" : "right"}
+          initial={key === "team" ? "asc" : "desc"} direction={activeSort.key === key ? activeSort.direction : undefined}
+          disabled={key === "deltaValue" && !model.showDelta} onClick={() => setSort(nextSort(activeSort, key, key === "team" ? "asc" : "desc"))} />)}
         <span aria-hidden="true" />
       </div>
 
-      {ax.rows.map((r) => {
+      {rows.map((r) => {
         const on = !hidden[r.team];
         return (
         <div

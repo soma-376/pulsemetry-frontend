@@ -1,3 +1,4 @@
+import { openDashboard } from "./helpers";
 import { expect, test, type Page } from "@playwright/test";
 
 async function selectCalendarPreset(page: Page, preset: string) {
@@ -7,7 +8,7 @@ async function selectCalendarPreset(page: Page, preset: string) {
   await calendar.getByRole("button", { name: "적용", exact: true }).click();
 }
 
-test.beforeEach(async ({ page }) => { await page.goto("/overview"); });
+test.beforeEach(async ({ page }) => { await openDashboard(page, "/overview"); });
 
 test("filters update data and chart; incomplete and empty queries are explicit", async ({ page }) => {
   const chart = page.getByRole("slider");
@@ -77,7 +78,7 @@ test("overview summary links to the team analysis drawer", async ({ page }) => {
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("button", { name: "상세 패널 닫기" })).toBeFocused();
   await page.keyboard.press("Tab");
-  await expect(dialog.getByLabel("팀 상세 내용")).toBeFocused();
+  await expect(dialog.getByLabel("플랫폼 팀 내용")).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(dialog.getByRole("button", { name: "상세 패널 닫기" })).toBeFocused();
   await expect(dialog.locator(":scope > div")).toHaveCSS("opacity", "1");
@@ -108,7 +109,7 @@ test("small viewport and reduced motion keep content usable", async ({ page }) =
 });
 
 test("team rows open details across the row while trend checkboxes stay independent", async ({ page }) => {
-  await page.goto("/teams");
+  await openDashboard(page, "/teams");
   const analysis = page.getByRole("region", { name: "팀별 사용량 비교" });
   const checkbox = analysis.getByRole("checkbox", { name: "미배정 추이 선 표시" });
   const row = checkbox.locator("..").locator("..");
@@ -159,7 +160,7 @@ test("team rows open details across the row while trend checkboxes stay independ
 test("overview has no browser errors and sidebar stays viewport height", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.reload();
+  await openDashboard(page, "/overview");
   await expect(page.getByRole("slider")).toBeVisible();
   const nav = page.getByRole("navigation", { name: "주 내비게이션" });
   await expect(nav).toHaveCSS("height", "1000px");

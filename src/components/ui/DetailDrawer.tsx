@@ -146,7 +146,7 @@ export function DetailDrawer({
               </header>
               <div
                 tabIndex={0}
-                aria-label="팀 상세 내용"
+                aria-label={`${title} 내용`}
                 className="min-h-0 flex-1 overflow-y-auto p-6"
               >
                 {children}

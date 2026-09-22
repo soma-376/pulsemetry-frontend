@@ -10,6 +10,8 @@ import { UserUsageCard } from "@/components/teams/UserUsageCard";
 import { ButtonLink } from "@/components/ui/Button";
 import { useFilters } from "@/lib/filters";
 import { buildTeams, type AxisKey } from "@/lib/metrics/teams";
+import { useOrganization } from "@/lib/organization-store";
+import { TeamManagement } from "@/components/teams/TeamManagement";
 
 /**
  * P2 팀 분석.
@@ -18,7 +20,8 @@ import { buildTeams, type AxisKey } from "@/lib/metrics/teams";
  */
 export function TeamsContent() {
   const { compare, dates } = useFilters();
-  const model = useMemo(() => buildTeams(compare, dates), [compare, dates]);
+  const { state } = useOrganization();
+  const model = useMemo(() => buildTeams(compare, dates, state.teams), [compare, dates, state.teams]);
 
   const [axis, setAxis] = useState<AxisKey>("cost");
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
@@ -35,6 +38,7 @@ export function TeamsContent() {
 
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-6 pt-5 pb-10">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <div className="order-last"><TeamManagement /></div>
           <div className="flex items-baseline gap-2.5">
             <h1 className="text-[18px] font-semibold tracking-[-0.01em]">
               팀 분석

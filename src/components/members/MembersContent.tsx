@@ -6,31 +6,47 @@ import { FilterToolbar } from "@/components/layout/FilterToolbar";
 import { IngestDownBanner } from "@/components/layout/IngestDownBanner";
 import { InviteModal } from "@/components/members/InviteModal";
 import { MemberListCard } from "@/components/members/MemberListCard";
+import { MemberEditModal } from "@/components/members/MemberEditModal";
+import { PendingInviteCard } from "@/components/members/PendingInviteCard";
 import { SeatReclaimCard } from "@/components/members/SeatReclaimCard";
 import { UnassignedCard } from "@/components/members/UnassignedCard";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { StatCard } from "@/components/ui/StatCard";
+import { TeamManagement } from "@/components/teams/TeamManagement";
+import { useInvitations } from "@/lib/invitations";
+import { useOrganization } from "@/lib/organization-store";
 import { useFilters } from "@/lib/filters";
 import { buildMembers, type MemberState } from "@/lib/metrics/members";
+import { saveMemberAssignment, type MemberAssignmentTarget } from "@/lib/member-assignment";
 
 /**
  * P6 구성원.
  *
  * 셸(사이드바·필터 툴바·커버리지 바)과 카드·버튼·셀렉트는 기존 것을 그대로 씁니다.
- * 이 페이지가 새로 가진 것은 좌석 회수·팀 배정·초대 세 가지 동작뿐입니다.
+ * 좌석 회수·팀 배정·초대와 구성원의 팀·역할을 관리합니다.
  */
 export function MembersContent() {
   const { dates } = useFilters();
 
-  const [state, setState] = useState<MemberState>({ reclaimed: {}, assigned: {} });
+  const { state: organization, update } = useOrganization();
+  const state = organization.members;
+  const setState = (change: (previous: MemberState) => MemberState) =>
+    update((previous) => ({ ...previous, members: change(previous.members) }));
   const [reclaimPicks, setReclaimPicks] = useState<Record<string, boolean>>({});
   const [assignPicks, setAssignPicks] = useState<Record<string, string>>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [editing, setEditing] = useState<MemberAssignmentTarget | null>(null);
+  const [editNotice, setEditNotice] = useState("");
+  const openEdit = (target: MemberAssignmentTarget) => {
+    setEditNotice("");
+    setEditing(target);
+  };
+
   const [lastReclaim, setLastReclaim] = useState<string[]>([]);
 
-  const model = useMemo(() => buildMembers(dates, state), [dates, state]);
+  const model = useMemo(() => buildMembers(dates, state, organization.teams), [dates, state, organization.teams]);
 
   const picked = model.reclaimRows.filter((r) => reclaimPicks[r.account]);
   const preview = model.reclaimPreview(picked.length);
@@ -54,6 +70,8 @@ export function MembersContent() {
     });
     setLastReclaim([]);
   };
+
+  const { send: addInvites, resend: resendInvite, revoke: revokeInvite } = useInvitations();
 
   const applyAssign = () => {
     const picks = Object.entries(assignPicks).filter(([, team]) => team);
@@ -91,6 +109,7 @@ export function MembersContent() {
             <span className="text-[12px] text-text3">{model.pageSub}</span>
           </div>
           <div className="ml-auto flex flex-wrap items-center gap-3">
+            <TeamManagement />
             <span className="text-[12px] text-text3">{model.seatStatus}</span>
             <Button variant="primary" className="px-3.5" onClick={() => setInviteOpen(true)}>
               구성원 초대
@@ -98,6 +117,7 @@ export function MembersContent() {
           </div>
         </div>
 
+        <p role="status" aria-live="polite" className="text-xs text-text2 empty:hidden">{editNotice}</p>
         <div className="grid grid-cols-4 gap-4 @max-[1180px]:grid-cols-2 @max-[620px]:grid-cols-1">
           {model.seatCards.map((c) => (
             <StatCard
@@ -109,6 +129,20 @@ export function MembersContent() {
               tone={c.tone}
             />
           ))}
+
+          <PendingInviteCard
+            model={model}
+            onResend={resendInvite}
+            onRevoke={revokeInvite}
+            onEdit={(email) => {
+              const invite = model.inviteRows.find((item) => item.email === email);
+              if (!invite) return;
+              openEdit({
+                account: email, invited: true, role: invite.role, reclaimed: false,
+                teamId: organization.teams.find((team) => team.id === invite.team || team.sourceName === invite.team)?.id ?? "",
+              });
+            }}
+          />
 
           <SeatReclaimCard
             model={model}
@@ -122,6 +156,7 @@ export function MembersContent() {
           />
 
           <UnassignedCard
+            teams={organization.teams}
             model={model}
             picks={assignPicks}
             onPick={(account, team) =>
@@ -130,7 +165,7 @@ export function MembersContent() {
             onApply={applyAssign}
           />
 
-          <MemberListCard model={model} />
+          <MemberListCard model={model} onEdit={openEdit} />
         </div>
       </div>
 
@@ -178,7 +213,19 @@ export function MembersContent() {
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
         seatStatus={model.seatStatus}
+        onInvite={addInvites}
       />
+      <MemberEditModal target={editing} teams={organization.teams} onClose={() => setEditing(null)} onSave={(target, values) => {
+        const next = saveMemberAssignment(organization, target, values);
+        update(() => next);
+        setAssignPicks((previous) => {
+          const remaining = { ...previous };
+          delete remaining[target.account];
+          return remaining;
+        });
+        setEditing(null);
+        setEditNotice(`${target.account}의 ${target.invited ? "초대 " : ""}팀·역할을 변경했습니다.`);
+      }} />
     </>
   );
 }

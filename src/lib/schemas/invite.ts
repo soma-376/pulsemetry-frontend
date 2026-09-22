@@ -1,9 +1,7 @@
 import { z } from "zod";
+import { memberRoleSchema as roleSchema } from "./member";
 
 const emailSchema = z.string().trim().pipe(z.email("이메일 형식이 아닙니다"));
-const roleSchema = z.enum(["member", "lead", "viewer", "admin"], {
-  error: "역할을 선택하세요",
-});
 
 /** 입력 중에는 비어 있는 초안과 초대 목록을 허용합니다. */
 export const inviteFormSchema = z.object({

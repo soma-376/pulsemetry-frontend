@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/lib/theme";
+import { OrganizationProvider } from "@/lib/organization-store";
 import { themeBootstrapScript } from "@/lib/theme-config";
 import "./globals.css";
 
@@ -16,7 +17,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
       <body className="min-h-screen bg-bg text-text antialiased">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider><OrganizationProvider>{children}</OrganizationProvider></ThemeProvider>
       </body>
     </html>
   );

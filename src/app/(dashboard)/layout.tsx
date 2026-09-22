@@ -1,4 +1,5 @@
 import { Sidebar } from "@/components/layout/Sidebar";
+import { AuthGate } from "@/components/auth/AuthGate";
 import { FiltersProvider } from "@/lib/filters";
 import { MotionProvider } from "@/components/ui/MotionProvider";
 
@@ -17,7 +18,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <FiltersProvider>
+    <AuthGate><FiltersProvider>
       <MotionProvider>
         <div className="relative flex h-dvh w-dvw items-stretch overflow-hidden bg-bg text-text">
           <Sidebar />
@@ -26,6 +27,6 @@ export default function DashboardLayout({
           </main>
         </div>
       </MotionProvider>
-    </FiltersProvider>
+    </FiltersProvider></AuthGate>
   );
 }

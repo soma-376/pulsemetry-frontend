@@ -12,6 +12,7 @@ import { ValueVsSpendCard } from "@/components/overview/ValueVsSpendCard";
 import { WasteCard } from "@/components/overview/WasteCard";
 import { useFilters } from "@/lib/filters";
 import { buildOverview } from "@/lib/metrics/overview";
+import { useOrganization } from "@/lib/organization-store";
 
 /**
  * P1 개요.
@@ -20,7 +21,8 @@ import { buildOverview } from "@/lib/metrics/overview";
  */
 export function OverviewContent() {
   const { compare, dates } = useFilters();
-  const model = useMemo(() => buildOverview(compare, dates), [compare, dates]);
+  const { state } = useOrganization();
+  const model = useMemo(() => buildOverview(compare, dates, state.teams), [compare, dates, state.teams]);
 
   return (
     <>
