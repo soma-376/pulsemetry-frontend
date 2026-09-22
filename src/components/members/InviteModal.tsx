@@ -1,20 +1,14 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useFieldArray, useForm, useWatch, type FieldPath } from "react-hook-form";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { ROLE_HINT, ROLE_LABEL, TEAM_OPTIONS } from "@/lib/metrics/members";
 
-const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-
-type InviteForm = {
-  draft: string;
-  team: string;
-  role: string;
-  invitees: { email: string; team: string | null; role: string | null }[];
-};
+import { inviteFormSchema, inviteSubmissionSchema, type InviteForm } from "@/lib/schemas/invite";
 
 /**
  * 구성원 초대.
@@ -46,6 +40,7 @@ export function InviteModal({
     setFocus,
     formState: { errors, isSubmitting },
   } = useForm<InviteForm>({
+    resolver: zodResolver(inviteFormSchema),
     mode: "onChange",
     defaultValues: { draft: "", team: "", role: "member", invitees: [] },
   });
@@ -61,24 +56,26 @@ export function InviteModal({
 
   const commit = async () => {
     if (!(await trigger("draft", { shouldFocus: true }))) return;
-    const email = getValues("draft").trim();
-    if (!email || getValues("invitees").some((entry) => entry.email === email)) {
-      return;
-    }
-    append({ email, team: null, role: null }, { shouldFocus: false });
+    // 연속 입력으로 값이 바뀌었을 수 있으므로 추가 직전의 값을 검사합니다.
+    const result = inviteFormSchema.safeParse(getValues());
+    if (!result.success || !result.data.draft) return;
+    append({ email: result.data.draft, team: null, role: null }, { shouldFocus: false });
     resetField("draft");
     setSent(null);
   };
 
   const send = (values: InviteForm) => {
-    if (values.draft.trim()) {
-      setError("draft", {
-        message: "Enter 또는 쉼표로 이메일을 추가한 뒤 초대하세요",
-      });
+    const result = inviteSubmissionSchema.safeParse(values);
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        setError(issue.path.join(".") as FieldPath<InviteForm>, {
+          type: "schema",
+          message: issue.message,
+        });
+      }
       setFocus("draft");
       return;
     }
-    if (values.invitees.length === 0) return;
     // 배정 요약을 만들어 "몇 명을 어디로 보냈는지"를 닫기 전에 확인시킵니다
     const byTeam: Record<string, number> = {};
     const roles = new Set<string>();
@@ -151,17 +148,7 @@ export function InviteModal({
               </span>
             ))}
             <input
-              {...register("draft", {
-                validate: (value) => {
-                  const email = value.trim();
-                  if (!email) return true;
-                  if (!EMAIL.test(email)) return "이메일 형식이 아닙니다";
-                  if (getValues("invitees").some((entry) => entry.email === email)) {
-                    return "이미 추가한 이메일입니다";
-                  }
-                  return true;
-                },
-              })}
+              {...register("draft")}
               onKeyDown={(e) => {
                 if (e.nativeEvent.isComposing) return;
                 if (e.key === "Enter" || e.key === ",") {

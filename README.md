@@ -52,6 +52,7 @@ API 문서 검사는 문서의 TypeScript 타입과 JSON 예시를 비교하고 
 - src/app: App Router 페이지와 레이아웃
 - src/components: 공통 UI, 차트, 화면별 컴포넌트
 - src/lib/metrics: 기간·팀·사용량 집계와 표시 모델
+- src/lib/schemas: Zod 입력 검증 스키마와 스키마에서 추론한 폼 타입
 - src/mocks: 개발용 데이터
 - docs/api: 백엔드 전달용 API 제안 명세
 - tests: 집계 및 브라우저 회귀 테스트
