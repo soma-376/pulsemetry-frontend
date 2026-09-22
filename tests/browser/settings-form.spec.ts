@@ -1,0 +1,88 @@
+import { expect, test, type Page } from "@playwright/test";
+
+async function addVendor(page: Page, name: string, fee = "10") {
+  await page.getByRole("button", { name: "벤더 추가", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("표시 이름", { exact: true }).fill(name);
+  await dialog.getByLabel("좌석 수", { exact: true }).fill("2");
+  await dialog.getByLabel("월 단가", { exact: true }).fill(fee);
+  await dialog.getByRole("button", { name: "벤더 추가", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+}
+
+test.beforeEach(async ({ page }) => {
+  await page.goto("/settings");
+});
+
+test("deleting a middle vendor then adding another keeps edit and delete targets separate", async ({ page }) => {
+  for (const name of ["Review A", "Review B", "Review C"]) await addVendor(page, name);
+  const dialog = page.getByRole("dialog");
+  await page.getByRole("button", { name: "Review B 계약 설정 열기" }).click();
+  await dialog.getByRole("button", { name: "벤더 삭제", exact: true }).click();
+  await dialog.getByRole("button", { name: "삭제", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await addVendor(page, "Review D");
+  await page.getByRole("button", { name: "Review D 계약 설정 열기" }).click();
+  await expect(dialog.getByLabel("표시 이름", { exact: true })).toHaveValue("Review D");
+  await dialog.getByLabel("표시 이름", { exact: true }).fill("Review D renamed");
+  await dialog.getByRole("button", { name: "변경사항 저장" }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByRole("button", { name: "Review C 계약 설정 열기" })).toHaveCount(1);
+  await page.getByRole("button", { name: "Review D renamed 계약 설정 열기" }).click();
+  await dialog.getByRole("button", { name: "벤더 삭제", exact: true }).click();
+  await dialog.getByRole("button", { name: "삭제", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByRole("button", { name: "Review C 계약 설정 열기" })).toHaveCount(1);
+});
+
+test("keeps invalid input, explains errors, blocks save and accepts a free contract", async ({ page }) => {
+  await page.getByRole("button", { name: "벤더 추가", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  const seats = dialog.getByLabel("좌석 수", { exact: true });
+  const fee = dialog.getByLabel("월 단가", { exact: true });
+  const save = dialog.getByRole("button", { name: "벤더 추가", exact: true });
+  await dialog.getByLabel("표시 이름", { exact: true }).fill("Free contract");
+  await fee.fill("0");
+  for (const value of ["-5", "1e5", "1.2.3", "1.5", "9".repeat(400)]) {
+    await seats.fill(value);
+    await expect(seats).toHaveValue(value);
+    await expect(seats).toHaveAttribute("aria-invalid", "true");
+    await expect(seats).toHaveAccessibleDescription(/좌석 수/);
+    await expect(save).toBeDisabled();
+  }
+  await seats.fill("2");
+  for (const value of ["-5", "1e5", "1.2.3", "9".repeat(400)]) {
+    await fee.fill(value);
+    await expect(fee).toHaveValue(value);
+    await expect(fee).toHaveAttribute("aria-invalid", "true");
+    await expect(fee).toHaveAccessibleDescription(/월 단가/);
+    await expect(save).toBeDisabled();
+  }
+  await fee.fill("0");
+  await save.click();
+  await expect(dialog).not.toBeVisible();
+  const row = page.getByRole("button", { name: "Free contract 계약 설정 열기" });
+  await expect(row).toContainText("설정됨");
+  await expect(row).toContainText("$0.00");
+  await row.click();
+  await expect(dialog.getByRole("button", { name: "변경사항 없음" })).toBeDisabled();
+  await fee.fill("12.345");
+  await dialog.getByRole("button", { name: "변경사항 저장" }).click();
+  await expect(dialog).not.toBeVisible();
+  await row.click();
+  await expect(fee).toHaveValue("12.345");
+});
+
+test("metered contracts do not save hidden invalid seat drafts", async ({ page }) => {
+  await page.getByRole("button", { name: "벤더 추가", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("표시 이름", { exact: true }).fill("Metered contract");
+  await dialog.getByLabel("좌석 수", { exact: true }).fill("-5");
+  await dialog.getByLabel("플랜", { exact: true }).selectOption("metered");
+  await dialog.getByRole("button", { name: "벤더 추가", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await page.getByRole("button", { name: "Metered contract 계약 설정 열기" }).click();
+  await dialog.getByLabel("플랜", { exact: true }).selectOption("seat_flat");
+  await expect(dialog.getByLabel("좌석 수", { exact: true })).toHaveValue("");
+  await expect(dialog.getByRole("button", { name: "변경사항 저장" })).toBeDisabled();
+});

@@ -20,11 +20,13 @@ import {
   KEEP_NOTES,
   KEEP_ORDER,
   NEW_VENDOR_ID,
+  PLAN_SETS,
   policyCopy,
   RECLAIM_BY_IDLE,
   STALE_INSTALLS,
   TODAY,
   toDraftTiers,
+  validateTiers,
   vendorSummary,
   type DraftTier,
   type PolicyAsk,
@@ -34,8 +36,6 @@ import {
 } from "@/lib/settings";
 import { COVERAGE, INGEST } from "@/mocks/overview";
 import type { VendorRecord } from "@/mocks/vendors";
-
-const num = (v: string) => parseFloat(String(v).replace(/[^0-9.]/g, "")) || 0;
 
 /**
  * P5 설정.
@@ -126,16 +126,14 @@ export function SettingsContent() {
     setDraft({});
   }, []);
 
-  /** 문자열 초안을 계약 형태로 되돌립니다 — 빈 줄은 버립니다 */
-  const commitTiers = (tiers: DraftTier[]) =>
-    tiers
-      .filter((t) => num(t.seats) > 0)
-      .map((t) => ({ label: t.label || "표준", seats: Math.round(num(t.seats)), fee: num(t.fee) }));
-
   const saveVendor = (tiers: DraftTier[], plan: string | null, name: string) => {
+    const planDef = PLAN_SETS[drawerRow?.family ?? "generic"].find((item) => item.v === plan);
+    if (!planDef) return;
+    const committedTiers = planDef.bill === "seat" ? validateTiers(tiers).tiers : [];
+    if (!committedTiers) return;
     const contract = {
       plan,
-      tiers: commitTiers(tiers),
+      tiers: committedTiers,
       term: draft.term ?? "",
       confirmed: true,
       reviewedAt: TODAY,
@@ -144,10 +142,11 @@ export function SettingsContent() {
     };
 
     if (isNew) {
+      const id = `manual_${crypto.randomUUID()}`;
       setAdded((prev) => [
         ...prev,
         {
-          id: `manual_${prev.length + 1}`,
+          id,
           name,
           short: name,
           product: "수동 추가 · 신호 없음",
@@ -352,7 +351,6 @@ export function SettingsContent() {
           onAfterClose={clearDrawer}
           onSave={saveVendor}
           onDelete={deleteVendor}
-          stdFeeOf={(tiers) => num(tiers[0]?.fee ?? "0")}
         />
       )}
 

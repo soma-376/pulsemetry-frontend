@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { DetailDrawer } from "@/components/ui/DetailDrawer";
 import { Input } from "@/components/ui/Input";
@@ -12,10 +12,9 @@ import {
   EMPTY_TIER,
   MAX_TIERS,
   PLAN_SETS,
-  rowSpend,
-  tierSeats,
   tierSpend,
   toDraftTiers,
+  validateTiers,
   type DraftTier,
   type VendorDraft,
   type VendorRow,
@@ -42,7 +41,6 @@ export function VendorDrawer({
   onAfterClose,
   onSave,
   onDelete,
-  stdFeeOf,
 }: {
   open: boolean;
   row: VendorRow | null;
@@ -53,10 +51,9 @@ export function VendorDrawer({
   onAfterClose: () => void;
   onSave: (tiers: DraftTier[], plan: string | null, name: string) => void;
   onDelete: () => void;
-  /** 미사용 좌석 금액을 매길 기준 단가 */
-  stdFeeOf: (tiers: DraftTier[]) => number;
 }) {
   const [askDelete, setAskDelete] = useState(false);
+  const validationId = useId();
 
   if (!row) return null;
 
@@ -67,22 +64,24 @@ export function VendorDrawer({
   const isMetered = planDef?.bill === "metered";
 
   const tiers = draft.tiers?.length ? draft.tiers : [EMPTY_TIER];
-  const seats = tierSeats(tiers);
-  const seatSpend = tierSpend(tiers);
-  const setUp = !!planDef && (isSeat ? seats > 0 && seatSpend > 0 : true);
+  const validation = validateTiers(tiers);
+  const seats = validation.seats;
+  const seatSpend = validation.spend;
+  const stdFee = validation.tiers?.[0]?.fee ?? 0;
+  const setUp = !!planDef && (!isSeat || validation.tiers !== null);
 
   const baseTiers = toDraftTiers(row.contract);
   const baseSpend = tierSpend(baseTiers);
   const term = draft.term ?? row.contract.term ?? "";
 
-  const changed =
-    JSON.stringify({ p: row.plan, t: baseTiers, m: row.contract.term ?? "" }) !==
-    JSON.stringify({ p: plan, t: tiers, m: term });
-
   const name = draft.name ?? (isNew ? "" : row.short);
   const kindLabel =
     ADD_KINDS.find((k) => k.v === (draft.kind ?? "copilot"))?.label ?? ADD_KINDS[0].label;
   const shownName = name.trim() || (isNew ? kindLabel : row.short);
+
+  const changed =
+    JSON.stringify({ p: row.plan, t: baseTiers, m: row.contract.term ?? "", n: row.short }) !==
+    JSON.stringify({ p: plan, t: tiers, m: term, n: shownName });
 
   const check = contractCheck({
     isSeat: !!isSeat,
@@ -92,7 +91,7 @@ export function VendorDrawer({
     users: row.users,
     distinct30: row.distinct30,
     seats,
-    stdFee: stdFeeOf(tiers),
+    stdFee,
   });
 
   const idle = seats > 0 ? Math.max(0, seats - row.users) : null;
@@ -112,7 +111,7 @@ export function VendorDrawer({
                 ? "좌석 수 미입력"
                 : row.noSignal
                   ? "측정 없음"
-                  : `${int(idle)}석 · ${usd(idle * stdFeeOf(tiers))}/월`,
+                  : `${int(idle)}석 · ${usd(idle * stdFee)}/월`,
             muted: idle == null || row.noSignal,
           },
         ]
@@ -304,43 +303,62 @@ export function VendorDrawer({
               <span />
             </div>
 
-            {tiers.map((t, i) => (
-              <div key={i} className={TIER_COLS}>
-                <Input
-                  value={t.label}
-                  onChange={(e) => patchTier(i, { label: e.target.value })}
-                  aria-label="좌석 유형"
-                />
-                <Input
-                  value={t.seats}
-                  onChange={(e) => patchTier(i, { seats: e.target.value })}
-                  inputMode="numeric"
-                  placeholder="0"
-                  aria-label="좌석 수"
-                  className="text-right"
-                />
-                <Input
-                  value={t.fee}
-                  onChange={(e) => patchTier(i, { fee: e.target.value })}
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  aria-label="월 단가"
-                  className="text-right"
-                />
-                <span className="tnum text-right text-[12px] text-text2">
-                  {rowSpend(t) > 0 ? usd(rowSpend(t)) : "—"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setTiers(tiers.filter((_, k) => k !== i))}
-                  disabled={tiers.length <= 1}
-                  aria-label="좌석 유형 삭제"
-                  className="h-7 w-7 cursor-pointer rounded-md border border-border text-text2 hover:bg-hover disabled:cursor-default disabled:text-border"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
+            {tiers.map((t, i) => {
+              const error = validation.errors[i];
+              const rowValidation = validateTiers([t]);
+              return (
+                <div key={i} className="flex flex-col gap-1">
+                  <div className={TIER_COLS}>
+                    <Input
+                      value={t.label}
+                      onChange={(e) => patchTier(i, { label: e.target.value })}
+                      aria-label="좌석 유형"
+                    />
+                    <Input
+                      value={t.seats}
+                      onChange={(e) => patchTier(i, { seats: e.target.value })}
+                      inputMode="numeric"
+                      placeholder="0"
+                      aria-label="좌석 수"
+                      aria-invalid={!!error.seats}
+                      aria-describedby={error.seats ? `${validationId}-${i}-seats` : undefined}
+                      className="text-right"
+                    />
+                    <Input
+                      value={t.fee}
+                      onChange={(e) => patchTier(i, { fee: e.target.value })}
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      aria-label="월 단가"
+                      aria-invalid={!!error.fee}
+                      aria-describedby={error.fee ? `${validationId}-${i}-fee` : undefined}
+                      className="text-right"
+                    />
+                    <span className="tnum text-right text-[12px] text-text2">
+                      {rowValidation.tiers ? usd(rowValidation.spend) : "—"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setTiers(tiers.filter((_, k) => k !== i))}
+                      disabled={tiers.length <= 1}
+                      aria-label="좌석 유형 삭제"
+                      className="h-7 w-7 cursor-pointer rounded-md border border-border text-text2 hover:bg-hover disabled:cursor-default disabled:text-border"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div aria-live="polite" className="text-[11px] text-red">
+                    {error.seats && <p id={`${validationId}-${i}-seats`}>{error.seats}</p>}
+                    {error.fee && <p id={`${validationId}-${i}-fee`}>{error.fee}</p>}
+                    {error.subtotal && <p>{error.subtotal}</p>}
+                  </div>
+                </div>
+              );
+            })}
+
+            {validation.totalError && (
+              <p role="alert" className="text-[11px] text-red">{validation.totalError}</p>
+            )}
 
             <div className="flex items-center justify-between gap-2 pt-1">
               <Button
@@ -351,7 +369,7 @@ export function VendorDrawer({
                 + 좌석 유형 추가
               </Button>
               <span className="tnum text-[11.5px] text-text2">
-                {int(seats)}석 · {usd(seatSpend)} / 월
+                {validation.tiers ? `${int(seats)}석 · ${usd(seatSpend)} / 월` : "입력값을 확인하세요"}
               </span>
             </div>
           </section>
