@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import {
   teamFormSchema,
+  TEAM_NAME_HINT,
   type TeamForm as TeamFormValues,
 } from "@/lib/schemas/team";
 import { saveTeam, type Team } from "@/lib/organization";
@@ -99,9 +100,9 @@ export function TeamForm({
       <p
         id={`${fieldId}-error`}
         aria-live="polite"
-        className="text-xs text-red"
+        className={`text-xs ${errors.name ? "text-red" : "text-text3"}`}
       >
-        {errors.name?.message}
+        {errors.name?.message ?? TEAM_NAME_HINT}
       </p>
       <div className="flex justify-end gap-2">
         {onCancel && <Button onClick={onCancel}>취소</Button>}
