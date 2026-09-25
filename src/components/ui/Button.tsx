@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 
-type Variant = "default" | "primary" | "ghost";
+type Variant = "default" | "primary" | "ghost" | "danger";
 type Size = "sm" | "md";
 
 const VARIANT: Record<Variant, string> = {
@@ -10,6 +10,7 @@ const VARIANT: Record<Variant, string> = {
   // 주요 동작 — 원본은 파랑이 아니라 텍스트 색을 채웁니다
   primary:
     "border border-[var(--text)] bg-[var(--text)] text-[var(--card)] font-semibold hover:no-underline",
+  danger: "border border-red/40 bg-red-tint text-red font-semibold hover:bg-red/15",
   ghost: "border-0 bg-transparent text-text2 hover:bg-hover",
 };
 

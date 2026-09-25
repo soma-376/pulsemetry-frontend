@@ -1,16 +1,23 @@
 "use client";
+import { allowsSeatTiers } from "@/lib/vendor-catalog";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { CoverageBar } from "@/components/layout/CoverageBar";
 import { FilterToolbar } from "@/components/layout/FilterToolbar";
 import { SettingRow, SettingSection } from "@/components/settings/SettingRow";
 import { VendorDrawer } from "@/components/settings/VendorDrawer";
 import { VendorTable } from "@/components/settings/VendorTable";
+import { NEW_CONTRACT_ROW, createManualContract } from "@/lib/contracts";
+import { contractSchema } from "@/lib/schemas/contract";
+import { PromptCollectionField } from "./PromptCollectionField";
+import { useOrganization } from "@/lib/organization-store";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { StatCard } from "@/components/ui/StatCard";
 import { Toggle } from "@/components/ui/Toggle";
+import { buildMemberSeats } from "@/lib/metrics/member-seats";
+import { MEMBER_SEATS, SEAT_SNAPSHOT_DATE } from "@/mocks/member-seats";
 import { ingestBadge } from "@/lib/metrics/observation";
 import {
   ADMIN_EMAIL,
@@ -20,21 +27,21 @@ import {
   KEEP_NOTES,
   KEEP_ORDER,
   NEW_VENDOR_ID,
+  getVendorPlans,
   policyCopy,
-  RECLAIM_BY_IDLE,
   STALE_INSTALLS,
   TODAY,
   toDraftTiers,
+  validateTiers,
   vendorSummary,
   type DraftTier,
   type PolicyAsk,
   type VendorDraft,
   type VendorEdits,
+  type VendorRow,
 } from "@/lib/settings";
 import { COVERAGE, INGEST } from "@/mocks/overview";
 import type { VendorRecord } from "@/mocks/vendors";
-
-const num = (v: string) => parseFloat(String(v).replace(/[^0-9.]/g, "")) || 0;
 
 /**
  * P5 설정.
@@ -44,13 +51,26 @@ const num = (v: string) => parseFloat(String(v).replace(/[^0-9.]/g, "")) || 0;
  * 확인 단계를 두고, 나머지는 즉시 적용합니다.
  */
 export function SettingsContent() {
-  const [edits, setEdits] = useState<VendorEdits>({});
-  const [added, setAdded] = useState<VendorRecord[]>([]);
+  const { state: organization, update } = useOrganization();
+  const edits = organization.vendorEdits;
+  const added = organization.addedVendors;
+  const setEdits = (change: (previous: VendorEdits) => VendorEdits) => update((previous) => {
+    const vendorEdits = change(previous.vendorEdits);
+    return { ...previous, vendorEdits };
+  });
+  const setAdded = (change: (previous: VendorRecord[]) => VendorRecord[]) => update((previous) => {
+    const addedVendors = change(previous.addedVendors);
+    return { ...previous, addedVendors };
+  });
   const [drawerId, setDrawerId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerRow, setDrawerRow] = useState<VendorRow | null>(null);
   const [draft, setDraft] = useState<VendorDraft>({});
 
-  const [promptRaw, setPromptRaw] = useState(true);
-  const [idleDays, setIdleDays] = useState("14");
+  const promptRaw = organization.promptRaw ?? false;
+  const setPromptRaw = (value: boolean) => update((previous) => ({ ...previous, promptRaw: value }));
+  const idleDays = organization.seatReviewDays;
+  const candidateCount = buildMemberSeats(MEMBER_SEATS, SEAT_SNAPSHOT_DATE, idleDays).filter((seat) => seat.review === "candidate").length;
   const [keepMonths, setKeepMonths] = useState("24");
   const [rules, setRules] = useState<Record<string, boolean>>({});
   const [ask, setAsk] = useState<PolicyAsk | null>(null);
@@ -62,70 +82,50 @@ export function SettingsContent() {
   const ingest = ingestBadge(INGEST);
 
   const isNew = drawerId === NEW_VENDOR_ID;
-  const drawerRow = isNew
-    ? ({
-        id: NEW_VENDOR_ID,
-        short: "",
-        product: "수동 추가 · 신호 없음",
-        family: "generic" as const,
-        manual: true,
-        users: 0,
-        distinct30: 0,
-        firstSeen: "—",
-        noSignal: true,
-        plan: null,
-        planDef: null,
-        plans: [],
-        billing: null,
-        isSeat: false,
-        seats: 0,
-        seatSpend: 0,
-        metered: 0,
-        spendMonthly: 0,
-        setUp: false,
-        confirmed: false,
-        contract: {},
-        dot: "var(--gray)",
-        statusLabel: "",
-        statusFg: "",
-        seatsText: "",
-        spendText: "",
-        spendFg: "",
-        openLabel: "",
-      } as (typeof rows)[number])
-    : (rows.find((r) => r.id === drawerId) ?? null);
 
   const openVendor = (id: string) => {
     const row = rows.find((r) => r.id === id);
+    if (!row) return;
     setDrawerId(id);
+    setDrawerRow(row);
+    setDrawerOpen(true);
     setDraft({
-      plan: row?.plan ?? null,
-      tiers: row ? toDraftTiers(row.contract) : [],
-      term: row?.contract.term ?? "",
-      name: row?.short,
+      kind: row.kind,
+      planName: row.contract.planName,
+      plan: row.plan,
+      tiers: toDraftTiers(row.contract),
+      term: row.contract.term ?? "",
+      name: row.short,
     });
   };
 
   const openNew = () => {
     setDrawerId(NEW_VENDOR_ID);
-    setDraft({ kind: "copilot", plan: "seat_flat", tiers: [EMPTY_TIER], term: "" });
+    setDrawerOpen(true);
+    setDrawerRow(NEW_CONTRACT_ROW);
+    setDraft({ kind: "copilot", plan: "copilot_business", tiers: [EMPTY_TIER], term: "" });
   };
 
   const closeDrawer = () => {
-    setDrawerId(null);
-    setDraft({});
+    setDrawerOpen(false);
   };
 
-  /** 문자열 초안을 계약 형태로 되돌립니다 — 빈 줄은 버립니다 */
-  const commitTiers = (tiers: DraftTier[]) =>
-    tiers
-      .filter((t) => num(t.seats) > 0)
-      .map((t) => ({ label: t.label || "표준", seats: Math.round(num(t.seats)), fee: num(t.fee) }));
+  const clearDrawer = useCallback(() => {
+    setDrawerId(null);
+    setDrawerRow(null);
+    setDraft({});
+  }, []);
 
   const saveVendor = (tiers: DraftTier[], plan: string | null, name: string) => {
+    if (!contractSchema(drawerRow?.family).safeParse({ ...draft, kind: draft.kind ?? drawerRow?.kind, tiers, plan, name }).success) return;
+    const planDef = getVendorPlans(draft.kind ?? drawerRow?.kind, drawerRow?.family).find((item) => item.v === plan);
+    if (!planDef) return;
+    const committedTiers = planDef.bill === "seat" ? validateTiers(tiers).tiers : [];
+    if (!committedTiers) return;
     const contract = {
+      planName: draft.kind === "other" ? draft.planName?.trim() : undefined,
       plan,
-      tiers: commitTiers(tiers),
+      tiers: !allowsSeatTiers(draft.kind ?? drawerRow?.kind) ? committedTiers.map((tier) => ({ ...tier, label: planDef.label })) : committedTiers,
       term: draft.term ?? "",
       confirmed: true,
       reviewedAt: TODAY,
@@ -134,22 +134,9 @@ export function SettingsContent() {
     };
 
     if (isNew) {
-      setAdded((prev) => [
-        ...prev,
-        {
-          id: `manual_${prev.length + 1}`,
-          name,
-          short: name,
-          product: "수동 추가 · 신호 없음",
-          family: "generic",
-          plan,
-          manual: true,
-          users: 0,
-          distinct30: 0,
-          firstSeen: "—",
-          c: { tiers: contract.tiers, term: contract.term, reviewedAt: TODAY, reviewer: ADMIN_EMAIL },
-        },
-      ]);
+      const id = `manual_${crypto.randomUUID()}`;
+      const vendor = createManualContract({ ...draft, tiers, plan, name }, id);
+      setAdded((prev) => [...prev, vendor]);
     } else if (drawerId) {
       setEdits((prev) => ({ ...prev, [drawerId]: { ...prev[drawerId], ...contract } }));
     }
@@ -251,21 +238,16 @@ export function SettingsContent() {
                   : "본문은 저장하지 않고 길이와 토큰 수만 집계합니다 · 도구 인수, 파일 경로, 오류 메시지 본문도 보내지 않습니다"
               }
             >
-              <Toggle
-                on={promptRaw}
-                label="프롬프트 원문 수집"
-                onColor="var(--red)"
-                onChange={() => setAsk({ kind: "prompt", value: !promptRaw })}
-              />
+              <PromptCollectionField compact value={promptRaw} onChange={(value) => setAsk({ kind: "prompt", value })} />
             </SettingRow>
 
             <SettingRow
               title="좌석 회수 기준"
-              note={`이 기간 신호가 없는 좌석을 회수 후보로 올립니다 · 전 벤더 공통 · 현재 기준 ${RECLAIM_BY_IDLE[idleDays] ?? 0}석`}
+              note={`벤더별 배정·관측 정보가 확인된 좌석만 검토합니다 · 자동 회수 없음 · 데모 기준 ${candidateCount}석`}
             >
               <Select
                 value={idleDays}
-                onChange={(e) => setIdleDays(e.target.value)}
+                onChange={(e) => update((previous) => ({ ...previous, seatReviewDays: Number(e.target.value) }))}
                 aria-label="좌석 회수 기준"
               >
                 <option value="7">7일</option>
@@ -333,14 +315,15 @@ export function SettingsContent() {
 
       {drawerId && (
         <VendorDrawer
+          open={drawerOpen}
           row={drawerRow}
           isNew={isNew}
           draft={draft}
           onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch }))}
           onClose={closeDrawer}
+          onAfterClose={clearDrawer}
           onSave={saveVendor}
           onDelete={deleteVendor}
-          stdFeeOf={(tiers) => num(tiers[0]?.fee ?? "0")}
         />
       )}
 

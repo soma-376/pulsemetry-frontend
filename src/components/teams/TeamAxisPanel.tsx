@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { SortHeader } from "@/components/ui/SortHeader";
+import { nextSort, sortRows, type SortState } from "@/lib/sort";
 import { LineAreaChart } from "@/components/charts/LineAreaChart";
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import type { AxisKey, TeamsModel } from "@/lib/metrics/teams";
@@ -11,7 +14,10 @@ const AXIS_TABS: { key: AxisKey; label: string }[] = [
 ];
 
 const COLS =
-  "grid grid-cols-[minmax(132px,1fr)_minmax(0,2fr)_minmax(74px,1fr)_minmax(74px,1fr)_minmax(66px,0.9fr)] items-center gap-2.5";
+  "grid grid-cols-[minmax(132px,1fr)_minmax(0,2fr)_minmax(74px,1fr)_minmax(74px,1fr)_minmax(66px,0.9fr)_24px] items-center gap-2.5";
+
+type SortKey = "team" | "totalValue" | "perUserValue" | "unitValue" | "deltaValue";
+const DEFAULT_SORT: SortState<SortKey> = { key: "totalValue", direction: "desc" };
 
 /**
  * 축 탭 + 팀별 누적 추이 + 팀 표.
@@ -34,7 +40,10 @@ export function TeamAxisPanel({
   onToggleTeam: (team: string) => void;
   onOpenTeam: (team: string) => void;
 }) {
+  const [sort, setSort] = useState(DEFAULT_SORT);
+  const activeSort = sort.key === "deltaValue" && !model.showDelta ? DEFAULT_SORT : sort;
   const ax = model.axes[axis];
+  const rows = sortRows(ax.rows, (row) => row[activeSort.key], activeSort.direction, (row) => row.team);
   const shown = model.trend[axis].filter((s) => !hidden[s.team]);
   const isEmpty = shown.length === 0;
   const max =
@@ -56,7 +65,7 @@ export function TeamAxisPanel({
                 type="button"
                 role="tab"
                 aria-selected={active}
-                onClick={() => onAxisChange(t.key)}
+                onClick={() => { if (t.key !== axis) { setSort(DEFAULT_SORT); onAxisChange(t.key); } }}
                 className="h-7 cursor-pointer rounded-md border-0 px-3.5 text-[12px] font-semibold whitespace-nowrap"
                 style={{
                   background: active ? "var(--text)" : "transparent",
@@ -125,52 +134,57 @@ export function TeamAxisPanel({
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <span className="text-[12px] text-text2">{ax.title}</span>
-        <span className="text-[11px] text-text3">체크박스로 추이 표시 · 팀 이름을 눌러 상세 보기</span>
+        <span className="text-[11px] text-text3">체크박스로 추이 표시 · 행을 눌러 상세 보기</span>
       </div>
 
       <div className={`${COLS} border-b border-border px-0.5 pb-2 text-[11px] text-text3`}>
-        <span>팀</span>
-        <span>{ax.c1}</span>
-        <span className="text-right">{ax.c2}</span>
-        <span className="text-right">{ax.c3}</span>
-        <span className="text-right">{model.compareLabel || "증감"}</span>
+        {([
+          ["team", "팀"], ["totalValue", ax.c1], ["perUserValue", ax.c2], ["unitValue", ax.c3], ["deltaValue", model.compareLabel || "증감"],
+        ] as const).map(([key, label], index) => <SortHeader key={key} label={label} align={index < 2 ? "left" : "right"}
+          initial={key === "team" ? "asc" : "desc"} direction={activeSort.key === key ? activeSort.direction : undefined}
+          disabled={key === "deltaValue" && !model.showDelta} onClick={() => setSort(nextSort(activeSort, key, key === "team" ? "asc" : "desc"))} />)}
+        <span aria-hidden="true" />
       </div>
 
-      {ax.rows.map((r) => {
+      {rows.map((r) => {
         const on = !hidden[r.team];
         return (
         <div
           key={r.team}
-          className={`${COLS} border-b border-border px-0.5 py-2.5 transition-colors hover:bg-hover`}
+          className={`${COLS} relative cursor-pointer border-b border-border px-0.5 py-2.5 transition-colors hover:bg-hover`}
           style={{
             // 꺼진 팀은 흐리게 — 표에서 사라지면 값을 비교할 수 없습니다
             opacity: on ? 1 : 0.5,
           }}
         >
-          <span className="flex min-w-0 items-center gap-2">
+          <button
+            type="button"
+            aria-label={r.team}
+            aria-haspopup="dialog"
+            onClick={() => onOpenTeam(r.team)}
+            className="absolute inset-0 cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+          />
+          <span className="pointer-events-none flex min-w-0 items-center gap-2">
             <input
               type="checkbox"
               checked={on}
               onChange={() => onToggleTeam(r.team)}
               aria-label={`${r.team} 추이 선 표시`}
-              className="h-[14px] w-[14px] shrink-0 cursor-pointer"
+              className="pointer-events-auto relative z-10 h-[14px] w-[14px] shrink-0 cursor-pointer"
               style={{ accentColor: r.series }}
             />
-            <button
-              type="button"
-              aria-haspopup="dialog"
-              onClick={() => onOpenTeam(r.team)}
-              className="min-w-0 cursor-pointer overflow-hidden rounded px-1 py-0.5 text-left text-[12px] text-ellipsis whitespace-nowrap hover:underline"
+            <span
+              className="min-w-0 overflow-hidden px-1 py-0.5 text-left text-[12px] text-ellipsis whitespace-nowrap"
               style={{
                 fontWeight: r.unmapped ? 600 : 500,
-                color: r.unmapped ? "var(--orange-ink)" : "var(--blue)",
+                color: r.unmapped ? "var(--orange-ink)" : "var(--text)",
               }}
             >
-              {r.team} <span aria-hidden="true" className="text-text3">›</span>
-            </button>
+              {r.team}
+            </span>
           </span>
 
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="pointer-events-none flex min-w-0 items-center gap-2">
             <ProgressBar
               width={r.width}
               color={r.fill}
@@ -182,14 +196,15 @@ export function TeamAxisPanel({
             </span>
           </div>
 
-          <span className="tnum text-right text-[12px] text-text2">{r.v2}</span>
-          <span className="tnum text-right text-[12px] text-text2">{r.v3}</span>
+          <span className="pointer-events-none tnum text-right text-[12px] text-text2">{r.v2}</span>
+          <span className="pointer-events-none tnum text-right text-[12px] text-text2">{r.v3}</span>
           <span
-            className="tnum text-right text-[12px] font-semibold whitespace-nowrap"
+            className="pointer-events-none tnum text-right text-[12px] font-semibold whitespace-nowrap"
             style={{ color: r.deltaColor }}
           >
             {r.delta}
           </span>
+          <span aria-hidden="true" className="pointer-events-none flex items-center justify-center text-text3">›</span>
         </div>
         );
       })}

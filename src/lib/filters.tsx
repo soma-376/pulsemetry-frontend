@@ -24,7 +24,12 @@ type FiltersValue = {
 const FiltersContext = createContext<FiltersValue | null>(null);
 
 const DEFAULT_DATES: DateRange = { start: "2026-09-07", end: "2026-09-13" };
-const RANGE_DAYS: Record<RangeKey, number> = { "24h": 1, "7d": 7, "28d": 28, "90d": 90 };
+const RANGE_DAYS: Record<RangeKey, number> = {
+  "24h": 1,
+  "7d": 7,
+  "28d": 28,
+  "90d": 90,
+};
 
 export function FiltersProvider({ children }: { children: React.ReactNode }) {
   const [range, updateRange] = useState<RangeKey | null>("7d");
@@ -37,7 +42,12 @@ export function FiltersProvider({ children }: { children: React.ReactNode }) {
       range,
       setRange: (next: RangeKey) => {
         updateRange(next);
-        updateDates({ start: toIso(new Date(TODAY.getTime() - (RANGE_DAYS[next] - 1) * DAY_MS)), end: toIso(TODAY) });
+        updateDates({
+          start: toIso(
+            new Date(TODAY.getTime() - (RANGE_DAYS[next] - 1) * DAY_MS),
+          ),
+          end: toIso(TODAY),
+        });
       },
       compare,
       setCompare,

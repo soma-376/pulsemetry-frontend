@@ -17,7 +17,6 @@ test("inclusive range: daily, team, model and KPI totals agree", () => {
   near(model.chart.cost.reduce((sum, value) => sum + value, 0), aggregate.cost);
   near(aggregate.teams.reduce((sum, team) => sum + Object.values(team.models).reduce((n, cost) => n + cost, 0), 0), aggregate.cost);
   near(model.mix.slices.reduce((sum, item) => sum + item.share, 0), 100);
-  near(model.chart.spend.reduce((sum, value) => sum + value, 0), model.seat.spend);
   assert.equal(aggregate.users, 117); // Unique people, not the sum of daily active counts.
 });
 
@@ -41,13 +40,15 @@ test("comparison windows preserve duration and distinguish previous week from pr
   assert.notEqual(buildOverview("prev_week", range).kpis[1].delta, buildOverview("prev_period", range).kpis[1].delta);
 });
 
-test("partial coverage does not claim efficiency or comparison, nor invent missing days", () => {
+test("partial coverage suppresses usage comparisons without hiding current contracts", () => {
   const model = buildOverview("prev_period", { start: "2026-06-16", end: "2026-09-13" });
   assert.equal(model.rangeDays, 90);
   assert.equal(model.chart.ticks.length, 63);
   assert.equal(model.chart.ticks[0].date, "2026-07-13");
   assert.equal(model.showDelta, false);
-  assert.equal(model.kpis[2].value, "—");
+  assert.equal(model.kpis[2].value, usd(4800));
+  assert.equal(model.kpis[2].showDelta, false);
+  assert.equal(model.kpis[2].noDelta, false);
   assert.equal(model.observation.hasGap, true);
   assert.ok(model.attribution.rows.every((row) => row.contribText === "—"));
 });

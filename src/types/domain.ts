@@ -3,6 +3,14 @@
 export type RangeKey = "24h" | "7d" | "28d" | "90d";
 export type CompareKey = "prev_week" | "prev_period" | "none";
 
+/** Product attribution is independent of model providers and contract status. */
+export type VendorUsage = {
+  vendorId: string | null;
+  cost: number;
+  tokensM: number;
+  sessions: number;
+};
+
 /** 좌석 종류 — P5 설정의 벤더 계약 입력이 원천 */
 export type SeatTier = {
   label: string;

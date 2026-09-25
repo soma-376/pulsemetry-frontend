@@ -5,6 +5,8 @@ export const metadata: Metadata = {
   title: "팀 분석 · Pulsemetry",
 };
 
-export default function TeamsPage() {
-  return <TeamsContent />;
+export default async function TeamsPage({ searchParams }: { searchParams: Promise<{ team?: string | string[] }> }) {
+  const { team } = await searchParams;
+  const initialTeamId = typeof team === "string" ? team : undefined;
+  return <TeamsContent key={initialTeamId ?? "all"} initialTeamId={initialTeamId} />;
 }

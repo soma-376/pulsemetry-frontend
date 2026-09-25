@@ -1,13 +1,18 @@
+import { buildOverviewModelMix } from "./overview-model-mix";
+import { overviewTeams } from "./overview-teams";
+import { buildOverviewVendors, buildVendorTrend } from "./overview-vendors";
+import { getVendorProduct } from "@/lib/vendor-catalog";
+import { DEFAULT_SEAT_REVIEW_DAYS } from "./member-seats";
 import { dayCount, shortDate, type DateRange } from "@/lib/date";
 import { aggregateActivity, comparisonRange } from "./activity";
-import { SAMPLE_END } from "@/mocks/activity";
+import { ACTIVITY, SAMPLE_END } from "@/mocks/activity";
 import { int, pct, signedUsd, usd } from "@/lib/format";
 import { contributionColor, costDeltaColor } from "@/lib/metrics/deltas";
 import {
   ingestBadge,
   ingestDownCopy,
 } from "@/lib/metrics/observation";
-import { seatEconomics, seatVerdict } from "@/lib/metrics/seat-economics";
+import { buildVendorSeats } from "@/lib/metrics/vendor-seats";
 import {
   COVERAGE,
   INGEST,
@@ -17,17 +22,20 @@ import {
   ORG as BASE_ORG,
   WASTE,
 } from "@/mocks/overview";
-import { SEAT_TIERS, STD_SEAT_FEE } from "@/mocks/vendors";
+import { buildVendorRows, type VendorRow } from "@/lib/settings";
 import type { CompareKey } from "@/types/domain";
-
-/** 도넛에 색을 줄 상위 모델 수. 넘어가면 읽을 수 없어 "기타"로 묶습니다 */
-const MIX_TOP_N = 4;
+import { SEED_TEAMS, teamLabel, type Team } from "@/lib/organization";
 
 export type OverviewModel = ReturnType<typeof buildOverview>;
 
-export function buildOverview(compare: CompareKey = "prev_week", dates: DateRange = { start: "2026-09-07", end: SAMPLE_END }) {
-  const current = aggregateActivity(dates);
-  const previous = aggregateActivity(comparisonRange(dates, compare));
+export function buildOverview(compare: CompareKey = "prev_week", dates: DateRange = { start: "2026-09-07", end: SAMPLE_END }, catalog: Team[] = SEED_TEAMS, vendors: VendorRow[] = buildVendorRows({}, []), seatReviewDays = DEFAULT_SEAT_REVIEW_DAYS, source: typeof ACTIVITY = ACTIVITY) {
+  const current = aggregateActivity(dates, source);
+  const previous = aggregateActivity(comparisonRange(dates, compare), source);
+  const currentTeams = overviewTeams(current.teams, catalog);
+  const previousTeams = overviewTeams(previous.teams, catalog);
+  const inventory = aggregateActivity({ start: "0000-01-01", end: "9999-12-31" }, source);
+  const inventoryUnmapped = overviewTeams(inventory.teams, catalog).unmapped;
+  const showTeamSummary = catalog.length > 1 || inventoryUnmapped.users > 0 || inventoryUnmapped.cost > 0 || inventoryUnmapped.sessions > 0;
   const RANGE_DAYS = dayCount(dates);
   const growth = (now: number, prev: number) => prev > 0 ? now / prev - 1 : 0;
   const ORG = {
@@ -37,7 +45,7 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
     sessions: current.sessions,
     sessionsDelta: pct(growth(current.sessions, previous.sessions)),
     costGrowth: growth(current.cost, previous.cost),
-    unmappedUsers: current.teams.find((team) => team.team === "미배정")!.users,
+    unmappedUsers: currentTeams.unmapped.users,
   };
   /* ── 조직 총계 ───────────────────────────────────────── */
   const equivValue = current.cost;
@@ -47,7 +55,7 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
   const userGrowth = growth(ORG.activeUsers, ORG.prevUsers);
   // 팀 미배분 비용은 상수 비율이 아니라 실제 집계에서 가져옵니다 —
   // 귀속 실패는 기간마다 달라지는 사실이지 고정값이 아닙니다.
-  const unattributedCost = current.teams.find((team) => team.team === "미배정")!.cost;
+  const unattributedCost = currentTeams.unmapped.cost;
 
   const tokensM = current.tokensM;
 
@@ -65,80 +73,17 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
     firstObservedIndex: 0,
     hasGap: current.days.length > 0 && !current.complete,
     rangeLabel: `${dates.start} ~ ${dates.end ?? dates.start}`,
-    chartNote: "데이터가 없는 날짜는 차트에서 제외됩니다. 전체 기간 비교와 좌석 효율 판정은 보류합니다.",
+    chartNote: "데이터가 없는 날짜는 차트에서 제외됩니다. 전체 기간 비교는 보류합니다.",
     coverageNote: `선택 ${RANGE_DAYS}일 중 ${current.days.length}일 관측`,
   };
   const hasGap = obs.hasGap && !isEmpty;
 
-  /* ── 좌석 경제성 ─────────────────────────────────────── */
-  const seat = seatEconomics({
-    tiers: SEAT_TIERS,
-    activeUsers: ORG.activeUsers,
-    equivValue,
-    prevEquivValue: prevEquivValue || equivValue || 1,
-    rangeDays: RANGE_DAYS,
-    stdFee: STD_SEAT_FEE,
-  });
-  const complete = current.complete && !isDown;
-  const verdict = complete ? seatVerdict(seat, equivValue) : {
-    title: "관측 범위가 부족해 좌석 효율을 판정할 수 없습니다",
-    detail: `선택 ${RANGE_DAYS}일 중 ${current.days.length}일 관측 · 관측된 날짜만 표시합니다`,
-    color: "var(--text2)", bg: "var(--sub)", border: "var(--border)",
-  };
+  // Contracts are current inventory, independent of the selected usage period.
+  const vendorSeats = buildVendorSeats(vendors);
 
-  /* ── 모델 구성 (W1.4) — 팀별 비용 × 팀별 모델 비중의 합 ── */
-  const mixRaw = MODEL_META.map((m) => ({
-    ...m,
-    share: current.teams.reduce((sum, team) => sum + (team.models[m.v] ?? 0), 0) / (equivValue || 1) * 100,
-  })).sort((a, b) => b.share - a.share);
-
-  const mixTotal = mixRaw.reduce((n, m) => n + m.share, 0) || 1;
-  const mixTop = mixRaw.slice(0, MIX_TOP_N);
-  const mixRest = mixRaw.slice(MIX_TOP_N);
-  const restShare = mixRest.reduce((n, m) => n + m.share, 0);
-
-  const mixSlices = mixTop
-    .map((m) => ({
-      v: m.v,
-      name: m.name,
-      share: m.share,
-      color: MODEL_COLORS[m.v] ?? "var(--gray)",
-      sub: `${usd(m.perM)}/M`,
-    }))
-    .concat(
-      restShare > 0
-        ? [
-            {
-              v: "__rest",
-              name: `기타 ${mixRest.length}개 모델`,
-              share: restShare,
-              color: "var(--gray)",
-              sub:
-                mixRest
-                  .map((x) => x.name.replace("claude-", ""))
-                  .slice(0, 3)
-                  .join(" · ") +
-                (mixRest.length > 3 ? ` 외 ${mixRest.length - 3}개` : ""),
-            },
-          ]
-        : [],
-    );
-
-  const mixRows = mixSlices.map((m) => {
-    const shareText = ((m.share / mixTotal) * 100).toFixed(1) + "%";
-    return {
-      name: m.name,
-      shareText,
-      perMText: m.sub,
-      color: m.color,
-      tip:
-        `${m.name} · 환산가치 비중 ${shareText}` +
-        (m.v === "__rest" ? ` · ${m.sub}` : ` · 백만 토큰당 ${m.sub}`),
-    };
-  });
-
-  const mixTopName = mixRaw[0].name;
-  const mixTopShare = ((mixRaw[0].share / mixTotal) * 100).toFixed(1) + "%";
+  const mix = buildOverviewModelMix(current.teams);
+  const mixTopName = mix.topName;
+  const mixTopShare = mix.topShare;
 
   /* ── KPI ─────────────────────────────────────────────── */
   const showDelta = cmp.showCompare && cmp.canCompare && !isDown;
@@ -146,11 +91,11 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
 
   const kpis = [
     {
-      label: "활성 좌석",
+      label: "사용 관측 인원",
       value: int(ORG.activeUsers),
-      unit: ` / ${seat.seats}석`,
-      def: "기간 내 활성시간 > 0인 고유 사용자 수 ÷ 계약 좌석 수",
-      caption: complete ? `유휴 ${seat.idleSeats}석 · 회수 시 월 ${usd(seat.idleWasteMonthly)} 절감` : "관측된 날짜의 활성 사용자 · 유휴 판정 보류",
+      unit: "명",
+      def: "선택 기간에 사용 신호가 관측된 고유 구성원 수 · 여러 벤더를 사용해도 한 명으로 계산",
+      caption: "선택 기간 고유 구성원 · 벤더 좌석 수와 별개",
       delta: pct(userGrowth),
       up: userGrowth >= 0,
       good: true,
@@ -160,7 +105,7 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
       label: "토큰 비용",
       value: usd(equivValue),
       unit: ` / ${int(Math.round(tokensM))}M`,
-      def: "토큰 × 벤더 공시 단가 = 환산가치 · 이 사용량을 종량제로 샀다면 낼 금액(청구액은 좌석료) · 토큰은 입력·출력·캐시 합 실측값",
+      def: "토큰 × 공시 단가 = 사용 환산액 · 실제 청구액과 별개 · 토큰은 입력·출력·캐시 합 실측값",
       caption: `${mixTopName.replace("claude-", "")} 환산가치 ${mixTopShare}`,
       delta: pct(ORG.costGrowth),
       up: ORG.costGrowth >= 0,
@@ -168,14 +113,14 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
       bad: false,
     },
     {
-      label: "좌석 효율",
-      value: complete ? seat.seatEffText : "—",
-      unit: "×",
-      def: `환산가치 ÷ 지출 · 지출 = 좌석 ${seat.seats}석 ${usd(seat.seatSpendMonthly)}/월 × ${RANGE_DAYS}/30일 = ${usd(seat.spend)} · 1.00× = 종량제와 본전, 그 아래면 좌석이 값을 못 하는 것`,
-      caption: complete ? `유휴 ${seat.idleSeats}석 회수 시 ${seat.seatEffIfReclaimed.toFixed(2)}×로 상승` : "전체 기간 관측 후 계산 가능",
-      delta: pct(seat.effGrowth),
-      up: seat.effGrowth >= 0,
-      good: true,
+      label: "월 좌석 계약액",
+      value: vendorSeats.monthlyContractAmount === null ? "—" : usd(vendorSeats.monthlyContractAmount),
+      unit: "",
+      def: "현재 확인된 좌석제 계약의 수량 × 월 단가 합계(USD) · 종량제·추가 사용료 제외 · 실제 청구액과 별개",
+      caption: `현재 확인된 계약 기준 · 조회 기간과 별개${vendorSeats.pendingContracts ? ` · 미확인 ${vendorSeats.pendingContracts}건 제외` : ""}`,
+      delta: "—",
+      up: false,
+      good: false,
       bad: false,
     },
     {
@@ -200,20 +145,15 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
       good: false,
       bad: true,
     },
-  ].map((k, index) => ({ ...k, showDelta: index !== 4 && showDelta, noDelta: index !== 4 && noDelta }));
+  ].map((k, index) => ({ ...k, showDelta: index !== 4 && index !== 2 && showDelta, noDelta: index !== 4 && index !== 2 && noDelta }));
 
   /* ── W1.2 일별 시계열 ─────────────────────────────────── */
-  const dailySpend = seat.seatSpendMonthly / 30;
   const weekCost = current.days.map((day) => day.teams.reduce((sum, team) => sum + team.cost, 0));
-  const weekSpend = weekCost.map(() => dailySpend);
-  const yMax = Math.max(...weekCost, dailySpend) * 1.15;
+  const yMax = Math.max(1, ...weekCost) * 1.15;
   const weekTicks = current.days.map((day, i) => ({
     label: shortDate(day.date), date: day.date, preObserved: false,
     tokens: `${day.teams.reduce((sum, team) => sum + team.tokensM, 0).toFixed(1)}M`,
-    cost: usd(weekCost[i]), spend: usd(dailySpend),
-    effText: (weekCost[i] / dailySpend).toFixed(2) + "×",
-    gap: signedUsd(weekCost[i] - dailySpend),
-    gapColor: weekCost[i] >= dailySpend ? "var(--green)" : "var(--red)",
+    cost: usd(weekCost[i]),
   }));
 
   /* ── W1.6 사용 낭비 ───────────────────────────────────── */
@@ -240,15 +180,17 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
   const wasteTotalNote = "선택 기간 사용량의 월 환산";
 
   /* ── W1.7 팀별 사용량 ─────────────────────────────────── */
-  const teams = current.teams.filter((team) => team.team !== "미배정").map((team) => {
-    const prev = previous.teams.find((item) => item.team === team.team)!;
+  const teams = currentTeams.registered.map((team) => {
+    const prev = previousTeams.registered.find((item) => item.team === team.team)!;
     return { ...team, contrib: team.cost - prev.cost, perUserPct: growth(team.cost / (team.users || 1), prev.cost / (prev.users || 1)) };
   });
   const contribMax = Math.max(...teams.map((team) => Math.abs(team.contrib)), 1);
   const attrRows = teams.map((t) => {
     const models = MODEL_META.map((m) => ({ name: m.name, share: (t.models[m.v] ?? 0) / (t.cost || 1) * 100, color: MODEL_COLORS[m.v] ?? "var(--gray)" })).sort((a, b) => b.share - a.share);
     return {
-      team: t.team, users: int(t.users),
+      teamId: catalog.find((team) => team.sourceName === t.team || team.id === t.team)?.id,
+      vendors: t.vendors.filter((vendor) => vendor.sessions > 0 || vendor.cost > 0).map((vendor) => getVendorProduct(vendor.vendorId ?? "")?.short ?? "벤더 미확인"),
+      team: teamLabel(catalog, t.team), users: int(t.users),
       userCount: t.users, cost: t.cost,
       perUser: t.cost / (t.users || 1), contrib: t.contrib,
       cause: `${models[0].name.replace("claude-", "")} 비중 ${models[0].share.toFixed(0)}%`,
@@ -265,10 +207,11 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
       models,
     };
   }).sort((a, b) => b.cost - a.cost);
-  const unmapped = current.teams.find((team) => team.team === "미배정")!;
-  const unattrContrib = unmapped.cost - previous.teams.find((team) => team.team === "미배정")!.cost;
+  const unmapped = currentTeams.unmapped;
+  const unattrContrib = unmapped.cost - previousTeams.unmapped.cost;
 
   return {
+    observedTokens: `${tokensM.toFixed(1)}M`,
     periodLabel: `${dates.start} ~ ${dates.end ?? dates.start}`,
     showDelta,
     rangeDays: RANGE_DAYS,
@@ -321,28 +264,20 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
     observation: { ...obs, hasGap, coverageNote: hasGap ? obs.coverageNote : "" },
 
     kpis,
-    seat,
-    verdict,
+    vendorSeats,
+    vendorOverview: buildOverviewVendors(vendors, current, seatReviewDays, inventory.teams.flatMap((team) => team.vendors.filter((vendor) => vendor.cost > 0 || vendor.tokensM > 0 || vendor.sessions > 0).map((vendor) => vendor.vendorId))),
 
     chart: {
+      series: buildVendorTrend(current),
       labels: weekTicks.map((tick) => tick.label),
       cost: weekCost,
-      spend: weekSpend,
       yMax,
-      spendLabel: `${usd(dailySpend)} / 일`,
       topLabel: usd(yMax),
       midLabel: usd(yMax / 2),
       ticks: weekTicks,
     },
 
-    mix: {
-      slices: mixSlices,
-      rows: mixRows,
-      topName: mixTopName,
-      topShare: mixTopShare,
-      headline: `${mixTopName}이 환산가치의 ${mixTopShare}를 차지`,
-      detail: "선택 기간의 환산가치 · 모델을 선택하면 비중을 확인할 수 있어요",
-    },
+    mix,
 
     waste: {
       rows: wasteRows,
@@ -352,8 +287,11 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
     },
 
     attribution: {
+      show: showTeamSummary,
+      hasUnmapped: inventoryUnmapped.users > 0 || inventoryUnmapped.cost > 0 || inventoryUnmapped.sessions > 0,
       rows: attrRows,
       moreLabel: `전체 ${teams.length}팀`,
+      unmappedVendors: unmapped.vendors.filter((vendor) => vendor.sessions > 0 || vendor.cost > 0).map((vendor) => getVendorProduct(vendor.vendorId ?? "")?.short ?? "벤더 미확인"),
       unmappedUsers: int(ORG.unmappedUsers),
       unattributedCostText: usd(unattributedCost),
       unmappedPerUserText: usd(unattributedCost / (ORG.unmappedUsers || 1)),
@@ -362,7 +300,7 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
     },
 
     defs: {
-      w12: "날짜별 환산가치와 계약 좌석료의 일할 금액을 비교합니다 · 관측된 날짜만 표시합니다",
+      w12: "날짜별 토큰 사용량의 공시 단가 환산액 · 실제 청구액과 별개 · 관측된 날짜만 표시합니다",
       w14: "모델 구성: 모델별 환산가치 ÷ 전체 환산가치 · 좌석료가 아니라 사용량의 구성을 봅니다",
       w17: "팀별 환산가치 = 팀 귀속 토큰 × 공시 단가 · 증가 기여는 전사 증가분을 팀별 금액으로 분해한 값",
     },

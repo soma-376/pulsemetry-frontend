@@ -1,9 +1,9 @@
+import { getVendorPlans } from "./vendor-catalog";
 import { int, usd } from "@/lib/format";
 import {
   ADMIN_EMAIL,
   VENDORS,
   type VendorContract,
-  type VendorFamily,
   type VendorRecord,
 } from "@/mocks/vendors";
 
@@ -17,41 +17,7 @@ import {
 
 export const TODAY = "2026-09-17";
 
-export type Plan = {
-  v: string;
-  label: string;
-  bill: "seat" | "metered";
-  /** 좌석료와 별개로 사용량이 청구되는 플랜 */
-  usage: boolean;
-  note: string;
-};
-
-/** 플랜은 청구 정보라 텔레메트리에 없습니다 — 벤더가 파는 목록에서 관리자가 고릅니다 */
-export const PLAN_SETS: Record<VendorFamily, Plan[]> = {
-  anthropic: [
-    { v: "team", label: "Claude Team", bill: "seat", usage: false, note: "좌석당 정액 · 사용량 포함 · 최소 2석, 최대 150석" },
-    { v: "enterprise", label: "Claude Enterprise", bill: "seat", usage: true, note: "좌석당 정액 + 토큰은 API 요율로 별도 청구" },
-    { v: "api", label: "Anthropic API (종량제)", bill: "metered", usage: false, note: "좌석 없음 · 토큰 단가로만 청구" },
-  ],
-  openai: [
-    { v: "business", label: "ChatGPT Business", bill: "seat", usage: false, note: "좌석당 정액 · 사용량 포함" },
-    { v: "enterprise", label: "ChatGPT Enterprise", bill: "seat", usage: true, note: "좌석당 정액 + 사용량 별도 · 연간 계약" },
-    { v: "api", label: "OpenAI API (종량제)", bill: "metered", usage: false, note: "좌석 없음 · 토큰 단가로만 청구" },
-  ],
-  generic: [
-    { v: "seat_flat", label: "좌석 정액", bill: "seat", usage: false, note: "좌석당 정액 · 사용량 포함" },
-    { v: "seat_usage", label: "좌석 + 사용량", bill: "seat", usage: true, note: "좌석당 정액 + 사용량 별도 청구" },
-    { v: "metered", label: "종량제", bill: "metered", usage: false, note: "토큰 단가로만 청구" },
-  ],
-};
-
-/** 신호가 없어 감지되지 않는 벤더 — 좌석만 보유하고 아무도 안 쓰는 계약이 여기 해당합니다 */
-export const ADD_KINDS = [
-  { v: "copilot", label: "GitHub Copilot Business" },
-  { v: "gemini", label: "Google Gemini Code Assist" },
-  { v: "azure_openai", label: "Azure OpenAI" },
-  { v: "other", label: "기타 · 직접 입력" },
-];
+export { ADD_KINDS, PLAN_SETS, getVendorPlans, type Plan } from "./vendor-catalog";
 
 export const NEW_VENDOR_ID = "__new";
 
@@ -65,6 +31,7 @@ export type VendorDraft = {
   tiers?: DraftTier[];
   term?: string;
   metered?: number;
+  planName?: string;
 };
 
 /** 저장된 편집 — 벤더 id → 계약 패치. cleared 면 계약을 비운 상태입니다 */
@@ -73,24 +40,76 @@ export type VendorEdits = Record<
   (VendorContract & { plan?: string | null; cleared?: boolean; confirmed?: boolean; name?: string }) | undefined
 >;
 
-const toNumber = (v: string | number | undefined) =>
-  parseFloat(String(v ?? "").replace(/[^0-9.]/g, "")) || 0;
+// 지수 표기로 직렬화되는 작은 단가도 편집 시 원래 소수 값으로 복원합니다.
+const decimalText = (value: number) => {
+  const [coefficient, exponent] = String(value).split("e");
+  if (!exponent) return coefficient;
+  const [whole, fraction = ""] = coefficient.split(".");
+  const digits = whole + fraction;
+  const point = whole.length + Number(exponent);
+  if (point <= 0) return `0.${"0".repeat(-point)}${digits}`;
+  if (point >= digits.length) return digits + "0".repeat(point - digits.length);
+  return `${digits.slice(0, point)}.${digits.slice(point)}`;
+};
 
-export const tierSeats = (tiers: DraftTier[]) =>
-  tiers.reduce((n, t) => n + Math.round(toNumber(t.seats)), 0);
+const normalizeDecimal = (text: string) => {
+  const [whole, fraction = ""] = text.split(".");
+  const normalizedWhole = whole.replace(/^0+(?=\d)/, "");
+  const normalizedFraction = fraction.replace(/0+$/, "");
+  return normalizedFraction ? `${normalizedWhole}.${normalizedFraction}` : normalizedWhole;
+};
 
-export const tierSpend = (tiers: DraftTier[]) =>
-  tiers.reduce((n, t) => n + Math.round(toNumber(t.seats)) * toNumber(t.fee), 0);
+export type TierErrors = { seats?: string; fee?: string; subtotal?: string };
 
-export const rowSpend = (t: DraftTier) =>
-  Math.round(toNumber(t.seats)) * toNumber(t.fee);
+/** 표시와 저장에 같은 검증을 적용하고 잘못 입력한 행도 그대로 유지합니다. */
+export function validateTiers(drafts: DraftTier[]) {
+  const errors: TierErrors[] = [];
+  const parsed: NonNullable<VendorContract["tiers"]> = [];
+  for (const draft of drafts) {
+    const error: TierErrors = {};
+    const seatText = draft.seats.trim();
+    const feeText = draft.fee.trim();
+    const seats = Number(seatText);
+    const fee = Number(feeText);
+    if (!/^\d+$/.test(seatText) || seats < 1) {
+      error.seats = "좌석 수는 1 이상의 정수로 입력하세요";
+    } else if (!Number.isSafeInteger(seats)) {
+      error.seats = "좌석 수가 계산 가능한 범위를 넘었습니다";
+    }
+    if (!/^\d+(\.\d+)?$/.test(feeText)) {
+      error.fee = "월 단가는 0 이상의 숫자로 입력하세요 (예: 0, 12.345)";
+    } else if (!Number.isFinite(fee) || fee > Number.MAX_SAFE_INTEGER ||
+      normalizeDecimal(feeText) !== normalizeDecimal(decimalText(fee))) {
+      error.fee = "월 단가의 크기 또는 정밀도가 계산 가능한 범위를 넘었습니다";
+    }
+    if (!error.seats && !error.fee && seats * fee > Number.MAX_SAFE_INTEGER) {
+      error.subtotal = "소계가 계산 가능한 범위를 넘었습니다";
+    }
+    errors.push(error);
+    parsed.push({ label: draft.label || "표준", seats, fee });
+  }
+  let totalError: string | undefined;
+  if (drafts.length < 1 || drafts.length > MAX_TIERS) {
+    totalError = `좌석 유형은 1~${MAX_TIERS}개 입력하세요`;
+  }
+  const fieldsValid = errors.every((error) => Object.keys(error).length === 0);
+  const seats = fieldsValid ? parsed.reduce((sum, tier) => sum + tier.seats, 0) : 0;
+  const spend = fieldsValid ? parsed.reduce((sum, tier) => sum + tier.seats * tier.fee, 0) : 0;
+  if (!Number.isSafeInteger(seats) || !Number.isFinite(spend) || spend > Number.MAX_SAFE_INTEGER) {
+    totalError = "총 좌석 수 또는 월 계약액이 계산 가능한 범위를 넘었습니다";
+  }
+  const valid = fieldsValid && !totalError;
+  return { errors, totalError, tiers: valid ? parsed : null, seats: valid ? seats : 0, spend: valid ? spend : 0 };
+}
+
+export const tierSpend = (tiers: DraftTier[]) => validateTiers(tiers).spend;
 
 /** 계약 좌석은 문자열 입력으로 다루므로 목 데이터를 초안 형태로 변환합니다 */
 export const toDraftTiers = (contract: VendorContract): DraftTier[] =>
   (contract.tiers ?? []).map((t) => ({
     label: t.label,
     seats: String(t.seats),
-    fee: t.fee.toFixed(2),
+    fee: decimalText(t.fee),
   }));
 
 export const EMPTY_TIER: DraftTier = { label: "표준", seats: "", fee: "" };
@@ -114,20 +133,22 @@ export function buildVendorRows(edits: VendorEdits, added: VendorRecord[]) {
       ? { ...edit }
       : { ...v.c, ...edit };
 
-    const plans = PLAN_SETS[v.family];
+    const plans = getVendorPlans(v.kind, v.family);
     const plan = edit.cleared ? (contract.plan ?? null) : (contract.plan ?? v.plan);
-    const planDef = plans.find((p) => p.v === plan) ?? null;
+    const catalogPlan = plans.find((p) => p.v === plan) ?? null;
+    const planDef = catalogPlan && v.kind === "other" && contract.planName ? { ...catalogPlan, label: contract.planName } : catalogPlan;
     const billing = planDef?.bill ?? null;
     const isSeat = billing === "seat";
 
     const tiers = toDraftTiers(contract);
     const draftTiers = tiers.length ? tiers : [EMPTY_TIER];
-    const seats = tierSeats(draftTiers);
-    const seatSpend = tierSpend(draftTiers);
+    const validation = validateTiers(draftTiers);
+    const seats = validation.seats;
+    const seatSpend = validation.spend;
     const metered = contract.metered ?? 0;
 
     // 좌석제는 좌석 수와 단가가 둘 다 있어야 금액이 성립합니다
-    const setUp = !!billing && (isSeat ? seats > 0 && seatSpend > 0 : true);
+    const setUp = !!billing && (!isSeat || validation.tiers !== null);
     const confirmed = setUp && edit.confirmed !== false && !!contract.reviewedAt;
     const spendMonthly = isSeat ? seatSpend : metered;
     const noSignal = v.users === 0 && v.distinct30 === 0;
@@ -137,6 +158,7 @@ export function buildVendorRows(edits: VendorEdits, added: VendorRecord[]) {
       short: edit.name ?? v.short,
       product: v.product,
       family: v.family,
+      kind: v.kind,
       manual: !!v.manual,
       users: v.users,
       distinct30: v.distinct30,
@@ -301,9 +323,6 @@ export const KEEP_NOTES: Record<string, string> = {
 
 /** 보존 기간의 길이 순서 — 줄이는 방향만 확인을 받습니다 */
 export const KEEP_ORDER: Record<string, number> = { "12": 1, "24": 2, "36": 3, none: 4 };
-
-/** 회수 후보 수는 기준일에 따라 달라집니다 (P6 구성원과 같은 명부) */
-export const RECLAIM_BY_IDLE: Record<string, number> = { "7": 9, "14": 9, "30": 6, "60": 2 };
 
 export const STALE_INSTALLS = [
   { id: "inst_8f3a41c0", mail: "***@codeworks.io", team: "데이터", ver: "v0.9", last: "2시간 전" },

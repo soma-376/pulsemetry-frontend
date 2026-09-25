@@ -4,7 +4,9 @@ import { aggregateActivity, comparisonRange } from "./activity";
 import { SAMPLE_END } from "@/mocks/activity";
 import { MODEL_COLORS, MODEL_META } from "@/mocks/overview";
 import { buildRoster, rosterOffsets } from "./roster";
+import { buildTeamVendorMix } from "./team-vendor-mix";
 import type { CompareKey } from "@/types/domain";
+import { SEED_TEAMS, teamLabel, type Team } from "@/lib/organization";
 
 /**
  * P2 팀 분석.
@@ -30,7 +32,7 @@ const SERIES = [
   "var(--gray)",
 ];
 
-/** 산점도·믹스 막대에서 색을 받는 모델 수. 나머지는 "기타"로 묶습니다 */
+/** 산점도에서 색을 받는 상위 모델 수 */
 const MODEL_TOP_N = 4;
 
 /** 그 모델이 팀 비용의 이 비중 이상이면 "쓰는 팀"으로 셉니다 */
@@ -47,7 +49,9 @@ const deltaColor = (d: number) =>
 export function buildTeams(
   compare: CompareKey = "prev_week",
   dates: DateRange = { start: "2026-09-07", end: SAMPLE_END },
+  catalog: Team[] = SEED_TEAMS,
 ) {
+  const label = (name: string) => teamLabel(catalog, name);
   const current = aggregateActivity(dates);
   const previous = aggregateActivity(comparisonRange(dates, compare));
 
@@ -73,6 +77,7 @@ export function buildTeams(
         tokensM: team.tokensM,
         sessions: team.sessions,
         models: team.models,
+        vendors: team.vendors,
         costD: growth(team.cost, prev?.cost ?? 0),
         tokenD: growth(team.tokensM, prev?.tokensM ?? 0),
         sessionD: growth(team.sessions, prev?.sessions ?? 0),
@@ -90,6 +95,8 @@ export function buildTeams(
   const buildRows = (
     pick: (t: (typeof teams)[number]) => {
       n: number;
+      n2: number;
+      n3: number;
       v1: string;
       v2: string;
       v3: string;
@@ -102,11 +109,15 @@ export function buildTeams(
       .map((t) => ({ t, d: pick(t) }))
       .sort((a, b) => b.d.n - a.d.n)
       .map(({ t, d }) => ({
-        team: t.team,
+        team: label(t.team),
         unmapped: t.unmapped,
         v1: d.v1,
         v2: d.v2,
         v3: d.v3,
+        totalValue: d.n,
+        perUserValue: d.n2,
+        unitValue: d.n3,
+        deltaValue: showDelta ? d.d : null,
         width: `${((d.n / max) * 100).toFixed(1)}%`,
         // 미배정은 팀이 아니라 "귀속 실패"라서 팀 색을 주지 않습니다
         fill: t.unmapped ? "var(--gray)" : barColor,
@@ -145,6 +156,8 @@ export function buildTeams(
       rows: buildRows(
         (t) => ({
           n: t.cost,
+          n2: t.cost / (t.users || 1),
+          n3: t.cost / (t.sessions || 1),
           v1: usd(t.cost),
           v2: usd(t.cost / (t.users || 1)),
           v3: usd(t.cost / (t.sessions || 1)),
@@ -167,6 +180,8 @@ export function buildTeams(
       rows: buildRows(
         (t) => ({
           n: t.tokensM,
+          n2: t.tokensM / (t.users || 1),
+          n3: t.cost / (t.tokensM || 1),
           v1: tokTxt(t.tokensM),
           v2: tokTxt(t.tokensM / (t.users || 1)),
           v3: usd(t.cost / (t.tokensM || 1)),
@@ -189,6 +204,8 @@ export function buildTeams(
       rows: buildRows(
         (t) => ({
           n: t.sessions,
+          n2: t.sessions / (t.users || 1),
+          n3: t.tokensM / (t.sessions || 1),
           v1: int(t.sessions),
           v2: (t.sessions / (t.users || 1)).toFixed(1),
           // 세션당 토큰은 M 단위로는 너무 작아 K 로 내립니다
@@ -226,7 +243,7 @@ export function buildTeams(
         run += amount;
         return run;
       });
-      return { team: t.team, color: colorOf(t.team), values };
+      return { team: label(t.team), color: colorOf(t.team), values };
     });
 
   const trend: Record<AxisKey, { team: string; color: string; values: number[] }[]> = {
@@ -260,8 +277,6 @@ export function buildTeams(
   }).sort((a, b) => b.cost - a.cost);
 
   const topModels = models.slice(0, MODEL_TOP_N);
-  const restModels = models.slice(MODEL_TOP_N);
-  const restCost = restModels.reduce((n, m) => n + m.cost, 0);
 
   const scatter = {
     points: topModels.map((m) => ({
@@ -281,80 +296,18 @@ export function buildTeams(
     avgPerM: orgCost / (orgTokens || 1),
   };
 
-  const legend = topModels
-    .map((m) => ({
-      key: m.key,
-      short: m.name.replace("claude-", "").replace("gpt-5-", ""),
-      color: MODEL_COLORS[m.key] ?? "var(--gray)",
-    }))
-    .concat(
-      restCost > 0
-        ? [{ key: "__rest", short: `기타 ${restModels.length}개`, color: "var(--gray)" }]
-        : [],
-    );
-
-  /**
-   * 팀별 모델 믹스 — 세로 기둥.
-   *
-   * 기둥 높이는 선택한 축의 실제 값입니다. 100% 로 정규화하면 구성비만 남고
-   * 팀 크기가 사라져서, 3% 를 쓰는 팀과 40% 를 쓰는 팀이 같은 높이로 보입니다.
-   * 색은 상위 4개 모델 + 나머지를 기타로 묶어 기둥 안의 합이 항상 100% 입니다.
-   */
-  const mix = (axis: AxisKey) => {
-    const ordered = [...teams].sort(
-      (a, b) => axes[axis].value(b) - axes[axis].value(a),
-    );
-    const max = Math.max(...ordered.map((t) => axes[axis].value(t)), 1);
-    const format = axes[axis].format;
-
-    return {
-      yTop: format(max),
-      yMid: format(max / 2),
-      columns: ordered.map((t) => {
-        const value = axes[axis].value(t);
-        const shares = topModels.map((m) => {
-          const share = (t.models[m.key] ?? 0) / (t.cost || 1);
-          return {
-            key: m.key,
-            share,
-            color: MODEL_COLORS[m.key] ?? "var(--gray)",
-            tip: `${t.team} · ${m.name} ${(share * 100).toFixed(1)}% · ${format(value * share)}`,
-          };
-        });
-        const rest = 1 - shares.reduce((n, s) => n + s.share, 0);
-        const top = [...shares].sort((a, b) => b.share - a.share)[0];
-        const topName =
-          topModels.find((m) => m.key === top.key)?.name.replace("claude-", "") ?? "";
-
-        return {
-          team: t.team,
-          unmapped: t.unmapped,
-          height: `${((value / max) * 100).toFixed(1)}%`,
-          totalText: format(value),
-          segments: shares.concat(
-            rest > 0.001
-              ? [
-                  {
-                    key: "__rest",
-                    share: rest,
-                    color: "var(--gray)",
-                    tip: `${t.team} · 기타 ${(rest * 100).toFixed(1)}% · ${format(value * rest)}`,
-                  },
-                ]
-              : [],
-          ),
-          topText: `${topName} ${(top.share * 100).toFixed(0)}%`,
-        };
-      }),
-    };
-  };
+  const vendorMix = (axis: AxisKey) => buildTeamVendorMix(
+    teams.map((team) => ({ ...team, team: label(team.team) })),
+    axis === "token" ? "tokensM" : axis === "session" ? "sessions" : "cost",
+    axes[axis].format,
+  );
 
   /* ── 사용자별 사용량 ─────────────────────────────────
      팀 값을 개인으로 쪼갭니다. 자식의 합이 팀 값과 정확히 일치해야 하므로
      가중치는 평균 1.0 으로 정규화하고, 세션은 정수라 최대잉여법으로 나눕니다 —
      개별 반올림은 합계를 팀 값과 어긋나게 만듭니다. */
   const users = (teamName: string) => {
-    const t = teams.find((x) => x.team === teamName) ?? teams[0];
+    const t = teams.find((x) => label(x.team) === teamName) ?? teams.find((x) => x.team === teamName) ?? teams[0];
     const count = Math.max(1, t.users);
     const avgCost = t.cost / count;
 
@@ -363,6 +316,7 @@ export function buildTeams(
 
     const rows = roster.map((u) => ({
       ...u,
+      team: label(u.team),
       sessions: int(u.sessionCount),
       tokens: tokTxt(u.tokenValue),
       cost: usd(u.costValue),
@@ -391,9 +345,9 @@ export function buildTeams(
       (rows.reduce((n, u) => n + u.tokenValue, 0) || 1);
 
     return {
-      team: t.team,
+      team: label(t.team),
       rows,
-      note: `계정순 · 팀 평균 ${usd(avgCost)} 대비 편차`,
+      note: `팀 평균 ${usd(avgCost)} 대비 편차`,
       stats: [
         { key: "사용자", value: int(count), sub: "명", tone: "var(--text)" },
         {
@@ -422,12 +376,10 @@ export function buildTeams(
         },
       ],
       /** 보이는 만큼의 합계와 팀 전체를 같이 적어 "일부만 보고 있음"을 숨기지 않습니다 */
-      sumNote: (shown: number) => {
-        const shownCost = rows
-          .slice(0, shown)
-          .reduce((n, u) => n + u.costValue, 0);
-        return shown < rows.length
-          ? `${shown}명 합계 ${usd(shownCost)} · 팀 전체 ${usd(t.cost)}`
+      sumNote: (shown: readonly { costValue: number }[]) => {
+        const shownCost = shown.reduce((n, u) => n + u.costValue, 0);
+        return shown.length < rows.length
+          ? `${shown.length}명 합계 ${usd(shownCost)} · 팀 전체 ${usd(t.cost)}`
           : `${rows.length}명 합계 ${usd(shownCost)} = 팀 ${usd(t.cost)}`;
       },
     };
@@ -440,7 +392,7 @@ export function buildTeams(
       const prev = previous.teams.find((item) => item.team === team.team);
       const perUser = team.cost / (team.users || 1);
       return {
-        team: team.team,
+        team: label(team.team),
         unmapped: team.unmapped,
         users: int(team.users),
         costText: usd(team.cost),
@@ -461,13 +413,12 @@ export function buildTeams(
       (compareLabel ? ` · ${compareLabel}` : ""),
     compareLabel,
     showDelta,
-    teams: teams.map((t) => ({ team: t.team, color: colorOf(t.team) })),
+    teams: teams.map((t) => ({ team: label(t.team), color: colorOf(t.team) })),
     axes,
     dayLabels,
     trend,
     scatter,
-    legend,
-    mix,
+    vendorMix,
     users,
     /** 사용자 표 한 번에 보여줄 인원 */
     userPageSize: 12,
