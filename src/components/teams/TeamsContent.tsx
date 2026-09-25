@@ -5,7 +5,7 @@ import { FilterToolbar } from "@/components/layout/FilterToolbar";
 import { ModelScatterCard } from "@/components/teams/ModelScatterCard";
 import { TeamAxisPanel } from "@/components/teams/TeamAxisPanel";
 import { TeamDetailDrawer } from "@/components/teams/TeamDetailDrawer";
-import { TeamModelMixCard } from "@/components/teams/TeamModelMixCard";
+import { TeamVendorMixCard } from "@/components/teams/TeamVendorMixCard";
 import { UserUsageCard } from "@/components/teams/UserUsageCard";
 import { ButtonLink } from "@/components/ui/Button";
 import { useFilters } from "@/lib/filters";
@@ -18,15 +18,15 @@ import { TeamManagement } from "@/components/teams/TeamManagement";
  * 전역 필터를 구독하므로 클라이언트 컴포넌트입니다.
  * 축 선택과 선 표시 여부만 로컬 상태이고, 계산은 전부 buildTeams 안에 있습니다.
  */
-export function TeamsContent() {
+export function TeamsContent({ initialTeamId }: { initialTeamId?: string }) {
   const { compare, dates } = useFilters();
   const { state } = useOrganization();
   const model = useMemo(() => buildTeams(compare, dates, state.teams), [compare, dates, state.teams]);
 
   const [axis, setAxis] = useState<AxisKey>("cost");
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
-  const [selected, setSelected] = useState<string | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
+  const [selected, setSelected] = useState<string | null>(() => state.teams.find((team) => team.id === initialTeamId)?.name ?? null);
+  const [detailOpen, setDetailOpen] = useState(!!initialTeamId);
   const detail = model.details.find((team) => team.team === selected);
 
   const toggleTeam = (team: string) =>
@@ -80,7 +80,7 @@ export function TeamsContent() {
 
             <div className="grid grid-cols-5 gap-4 @max-[1100px]:grid-cols-1">
               <ModelScatterCard model={model} />
-              <TeamModelMixCard model={model} axis={axis} />
+              <TeamVendorMixCard model={model} axis={axis} />
             </div>
 
             <UserUsageCard model={model} />

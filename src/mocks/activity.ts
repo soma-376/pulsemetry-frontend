@@ -1,4 +1,5 @@
 import { DAY_MS, fromIso, toIso } from "@/lib/date";
+import { demoVendorUsage } from "./vendor-usage";
 import {
   DAILY_LISTED,
   MODEL_META,
@@ -56,14 +57,21 @@ export const ACTIVITY = Array.from({ length: 63 }, (_, day) => {
       (sum, model, m) => sum + models[m].cost / model.perM,
       0,
     );
+    const sessions = Math.round(teamCost / baseline * ORG.sessions);
+    const users = Array.from({ length: team.users }, (_, user) => user).filter((user) => (user + day + index) % 4 !== 0);
     return {
       team: team.team,
       cause: team.cause,
       cost: teamCost,
-      users: Array.from({ length: team.users }, (_, user) => user).filter((user) => (user + day + index) % 4 !== 0),
-      sessions: Math.round(teamCost / baseline * ORG.sessions),
+      users,
+      sessions,
       tokensM,
       models,
+      // Explicit demo product observations; independent of model names and seat assignments.
+      vendors: demoVendorUsage(team.team, day, { cost: teamCost, tokensM, sessions }).map((vendor, position) => ({
+        ...vendor,
+        users: users.filter((user) => (user + day) % 3 !== position).map((user) => `${team.team}:${user}`),
+      })),
     };
   });
   return { date, teams };

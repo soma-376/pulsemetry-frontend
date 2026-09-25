@@ -31,7 +31,7 @@ test("team values remain numeric and missing comparisons are not sorted as zero"
     assert.ok(axis.rows.every((row) => row.deltaValue === null));
     assert.ok(axis.rows.every((row) => Number.isFinite(row.totalValue) && Number.isFinite(row.perUserValue) && Number.isFinite(row.unitValue)));
   }
-  const members = buildMembers(undefined, { assigned: {}, reclaimed: {}, invites: [{ email: "waiting@example.com", team: "", role: "member", invitedAt: "2026-09-13" }] });
+  const members = buildMembers(undefined, { assigned: {}, invites: [{ email: "waiting@example.com", team: "", role: "member", invitedAt: "2026-09-13" }] });
   assert.equal(members.memberRows.find((row) => row.invited)!.costValue, null);
   assert.equal(members.memberRows.find((row) => row.invited)!.idleDays, null);
 });

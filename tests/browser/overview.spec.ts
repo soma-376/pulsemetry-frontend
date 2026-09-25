@@ -20,7 +20,7 @@ test("filters update data and chart; incomplete and empty queries are explicit",
   await selectCalendarPreset(page, "이번 달");
   await expect(chart).toHaveAttribute("aria-valuemax", "13");
   await selectCalendarPreset(page, "최근 1년");
-  await expect(page.getByText("관측 범위가 부족해 좌석 효율을 판정할 수 없습니다")).toBeVisible();
+  await expect(page.getByText("데이터가 없는 날짜는 차트에서 제외됩니다. 전체 기간 비교는 보류합니다.")).toBeVisible();
   await expect(chart).toHaveAttribute("aria-valuemax", "63");
   await selectCalendarPreset(page, "이번 주");
   await page.getByRole("button", { name: "2026.09.07 ~ 2026.09.13", exact: true }).click();
@@ -33,6 +33,7 @@ test("filters update data and chart; incomplete and empty queries are explicit",
   await calendar.getByRole("button", { name: "적용" }).click();
   await expect(page.getByRole("button", { name: "2026.10.05 ~ 2026.10.07", exact: true })).toBeVisible();
   await expect(page.getByText("선택한 기간에 데이터가 없습니다")).toBeVisible();
+  await expect(page.getByRole("table", { name: "계약·좌석 현황" })).toBeVisible();
 });
 
 test("chart supports pointer inspection and keyboard date navigation", async ({ page }) => {
@@ -42,6 +43,7 @@ test("chart supports pointer inspection and keyboard date navigation", async ({ 
   await chart.focus();
   await chart.press("Home");
   await expect(chart).toHaveAttribute("aria-valuetext", /2026-09-07/);
+  await expect(chart).toHaveAttribute("aria-valuetext", /Claude.*Codex/);
   await chart.press("ArrowRight");
   await expect(chart).toHaveAttribute("aria-valuetext", /2026-09-08/);
   await chart.press("End");
@@ -52,28 +54,21 @@ test("chart supports pointer inspection and keyboard date navigation", async ({ 
 
 test("overview summary links to the team analysis drawer", async ({ page }) => {
   const mix = page.getByRole("region", { name: "모델 구성", exact: true });
-  const model = mix.getByRole("button", { name: /gpt-5-codex/ });
-  await model.click();
-  await expect(model).toHaveAttribute("aria-pressed", "true");
-  await expect(mix.getByText("gpt-5-codex 선택됨")).toBeVisible();
+  await expect(mix).toBeVisible();
+  const modelOption = mix.getByRole("button", { name: /gpt-5-codex/ });
+  await modelOption.click();
+  await expect(modelOption).toHaveAttribute("aria-pressed", "true");
   await mix.getByRole("button", { name: "선택 해제" }).click();
-  await expect(model).toHaveAttribute("aria-pressed", "false");
-  const table = page.getByRole("table");
-  await expect(table.locator("tbody tr")).toHaveCount(4);
-  await expect(table.locator("tbody tr").last()).toContainText("미배분");
-  await expect(page.getByRole("link", { name: /전체 5팀 보기/ })).toHaveAttribute("href", "/teams");
-  await table.getByRole("button", { name: /환산가치/ }).click();
-  await expect(table.getByRole("columnheader", { name: /환산가치/ })).toHaveAttribute("aria-sort", "ascending");
-  await expect(table.locator("tbody tr").first()).toContainText("데이터");
-  await expect(table.locator("tbody tr")).toHaveCount(4);
-  await expect(table.getByRole("button", { name: "플랫폼", exact: true })).toHaveCount(0);
-  await expect(page.locator("dialog")).toHaveCount(0);
-  await page.getByRole("link", { name: /전체 5팀 보기/ }).click();
-  await expect(page).toHaveURL(/\/teams$/);
+  await expect(modelOption).toHaveAttribute("aria-pressed", "false");
+  const table = page.getByRole("table", { name: "팀별 요약" });
+  await expect(table.locator("tbody tr")).toHaveCount(6);
+  await expect(table.locator("tbody tr").last()).toContainText("미배정");
+  await expect(table).toContainText("Claude · Codex");
+  await table.getByRole("button", { name: /사용 환산액/ }).click();
+  await expect(table.getByRole("columnheader", { name: /사용 환산액/ })).toHaveAttribute("aria-sort", "ascending");
+  await table.getByRole("link", { name: "플랫폼", exact: true }).click();
+  await expect(page).toHaveURL(/\/teams\?team=team-1$/);
   const analysis = page.getByRole("region", { name: "팀별 사용량 비교" });
-  const trigger = analysis.getByRole("button", { name: "플랫폼", exact: true });
-  await expect(analysis.getByRole("checkbox", { name: "플랫폼 추이 선 표시" })).toBeChecked();
-  await trigger.click();
   const dialog = page.getByRole("dialog", { name: "플랫폼 팀" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("button", { name: "상세 패널 닫기" })).toBeFocused();
@@ -86,7 +81,6 @@ test("overview summary links to the team analysis drawer", async ({ page }) => {
   await page.screenshot({ path: "test-results/team-detail.png" });
   await page.keyboard.press("Escape");
   await expect(dialog).not.toBeVisible();
-  await expect(trigger).toBeFocused();
   await expect(analysis.getByRole("checkbox", { name: "플랫폼 추이 선 표시" })).toBeChecked();
   await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
 });

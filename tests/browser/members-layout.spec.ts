@@ -29,14 +29,9 @@ test("pending invitations remain below the cards with resend and revoke actions"
   await expect(pending).toContainText("7일 남음");
   const members = page.getByRole("region", { name: "구성원 목록", exact: true });
   await members.getByRole("textbox", { name: "구성원 검색" }).fill("pending@example.com");
-  await expect(members.getByText("신호 대기", { exact: true })).toBeVisible();
   await expect(members.getByText("기록 없음", { exact: true })).toBeVisible();
-  const status = members.getByText("신호 대기", { exact: true });
-  const recent = members.getByText("기록 없음", { exact: true });
-  const recentBox = (await recent.boundingBox())!;
-  const statusBox = (await status.boundingBox())!;
-  expect(statusBox.x - (recentBox.x + recentBox.width)).toBeGreaterThanOrEqual(15);
-  await expect(status).toHaveCSS("padding-left", "16px");
+  await expect(members.getByRole("button", { name: "pending@example.com 구성원 상세", exact: true })).toBeVisible();
+  await expect(members.getByText("벤더 좌석", { exact: true })).toHaveCount(0);
   await page.screenshot({ path: "test-results/members-pending-desktop.png", fullPage: true });
   await members.screenshot({ path: "test-results/members-table-desktop.png" });
   await page.setViewportSize({ width: 390, height: 844 });

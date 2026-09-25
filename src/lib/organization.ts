@@ -10,6 +10,7 @@ export type Team = { id: string; name: string; sourceName: string | null };
 export type OrganizationState = {
   teams: Team[];
   members: MemberState;
+  seatReviewDays: number;
   session: { email: string; name: string; organizationId: string } | null;
   promptRaw: boolean | null;
   onboardingCompleted: boolean;

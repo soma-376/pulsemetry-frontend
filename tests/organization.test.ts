@@ -21,7 +21,7 @@ test("removing an onboarding team clears its assignment in both sent and draft i
 });
 
 test("onboarding requires an explicit policy, a saved contract and login, but not a team or developer", () => {
-  const contract = createManualContract({ kind: "copilot", plan: "seat_flat", tiers: [{ label: "표준", seats: "2", fee: "0" }] }, "contract-1");
+  const contract = createManualContract({ kind: "copilot", plan: "copilot_business", tiers: [{ label: "표준", seats: "2", fee: "0" }] }, "contract-1");
   const state = { ...INITIAL_ORGANIZATION, teams: [], session: resolveDemoAdmin("admin@codeworks.io"), addedVendors: [contract] };
   assert.equal(completeOnboarding(state).onboardingCompleted, false);
   assert.equal(completeOnboarding({ ...state, promptRaw: false }).onboardingCompleted, true);
@@ -31,11 +31,11 @@ test("onboarding requires an explicit policy, a saved contract and login, but no
 });
 
 test("contract creation preserves precise and zero fees and rejects malformed seats", () => {
-  const draft = { kind: "copilot", plan: "seat_flat", tiers: [{ label: "표준", seats: "2", fee: "12.345" }] };
+  const draft = { kind: "copilot", plan: "copilot_business", tiers: [{ label: "표준", seats: "2", fee: "12.345" }] };
   assert.equal(createManualContract(draft, "id").c.tiers?.[0].fee, 12.345);
   for (const seats of ["", "-1", "1.5", "1e5"]) assert.throws(() => createManualContract({ ...draft, tiers: [{ ...draft.tiers[0], seats }] }, "id"));
   assert.throws(() => createManualContract({ ...draft, kind: "other", name: " " }, "id"));
-  assert.equal(createManualContract({ ...draft, plan: "metered", tiers: [{ label: "표준", seats: "-1", fee: "bad" }] }, "id").c.tiers?.length, 0);
+  assert.throws(() => createManualContract({ ...draft, plan: "metered" }, "id"));
 });
 
 test("creating and renaming a team preserves its ID and pending invitations", () => {

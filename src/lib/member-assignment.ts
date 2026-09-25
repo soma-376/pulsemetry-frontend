@@ -2,7 +2,7 @@ import { buildMembers, type MembersModel } from "./metrics/members";
 import type { OrganizationState } from "./organization";
 import { memberAssignmentSchema } from "./schemas/member";
 
-export type MemberAssignmentTarget = Pick<MembersModel["memberRows"][number], "account" | "invited" | "teamId" | "role" | "reclaimed">;
+export type MemberAssignmentTarget = Pick<MembersModel["memberRows"][number], "account" | "invited" | "teamId" | "role">;
 
 /** 팀 배정과 역할만 갱신합니다. 초대 만료일, 좌석 상태와 사용 기록은 유지합니다. */
 export function saveMemberAssignment(
@@ -27,15 +27,12 @@ export function saveMemberAssignment(
     !row.invited && row.account.toLowerCase() === email,
   );
   if (!member) throw new Error("수정할 구성원을 찾을 수 없습니다");
-  if (member.reclaimed && values.role !== "viewer") {
-    throw new Error("좌석이 회수된 구성원은 조회 전용 역할만 사용할 수 있습니다");
-  }
   return {
     ...state,
     members: {
       ...state.members,
       assigned: { ...state.members.assigned, [member.account]: values.team },
-      roles: member.reclaimed ? state.members.roles : { ...state.members.roles, [member.account]: values.role },
+      roles: { ...state.members.roles, [member.account]: values.role },
     },
   };
 }

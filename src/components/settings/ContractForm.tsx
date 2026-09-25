@@ -1,4 +1,5 @@
 "use client";
+import { allowsSeatTiers } from "@/lib/vendor-catalog";
 import { useId } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -6,7 +7,7 @@ import { DateInput } from "@/components/ui/DateInput";
 import { currentDateIso } from "@/lib/date";
 import { Select } from "@/components/ui/Select";
 import { int, usd } from "@/lib/format";
-import { ADD_KINDS, EMPTY_TIER, MAX_TIERS, PLAN_SETS, validateTiers, type DraftTier, type VendorDraft, type VendorRow } from "@/lib/settings";
+import { ADD_KINDS, EMPTY_TIER, MAX_TIERS, getVendorPlans, validateTiers, type DraftTier, type VendorDraft, type VendorRow } from "@/lib/settings";
 const TIER_COLS =
   "grid grid-cols-[minmax(0,1fr)_64px_78px_74px_28px] items-center gap-1.5 " +
   "@max-[420px]:grid-cols-[minmax(0,1fr)_56px_66px_24px] @max-[420px]:[&>*:nth-child(4)]:hidden";
@@ -14,7 +15,9 @@ const TIER_COLS =
 
 export function ContractForm({ row, isNew, draft, onChange }: { row: VendorRow; isNew: boolean; draft: VendorDraft; onChange: (patch: VendorDraft) => void }) {
   const validationId = useId();
-  const plans = PLAN_SETS[row.family];
+  const kind = isNew ? draft.kind ?? "copilot" : row.kind;
+  const plans = getVendorPlans(kind, row.family);
+  const allowsTiers = allowsSeatTiers(kind);
   const plan = draft.plan !== undefined ? draft.plan : row.plan;
   const planDef = plans.find((p) => p.v === plan) ?? null;
   const isSeat = planDef?.bill === "seat";
@@ -24,7 +27,7 @@ export function ContractForm({ row, isNew, draft, onChange }: { row: VendorRow; 
   const seatSpend = validation.spend;
   const term = draft.term ?? row.contract.term ?? "";
   const name = draft.name ?? (isNew ? "" : row.short);
-  const kindLabel = ADD_KINDS.find((k) => k.v === (draft.kind ?? "copilot"))?.label ?? ADD_KINDS[0].label;
+  const kindLabel = ADD_KINDS.find((k) => k.v === kind)?.label ?? row.short;
   const setTiers = (next: DraftTier[]) => onChange({ tiers: next });
   const patchTier = (index: number, patch: Partial<DraftTier>) => setTiers(tiers.map((t, i) => i === index ? { ...t, ...patch } : t));
   return <div className="flex flex-col gap-6">
@@ -32,40 +35,23 @@ export function ContractForm({ row, isNew, draft, onChange }: { row: VendorRow; 
           <span className="text-[12px] font-semibold">계약 기본정보</span>
 
           <label className="flex flex-col gap-1 text-[11.5px] text-text2">
-            표시 이름
-            <Input
-              value={name}
-              onChange={(e) => onChange({ name: e.target.value })}
-              placeholder={isNew ? kindLabel : row.short}
-              maxLength={100}
-              aria-label="표시 이름"
-            />
+            제품
+            {isNew ? <Select value={kind} onChange={(event) => onChange({ kind: event.target.value, plan: null, name: "", planName: "", tiers: [{ ...EMPTY_TIER }] })} aria-label="제품">
+              {ADD_KINDS.map((item) => <option key={item.v} value={item.v}>{item.label}</option>)}
+            </Select> : <span className="py-1 text-[12px] text-text">{kindLabel}</span>}
           </label>
-
-          {isNew && (
-            <label className="flex flex-col gap-1 text-[11.5px] text-text2">
-              벤더
-              <Select
-                value={draft.kind ?? "copilot"}
-                onChange={(e) => onChange({ kind: e.target.value })}
-                aria-label="벤더"
-              >
-                {ADD_KINDS.map((k) => (
-                  <option key={k.v} value={k.v}>
-                    {k.label}
-                  </option>
-                ))}
-              </Select>
-            </label>
-          )}
+          {kind === "other" && <label className="flex flex-col gap-1 text-[11.5px] text-text2">
+            플랜명 (선택)
+            <Input value={draft.planName ?? row.contract.planName ?? ""} onChange={(event) => onChange({ planName: event.target.value })} maxLength={100} aria-label="플랜명" placeholder="계약서의 플랜명" />
+          </label>}
 
           <div className="grid grid-cols-2 gap-2 @max-[700px]:grid-cols-1">
             <label className="flex flex-col gap-1 text-[11.5px] text-text2">
-              플랜
+              {kind === "other" ? "과금 방식" : "플랜"}
               <Select
-                value={plan ?? ""}
+                value={planDef ? plan ?? "" : ""}
                 onChange={(e) => onChange({ plan: e.target.value || null })}
-                aria-label="플랜"
+                aria-label={kind === "other" ? "과금 방식" : "플랜"}
               >
                 {!planDef && <option value="">선택하세요</option>}
                 {plans.map((p) => (
@@ -77,6 +63,11 @@ export function ContractForm({ row, isNew, draft, onChange }: { row: VendorRow; 
             </label>
             <DateInput label="계약 종료일" value={term} min={currentDateIso()} onChange={(value) => onChange({ term: value })} />
           </div>
+
+          <label className="flex flex-col gap-1 text-[11.5px] text-text2">
+            {kind === "other" ? "제품 이름" : "표시 이름 (선택)"}
+            <Input value={name} onChange={(event) => onChange({ name: event.target.value })} placeholder={kindLabel} maxLength={100} aria-label="표시 이름" />
+          </label>
 
           <span
             className="pretty text-[11px]"
@@ -91,13 +82,11 @@ export function ContractForm({ row, isNew, draft, onChange }: { row: VendorRow; 
 
         {isSeat && (
           <section className="flex flex-col gap-1.5">
-            <span className="text-[12px] font-semibold">계약 좌석 구성</span>
-            <span className="pretty text-[11px] text-text3">
-              종류마다 단가가 다릅니다 · 평균으로 뭉개면 지출이 틀어집니다
-            </span>
+            <span className="text-[12px] font-semibold">{allowsTiers ? "계약 좌석 구성" : "계약 좌석"}</span>
+
 
             <div className={`${TIER_COLS} px-0.5 pt-1.5 text-[11px] text-text3`}>
-              <span>좌석 유형</span>
+              <span>{allowsTiers ? "좌석 유형" : "플랜"}</span>
               <span className="text-right">좌석 수</span>
               <span className="text-right">월 단가</span>
               <span className="text-right">소계</span>
@@ -110,11 +99,11 @@ export function ContractForm({ row, isNew, draft, onChange }: { row: VendorRow; 
               return (
                 <div key={i} className="flex flex-col gap-1">
                   <div className={TIER_COLS}>
-                    <Input
+                    {allowsTiers ? <Input
                       value={t.label}
                       onChange={(e) => patchTier(i, { label: e.target.value })}
                       aria-label="좌석 유형"
-                    />
+                    /> : <span className="truncate text-xs" title={planDef?.label}>{planDef?.label}</span>}
                     <Input
                       value={t.seats}
                       onChange={(e) => patchTier(i, { seats: e.target.value })}
@@ -141,8 +130,9 @@ export function ContractForm({ row, isNew, draft, onChange }: { row: VendorRow; 
                     <button
                       type="button"
                       onClick={() => setTiers(tiers.filter((_, k) => k !== i))}
-                      disabled={tiers.length <= 1}
+                      disabled={!allowsTiers || tiers.length <= 1}
                       aria-label="좌석 유형 삭제"
+                      hidden={!allowsTiers}
                       className="h-7 w-7 cursor-pointer rounded-md border border-border text-text2 hover:bg-hover disabled:cursor-default disabled:text-border"
                     >
                       ×
@@ -162,13 +152,13 @@ export function ContractForm({ row, isNew, draft, onChange }: { row: VendorRow; 
             )}
 
             <div className="flex items-center justify-between gap-2 pt-1">
-              <Button
+              {allowsTiers && <Button
                 size="sm"
                 disabled={tiers.length >= MAX_TIERS}
                 onClick={() => setTiers([...tiers, { label: "프리미엄", seats: "", fee: "" }])}
               >
                 + 좌석 유형 추가
-              </Button>
+              </Button>}
               <span className="tnum text-[11.5px] text-text2">
                 {validation.tiers ? `${int(seats)}석 · ${usd(seatSpend)} / 월` : "좌석 수와 단가를 입력하세요"}
               </span>

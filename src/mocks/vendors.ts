@@ -1,3 +1,5 @@
+import { vendorIdentity, type VendorFamily } from "@/lib/vendor-catalog";
+export type { VendorFamily } from "@/lib/vendor-catalog";
 import type { SeatTier } from "@/types/domain";
 
 /**
@@ -10,9 +12,10 @@ import type { SeatTier } from "@/types/domain";
  * users/distinct30/firstSeen 만 측정값이고 c(contract) 는 전부 수동 입력입니다.
  */
 
-export type VendorFamily = "anthropic" | "openai" | "generic";
+
 
 export type VendorContract = {
+  planName?: string;
   tiers?: SeatTier[];
   /** 종량제 계약의 실측 월 비용 */
   metered?: number;
@@ -30,6 +33,7 @@ export type VendorRecord = {
   short: string;
   product: string;
   family: VendorFamily;
+  kind?: string;
   /** 선택된 플랜 키. 미설정이면 null */
   plan: string | null;
   /** 수동 추가한 벤더 — 신호가 없습니다 */
@@ -51,10 +55,7 @@ export const ADMIN_EMAIL = "admin@codeworks.io";
 export const VENDORS: VendorRecord[] = [
   {
     id: "claude_team",
-    name: "Claude",
-    short: "Claude",
-    product: "Claude Code · claude.ai",
-    family: "anthropic",
+    ...vendorIdentity("claude_team"),
     plan: "team",
     users: 117,
     distinct30: 131,
@@ -72,10 +73,7 @@ export const VENDORS: VendorRecord[] = [
   },
   {
     id: "openai_biz",
-    name: "OpenAI ChatGPT",
-    short: "Codex",
-    product: "Codex CLI",
-    family: "openai",
+    ...vendorIdentity("openai_biz"),
     // 감지는 됐지만 계약이 등록되지 않아 합계에서 빠져 있습니다
     plan: null,
     users: 34,
@@ -85,10 +83,7 @@ export const VENDORS: VendorRecord[] = [
   },
   {
     id: "cursor",
-    name: "Cursor",
-    short: "Cursor",
-    product: "IDE 확장 · 사용량 미수집",
-    family: "generic",
+    ...vendorIdentity("cursor"),
     plan: null,
     users: 11,
     distinct30: 14,

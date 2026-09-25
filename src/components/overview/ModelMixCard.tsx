@@ -14,6 +14,16 @@ export function ModelMixCard({ model }: { model: OverviewModel }) {
   const activeModel = active === null ? null : mix.rows[active];
   const select = (index: number) => setSelected((value) => value === index ? null : index);
 
+  if (mix.count <= 1) {
+    const only = mix.rows[0];
+    return <Widget id="w14" label="모델 구성" title="모델 구성" note="선택 기간 기준" def={defs.w14} className="col-span-2 @max-[1023px]:col-span-full">
+      {only ? <div className="flex flex-1 flex-col justify-center gap-5 py-5">
+        <div className="flex items-center gap-2.5"><span className="h-3 w-3 shrink-0 rounded" style={{ background: only.color }} /><span className="break-all text-lg font-semibold">{only.name}</span></div>
+        <dl className="grid grid-cols-2 gap-4"><div><dt className="text-xs text-text3">사용 환산액</dt><dd className="tnum mt-2 text-xl font-semibold">{only.costText}</dd></div><div><dt className="text-xs text-text3">관측 토큰</dt><dd className="tnum mt-2 text-xl font-semibold">{model.observedTokens}</dd></div></dl>
+      </div> : <p className="py-8 text-sm text-text3">관측된 모델이 없습니다.</p>}
+    </Widget>;
+  }
+
   return (
     <Widget
       id="w14"

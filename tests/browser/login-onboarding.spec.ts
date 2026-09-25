@@ -91,8 +91,7 @@ test("required contract cannot be skipped after deletion and incomplete onboardi
   await expect(page).toHaveURL(/\/onboarding$/);
   await expect(page.getByLabel("표시 이름", { exact: true })).toHaveValue("Unfinished contract");
   await page.reload();
-  await expect(page).toHaveURL(/\/login$/);
-  await signIn(page);
+  await expect(page).toHaveURL(/\/onboarding$/);
   await expect(page.getByRole("button", { name: "다음", exact: true })).toBeDisabled();
   await expect(page.getByRole("radio", { name: /^수집함/ })).not.toBeChecked();
 });
@@ -133,7 +132,7 @@ test("optional setup sends demo invitations and carries the pending list into me
   await members.getByRole("textbox", { name: "구성원 검색" }).fill("minsu@codeworks.io");
   await expect(members).toContainText("minsu@codeworks.io");
   await expect(members).toContainText("리서치");
-  await expect(members.getByText("신호 대기", { exact: true })).toBeVisible();
+  await expect(members.getByText("기록 없음", { exact: true })).toBeVisible();
 });
 
 test("onboarding team chips clear the team from sent and draft invitations", async ({ page }) => {
@@ -174,8 +173,7 @@ test("onboarding team chips clear the team from sent and draft invitations", asy
 test("mobile onboarding fits the viewport without a sidebar", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/onboarding");
-  await expect(page).toHaveURL(/\/login$/);
-  await signIn(page);
+  await expect(page).toHaveURL(/\/onboarding$/);
   await page.screenshot({ path: "test-results/onboarding-collection-mobile.png", fullPage: true });
   await page.getByRole("radio", { name: /^수집하지 않음/ }).check();
   await page.getByRole("button", { name: "다음", exact: true }).click();
@@ -186,4 +184,13 @@ test("mobile onboarding fits the viewport without a sidebar", async ({ page }) =
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: "test-results/onboarding-team-mobile.png", fullPage: true });
   await expect(page.getByRole("button", { name: "팀 관리", exact: true })).toHaveCount(0);
+});
+
+
+test("dashboard routes and onboarding are accessible without a login gate", async ({ page }) => {
+  for (const route of ["overview", "members", "settings", "onboarding"]) {
+    await page.goto(`/${route}`);
+    await expect(page).toHaveURL(new RegExp(`/${route}$`));
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  }
 });

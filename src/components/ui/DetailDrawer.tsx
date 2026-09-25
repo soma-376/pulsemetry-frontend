@@ -12,6 +12,7 @@ export function DetailDrawer({
   onAfterClose,
   title,
   subtitle,
+  headerContent,
   footer,
   children,
 }: {
@@ -19,6 +20,7 @@ export function DetailDrawer({
   onClose: () => void;
   title: string;
   subtitle?: string;
+  headerContent?: ReactNode;
   /** 퇴장 애니메이션과 dialog 닫기가 끝난 뒤 내용을 정리합니다. */
   onAfterClose?: () => void;
   /** 하단 액션 영역 — 넘기지 않으면 닫는 방법 안내가 들어갑니다 */
@@ -125,7 +127,8 @@ export function DetailDrawer({
               }}
               className="absolute inset-y-0 right-0 flex w-full max-w-[480px] flex-col border-l border-border bg-card shadow-2xl"
             >
-              <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border p-6">
+              <header className="shrink-0 border-b border-border p-6">
+                <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 id={titleId} className="text-lg font-semibold">
                     {title}
@@ -143,6 +146,8 @@ export function DetailDrawer({
                 >
                   ×
                 </button>
+                </div>
+                {headerContent && <div className="mt-4">{headerContent}</div>}
               </header>
               <div
                 tabIndex={0}
@@ -151,9 +156,9 @@ export function DetailDrawer({
               >
                 {children}
               </div>
-              <footer className="shrink-0 border-t border-border px-6 py-3 text-[11px] text-text3">
+              {footer !== null && <footer className="shrink-0 border-t border-border px-6 py-3 text-[11px] text-text3">
                 {footer ?? "Esc 키 또는 바깥 영역을 눌러 닫기"}
-              </footer>
+              </footer>}
             </motion.section>
           </motion.div>
         )}

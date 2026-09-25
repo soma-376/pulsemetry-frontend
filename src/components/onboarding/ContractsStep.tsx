@@ -25,7 +25,7 @@ export function ContractsStep() {
       event.preventDefault();
       if (!validation.success) return;
       const vendor = createManualContract(draft, `manual_${crypto.randomUUID()}`);
-      update((previous) => ({ ...previous, addedVendors: [...previous.addedVendors, vendor], onboardingDraft: { ...previous.onboardingDraft, contract: { kind: "copilot", plan: "seat_flat", tiers: [{ ...EMPTY_TIER }], term: "" } } }));
+      update((previous) => ({ ...previous, addedVendors: [...previous.addedVendors, vendor], onboardingDraft: { ...previous.onboardingDraft, contract: { kind: "copilot", plan: "copilot_business", tiers: [{ ...EMPTY_TIER }], term: "" } } }));
       setMessage(`${vendor.short} 계약을 등록했습니다`);
     }} className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5 @container">
       <ContractForm row={NEW_CONTRACT_ROW} isNew draft={draft} onChange={(patch) => {

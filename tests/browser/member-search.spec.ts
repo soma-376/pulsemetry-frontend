@@ -10,8 +10,8 @@ test.beforeEach(async ({ page }) => {
 test("typing keeps results until a pause, while Enter and clearing apply immediately", async ({ page }) => {
   const members = page.getByRole("region", { name: "구성원 목록", exact: true });
   const input = members.getByRole("textbox", { name: "구성원 검색" });
-  const rows = members.getByRole("button", { name: /팀\/역할 수정$/ });
-  const account = (await rows.first().getAttribute("aria-label"))!.replace(" 팀/역할 수정", "");
+  const rows = members.getByRole("button", { name: /구성원 상세$/ });
+  const account = (await rows.first().getAttribute("aria-label"))!.replace(" 구성원 상세", "");
   await expect(rows).toHaveCount(20);
   await input.fill("not-a-member");
   await expect(input).toHaveValue("not-a-member");
@@ -22,7 +22,7 @@ test("typing keeps results until a pause, while Enter and clearing apply immedia
   await expect(rows).toHaveCount(20);
   await page.clock.runFor(1);
   await expect(rows).toHaveCount(1);
-  await expect(rows).toHaveAttribute("aria-label", `${account} 팀/역할 수정`);
+  await expect(rows).toHaveAttribute("aria-label", `${account} 구성원 상세`);
   await input.fill("not-a-member");
   await expect(rows).toHaveCount(1);
   await input.press("Enter");
@@ -38,7 +38,7 @@ test("typing keeps results until a pause, while Enter and clearing apply immedia
 test("Korean IME searches after an input pause without compositionend or losing focus", async ({ page }) => {
   const members = page.getByRole("region", { name: "구성원 목록", exact: true });
   const input = members.getByRole("textbox", { name: "구성원 검색" });
-  const rows = members.getByRole("button", { name: /팀\/역할 수정$/ });
+  const rows = members.getByRole("button", { name: /구성원 상세$/ });
   const ime = await page.context().newCDPSession(page);
   await input.focus();
   await ime.send("Input.imeSetComposition", { text: "플", selectionStart: 1, selectionEnd: 1 });
@@ -54,7 +54,7 @@ test("Korean IME searches after an input pause without compositionend or losing 
   await expect(members).toContainText("검색 결과");
   await expect(input).toBeFocused();
   expect(await rows.count()).toBeGreaterThan(0);
-  for (const row of await rows.all()) await expect(row.locator("..").getByText("플랫폼", { exact: true })).toBeVisible();
+  for (const row of await rows.all()) await expect(row.getByText("플랫폼", { exact: true })).toBeVisible();
   await ime.send("Input.imeSetComposition", { text: "", selectionStart: 0, selectionEnd: 0 });
   await expect(input).toHaveValue("");
   await expect(rows).toHaveCount(20);
@@ -67,7 +67,7 @@ test("Korean IME searches after an input pause without compositionend or losing 
 test("search preserves list height and scroll position, then releases space when cleared", async ({ page }) => {
   const members = page.getByRole("region", { name: "구성원 목록", exact: true });
   const input = members.getByRole("textbox", { name: "구성원 검색" });
-  const rows = members.getByRole("button", { name: /팀\/역할 수정$/ });
+  const rows = members.getByRole("button", { name: /구성원 상세$/ });
   const main = page.getByRole("main");
   await members.getByRole("button", { name: "다음 20명 더보기", exact: true }).click();
   await expect(rows).toHaveCount(40);
@@ -92,7 +92,7 @@ test("search preserves list height and scroll position, then releases space when
   expect(await rows.count()).toBeGreaterThan(40);
   const expandedHeight = (await members.boundingBox())!.height;
   expect(expandedHeight).toBeGreaterThan(originalHeight);
-  const account = (await rows.first().getAttribute("aria-label"))!.replace(" 팀/역할 수정", "");
+  const account = (await rows.first().getAttribute("aria-label"))!.replace(" 구성원 상세", "");
   await input.fill(account);
   await input.press("Enter");
   await expect(rows).toHaveCount(1);

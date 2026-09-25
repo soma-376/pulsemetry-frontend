@@ -3,6 +3,10 @@ export const AUTH_SEED = {
   organizationId: "org-codeworks",
   organizationName: "코드웍스",
   domains: ["codeworks.io"],
-  connection: { provider: "Okta", issuer: "https://codeworks.example.okta.com", clientId: "demo-pulsemetry" },
+  connection: {
+    provider: "Okta",
+    issuer: "https://codeworks.example.okta.com",
+    clientId: "demo-pulsemetry",
+  },
   admins: [{ email: "admin@codeworks.io", name: "코드웍스 관리자" }],
 };

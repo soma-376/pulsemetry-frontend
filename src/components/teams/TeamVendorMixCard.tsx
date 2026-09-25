@@ -2,45 +2,46 @@ import { StackedBar } from "@/components/charts/StackedBar";
 import type { AxisKey, TeamsModel } from "@/lib/metrics/teams";
 
 /**
- * 팀별 모델 믹스.
+ * 팀별 벤더 비중.
  *
  * 왼쪽 표가 "얼마나 썼나"라면 이쪽은 "무엇으로 썼나"입니다.
  * 기둥 높이는 선택한 축의 실제 값이라 크기와 구성을 한 번에 읽습니다 —
  * 100% 로 정규화하면 구성비만 남아서, 조금 쓰는 팀과 많이 쓰는 팀이 같은 높이가 됩니다.
  * 기둥 순서는 선택한 축을 따라가므로 왼쪽 표와 같은 줄에서 읽힙니다.
  */
-export function TeamModelMixCard({
+export function TeamVendorMixCard({
   model,
   axis,
 }: {
   model: TeamsModel;
   axis: AxisKey;
 }) {
-  const { yTop, yMid, columns } = model.mix(axis);
+  const { yTop, yMid, columns, legend } = model.vendorMix(axis);
 
   return (
     <section
-      aria-label="팀별 모델 믹스"
+      aria-label="팀별 벤더 비중"
       className="col-span-3 flex min-w-0 flex-col rounded-[10px] border border-border bg-card p-4 @max-[1100px]:col-span-full"
     >
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <span className="min-w-0 text-[12px] font-semibold">팀별 모델 믹스</span>
+        <span className="min-w-0 text-[12px] font-semibold">팀별 벤더 비중</span>
         <div className="flex flex-wrap gap-2.5">
-          {model.legend.map((l) => (
+          {legend.map((l) => (
             <span
-              key={l.key}
+              key={l.id}
               className="flex items-center gap-[5px] text-[11px] whitespace-nowrap text-text2"
             >
               <span
                 className="h-[9px] w-[9px] shrink-0 rounded-[3px]"
                 style={{ background: l.color }}
               />
-              {l.short}
+              {l.name}
             </span>
           ))}
         </div>
       </div>
 
+      <p className="mb-3 text-[11px] leading-5 text-text3">관측된 사용량의 {axis === "cost" ? "환산 비용" : axis === "token" ? "토큰" : "세션"} 비중 · 데모 데이터 · 사용량 미수집 벤더 제외</p>
       <div className="grid grid-cols-[64px_minmax(0,1fr)] gap-2">
         {/* y축 — 기둥 위 총액 라벨이 들어갈 20px 을 비워두고 시작합니다 */}
         <div className="tnum relative h-[226px] text-[11px] text-text3">
@@ -57,6 +58,8 @@ export function TeamModelMixCard({
           {columns.map((c) => (
             <div
               key={c.team}
+              role="img"
+              aria-label={`${c.team} · ${c.totalText} · ${c.segments.map((segment) => segment.tip).join(", ")}`}
               className="relative flex h-full min-w-0 flex-1 flex-col items-center justify-end"
             >
               <span

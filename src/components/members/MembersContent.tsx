@@ -6,19 +6,18 @@ import { FilterToolbar } from "@/components/layout/FilterToolbar";
 import { IngestDownBanner } from "@/components/layout/IngestDownBanner";
 import { InviteModal } from "@/components/members/InviteModal";
 import { MemberListCard } from "@/components/members/MemberListCard";
-import { MemberEditModal } from "@/components/members/MemberEditModal";
+import { MemberDetailDrawer } from "@/components/members/MemberDetailDrawer";
 import { PendingInviteCard } from "@/components/members/PendingInviteCard";
 import { SeatReclaimCard } from "@/components/members/SeatReclaimCard";
 import { UnassignedCard } from "@/components/members/UnassignedCard";
 import { Button } from "@/components/ui/Button";
-import { Modal } from "@/components/ui/Modal";
 import { StatCard } from "@/components/ui/StatCard";
 import { TeamManagement } from "@/components/teams/TeamManagement";
 import { useInvitations } from "@/lib/invitations";
 import { useOrganization } from "@/lib/organization-store";
 import { useFilters } from "@/lib/filters";
-import { buildMembers, type MemberState } from "@/lib/metrics/members";
-import { saveMemberAssignment, type MemberAssignmentTarget } from "@/lib/member-assignment";
+import { buildMembers, type MembersModel, type MemberState } from "@/lib/metrics/members";
+import { saveMemberAssignment } from "@/lib/member-assignment";
 
 /**
  * P6 구성원.
@@ -33,43 +32,20 @@ export function MembersContent() {
   const state = organization.members;
   const setState = (change: (previous: MemberState) => MemberState) =>
     update((previous) => ({ ...previous, members: change(previous.members) }));
-  const [reclaimPicks, setReclaimPicks] = useState<Record<string, boolean>>({});
   const [assignPicks, setAssignPicks] = useState<Record<string, string>>({});
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [highlightedSeatId, setHighlightedSeatId] = useState<string>();
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [editing, setEditing] = useState<MemberAssignmentTarget | null>(null);
+  const [editing, setEditing] = useState<MembersModel["memberRows"][number] | null>(null);
   const [editNotice, setEditNotice] = useState("");
-  const openEdit = (target: MemberAssignmentTarget) => {
+  const openDetail = (target: MembersModel["memberRows"][number], seatId?: string) => {
+    setHighlightedSeatId(seatId);
+    setDrawerOpen(true);
     setEditNotice("");
     setEditing(target);
   };
 
-  const [lastReclaim, setLastReclaim] = useState<string[]>([]);
-
-  const model = useMemo(() => buildMembers(dates, state, organization.teams), [dates, state, organization.teams]);
-
-  const picked = model.reclaimRows.filter((r) => reclaimPicks[r.account]);
-  const preview = model.reclaimPreview(picked.length);
-
-  const applyReclaim = () => {
-    const accounts = picked.map((r) => r.account);
-    setState((prev) => ({
-      ...prev,
-      reclaimed: { ...prev.reclaimed, ...Object.fromEntries(accounts.map((a) => [a, true])) },
-    }));
-    setReclaimPicks({});
-    setLastReclaim(accounts);
-    setConfirmOpen(false);
-  };
-
-  const undoReclaim = () => {
-    setState((prev) => {
-      const next = { ...prev.reclaimed };
-      for (const account of lastReclaim) delete next[account];
-      return { ...prev, reclaimed: next };
-    });
-    setLastReclaim([]);
-  };
+  const model = useMemo(() => buildMembers(dates, state, organization.teams, organization.seatReviewDays), [dates, state, organization.teams, organization.seatReviewDays]);
 
   const { send: addInvites, resend: resendInvite, revoke: revokeInvite } = useInvitations();
 
@@ -110,7 +86,6 @@ export function MembersContent() {
           </div>
           <div className="ml-auto flex flex-wrap items-center gap-3">
             <TeamManagement />
-            <span className="text-[12px] text-text3">{model.seatStatus}</span>
             <Button variant="primary" className="px-3.5" onClick={() => setInviteOpen(true)}>
               구성원 초대
             </Button>
@@ -119,7 +94,7 @@ export function MembersContent() {
 
         <p role="status" aria-live="polite" className="text-xs text-text2 empty:hidden">{editNotice}</p>
         <div className="grid grid-cols-4 gap-4 @max-[1180px]:grid-cols-2 @max-[620px]:grid-cols-1">
-          {model.seatCards.map((c) => (
+          {model.memberCards.map((c) => (
             <StatCard
               key={c.label}
               label={c.label}
@@ -135,25 +110,15 @@ export function MembersContent() {
             onResend={resendInvite}
             onRevoke={revokeInvite}
             onEdit={(email) => {
-              const invite = model.inviteRows.find((item) => item.email === email);
-              if (!invite) return;
-              openEdit({
-                account: email, invited: true, role: invite.role, reclaimed: false,
-                teamId: organization.teams.find((team) => team.id === invite.team || team.sourceName === invite.team)?.id ?? "",
-              });
+              const member = model.memberRows.find((item) => item.account.toLowerCase() === email.toLowerCase());
+              if (member) openDetail(member);
             }}
           />
 
-          <SeatReclaimCard
-            model={model}
-            picked={reclaimPicks}
-            onToggle={(account) =>
-              setReclaimPicks((prev) => ({ ...prev, [account]: !prev[account] }))
-            }
-            onConfirm={() => setConfirmOpen(true)}
-            undoCount={lastReclaim.length}
-            onUndo={undoReclaim}
-          />
+          <SeatReclaimCard model={model} onReview={(seat) => {
+            const member = model.memberRows.find((item) => item.account === seat.account);
+            if (member) openDetail(member, seat.id);
+          }} />
 
           <UnassignedCard
             teams={organization.teams}
@@ -165,49 +130,9 @@ export function MembersContent() {
             onApply={applyAssign}
           />
 
-          <MemberListCard model={model} onEdit={openEdit} />
+          <MemberListCard model={model} onOpen={openDetail} />
         </div>
       </div>
-
-      <Modal
-        open={confirmOpen && picked.length > 0}
-        onClose={() => setConfirmOpen(false)}
-        title={preview.title}
-        width={460}
-        footer={
-          <>
-            <div className="flex-1" />
-            <Button onClick={() => setConfirmOpen(false)}>취소</Button>
-            <Button variant="primary" onClick={applyReclaim}>
-              {picked.length}석 회수
-            </Button>
-          </>
-        }
-      >
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col border-t border-border">
-            {picked.map((r) => (
-              <div
-                key={r.account}
-                className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border py-2 text-[12px]"
-              >
-                <span className="min-w-0 flex-1 basis-40 overflow-hidden text-ellipsis whitespace-nowrap">
-                  {r.account}
-                </span>
-                <span className="text-text3">{r.team}</span>
-                <span className="tnum text-text3">{r.idleText}</span>
-              </div>
-            ))}
-          </div>
-          <div className="flex flex-col gap-1 rounded-md bg-sub px-3 py-2.5">
-            <span className="tnum text-[12px] font-semibold">{preview.seatText}</span>
-            <span className="pretty text-[11.5px] text-text2">
-              계정은 조회 전용으로 전환되고 사용 기록은 유지됩니다 · 다시 초대하면
-              좌석을 재배정할 수 있습니다
-            </span>
-          </div>
-        </div>
-      </Modal>
 
       <InviteModal
         open={inviteOpen}
@@ -215,7 +140,9 @@ export function MembersContent() {
         seatStatus={model.seatStatus}
         onInvite={addInvites}
       />
-      <MemberEditModal target={editing} teams={organization.teams} onClose={() => setEditing(null)} onSave={(target, values) => {
+      <MemberDetailDrawer member={model.memberRows.find((member) => member.account === editing?.account) ?? editing}
+        open={drawerOpen} teams={organization.teams} asOf={model.seatSnapshotDate} highlightedSeatId={highlightedSeatId} notice={editNotice}
+        onClose={() => setDrawerOpen(false)} onAfterClose={() => setEditing(null)} onSave={(target, values) => {
         const next = saveMemberAssignment(organization, target, values);
         update(() => next);
         setAssignPicks((previous) => {
@@ -223,7 +150,6 @@ export function MembersContent() {
           delete remaining[target.account];
           return remaining;
         });
-        setEditing(null);
         setEditNotice(`${target.account}의 ${target.invited ? "초대 " : ""}팀·역할을 변경했습니다.`);
       }} />
     </>

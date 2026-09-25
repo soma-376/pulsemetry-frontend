@@ -10,7 +10,7 @@ import {
   ADD_KINDS,
   contractCheck,
   EMPTY_TIER,
-  PLAN_SETS,
+  getVendorPlans,
   tierSpend,
   toDraftTiers,
   validateTiers,
@@ -52,7 +52,8 @@ export function VendorDrawer({
 
   if (!row) return null;
 
-  const plans = PLAN_SETS[row.family];
+  const kind = isNew ? draft.kind ?? "copilot" : row.kind;
+  const plans = getVendorPlans(kind, row.family);
   const plan = draft.plan !== undefined ? draft.plan : row.plan;
   const planDef = plans.find((p) => p.v === plan) ?? null;
   const isSeat = planDef?.bill === "seat";
@@ -75,8 +76,8 @@ export function VendorDrawer({
   const shownName = name.trim() || (isNew ? kindLabel : row.short);
 
   const changed =
-    JSON.stringify({ p: row.plan, t: baseTiers, m: row.contract.term ?? "", n: row.short }) !==
-    JSON.stringify({ p: plan, t: tiers, m: term, n: shownName });
+    JSON.stringify({ p: row.plan, t: baseTiers, m: row.contract.term ?? "", n: row.short, pn: row.contract.planName ?? "" }) !==
+    JSON.stringify({ p: plan, t: tiers, m: term, n: shownName, pn: draft.planName?.trim() ?? row.contract.planName ?? "" });
 
   const check = contractCheck({
     isSeat: !!isSeat,
@@ -109,7 +110,7 @@ export function VendorDrawer({
       : []),
   ];
 
-  const saveDisabled = !setUp || !contractSchema(row.family).safeParse({ ...draft, plan, tiers }).success || (!isNew && !changed);
+  const saveDisabled = !setUp || !contractSchema(row.family).safeParse({ ...draft, kind, plan, tiers }).success || (!isNew && !changed);
   const deleteDisabled = isNew || (!row.manual && !row.plan && baseTiers.length === 0);
   const dirty = !!isSeat && setUp && Math.abs(seatSpend - baseSpend) > 0.005 && baseSpend > 0;
 
@@ -119,7 +120,7 @@ export function VendorDrawer({
       onClose={onClose}
       onAfterClose={onAfterClose}
       title={isNew ? "벤더 추가" : `${shownName} 계약 설정`}
-      subtitle={planDef ? planDef.label : "플랜 미선택"}
+      subtitle={planDef ? (kind === "other" && draft.planName?.trim() ? draft.planName.trim() : planDef.label) : "플랜 미선택"}
       footer={
         <div className="flex flex-col gap-3">
           {/* 저장 전후를 나란히 보여줍니다 — 숫자가 바뀌는 걸 모르고 저장하지 않도록 */}

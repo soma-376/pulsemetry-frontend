@@ -5,7 +5,7 @@ import { buildTeams } from "../../src/lib/metrics/teams";
 import { usd } from "../../src/lib/format";
 
 const collator = new Intl.Collator("ko", { numeric: true, sensitivity: "base" });
-const memberAccounts = (region: Locator) => region.getByRole("button", { name: /팀\/역할 수정$/ }).evaluateAll((buttons) => buttons.map((button) => button.getAttribute("aria-label")!.replace(" 팀/역할 수정", "")));
+const memberAccounts = (region: Locator) => region.getByRole("button", { name: /구성원 상세$/ }).evaluateAll((buttons) => buttons.map((button) => button.getAttribute("aria-label")!.replace(" 구성원 상세", "")));
 
 test("members sort the whole search result, keep sorting through more and put missing values last", async ({ page }) => {
   await openDashboard(page, "/members");
@@ -18,7 +18,7 @@ test("members sort the whole search result, keep sorting through more and put mi
   expect(await memberAccounts(members)).toEqual([...alphabetical].reverse().slice(0, 20));
   await members.getByRole("button", { name: "다음 20명 더보기", exact: true }).click();
   expect(await memberAccounts(members)).toEqual([...alphabetical].reverse().slice(0, 40));
-  const cost = members.getByRole("button", { name: "이번 주 비용 정렬", exact: true });
+  const cost = members.getByRole("button", { name: "사용 환산액 정렬", exact: true });
   await cost.click();
   await expect(cost).toHaveAccessibleDescription(/^내림차순 정렬 중/);
   const costs = [...model.memberRows].sort((a, b) => (b.costValue ?? -Infinity) - (a.costValue ?? -Infinity) || collator.compare(a.account, b.account));
@@ -43,9 +43,9 @@ test("members sort the whole search result, keep sorting through more and put mi
   expect((await memberAccounts(members)).at(-1)).toBe("zz-sort@codeworks.io");
   await cost.click();
   expect((await memberAccounts(members)).at(-1)).toBe("zz-sort@codeworks.io");
-  const activity = members.getByRole("button", { name: "최근 활동 정렬", exact: true });
+  const activity = members.getByRole("button", { name: "최근 관측 정렬", exact: true });
   await activity.click();
-  const latest = [...model.memberRows].sort((a, b) => a.idleDays! - b.idleDays! || collator.compare(a.account, b.account));
+  const latest = [...model.memberRows].sort((a, b) => (a.idleDays ?? Infinity) - (b.idleDays ?? Infinity) || collator.compare(a.account, b.account));
   expect((await memberAccounts(members)).slice(0, model.memberRows.length)).toEqual(latest.map((row) => row.account));
   expect((await memberAccounts(members)).at(-1)).toBe("zz-sort@codeworks.io");
   await activity.click();

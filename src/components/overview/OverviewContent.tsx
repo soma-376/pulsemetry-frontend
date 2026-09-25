@@ -8,11 +8,12 @@ import { KpiCard } from "@/components/overview/KpiCard";
 import { ModelMixCard } from "@/components/overview/ModelMixCard";
 import { OverviewEmptyState } from "@/components/overview/OverviewEmptyState";
 import { TeamUsageTable } from "@/components/overview/TeamUsageTable";
-import { ValueVsSpendCard } from "@/components/overview/ValueVsSpendCard";
-import { WasteCard } from "@/components/overview/WasteCard";
+import { UsageValueCard } from "@/components/overview/UsageValueCard";
+import { VendorSeatsCard } from "@/components/overview/VendorSeatsCard";
 import { useFilters } from "@/lib/filters";
 import { buildOverview } from "@/lib/metrics/overview";
 import { useOrganization } from "@/lib/organization-store";
+import { buildVendorRows } from "@/lib/settings";
 
 /**
  * P1 개요.
@@ -22,7 +23,7 @@ import { useOrganization } from "@/lib/organization-store";
 export function OverviewContent() {
   const { compare, dates } = useFilters();
   const { state } = useOrganization();
-  const model = useMemo(() => buildOverview(compare, dates, state.teams), [compare, dates, state.teams]);
+  const model = useMemo(() => buildOverview(compare, dates, state.teams, buildVendorRows(state.vendorEdits, state.addedVendors), state.seatReviewDays), [compare, dates, state.teams, state.vendorEdits, state.addedVendors, state.seatReviewDays]);
 
   return (
     <>
@@ -65,26 +66,27 @@ export function OverviewContent() {
               <p className="font-semibold">선택한 기간에 데이터가 없습니다</p>
               <p className="mt-2 text-text3">다른 기간을 선택해 주세요.</p>
             </div>
-          ) : (
+          ) : null}
             <div className="grid grid-cols-5 gap-4 @max-[1023px]:grid-cols-2 @max-[560px]:grid-cols-1">
-              {model.kpis.map((k) => (
+              {model.hasData && model.kpis.map((k) => (
                 <KpiCard
                   key={k.label}
                   {...k}
                   compareLabel={model.compareLabel}
                   noDeltaReason={model.noDeltaReason}
                   staleAt={
-                    model.ingest.isDown ? model.ingest.lastIngestAt : undefined
+                    model.ingest.isDown && k.label !== "월 좌석 계약액" ? model.ingest.lastIngestAt : undefined
                   }
                 />
               ))}
 
-              <ValueVsSpendCard key={`chart-${model.periodLabel}`} model={model} />
+              {model.hasData && <>
+              <UsageValueCard key={`chart-${model.periodLabel}`} model={model} />
               <ModelMixCard key={`mix-${model.periodLabel}`} model={model} />
-              <WasteCard model={model} />
-              <TeamUsageTable model={model} />
+              </>}
+              <VendorSeatsCard model={model.vendorOverview} />
+              {model.attribution.show && <TeamUsageTable model={model} />}
             </div>
-          )}
         </div>
       </div>
     </>

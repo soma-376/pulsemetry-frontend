@@ -16,7 +16,7 @@ test("member edits preserve usage and seat counts and can explicitly clear a see
   assert.equal(member.roleLabel, "팀 리드");
   assert.equal(member.costText, target.costText);
   assert.equal(after.activeUsers, before.activeUsers);
-  assert.equal(after.idleSeats, before.idleSeats);
+  assert.deepEqual(after.reclaimRows, before.reclaimRows);
   assert.deepEqual(state.members.assigned, {});
   const renamed = saveTeam(saved, { name: "Research" }, "team-2", true);
   assert.equal(buildMembers(undefined, renamed.members, renamed.teams).memberRows.find((row) => row.account === target.account)!.team, "Research");
@@ -51,16 +51,13 @@ test("invalid teams, invalid roles and stale targets cannot create assignments",
   for (const invited of [true, false]) assert.throws(() => saveMemberAssignment(state, { account: "missing@example.com", invited }, { team: "", role: "member" }), /찾을 수 없습니다/);
 });
 
-test("editing a reclaimed member does not grant a seat or replace the role restored by undo", () => {
+test("dashboard roles are independent of vendor seat review status", () => {
   const state = structuredClone(INITIAL_ORGANIZATION);
-  const target = buildMembers().memberRows[0];
-  state.members.reclaimed[target.account] = true;
-  state.members.roles = { [target.account]: "lead" };
-  assert.throws(() => saveMemberAssignment(state, target, { team: "team-2", role: "admin" }), /조회 전용/);
-  const saved = saveMemberAssignment(state, target, { team: "team-2", role: "viewer" });
-  assert.equal(saved.members.reclaimed[target.account], true);
-  assert.equal(saved.members.roles![target.account], "lead");
+  const before = buildMembers();
+  const target = before.memberRows.find((row) => row.vendorSeats.some((seat) => seat.review === "candidate"))!;
+  const saved = saveMemberAssignment(state, target, { team: "team-2", role: "admin" });
   const row = buildMembers(undefined, saved.members, saved.teams).memberRows.find((member) => member.account === target.account)!;
-  assert.equal(row.role, "viewer");
+  assert.equal(row.role, "admin");
+  assert.deepEqual(row.vendorSeats, target.vendorSeats);
   assert.equal(row.teamId, "team-2");
 });

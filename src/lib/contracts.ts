@@ -1,5 +1,6 @@
+import { allowsSeatTiers, vendorIdentity } from "./vendor-catalog";
 import { contractSchema } from "./schemas/contract";
-import { ADD_KINDS, ADMIN_EMAIL, buildVendorRows, NEW_VENDOR_ID, PLAN_SETS, TODAY, validateTiers, type VendorDraft } from "./settings";
+import { ADD_KINDS, ADMIN_EMAIL, buildVendorRows, NEW_VENDOR_ID, getVendorPlans, TODAY, validateTiers, type VendorDraft } from "./settings";
 import type { VendorRecord } from "@/mocks/vendors";
 
 const emptyVendor: VendorRecord = {
@@ -9,11 +10,12 @@ const emptyVendor: VendorRecord = {
 export const NEW_CONTRACT_ROW = buildVendorRows({}, [emptyVendor]).find((row) => row.id === NEW_VENDOR_ID)!;
 
 export function createManualContract(input: VendorDraft, id: string): VendorRecord {
-  const draft = contractSchema().parse(input);
-  const plan = PLAN_SETS.generic.find((item) => item.v === draft.plan)!;
+  const draft = contractSchema().parse({ ...input, kind: input.kind ?? "copilot" });
+  const plan = getVendorPlans(draft.kind).find((item) => item.v === draft.plan)!;
   const name = draft.name || ADD_KINDS.find((kind) => kind.v === (draft.kind ?? "copilot"))!.label;
   return {
-    ...emptyVendor, id, name, short: name, plan: plan.v,
-    c: { tiers: plan.bill === "seat" ? validateTiers(draft.tiers!).tiers! : [], term: draft.term ?? "", reviewedAt: TODAY, reviewer: ADMIN_EMAIL },
+    ...emptyVendor, ...vendorIdentity(draft.kind!), id, name, short: name, plan: plan.v,
+    product: ADD_KINDS.find((kind) => kind.v === draft.kind)!.label,
+    c: { planName: draft.kind === "other" ? draft.planName : undefined, tiers: plan.bill === "seat" ? validateTiers(draft.tiers!).tiers!.map((tier) => ({ ...tier, label: allowsSeatTiers(draft.kind) ? tier.label : plan.label })) : [], term: draft.term ?? "", reviewedAt: TODAY, reviewer: ADMIN_EMAIL },
   };
 }

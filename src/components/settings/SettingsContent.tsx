@@ -1,4 +1,5 @@
 "use client";
+import { allowsSeatTiers } from "@/lib/vendor-catalog";
 
 import { useCallback, useMemo, useState } from "react";
 import { CoverageBar } from "@/components/layout/CoverageBar";
@@ -15,6 +16,8 @@ import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { StatCard } from "@/components/ui/StatCard";
 import { Toggle } from "@/components/ui/Toggle";
+import { buildMemberSeats } from "@/lib/metrics/member-seats";
+import { MEMBER_SEATS, SEAT_SNAPSHOT_DATE } from "@/mocks/member-seats";
 import { ingestBadge } from "@/lib/metrics/observation";
 import {
   ADMIN_EMAIL,
@@ -24,9 +27,8 @@ import {
   KEEP_NOTES,
   KEEP_ORDER,
   NEW_VENDOR_ID,
-  PLAN_SETS,
+  getVendorPlans,
   policyCopy,
-  RECLAIM_BY_IDLE,
   STALE_INSTALLS,
   TODAY,
   toDraftTiers,
@@ -67,7 +69,8 @@ export function SettingsContent() {
 
   const promptRaw = organization.promptRaw ?? false;
   const setPromptRaw = (value: boolean) => update((previous) => ({ ...previous, promptRaw: value }));
-  const [idleDays, setIdleDays] = useState("14");
+  const idleDays = organization.seatReviewDays;
+  const candidateCount = buildMemberSeats(MEMBER_SEATS, SEAT_SNAPSHOT_DATE, idleDays).filter((seat) => seat.review === "candidate").length;
   const [keepMonths, setKeepMonths] = useState("24");
   const [rules, setRules] = useState<Record<string, boolean>>({});
   const [ask, setAsk] = useState<PolicyAsk | null>(null);
@@ -87,6 +90,8 @@ export function SettingsContent() {
     setDrawerRow(row);
     setDrawerOpen(true);
     setDraft({
+      kind: row.kind,
+      planName: row.contract.planName,
       plan: row.plan,
       tiers: toDraftTiers(row.contract),
       term: row.contract.term ?? "",
@@ -98,7 +103,7 @@ export function SettingsContent() {
     setDrawerId(NEW_VENDOR_ID);
     setDrawerOpen(true);
     setDrawerRow(NEW_CONTRACT_ROW);
-    setDraft({ kind: "copilot", plan: "seat_flat", tiers: [EMPTY_TIER], term: "" });
+    setDraft({ kind: "copilot", plan: "copilot_business", tiers: [EMPTY_TIER], term: "" });
   };
 
   const closeDrawer = () => {
@@ -112,14 +117,15 @@ export function SettingsContent() {
   }, []);
 
   const saveVendor = (tiers: DraftTier[], plan: string | null, name: string) => {
-    if (!contractSchema(drawerRow?.family).safeParse({ ...draft, tiers, plan, name }).success) return;
-    const planDef = PLAN_SETS[drawerRow?.family ?? "generic"].find((item) => item.v === plan);
+    if (!contractSchema(drawerRow?.family).safeParse({ ...draft, kind: draft.kind ?? drawerRow?.kind, tiers, plan, name }).success) return;
+    const planDef = getVendorPlans(draft.kind ?? drawerRow?.kind, drawerRow?.family).find((item) => item.v === plan);
     if (!planDef) return;
     const committedTiers = planDef.bill === "seat" ? validateTiers(tiers).tiers : [];
     if (!committedTiers) return;
     const contract = {
+      planName: draft.kind === "other" ? draft.planName?.trim() : undefined,
       plan,
-      tiers: committedTiers,
+      tiers: !allowsSeatTiers(draft.kind ?? drawerRow?.kind) ? committedTiers.map((tier) => ({ ...tier, label: planDef.label })) : committedTiers,
       term: draft.term ?? "",
       confirmed: true,
       reviewedAt: TODAY,
@@ -237,11 +243,11 @@ export function SettingsContent() {
 
             <SettingRow
               title="좌석 회수 기준"
-              note={`이 기간 신호가 없는 좌석을 회수 후보로 올립니다 · 전 벤더 공통 · 현재 기준 ${RECLAIM_BY_IDLE[idleDays] ?? 0}석`}
+              note={`벤더별 배정·관측 정보가 확인된 좌석만 검토합니다 · 자동 회수 없음 · 데모 기준 ${candidateCount}석`}
             >
               <Select
                 value={idleDays}
-                onChange={(e) => setIdleDays(e.target.value)}
+                onChange={(e) => update((previous) => ({ ...previous, seatReviewDays: Number(e.target.value) }))}
                 aria-label="좌석 회수 기준"
               >
                 <option value="7">7일</option>
