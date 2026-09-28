@@ -10,10 +10,12 @@ test("onboarding retains typed date drafts and rejects impossible dates", async 
   await signIn(page);
   await page.getByRole("radio", { name: /^수집하지 않음/ }).check();
   await page.getByRole("button", { name: "다음", exact: true }).click();
+  await page.getByLabel("제품", { exact: true }).selectOption("copilot");
+  await page.getByLabel("플랜", { exact: true }).selectOption("copilot_business");
   await page.getByLabel("좌석 수", { exact: true }).fill("2");
   await page.getByLabel("월 단가", { exact: true }).fill("0");
   const date = page.getByLabel("계약 종료일", { exact: true });
-  const save = page.getByRole("button", { name: "계약 등록", exact: true });
+  const save = page.getByRole("button", { name: "벤더 등록", exact: true });
   await date.pressSequentially("20260229");
   await expect(date).toHaveValue("2026.02.29");
   await expect(date).toHaveAccessibleDescription(/존재하지 않는 날짜/);

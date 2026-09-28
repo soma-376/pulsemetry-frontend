@@ -62,3 +62,14 @@ export const centeredPath = (values: number[], domain: Domain) =>
         yAt(v, domain).toFixed(2),
     )
     .join(" ");
+
+/** null 구간마다 경로를 끊되, 날짜의 원래 x 좌표는 유지한다. */
+export function nullableLinePath(values: (number | null)[], domain: Domain, observedFrom = 0) {
+  let connected = false;
+  return values.map((value, index) => {
+    if (value === null || index < observedFrom) { connected = false; return ""; }
+    const command = connected ? "L" : "M";
+    connected = true;
+    return `${command}${Number(xAt(index, values.length).toFixed(2))},${Number(yAt(value, domain).toFixed(2))}`;
+  }).filter(Boolean).join(" ");
+}

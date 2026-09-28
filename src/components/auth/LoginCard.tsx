@@ -9,15 +9,16 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { loginSchema, type LoginForm } from "@/lib/schemas/auth";
-import { resolveDemoLogin, resolveDemoAdmin, ownerMailto, type DemoLoginResult, type LoginView } from "@/lib/auth";
+import { ownerMailto, type DemoLoginResult, type LoginView } from "@/lib/auth";
+import { fetchOnboarding } from "@/lib/api/management";
+import { AuthError, seedLogin } from "@/lib/api/session";
 import { useOrganization } from "@/lib/organization-store";
 
 export function LoginCard() {
-  const { state, update } = useOrganization();
+  const { update } = useOrganization();
   const router = useRouter();
   const [view, setView] = useState<LoginView>("form");
   const [scenario, setScenario] = useState<DemoLoginResult>("success");
-  const [provider, setProvider] = useState("");
   const [error, setError] = useState("");
   const request = useRef<AbortController | null>(null);
   useEffect(() => () => request.current?.abort(), []);
@@ -32,23 +33,26 @@ export function LoginCard() {
     await new Promise((resolve) => setTimeout(resolve, 250));
     if (controller.signal.aborted) return;
     if (scenario === "network") { setError("로그인 정보를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요."); return; }
-    const result = resolveDemoLogin(values);
-    if (result.kind === "unknown" || result.kind === "invalid") { setView("unknown"); return; }
-    setProvider(result.provider);
     if (scenario === "denied") { setView("denied"); return; }
     if (scenario === "cancelled" || scenario === "configuration") {
       setError(scenario === "cancelled" ? "회사 계정 로그인이 취소되었습니다." : "회사 로그인 연결을 확인할 수 없습니다. 조직 관리자에게 문의해 주세요.");
       setView("error"); return;
     }
     setView("redirect");
+    try {
+      const user = await seedLogin(values.email, controller.signal);
+      if (controller.signal.aborted) return;
+      update((previous) => ({ ...previous, session: { email: user.email, name: user.displayName ?? user.email, organizationId: user.organizationId } }));
+      const onboarding = await fetchOnboarding(user.organizationId, controller.signal);
+      if (!controller.signal.aborted) router.replace(onboarding.completed ? "/overview" : "/onboarding");
+    } catch (cause) {
+      if (controller.signal.aborted) return;
+      if (cause instanceof AuthError && cause.status === 400) { setView("unknown"); return; }
+      setError(cause instanceof Error ? cause.message : "로그인에 실패했습니다.");
+      setView("error");
+    }
   };
-  const retry = () => { setView("form"); setError(""); };
-  const finishDemoLogin = () => {
-    const session = resolveDemoAdmin(getValues("email").trim().toLowerCase());
-    if (!session) { setView("denied"); return; }
-    update((previous) => ({ ...previous, session }));
-    router.replace(state.onboardingCompleted ? "/overview" : "/onboarding");
-  };
+  const retry = () => { request.current?.abort(); setView("form"); setError(""); };
   return <AuthFrame title={view === "denied" ? "접근 권한이 없습니다" : "회사 계정으로 로그인"}>
     {(view === "form" || view === "unknown") && <form onSubmit={(event) => void handleSubmit(submit)(event)} noValidate className="flex flex-col gap-4">
       <label className="flex flex-col gap-2 text-sm">회사 이메일
@@ -60,9 +64,8 @@ export function LoginCard() {
       <Button type="submit" variant="primary" className="h-10" disabled={isSubmitting}>{isSubmitting ? "로그인 방법 확인 중…" : "회사 계정으로 계속"}</Button>
     </form>}
     {view === "redirect" && <>
-      <div role="status" className="rounded-lg bg-sub p-4 text-sm"><p className="font-semibold">{provider}로 이동 중</p><p className="mt-2 break-all text-text2">{getValues("email")}</p></div>
-      <p className="text-xs leading-5 text-text3">데모에서는 외부 인증 화면을 열지 않습니다.</p>
-      <Button variant="primary" onClick={finishDemoLogin}>데모 인증 완료</Button>
+      <div role="status" className="rounded-lg bg-sub p-4 text-sm"><p className="font-semibold">회사 계정으로 로그인 중</p><p className="mt-2 break-all text-text2">{getValues("email")}</p></div>
+
       <Button onClick={retry}>다른 이메일로 로그인</Button>
     </>}
     {(view === "denied" || view === "error") && <>
@@ -73,7 +76,7 @@ export function LoginCard() {
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-xs text-text2"><span>아직 도입 전인가요?</span><ButtonLink href="/contact">도입 문의</ButtonLink></div>
     <details className="text-xs text-text3"><summary className="cursor-pointer">데모 시나리오</summary>
       <div className="mt-3 flex flex-col gap-3">
-        <p>관리자: admin@codeworks.io<br />새로고침하면 로그인과 온보딩을 처음부터 체험할 수 있습니다.</p>
+        <p>관리자: owner@seed-a.example.test<br />B·C 조직은 seed-b·seed-c 이메일을 사용합니다.</p>
         <label className="flex flex-col gap-1">회사 로그인 결과<Select value={scenario} disabled={isSubmitting} onChange={(event) => { setScenario(event.target.value as DemoLoginResult); retry(); }}>
           <option value="success">정상</option><option value="cancelled">사용자 취소</option><option value="configuration">연결 오류</option><option value="denied">권한 부족</option><option value="network">조회 실패</option>
         </Select></label>

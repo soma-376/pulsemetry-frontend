@@ -12,7 +12,7 @@ import type { CompareKey } from "@/types/domain";
  * 설정 화면처럼 필터가 무의미한 페이지는 이걸 렌더하지 않습니다 —
  * 그래서 레이아웃이 아니라 페이지가 직접 얹습니다.
  */
-export function FilterToolbar() {
+export function FilterToolbar({ todayIso, onRefresh, refreshing = false, csvDisabled = false }: { todayIso?: string; onRefresh?: () => void; refreshing?: boolean; csvDisabled?: boolean }) {
   const {
     compare,
     setCompare,
@@ -28,7 +28,7 @@ export function FilterToolbar() {
       aria-label="전역 필터"
       className="sticky top-0 z-30 flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border bg-card px-4 py-2 @min-[1180px]:h-14 @min-[1180px]:flex-nowrap @min-[1180px]:py-0"
     >
-      <DateRangePicker value={dates} onChange={setDates} />
+      <DateRangePicker value={dates} onChange={setDates} todayIso={todayIso} />
 
       <label className="flex items-center gap-1.5 text-[12px] whitespace-nowrap text-text2">
         비교
@@ -51,12 +51,13 @@ export function FilterToolbar() {
 
       <div className="hidden flex-1 @min-[1180px]:block" />
 
+      {onRefresh && <Button onClick={onRefresh} disabled={refreshing}>{refreshing ? "조회 중…" : "새로고침"}</Button>}
       <Button
         onClick={toggleAutoRefresh}
         aria-pressed={autoRefresh}
-        title="새로고침 · 자동 갱신 5분"
+        title="자동 갱신 5분"
       >
-        새로고침
+        {onRefresh ? "자동 갱신" : "새로고침"}
         <span className="flex items-center gap-1 text-[11px] text-text3">
           <span
             className="relative h-3 w-[22px] rounded-full transition-colors"
@@ -73,7 +74,7 @@ export function FilterToolbar() {
         </span>
       </Button>
 
-      <Button>CSV</Button>
+      <Button disabled={csvDisabled} title={csvDisabled ? "개요 CSV 내보내기는 아직 지원하지 않습니다" : undefined}>CSV</Button>
 
       <ThemeToggle />
     </div>
