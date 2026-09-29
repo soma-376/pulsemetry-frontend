@@ -1,0 +1,366 @@
+{
+  "fixtureVersion": 1,
+  "asOf": "2026-09-28",
+  "synthetic": true,
+  "organization": {
+    "organizationId": "1b59ab21-1788-35e0-bfd7-23baa88a35b4",
+    "name": "시드 A · 정상 사용",
+    "timezone": "Asia/Seoul"
+  },
+  "teams": [
+    {
+      "teamId": "7603f1b2-2b0e-3a4e-b0ca-edd43d490bb4",
+      "teamName": "플랫폼",
+      "version": 1
+    },
+    {
+      "teamId": "4b153968-c7c5-3fb7-91b7-5c4fc24f9925",
+      "teamName": "제품",
+      "version": 1
+    },
+    {
+      "teamId": "758c0dcf-d9b2-30bb-920d-f9013d8913f9",
+      "teamName": "데이터",
+      "version": 1
+    },
+    {
+      "teamId": "b986f4a0-4bf9-3c83-a914-b5cd9e47e8f9",
+      "teamName": "디자인",
+      "version": 1
+    }
+  ],
+  "members": [
+    {
+      "memberId": "02a5ab90-a9b1-30b1-894c-6de36fb11f7a",
+      "email": "owner@seed-a.example.test",
+      "displayName": "A 구성원 00",
+      "role": "owner",
+      "status": "active",
+      "teamId": "7603f1b2-2b0e-3a4e-b0ca-edd43d490bb4"
+    },
+    {
+      "memberId": "14039ac1-4444-3718-8ac6-d87accb0a945",
+      "email": "admin@seed-a.example.test",
+      "displayName": "A 구성원 01",
+      "role": "admin",
+      "status": "active",
+      "teamId": "7603f1b2-2b0e-3a4e-b0ca-edd43d490bb4"
+    },
+    {
+      "memberId": "5f457aad-ca0e-3ff8-b5c8-20ee8a8e587e",
+      "email": "member2@seed-a.example.test",
+      "displayName": "A 구성원 02",
+      "role": "member",
+      "status": "active",
+      "teamId": "4b153968-c7c5-3fb7-91b7-5c4fc24f9925"
+    },
+    {
+      "memberId": "2acacf2f-40c0-3715-9f8f-f428f929f9c6",
+      "email": "member3@seed-a.example.test",
+      "displayName": "A 구성원 03",
+      "role": "member",
+      "status": "active",
+      "teamId": "4b153968-c7c5-3fb7-91b7-5c4fc24f9925"
+    },
+    {
+      "memberId": "8a49fef9-8ed6-37b7-8790-6395451bbf18",
+      "email": "member4@seed-a.example.test",
+      "displayName": "A 구성원 04",
+      "role": "member",
+      "status": "active",
+      "teamId": "758c0dcf-d9b2-30bb-920d-f9013d8913f9"
+    },
+    {
+      "memberId": "e0cd2e38-d592-357e-83f0-0e65fe8ce61e",
+      "email": "member5@seed-a.example.test",
+      "displayName": "A 구성원 05",
+      "role": "member",
+      "status": "active",
+      "teamId": "b986f4a0-4bf9-3c83-a914-b5cd9e47e8f9"
+    },
+    {
+      "memberId": "b672e999-7c91-3fd2-8dfd-660dcf9bb21b",
+      "email": "member6@seed-a.example.test",
+      "displayName": "A 구성원 06",
+      "role": "member",
+      "status": "active",
+      "teamId": "7603f1b2-2b0e-3a4e-b0ca-edd43d490bb4"
+    },
+    {
+      "memberId": "37b35f00-ed7c-3633-8cce-35732692538e",
+      "email": "member7@seed-a.example.test",
+      "displayName": "A 구성원 07",
+      "role": "member",
+      "status": "active",
+      "teamId": "4b153968-c7c5-3fb7-91b7-5c4fc24f9925"
+    },
+    {
+      "memberId": "cba8bdd5-e6a5-39f5-acac-98d205a7dc40",
+      "email": "member8@seed-a.example.test",
+      "displayName": "A 구성원 08",
+      "role": "member",
+      "status": "active",
+      "teamId": "758c0dcf-d9b2-30bb-920d-f9013d8913f9"
+    },
+    {
+      "memberId": "4ada80a9-4549-327a-93e8-fabfe455fd41",
+      "email": "member9@seed-a.example.test",
+      "displayName": "A 구성원 09",
+      "role": "member",
+      "status": "active",
+      "teamId": null
+    },
+    {
+      "memberId": "c7909a2f-e877-3358-ae3f-09a27c7111c6",
+      "email": "member10@seed-a.example.test",
+      "displayName": "A 구성원 10",
+      "role": "member",
+      "status": "active",
+      "teamId": "7603f1b2-2b0e-3a4e-b0ca-edd43d490bb4"
+    },
+    {
+      "memberId": "831adb13-5886-3e01-baee-2e6ec7901e3c",
+      "email": "member11@seed-a.example.test",
+      "displayName": "A 구성원 11",
+      "role": "member",
+      "status": "active",
+      "teamId": "4b153968-c7c5-3fb7-91b7-5c4fc24f9925"
+    },
+    {
+      "memberId": "927dab34-02c3-32e9-8e95-5ee30aa56344",
+      "email": "member12@seed-a.example.test",
+      "displayName": "A 구성원 12",
+      "role": "member",
+      "status": "invited",
+      "teamId": null
+    },
+    {
+      "memberId": "1ac92663-6a9a-3bce-a560-e869c41290f7",
+      "email": "member13@seed-a.example.test",
+      "displayName": "A 구성원 13",
+      "role": "member",
+      "status": "invited",
+      "teamId": null
+    }
+  ],
+  "managedVendors": [
+    {
+      "vendorId": "df4b6ee0-9366-354e-b1bd-2d0bd6f15b18",
+      "kind": "claude_team",
+      "displayName": "Claude (Anthropic)",
+      "source": "manual",
+      "version": 1,
+      "state": "configured",
+      "contractStatus": "active",
+      "contract": {
+        "version": 1,
+        "planId": "team",
+        "effectiveFrom": "2026-07-30",
+        "effectiveTo": "2027-07-30",
+        "termNote": "합성 테스트 계약",
+        "tiers": [
+          {
+            "tierId": "4a68a1b2-9d13-3847-80bc-ebe34dd0991e",
+            "label": "표준",
+            "seats": 8,
+            "monthlyFeePerSeatUsd": "20"
+          },
+          {
+            "tierId": "d298423c-a959-309c-9809-41fc1d691db1",
+            "label": "프리미엄",
+            "seats": 2,
+            "monthlyFeePerSeatUsd": "100"
+          }
+        ],
+        "monthlySeatFeeUsd": "360",
+        "confirmedAt": "2026-07-29T15:00:00Z",
+        "confirmedBy": "02a5ab90-a9b1-30b1-894c-6de36fb11f7a"
+      },
+      "activeUsers7d": null,
+      "activeUsers30d": null,
+      "firstSeenAt": null,
+      "lastSeenAt": null,
+      "observation": "unobserved"
+    },
+    {
+      "vendorId": "6b5cda6f-d782-3be7-b687-71f545fb31d4",
+      "kind": "openai_biz",
+      "displayName": "ChatGPT / Codex (OpenAI)",
+      "source": "manual",
+      "version": 1,
+      "state": "needs_review",
+      "contractStatus": "missing",
+      "contract": null,
+      "activeUsers7d": null,
+      "activeUsers30d": null,
+      "firstSeenAt": null,
+      "lastSeenAt": null,
+      "observation": "unobserved"
+    },
+    {
+      "vendorId": "31d4d9c7-5a48-325d-91d8-11d9397e9587",
+      "kind": "copilot",
+      "displayName": "GitHub Copilot",
+      "source": "manual",
+      "version": 1,
+      "state": "needs_review",
+      "contractStatus": "expired",
+      "contract": {
+        "version": 1,
+        "planId": "copilot_business",
+        "effectiveFrom": "2026-07-30",
+        "effectiveTo": "2026-09-27",
+        "termNote": "합성 테스트 만료 계약",
+        "tiers": [
+          {
+            "tierId": "fcd25c60-4fb6-35fc-ba56-843a6058c24d",
+            "label": "표준",
+            "seats": 5,
+            "monthlyFeePerSeatUsd": "19"
+          }
+        ],
+        "monthlySeatFeeUsd": "95",
+        "confirmedAt": "2026-07-29T15:00:00Z",
+        "confirmedBy": "02a5ab90-a9b1-30b1-894c-6de36fb11f7a"
+      },
+      "activeUsers7d": null,
+      "activeUsers30d": null,
+      "firstSeenAt": null,
+      "lastSeenAt": null,
+      "observation": "unobserved"
+    }
+  ],
+  "installations": [
+    {
+      "installationId": "953c0e17-919e-32aa-b265-9d083411f63e",
+      "memberId": "5f457aad-ca0e-3ff8-b5c8-20ee8a8e587e",
+      "agentVersion": "seed-v1",
+      "appliedPolicyVersion": 1,
+      "lastHeartbeatAt": null,
+      "canNotify": false
+    },
+    {
+      "installationId": "24323661-a796-350c-9ba5-68b7f2d5ed93",
+      "memberId": "2acacf2f-40c0-3715-9f8f-f428f929f9c6",
+      "agentVersion": "seed-v1",
+      "appliedPolicyVersion": 1,
+      "lastHeartbeatAt": null,
+      "canNotify": false
+    },
+    {
+      "installationId": "b114cf3e-985b-3c22-b136-39124d8de767",
+      "memberId": "8a49fef9-8ed6-37b7-8790-6395451bbf18",
+      "agentVersion": "seed-v1",
+      "appliedPolicyVersion": 1,
+      "lastHeartbeatAt": null,
+      "canNotify": false
+    },
+    {
+      "installationId": "3ff7c6e7-71de-392c-9d2d-3c7d1b4c19f3",
+      "memberId": "e0cd2e38-d592-357e-83f0-0e65fe8ce61e",
+      "agentVersion": "seed-v1",
+      "appliedPolicyVersion": 1,
+      "lastHeartbeatAt": null,
+      "canNotify": false
+    },
+    {
+      "installationId": "19c72366-067f-3900-b71a-819970c01a56",
+      "memberId": "b672e999-7c91-3fd2-8dfd-660dcf9bb21b",
+      "agentVersion": "seed-v1",
+      "appliedPolicyVersion": 1,
+      "lastHeartbeatAt": null,
+      "canNotify": false
+    },
+    {
+      "installationId": "f048d38a-a5ad-3194-801a-6d21056c9944",
+      "memberId": "37b35f00-ed7c-3633-8cce-35732692538e",
+      "agentVersion": "seed-v1",
+      "appliedPolicyVersion": 1,
+      "lastHeartbeatAt": null,
+      "canNotify": false
+    },
+    {
+      "installationId": "48ca8e67-9ef8-32a1-90fd-1fb54375c377",
+      "memberId": "cba8bdd5-e6a5-39f5-acac-98d205a7dc40",
+      "agentVersion": "seed-v1",
+      "appliedPolicyVersion": 1,
+      "lastHeartbeatAt": null,
+      "canNotify": false
+    },
+    {
+      "installationId": "7fbdb302-b483-3fee-a90e-cef85d2e6548",
+      "memberId": "4ada80a9-4549-327a-93e8-fabfe455fd41",
+      "agentVersion": "seed-v1",
+      "appliedPolicyVersion": 1,
+      "lastHeartbeatAt": null,
+      "canNotify": false
+    },
+    {
+      "installationId": "0ebf3398-cc7d-3076-b399-1d81603f38fa",
+      "memberId": "c7909a2f-e877-3358-ae3f-09a27c7111c6",
+      "agentVersion": "seed-v1",
+      "appliedPolicyVersion": 1,
+      "lastHeartbeatAt": null,
+      "canNotify": false
+    },
+    {
+      "installationId": "3e0583a0-ce57-3207-b252-a87c878b35c0",
+      "memberId": "831adb13-5886-3e01-baee-2e6ec7901e3c",
+      "agentVersion": "seed-v1",
+      "appliedPolicyVersion": 1,
+      "lastHeartbeatAt": null,
+      "canNotify": false
+    }
+  ],
+  "onboarding": {
+    "organizationId": "1b59ab21-1788-35e0-bfd7-23baa88a35b4",
+    "completed": true,
+    "completedAt": "2026-07-29T15:00:00Z",
+    "policy": {
+      "confirmed": true,
+      "confirmedAt": "2026-07-29T15:00:00Z",
+      "version": 1,
+      "collectRawContent": false
+    },
+    "selectedVendorCount": 3,
+    "canComplete": true,
+    "nextStep": "complete"
+  },
+  "policyRollout": {
+    "desiredVersion": 1,
+    "eligible": 10,
+    "applied": 10,
+    "outdated": 0,
+    "unknown": 0
+  },
+  "usage": {
+    "startDate": "2026-08-31",
+    "endDate": "2026-09-27",
+    "activeUsers": 8,
+    "eventCount": 252,
+    "byProduct": {
+      "claude_code": {
+        "activeUsers": 4
+      },
+      "codex": {
+        "activeUsers": 5
+      }
+    }
+  },
+  "legacyContracts": [
+    {
+      "contractId": "fdc28479-2035-36bf-ae5a-1767ada67c0a",
+      "provider": "anthropic",
+      "contractType": "term_commitment",
+      "commitmentMonths": 12,
+      "commitmentAmountUsd": "1200"
+    },
+    {
+      "contractId": "845c3e3e-ed6f-3777-95cf-c8f28c0eaaae",
+      "provider": "openai",
+      "contractType": "term_commitment",
+      "commitmentMonths": 12,
+      "commitmentAmountUsd": "0"
+    }
+  ]
+}

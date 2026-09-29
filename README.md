@@ -59,3 +59,11 @@ API 문서 검사는 문서의 TypeScript 타입과 JSON 예시를 비교하고 
 
 Next.js API를 수정하기 전 [AGENTS.md](AGENTS.md)와 설치된 버전의
 node_modules/next/dist/docs 가이드를 확인합니다.
+
+## 화면 검증 환경
+
+`npm run storybook`으로 공통 컴포넌트를 확인하고 `npm run build-storybook`으로 정적 빌드를 검증한다. MSW 응답은 Storybook 안에서만 사용한다.
+
+`npm run fixtures:sync`는 백엔드 exporter로 A 회사와 카탈로그 fixture를 생성한다. DB를 초기화하지 않는다. `src/mocks/README.md` 참고.
+
+기본 Playwright는 실제 서버 E2E용이며 시나리오는 후속 로그인·설정·개요 PR에서 추가한다. 기존 화면 목 테스트는 `npm run test:browser:mock`으로 실행한다.

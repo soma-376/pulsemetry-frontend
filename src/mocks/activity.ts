@@ -1,3 +1,4 @@
+// 기존 Codeworks UI 데모. A회사 백엔드 시드는 ./company-a.ts 참조 (README.md).
 import { DAY_MS, fromIso, toIso } from "@/lib/date";
 import { demoVendorUsage } from "./vendor-usage";
 import {
