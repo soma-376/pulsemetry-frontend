@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useOrganization } from "@/lib/organization-store";
+import { backendLogout, useBackendSession } from "@/lib/api/session";
 import { AUTH_SEED } from "@/mocks/auth";
 import { Icon, type IconName } from "@/components/ui/Icon";
 
@@ -18,6 +19,9 @@ const NAV: { href: string; label: string; icon: IconName }[] = [
 export function Sidebar() {
   const { state, update } = useOrganization();
   const pathname = usePathname();
+  const session = useBackendSession();
+  const router = useRouter();
+  const [logoutError, setLogoutError] = useState("");
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -78,9 +82,9 @@ export function Sidebar() {
       <div className="flex shrink-0 flex-col gap-2.5 border-t border-border pt-3">
         {!collapsed && (
           <div className="flex flex-col gap-0.5 px-2">
-            <div className="text-[13px] font-semibold">{AUTH_SEED.organizationName}</div>
+            <div className="text-[13px] font-semibold">{session?.user.organizationName ?? AUTH_SEED.organizationName}</div>
             <div className="overflow-hidden text-[12px] text-ellipsis whitespace-nowrap text-text3">
-              {state.session?.email}
+              {session?.user.email ?? state.session?.email}
             </div>
             <div className="mt-1">
               <span className="rounded border border-border bg-sub px-1.5 py-px text-[11px] font-medium text-text2">
@@ -89,7 +93,8 @@ export function Sidebar() {
             </div>
           </div>
         )}
-        <Link href="/login" onClick={() => update((previous) => ({ ...previous, session: null }))} className="rounded-md px-2 py-1 text-xs text-text3 hover:bg-hover">로그아웃</Link>
+        <Link href="/login" onClick={async (event) => { event.preventDefault(); try { await backendLogout(); update((previous) => ({ ...previous, session: null })); router.replace("/login"); } catch (cause) { setLogoutError(cause instanceof Error ? cause.message : "로그아웃에 실패했습니다."); } }} className="rounded-md px-2 py-1 text-xs text-text3 hover:bg-hover">로그아웃</Link>
+        {logoutError && <p role="alert" className="text-xs text-red">{logoutError}</p>}
       </div>
     </nav>
   );
