@@ -96,4 +96,65 @@
 공통 컴포넌트는 쿼리를 직접 받지 않는다. 페이지에서 데이터 유무·권한·요청 상태에 따라
 필요한 표현을 선택하며, 로딩만을 위한 별도 서버 상태나 페이지별 복제 컴포넌트를 만들지 않는다.
 
-설정 페이지의 API 연동과 상태별 스토리는 PROJ-182에서 적용한다.
+현재 설정 구현:
+
+- [SettingsContent](../src/components/settings/SettingsContent.tsx): 본문 조회 상태, 새로고침, 벤더 상세 조회.
+- [VendorTable](../src/components/settings/VendorTable.tsx): 선택한 행의 상세 조회 진행 표시.
+- [ServerVendorDrawer](../src/components/settings/ServerVendorDrawer.tsx): 변경 요청, 입력 보존, 충돌 복구.
+- [설정 스토리](../src/components/settings/SettingsContent.stories.tsx): 상태별 상호작용 검증.
+
+`npm run storybook` 실행 후 확인할 사례:
+
+| 사례 | Storybook |
+| --- | --- |
+| 최초 로딩 | [Loading](http://localhost:6006/?path=/story/pages-settings--loading) |
+| 로딩 완료 후 실제 빈 값 표시 | [LoadingThenLoaded](http://localhost:6006/?path=/story/pages-settings--loading-then-loaded) |
+| 기존 화면을 유지하는 새로고침 | [Refreshing](http://localhost:6006/?path=/story/pages-settings--refreshing) |
+| 최초 조회 실패 | [LoadError](http://localhost:6006/?path=/story/pages-settings--load-error) |
+| 벤더 상세 로딩·선택 전환 | [VendorLoading](http://localhost:6006/?path=/story/pages-settings--vendor-loading) |
+| 상세 조회 실패 후 재시도 | [VendorLoadError](http://localhost:6006/?path=/story/pages-settings--vendor-load-error) |
+| 등록 제품 없음 | [Empty](http://localhost:6006/?path=/story/pages-settings--empty) |
+| 저장 실패 시 입력 보존 | [SaveError](http://localhost:6006/?path=/story/pages-settings--save-error) |
+| 동시 수정 충돌 | [Conflict](http://localhost:6006/?path=/story/pages-settings--conflict) |
+| 계약 정정·비우기·삭제·재등록 | [ContractLifecycle](http://localhost:6006/?path=/story/pages-settings--contract-lifecycle) |
+
+## 적용 현황
+
+설정의 최초 본문 로딩, 기존 데이터를 유지하는 재조회, 벤더 상세 조회는 구현되어 있다.
+저장 오류와 충돌 안내도 드로어 안에서 처리한다. 위 Storybook은 목 API로 동작하며,
+실제 서버 연동 검증은 별도 E2E 테스트에서 수행한다.
+
+공통 성공 Toast를 구현하고 설정의 벤더 추가·저장·계약 비우기·삭제와 수집 정책 저장에 적용했다.
+공통 로딩·오류·빈 상태 컴포넌트를 설정 본문·미적용 설치 목록과 개요 본문에 적용했다.
+설정 드로어의 오류 표시, 저장·삭제 버튼과 수동 새로고침 버튼도 공통 표현을 사용한다.
+개요의 관측 안내처럼 도메인 설명이 필요한 빈 상태는 기존 전용 컴포넌트를 유지한다.
+갱신 실패 문구, 네트워크 연결 대기 표시와 다른 페이지의 적용 여부는 추가 점검이 필요하다.
+이 문서를 추가한 것만으로 모든 화면이 기준을 충족한 것으로 보지 않는다.
+
+## 공통 헤더의 조직 수집 현황
+
+`DashboardHeaderProvider`는 대시보드 레이아웃에서 한 번만 렌더링한다. 기간 필터와
+자동 갱신 설정도 같은 레이아웃의 `FiltersProvider`를 사용하며 페이지별로 중첩하지 않는다.
+페이지는 `useDashboardPageRefresh`로 자신의 재조회 동작·진행 여부만 등록한다.
+수동 새로고침은 현재 페이지와 조직 수집 현황을 함께 조회하고, 자동 갱신은 공통 설정을 따른다.
+
+`IngestStatusBar`의 높이는 모든 상태에서 40px로 유지한다. 조직 ID만 포함한 쿼리 키로
+`GET /api/v1/organizations/{organizationId}/ingest-status`를 조회하므로 기간 변경과 독립적이다.
+최초 조회는 inline LoadingState, 오류는 inline ErrorState, 재조회는 기존 값과 작은 진행 표시를 쓴다.
+권한 거부 시 이전 값은 숨기고 조직이 바뀌면 다른 조직의 캐시를 표시하지 않는다.
+현재 서버 판정은 empty/unknown이며 lastReceivedAt만으로 정상·지연·중단을 추정하지 않는다.
+마지막 수신 시각은 한국 시간의 절대 시각으로 표시해 자동 갱신을 꺼도 상대 시간이 낡지 않게 한다.
+개요의 선택 기간별 관측 일수는 헤더가 아닌 개요 본문에서 표시한다.
+
+[공통 헤더 스토리](../src/components/layout/DashboardHeader.stories.tsx)에서 로딩·오류·재시도·재조회·본문 전환을 검증한다.
+서버 변경은 [backend-ingest-status.patch](../patches/backend-ingest-status.patch)에 준비되어 있다.
+이 대화에서는 백엔드 디렉터리에 쓰기 권한이 없어 실제 적용·서버 테스트는 하지 않았다.
+서버 패치 적용 전에는 실서비스 연결 시 수집 현황 줄이 API 오류를 표시할 수 있다. 목 응답으로 대체하지 않는다.
+
+백엔드 저장소에서 패치 적용 확인과 적용 후 테스트:
+
+```powershell
+git apply --check ../pulsemetry-frontend/patches/backend-ingest-status.patch
+git apply ../pulsemetry-frontend/patches/backend-ingest-status.patch
+./gradlew.bat :apps:dashboard-api:test --tests '*IngestStatusApiTest'
+```
