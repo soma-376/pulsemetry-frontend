@@ -1,9 +1,10 @@
 import { LineAreaChart } from "@/components/charts/LineAreaChart";
 import { ChartInspector } from "@/components/charts/ChartInspector";
 import { Widget } from "@/components/ui/Card";
+import type { OverviewChart } from "@/lib/metrics/overview-presentation";
 import type { OverviewModel } from "@/lib/metrics/overview";
 
-export function UsageValueCard({ model }: { model: OverviewModel }) {
+export function UsageValueCard({ model }: { model: { observation: Pick<OverviewModel["observation"], "firstObservedIndex" | "hasGap" | "chartNote">; defs: Pick<OverviewModel["defs"], "w12"> } & { chart: OverviewChart } }) {
   const { chart, observation, defs } = model;
   return <Widget id="w12" label="사용 환산액 추이" title="사용 환산액 추이" note="일별 · 포인터 또는 방향키로 탐색" def={defs.w12} className="col-span-3 @max-[1023px]:col-span-full">
     <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-text2">

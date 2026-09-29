@@ -1,171 +1,141 @@
-import { openDashboard } from "./helpers";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { mockOverview, overviewFixture, overviewUrl, corsHeaders, mockOverviewSettings } from "./overview-fixture";
 
-async function selectCalendarPreset(page: Page, preset: string) {
-  await page.getByRole("toolbar", { name: "전역 필터" }).getByRole("button", { name: /^\d{4}\.\d{2}\.\d{2} ~ / }).click();
-  const calendar = page.getByRole("dialog", { name: "기간 선택" });
-  await calendar.getByRole("button", { name: preset, exact: true }).click();
-  await calendar.getByRole("button", { name: "적용", exact: true }).click();
+test.beforeEach(async ({ page }) => { await mockOverviewSettings(page); });
+
+test("Spring을 직접 조회하고 기간·비교 변경과 수동 새로고침을 반영한다", async ({ page }) => {
+  const requests: URL[] = [];
+  await mockOverview(page);
+  page.on("request", (request) => { if (request.url().includes("/analytics/overview?")) requests.push(new URL(request.url())); });
+  await page.goto("/overview");
+  await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toContainText("$5,000.00");
+  expect(requests[0].origin).toBe("http://localhost:8081");
+  expect(requests[0].searchParams.get("timeZone")).toBe("Asia/Seoul");
+  expect(requests[0].searchParams.get("startDate")).toBe("2026-09-07");
+  await page.getByRole("combobox", { name: "비교", exact: true }).selectOption("none");
+  await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).not.toContainText("전주 대비");
+  expect(requests.at(-1)!.searchParams.get("compare")).toBe("none");
+  await page.getByRole("button", { name: "2026.09.07 ~ 2026.09.13", exact: true }).click();
+  await page.getByRole("button", { name: "오늘", exact: true }).click();
+  await page.getByRole("button", { name: "적용", exact: true }).click();
+  await expect(page.getByRole("button", { name: "2026.09.13 ~ 2026.09.13", exact: true })).toBeVisible();
+  await expect.poll(() => requests.at(-1)!.searchParams.get("startDate")).toBe("2026-09-13");
+  const count = requests.length;
+  await page.getByRole("button", { name: "새로고침", exact: true }).click();
+  await expect.poll(() => requests.length).toBe(count + 1);
+  await expect(page.getByRole("button", { name: "CSV", exact: true })).toBeDisabled();
+});
+
+test("날짜 탐색·모델 선택·팀 정렬이 실제 응답을 사용한다", async ({ page }) => {
+  await mockOverview(page);
+  await page.goto("/overview");
+  const slider = page.getByRole("slider", { name: "날짜별 환산가치. 좌우 방향키로 날짜를 이동하세요" });
+  await expect(slider).toBeVisible();
+  await slider.focus();
+  await slider.press("Home");
+  await expect(slider).toHaveAttribute("aria-valuetext", /2026-09-07/);
+  await slider.press("ArrowRight");
+  await expect(slider).toHaveAttribute("aria-valuetext", /2026-09-08/);
+  const model = page.getByRole("button", { name: /Model Pro/ });
+  await model.click();
+  await expect(model).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("region", { name: "모델 구성" })).toContainText("/M");
+  const table = page.getByRole("table", { name: "팀별 요약" });
+  await expect(table.locator("tbody tr")).toHaveCount(4);
+  await expect(table.locator("tbody tr").first()).toContainText("플랫폼");
+  await table.getByRole("button", { name: /사용 환산액/ }).click();
+  await expect(table.locator("tbody tr").first()).toContainText("데이터");
+  await expect(table.locator("tbody tr").last()).toContainText("미배정");
+});
+
+test("부분 관측과 알 수 없는 비용을 0으로 만들지 않는다", async ({ page }) => {
+  await mockOverview(page, (data) => {
+    data.meta.dataState = "partial";
+    data.meta.currentCoverage.status = "partial";
+    Object.assign(data.usage.current, { equivalentCostUsd: null });
+    data.usage.current.tokens.total = 0;
+    data.modelMix.availability = "partial";
+    Object.assign(data.modelMix.models[0], { equivalentCostUsd: null });
+  });
+  await page.goto("/overview");
+  await expect(page.getByText("선택·비교 기간의 관측 데이터 부족").first()).toBeVisible();
+  await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toContainText("-");
+  await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toContainText("/ 0M");
+  await expect(page.getByRole("region", { name: "모델 구성", exact: true }).locator("svg")).toHaveCount(0);
+});
+
+for (const status of [401, 403, 503]) {
+  test(`HTTP ${status} 오류는 목 데이터로 대체하지 않고 재시도할 수 있다`, async ({ page }) => {
+    let calls = 0;
+    let fail = true;
+    await page.route(overviewUrl, async (route) => {
+      calls++;
+      await route.fulfill(fail ? { status, json: { error: { code: "test_error" } }, headers: corsHeaders(page) } : { json: overviewFixture(route.request().url()), headers: corsHeaders(page) });
+    });
+    await page.goto("/overview");
+    await expect(page.getByRole("main").getByRole("alert")).toBeVisible({ timeout: 15_000 });
+    expect(calls).toBe(status >= 500 ? 3 : 1);
+    await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toHaveCount(0);
+    fail = false;
+    await page.getByRole("button", { name: "다시 시도", exact: true }).click();
+    await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toContainText("$5,000.00");
+  });
 }
 
-test.beforeEach(async ({ page }) => { await openDashboard(page, "/overview"); });
-
-test("filters update data and chart; incomplete and empty queries are explicit", async ({ page }) => {
-  const chart = page.getByRole("slider");
-  await expect(chart).toHaveAttribute("aria-valuemax", "7");
-  await selectCalendarPreset(page, "오늘");
-  await expect(chart).toHaveAttribute("aria-valuemax", "1");
-  await expect(page.getByRole("button", { name: "2026.09.13 ~ 2026.09.13", exact: true })).toBeVisible();
-  await expect(page.getByText("조직 전체 · 2026-09-13 ~ 2026-09-13")).toBeVisible();
-  await selectCalendarPreset(page, "이번 달");
-  await expect(chart).toHaveAttribute("aria-valuemax", "13");
-  await selectCalendarPreset(page, "최근 1년");
-  await expect(page.getByText("데이터가 없는 날짜는 차트에서 제외됩니다. 전체 기간 비교는 보류합니다.")).toBeVisible();
-  await expect(chart).toHaveAttribute("aria-valuemax", "63");
-  await selectCalendarPreset(page, "이번 주");
-  await page.getByRole("button", { name: "2026.09.07 ~ 2026.09.13", exact: true }).click();
-  const calendar = page.getByRole("dialog", { name: "기간 선택" });
-  await calendar.getByRole("button", { name: "다음 달" }).click();
-  await calendar.locator('[title="2026-10-05"]').click();
-  await expect(calendar.getByRole("button", { name: "적용" })).toBeDisabled();
-  await calendar.locator('[title="2026-10-07"]').click();
-  await expect(chart).toHaveAttribute("aria-valuemax", "7"); // Draft has not been applied.
-  await calendar.getByRole("button", { name: "적용" }).click();
-  await expect(page.getByRole("button", { name: "2026.10.05 ~ 2026.10.07", exact: true })).toBeVisible();
-  await expect(page.getByText("선택한 기간에 데이터가 없습니다")).toBeVisible();
-  await expect(page.getByRole("table", { name: "계약·좌석 현황" })).toBeVisible();
+test("권한 상실 시 재조회 이전의 데이터도 숨긴다", async ({ page }) => {
+  await mockOverview(page);
+  await page.goto("/overview");
+  const cost = page.getByRole("region", { name: "토큰 비용", exact: true });
+  await expect(cost).toBeVisible();
+  await page.route(overviewUrl, (route) => route.fulfill({ status: 401, json: {}, headers: corsHeaders(page) }));
+  await page.getByRole("button", { name: "새로고침", exact: true }).click();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("로그인이 필요합니다");
+  await expect(cost).toHaveCount(0);
 });
 
-test("chart supports pointer inspection and keyboard date navigation", async ({ page }) => {
-  const chart = page.getByRole("slider");
-  await chart.hover({ position: { x: 30, y: 150 } });
-  await expect(chart.getByText("환산가치", { exact: true })).toBeVisible();
-  await chart.focus();
-  await chart.press("Home");
-  await expect(chart).toHaveAttribute("aria-valuetext", /2026-09-07/);
-  await expect(chart).toHaveAttribute("aria-valuetext", /Claude.*Codex/);
-  await chart.press("ArrowRight");
-  await expect(chart).toHaveAttribute("aria-valuetext", /2026-09-08/);
-  await chart.press("End");
-  await expect(chart).toHaveAttribute("aria-valuetext", /2026-09-13/);
-  await chart.press("Escape");
-  await expect(chart.getByText("환산가치", { exact: true })).not.toBeVisible();
+test("조회 중 상태와 잘못된 응답을 명확히 표시한다", async ({ page }) => {
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => { release = resolve; });
+  await page.route(overviewUrl, async (route) => { await pending; await route.fulfill({ json: {}, headers: corsHeaders(page) }); });
+  await page.goto("/overview");
+  await expect(page.getByText("개요 데이터를 불러오는 중입니다…")).toBeVisible();
+  release();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("데이터 계약과 일치하지 않습니다");
 });
 
-test("overview summary links to the team analysis drawer", async ({ page }) => {
-  const mix = page.getByRole("region", { name: "모델 구성", exact: true });
-  await expect(mix).toBeVisible();
-  const modelOption = mix.getByRole("button", { name: /gpt-5-codex/ });
-  await modelOption.click();
-  await expect(modelOption).toHaveAttribute("aria-pressed", "true");
-  await mix.getByRole("button", { name: "선택 해제" }).click();
-  await expect(modelOption).toHaveAttribute("aria-pressed", "false");
-  const table = page.getByRole("table", { name: "팀별 요약" });
-  await expect(table.locator("tbody tr")).toHaveCount(6);
-  await expect(table.locator("tbody tr").last()).toContainText("미배정");
-  await expect(table).toContainText("Claude · Codex");
-  await table.getByRole("button", { name: /사용 환산액/ }).click();
-  await expect(table.getByRole("columnheader", { name: /사용 환산액/ })).toHaveAttribute("aria-sort", "ascending");
-  await table.getByRole("link", { name: "플랫폼", exact: true }).click();
-  await expect(page).toHaveURL(/\/teams\?team=team-1$/);
-  const analysis = page.getByRole("region", { name: "팀별 사용량 비교" });
-  const dialog = page.getByRole("dialog", { name: "플랫폼 팀" });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("button", { name: "상세 패널 닫기" })).toBeFocused();
-  await page.keyboard.press("Tab");
-  await expect(dialog.getByLabel("플랫폼 팀 내용")).toBeFocused();
-  await page.keyboard.press("Tab");
-  await expect(dialog.getByRole("button", { name: "상세 패널 닫기" })).toBeFocused();
-  await expect(dialog.locator(":scope > div")).toHaveCSS("opacity", "1");
-  await expect(dialog.locator(":scope > div > section")).toHaveCSS("transform", "none");
-  await page.screenshot({ path: "test-results/team-detail.png" });
-  await page.keyboard.press("Escape");
-  await expect(dialog).not.toBeVisible();
-  await expect(analysis.getByRole("checkbox", { name: "플랫폼 추이 선 표시" })).toBeChecked();
-  await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
-});
+for (const state of ["no_data", "never_observed"]) {
+  test(`${state}에서도 계약 정보는 유지하고 사용량은 비어 있음을 표시한다`, async ({ page }) => {
+    await mockOverview(page, (data) => {
+      data.meta.dataState = state;
+      data.meta.currentCoverage = { status: "none", observedDays: 0 };
+      Object.assign(data.usage, { current: null, previous: null });
+      data.modelMix.models = [];
+      data.teamUsage.topTeams = [];
+      Object.assign(data.teamUsage.unassigned.current, { activeUsers: null, equivalentCostUsd: null });
+      data.trend.points.forEach((point) => Object.assign(point, { observation: "unobserved", equivalentCostUsd: null, totalTokens: null }));
+    });
+    await page.goto("/overview");
+    await expect(page.getByText(state === "no_data" ? "선택한 기간에 데이터가 없습니다" : "아직 수집된 신호가 없습니다")).toBeVisible();
+    await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "계약·좌석 현황" })).toContainText("100석");
+  });
+}
 
-test("small viewport and reduced motion keep content usable", async ({ page }) => {
-  await page.setViewportSize({ width: 760, height: 700 });
-  await page.emulateMedia({ reducedMotion: "reduce" });
+test("5분 자동 갱신과 작은 화면이 동작한다", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-09-13T12:00:00Z") });
+  await mockOverview(page);
+  let calls = 0;
+  page.on("request", (request) => { if (request.url().includes("/analytics/overview?")) calls++; });
+  await page.goto("/overview");
+  await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /자동 갱신/ }).click();
+  const before = calls;
+  await page.clock.fastForward(300_001);
+  await expect.poll(() => calls).toBe(before + 1);
+  await page.screenshot({ path: "test-results/overview-api-desktop.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "내비게이션 접기/펼치기" }).click();
-  await selectCalendarPreset(page, "이번 달");
-  await expect(page.getByRole("slider")).toHaveAttribute("aria-valuemax", "13");
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
-  expect(overflow).toBe(false);
-  await page.getByRole("link", { name: /전체 5팀 보기/ }).click();
-  await page.getByRole("region", { name: "팀별 사용량 비교" }).getByRole("button", { name: "플랫폼", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "플랫폼 팀" })).toBeVisible();
-  await page.getByRole("button", { name: "상세 패널 닫기" }).click();
-  await expect(page.getByRole("dialog", { name: "플랫폼 팀" })).not.toBeVisible();
-  await page.getByRole("main").evaluate((element) => element.scrollTo(0, 0));
-  await page.screenshot({ path: "test-results/teams-small.png", fullPage: true });
-});
-
-test("team rows open details across the row while trend checkboxes stay independent", async ({ page }) => {
-  await openDashboard(page, "/teams");
-  const analysis = page.getByRole("region", { name: "팀별 사용량 비교" });
-  const checkbox = analysis.getByRole("checkbox", { name: "미배정 추이 선 표시" });
-  const row = checkbox.locator("..").locator("..");
-  await page.getByRole("heading", { name: "팀 분석", exact: true }).hover();
-  await expect(row).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  await row.hover();
-  await expect(row).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  await expect(row).toHaveCSS("cursor", "pointer");
-  const trigger = analysis.getByRole("button", { name: "미배정", exact: true });
-  const dialog = page.getByRole("dialog", { name: "미배정", exact: true });
-  const size = await row.boundingBox();
-  // Clicking the numeric area and the far-right arrow both opens the same drawer.
-  await row.click({ position: { x: size!.width / 2, y: size!.height / 2 } });
-  await expect(dialog).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(dialog).not.toBeVisible();
-  await expect(trigger).toBeFocused();
-  await expect(checkbox).toBeChecked();
-  await expect(row.locator(":scope > span").last()).toHaveText("›");
-  await row.click({ position: { x: size!.width - 12, y: size!.height / 2 } });
-  await expect(dialog).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(dialog).not.toBeVisible();
-  await checkbox.uncheck();
-  await expect(checkbox).not.toBeChecked();
-  await expect(dialog).not.toBeVisible();
-  await trigger.focus();
-  await trigger.press("Enter");
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByText("팀에 배정되지 않은 사용량입니다.")).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(dialog).not.toBeVisible();
-  await expect(trigger).toBeFocused();
-  await expect(checkbox).not.toBeChecked();
-  await checkbox.focus();
-  await checkbox.press("Space");
-  await expect(checkbox).toBeChecked();
-  await expect(dialog).not.toBeVisible();
-  await trigger.focus();
-  await trigger.press("Space");
-  await expect(dialog).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(dialog).not.toBeVisible();
-  await page.getByRole("heading", { name: "팀 분석", exact: true }).hover();
-  await expect(row).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-});
-
-test("overview has no browser errors and sidebar stays viewport height", async ({ page }) => {
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
-  await openDashboard(page, "/overview");
-  await expect(page.getByRole("slider")).toBeVisible();
-  const nav = page.getByRole("navigation", { name: "주 내비게이션" });
-  await expect(nav).toHaveCSS("height", "1000px");
-  const main = page.getByRole("main");
-  await expect(main.locator("..")).toHaveCSS("width", "1440px");
-  await expect(main.locator("..")).toHaveCSS("overflow", "hidden");
-  await main.evaluate((element) => element.scrollTo(0, element.scrollHeight));
-  expect(await main.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
-  expect(await page.evaluate(() => window.scrollY)).toBe(0);
-  expect((await nav.boundingBox())?.y).toBe(0);
-  await main.evaluate((element) => element.scrollTo(0, 0));
-  await page.screenshot({ path: "test-results/overview-desktop.png", fullPage: true });
-  expect(errors).toEqual([]);
+  await expect(page.getByRole("navigation", { name: "주 내비게이션" })).toHaveCSS("width", "56px");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: "test-results/overview-api-mobile.png", fullPage: true });
 });

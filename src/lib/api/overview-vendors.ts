@@ -1,3 +1,4 @@
+import { contractStatusSchema } from "../contract-status";
 import { organizationKey } from "./query-keys";
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
@@ -6,7 +7,7 @@ import { DashboardError, retryAfterMs, shouldRetryOverview } from "./overview";
 const money = z.string().regex(/^\d+(?:\.\d+)?$/).nullable();
 const meta = z.object({ organizationId: z.string(), asOf: z.string(), snapshotId: z.string() });
 const vendor = z.object({
-  vendorId: z.string(), displayName: z.string(), kind: z.string(), state: z.string(),
+  vendorId: z.string(), displayName: z.string(), kind: z.string(), state: z.string(), contractStatus: contractStatusSchema,
   contract: z.object({ planId: z.string(), effectiveFrom: z.string(), effectiveTo: z.string().nullable(), monthlySeatFeeUsd: money,
     tiers: z.array(z.object({ tierId: z.string(), label: z.string(), seats: z.number().int().nonnegative(), monthlyFeePerSeatUsd: z.string().regex(/^\d+(?:\.\d+)?$/) })),
   }).nullable(),

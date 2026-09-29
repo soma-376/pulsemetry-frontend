@@ -177,3 +177,30 @@ export const PolicySaved: Story = {
   },
 };
 
+export const ExpiredCopilot: Story = {
+  name: "A 회사·Copilot 계약 만료",
+  async play({ canvas, canvasElement, userEvent }) {
+    const row = await canvas.findByRole("button", { name: /GitHub Copilot.*계약 설정 열기/ });
+    await expect(row).toHaveTextContent("계약 만료");
+    await expect(row).toHaveTextContent("마지막 계약");
+    await canvas.findByText(/만료 1건 제외/);
+    await expect(canvas.getByText("$360", { exact: true })).toBeVisible();
+    await expect(canvas.getByText("- / 10", { exact: true })).toBeVisible();
+    await userEvent.click(row);
+    const dialog = await within(canvasElement.ownerDocument.body).findByRole("dialog");
+    await expect(within(dialog).getByText("계약 만료", { exact: true })).toBeVisible();
+    await expect(within(dialog).getByText("마지막 계약 금액")).toBeVisible();
+  },
+};
+
+export const ScheduledContract: Story = {
+  name: "계약 시작 예정", parameters: { scenario: "scheduled" },
+  async play({ canvas }) {
+    const row = await canvas.findByRole("button", { name: /Claude.*계약 설정 열기/ });
+    await expect(row).toHaveTextContent("시작 예정");
+    await expect(row).toHaveTextContent("예정 계약");
+    await expect(canvas.getByText("$0", { exact: true })).toBeVisible();
+    await expect(canvas.getByText("- / 0", { exact: true })).toBeVisible();
+    await expect(canvas.getByText(/시작 예정 1건 제외/)).toBeVisible();
+  },
+};

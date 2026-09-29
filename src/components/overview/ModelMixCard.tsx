@@ -6,7 +6,7 @@ import { Widget } from "@/components/ui/Card";
 import type { OverviewModel } from "@/lib/metrics/overview";
 
 /** W1.4 모델 구성 — 좌석료가 아니라 사용량의 구성을 봅니다 */
-export function ModelMixCard({ model }: { model: OverviewModel }) {
+export function ModelMixCard({ model }: { model: Pick<OverviewModel, "mix" | "observedTokens"> & { defs: Pick<OverviewModel["defs"], "w14"> } }) {
   const { mix, defs } = model;
   const [hovered, setHovered] = useState<number | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
