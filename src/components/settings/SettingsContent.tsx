@@ -1,5 +1,6 @@
 "use client";
 
+import { contractSummaryNotice } from "@/lib/contract-status";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -87,6 +88,7 @@ function OrganizationSettings({ organizationId }: { organizationId: string }) {
     { label: "미설정 벤더", value: data ? `${int(data.summary.unconfiguredVendors)}곳` : "-", caption: "계약 정보 확인 필요" },
   ];
   const rows = data?.vendors.items.map(vendor => settingsVendorRow(vendor, catalog.data?.items.find(product => product.id === vendor.kind))) ?? [];
+  const contractNotice = data ? contractSummaryNotice(data.vendors.items) : null;
   const errors = [query.error, catalog.error, accessError].filter(Boolean);
   useDashboardPageRefresh(() => { setAccessError(null); void query.refetch({ cancelRefetch: false }); }, query.isFetching);
   return <>
@@ -106,6 +108,7 @@ function OrganizationSettings({ organizationId }: { organizationId: string }) {
       {data && <>
       <SettingSection id="vendors" title="벤더 연동">
         <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-2">{cards.map(card => <StatCard key={card.label} {...card} size="sm" />)}</div>
+        {contractNotice && <p className="text-xs text-text3">{contractNotice}</p>}
         <VendorTable rows={rows} loadingVendorId={openingVendorId} addDisabled={!data.capabilities.editContracts || catalog.isError || catalog.isPending || openingVendorId !== null || catalog.data?.items.every(product => data.vendors.items.some(vendor => vendor.kind === product.id))} onOpen={openVendor} onAdd={() => { setEditor({ vendorId: null }); setOpen(true); }} />
         {!rows.length && <EmptyState message="등록된 제품이 없습니다." />}
       </SettingSection>
