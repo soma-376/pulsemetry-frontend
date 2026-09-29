@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
+import { LoadingSpinner } from "./LoadingState";
 
 type Variant = "default" | "primary" | "ghost" | "danger";
 type Size = "sm" | "md";
@@ -31,6 +32,8 @@ function classes(variant: Variant, size: Size, className?: string) {
 export type ButtonProps = ComponentProps<"button"> & {
   variant?: Variant;
   size?: Size;
+  loading?: boolean;
+  loadingLabel?: string;
 };
 
 export function Button({
@@ -38,10 +41,17 @@ export function Button({
   size = "md",
   className,
   type = "button",
+  loading = false,
+  loadingLabel,
+  disabled,
+  children,
   ...rest
 }: ButtonProps) {
   return (
-    <button type={type} className={classes(variant, size, className)} {...rest} />
+    <button type={type} className={classes(variant, size, className)} {...rest} disabled={disabled || loading} aria-busy={loading || undefined}>
+      {loading && <LoadingSpinner className="size-3" />}
+      {loading && loadingLabel ? loadingLabel : children}
+    </button>
   );
 }
 
