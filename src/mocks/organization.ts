@@ -1,3 +1,4 @@
+// 기존 Codeworks UI 데모. A회사 백엔드 시드는 ./company-a.ts 참조 (README.md).
 import type { OrganizationState } from "@/lib/organization";
 
 export const SEED_TEAMS = ["플랫폼", "데이터", "결제", "프론트엔드", "모바일"].map((name, index) => ({

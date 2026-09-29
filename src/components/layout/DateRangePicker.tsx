@@ -21,10 +21,13 @@ const DOW = ["월", "화", "수", "목", "금", "토", "일"];
 export function DateRangePicker({
   value,
   onChange,
+  todayIso,
 }: {
   value: DateRange;
   onChange: (next: DateRange) => void;
+  todayIso?: string;
 }) {
+  const today = todayIso ? fromIso(todayIso) : TODAY;
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(value);
   const anchor = fromIso(value.end ?? value.start);
@@ -54,16 +57,16 @@ export function DateRangePicker({
   };
 
   const presets = [
-    { label: "오늘", run: () => setRange(TODAY, TODAY) },
+    { label: "오늘", run: () => setRange(today, today) },
     {
       label: "이번 주",
       run: () => {
-        const offset = (TODAY.getUTCDay() + 6) % 7;
-        setRange(new Date(TODAY.getTime() - offset * DAY_MS), TODAY);
+        const offset = (today.getUTCDay() + 6) % 7;
+        setRange(new Date(today.getTime() - offset * DAY_MS), today);
       },
     },
-    { label: "이번 달", run: () => setRange(utcDate(2026, 8, 1), TODAY) },
-    { label: "최근 1년", run: () => setRange(utcDate(2025, 8, 14), TODAY) },
+    { label: "이번 달", run: () => setRange(utcDate(today.getUTCFullYear(), today.getUTCMonth(), 1), today) },
+    { label: "최근 1년", run: () => setRange(new Date(today.getTime() - 364 * DAY_MS), today) },
   ];
 
   const cells = calendarCells(viewYear, viewMonth, draft);
@@ -160,11 +163,11 @@ export function DateRangePicker({
                       ? "var(--card)"
                       : !c.inMonth
                         ? "var(--text3)"
-                        : c.isToday
+                      : c.iso === toIso(today)
                           ? "var(--blue)"
                           : "var(--text)",
                     borderRadius: edge ? 6 : c.inRange ? 0 : 6,
-                    fontWeight: edge || c.isToday ? 600 : 400,
+                    fontWeight: edge || c.iso === toIso(today) ? 600 : 400,
                   }}
                 >
                   {c.day}

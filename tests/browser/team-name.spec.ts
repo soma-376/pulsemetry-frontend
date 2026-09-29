@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { saveOnboardingContract, signIn } from "./helpers";
 
-test("onboarding and team management reject emoji names while preserving valid assignments", async ({ page }) => {
+test("onboarding API and existing team form reject emoji names", async ({ page }) => {
   await page.goto("/login");
   await signIn(page);
   await page.getByRole("radio", { name: /^수집하지 않음/ }).check();
@@ -22,6 +22,10 @@ test("onboarding and team management reject emoji names while preserving valid a
   await page.getByRole("link", { name: "구성원", exact: true }).click();
   await page.getByRole("button", { name: "팀 관리", exact: true }).click();
   const drawer = page.getByRole("dialog", { name: "팀 관리", exact: true });
+  // 구성원 화면은 별도 목 데이터 화면이다. 해당 폼의 검증을 독립적으로 확인한다.
+  await drawer.getByRole("button", { name: "팀 만들기", exact: true }).click();
+  await drawer.getByRole("textbox", { name: "팀 이름", exact: true }).fill("R&D");
+  await drawer.getByRole("button", { name: "팀 생성", exact: true }).click();
   await drawer.getByRole("button", { name: "R&D 팀 수정", exact: true }).click();
   const editName = drawer.getByRole("textbox", { name: "팀 이름", exact: true });
   await editName.fill("팀👩‍💻");

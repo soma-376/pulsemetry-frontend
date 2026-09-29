@@ -38,7 +38,7 @@ export function KpiCard({
   staleAt,
 }: KpiCardProps) {
   return (
-    <div className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-border bg-card p-4">
+    <div role="region" aria-label={label} className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-border bg-card p-4">
       <div className="flex items-center justify-between gap-1.5">
         <span
           title={def}

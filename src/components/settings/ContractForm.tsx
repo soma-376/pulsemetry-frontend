@@ -1,4 +1,6 @@
 "use client";
+import { minimumContractEnd, validateServerTiers } from "@/lib/schemas/server-contract";
+import type { CatalogVendor, CatalogPlan } from "@/lib/api/vendor-catalog";
 import { allowsSeatTiers } from "@/lib/vendor-catalog";
 import { useId } from "react";
 import { Button } from "@/components/ui/Button";
@@ -13,21 +15,23 @@ const TIER_COLS =
   "@max-[420px]:grid-cols-[minmax(0,1fr)_56px_66px_24px] @max-[420px]:[&>*:nth-child(4)]:hidden";
 
 
-export function ContractForm({ row, isNew, draft, onChange }: { row: VendorRow; isNew: boolean; draft: VendorDraft; onChange: (patch: VendorDraft) => void }) {
+export function ContractForm({ row, isNew, draft, onChange, catalog, existingContract }: { existingContract?: { effectiveFrom: string; effectiveTo: string | null }; catalog?: { vendors: CatalogVendor[]; plans: CatalogPlan[]; loading: boolean }; row: VendorRow; isNew: boolean; draft: VendorDraft; onChange: (patch: VendorDraft) => void }) {
   const validationId = useId();
-  const kind = isNew ? draft.kind ?? "copilot" : row.kind;
-  const plans = getVendorPlans(kind, row.family);
-  const allowsTiers = allowsSeatTiers(kind);
+  const kind = isNew ? draft.kind ?? (catalog ? "" : "copilot") : row.kind;
+  const serverVendor = catalog?.vendors.find(v => v.id === kind);
+  const kinds = catalog ? catalog.vendors.map(v => ({ v: v.id, label: v.displayName })) : ADD_KINDS;
+  const plans = catalog ? catalog.plans.map(p => ({ v: p.id, label: p.displayName, bill: p.billing, note: p.separateUsageBilling ? "좌석 요금 외 사용량 요금은 별도입니다" : "계약서의 좌석 수와 단가를 입력하세요" })) : getVendorPlans(kind, row.family);
+  const allowsTiers = catalog ? serverVendor?.allowsSeatTiers === true : allowsSeatTiers(kind);
   const plan = draft.plan !== undefined ? draft.plan : row.plan;
   const planDef = plans.find((p) => p.v === plan) ?? null;
   const isSeat = planDef?.bill === "seat";
   const tiers = draft.tiers?.length ? draft.tiers : [EMPTY_TIER];
-  const validation = validateTiers(tiers);
+  const validation = catalog ? validateServerTiers(tiers, allowsTiers) : validateTiers(tiers);
   const seats = validation.seats;
   const seatSpend = validation.spend;
   const term = draft.term ?? row.contract.term ?? "";
   const name = draft.name ?? (isNew ? "" : row.short);
-  const kindLabel = ADD_KINDS.find((k) => k.v === kind)?.label ?? row.short;
+  const kindLabel = kinds.find((k) => k.v === kind)?.label ?? row.short;
   const setTiers = (next: DraftTier[]) => onChange({ tiers: next });
   const patchTier = (index: number, patch: Partial<DraftTier>) => setTiers(tiers.map((t, i) => i === index ? { ...t, ...patch } : t));
   return <div className="flex flex-col gap-6">
@@ -36,24 +40,26 @@ export function ContractForm({ row, isNew, draft, onChange }: { row: VendorRow; 
 
           <label className="flex flex-col gap-1 text-[11.5px] text-text2">
             제품
-            {isNew ? <Select value={kind} onChange={(event) => onChange({ kind: event.target.value, plan: null, name: "", planName: "", tiers: [{ ...EMPTY_TIER }] })} aria-label="제품">
-              {ADD_KINDS.map((item) => <option key={item.v} value={item.v}>{item.label}</option>)}
+            {isNew ? <Select value={kind} onChange={(event) => onChange({ kind: event.target.value, plan: null, name: "", planName: "", tiers: [{ ...EMPTY_TIER }], ...(catalog ? { term: "" } : {}) })} aria-label="제품">
+              {catalog && <option value="">제품을 선택하세요</option>}
+              {kinds.map((item) => <option key={item.v} value={item.v}>{item.label}</option>)}
             </Select> : <span className="py-1 text-[12px] text-text">{kindLabel}</span>}
           </label>
           {kind === "other" && <label className="flex flex-col gap-1 text-[11.5px] text-text2">
-            플랜명 (선택)
-            <Input value={draft.planName ?? row.contract.planName ?? ""} onChange={(event) => onChange({ planName: event.target.value })} maxLength={100} aria-label="플랜명" placeholder="계약서의 플랜명" />
+            {catalog ? "계약 메모 (선택)" : "플랜명 (선택)"}
+            <Input value={draft.planName ?? row.contract.planName ?? ""} onChange={(event) => onChange({ planName: event.target.value })} maxLength={100} aria-label={catalog ? "계약 메모" : "플랜명"} placeholder={catalog ? "계약서의 플랜명 등 참고 사항" : "계약서의 플랜명"} />
           </label>}
 
           <div className="grid grid-cols-2 gap-2 @max-[700px]:grid-cols-1">
             <label className="flex flex-col gap-1 text-[11.5px] text-text2">
-              {kind === "other" ? "과금 방식" : "플랜"}
+              {`${kind === "other" ? "과금 방식" : "플랜"}${catalog ? "(선택)" : ""}`}
               <Select
                 value={planDef ? plan ?? "" : ""}
-                onChange={(e) => onChange({ plan: e.target.value || null })}
+                onChange={(e) => onChange({ plan: e.target.value || null, ...(catalog && !e.target.value ? { tiers: [{ ...EMPTY_TIER }], term: "", planName: "" } : {}) })}
                 aria-label={kind === "other" ? "과금 방식" : "플랜"}
+                disabled={catalog ? !serverVendor || catalog.loading : false}
               >
-                {!planDef && <option value="">선택하세요</option>}
+                {catalog ? <option value="">{catalog.loading ? "불러오는 중…" : "선택 안 함"}</option> : !planDef && <option value="">선택하세요</option>}
                 {plans.map((p) => (
                   <option key={p.v} value={p.v}>
                     {p.label}
@@ -61,7 +67,7 @@ export function ContractForm({ row, isNew, draft, onChange }: { row: VendorRow; 
                 ))}
               </Select>
             </label>
-            <DateInput label="계약 종료일" value={term} min={currentDateIso()} onChange={(value) => onChange({ term: value })} />
+            <DateInput label="계약 종료일" value={term} min={minimumContractEnd(currentDateIso(), term, existingContract)} onChange={(value) => onChange({ term: value })} />
           </div>
 
           <label className="flex flex-col gap-1 text-[11.5px] text-text2">
@@ -76,7 +82,7 @@ export function ContractForm({ row, isNew, draft, onChange }: { row: VendorRow; 
             {planDef ? planDef.note : "신호로는 알 수 없는 계약 정보입니다 · 계약서를 보고 고르세요"}
           </span>
           <span className="text-[11px] text-text3">
-            다음 계약 검토일 {row.contract.nextReview ?? "미정"} · 종료 60일 전 알림
+            {catalog ? existingContract ? `계약 시작일 ${existingContract.effectiveFrom} · 정정 시 시작일은 유지됩니다` : "계약 시작일은 등록일입니다 · 플랜과 계약 정보는 나중에 입력할 수 있습니다" : <>다음 계약 검토일 {row.contract.nextReview ?? "미정"} · 종료 60일 전 알림</>}
           </span>
         </section>
 
@@ -95,7 +101,7 @@ export function ContractForm({ row, isNew, draft, onChange }: { row: VendorRow; 
 
             {tiers.map((t, i) => {
               const error = t.seats || t.fee ? validation.errors[i] : {};
-              const rowValidation = validateTiers([t]);
+              const rowValidation = catalog ? validateServerTiers([t], allowsTiers) : validateTiers([t]);
               return (
                 <div key={i} className="flex flex-col gap-1">
                   <div className={TIER_COLS}>
@@ -125,7 +131,7 @@ export function ContractForm({ row, isNew, draft, onChange }: { row: VendorRow; 
                       className="text-right"
                     />
                     <span className="tnum text-right text-[12px] text-text2">
-                      {rowValidation.tiers ? usd(rowValidation.spend) : "—"}
+                      {rowValidation.tiers ? usd(rowValidation.spend) : "-"}
                     </span>
                     <button
                       type="button"

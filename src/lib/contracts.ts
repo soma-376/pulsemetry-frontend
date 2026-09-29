@@ -7,7 +7,7 @@ const emptyVendor: VendorRecord = {
   id: NEW_VENDOR_ID, name: "", short: "", product: "수동 추가 · 신호 없음", family: "generic",
   plan: null, manual: true, users: 0, distinct30: 0, firstSeen: "—", c: {},
 };
-export const NEW_CONTRACT_ROW = buildVendorRows({}, [emptyVendor]).find((row) => row.id === NEW_VENDOR_ID)!;
+export const NEW_CONTRACT_ROW = buildVendorRows({}, [emptyVendor], []).find((row) => row.id === NEW_VENDOR_ID)!;
 
 export function createManualContract(input: VendorDraft, id: string): VendorRecord {
   const draft = contractSchema().parse({ ...input, kind: input.kind ?? "copilot" });

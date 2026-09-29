@@ -1,4 +1,4 @@
-import { bandPath, pathOf, points, xAt, yAt, type Domain } from "./scale";
+import { bandPath, nullableLinePath, points, xAt, yAt, type Domain } from "./scale";
 
 /**
  * 해칭 패턴은 모든 차트에서 동일하므로 id 를 공유합니다.
@@ -7,7 +7,7 @@ import { bandPath, pathOf, points, xAt, yAt, type Domain } from "./scale";
 const HATCH_ID = "pm-preobs-hatch";
 
 export type Series = {
-  values: number[];
+  values: (number | null)[];
   color: string;
   /** 선 굵기 (px, 스케일에 영향받지 않음) */
   width?: number;
@@ -131,7 +131,7 @@ export function LineAreaChart({
       {series.map((s, i) => (
         <path
           key={i}
-          d={pathOf(observed(s.values))}
+          d={nullableLinePath(s.values, domain, observedFrom)}
           style={{
             fill: "none",
             stroke: s.color,
@@ -145,7 +145,7 @@ export function LineAreaChart({
         />
       ))}
       {count === 1 && series.map((s, i) => (
-        <ellipse key={`point-${i}`} cx={xAt(0, count)} cy={yAt(s.values[0], domain)} rx={0.8} ry={1.2} fill={s.color} />
+        s.values[0] !== null && <ellipse key={`point-${i}`} cx={xAt(0, count)} cy={yAt(s.values[0], domain)} rx={0.8} ry={1.2} fill={s.color} />
       ))}
     </svg>
   );

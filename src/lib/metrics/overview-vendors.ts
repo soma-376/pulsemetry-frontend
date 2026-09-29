@@ -1,3 +1,4 @@
+import type { ContractStatus } from "../contract-status";
 import type { VendorRow } from "@/lib/settings";
 import type { aggregateActivity } from "./activity";
 import { getVendorProduct } from "@/lib/vendor-catalog";
@@ -35,6 +36,7 @@ export function buildOverviewVendors(vendors: VendorRow[], activity: Activity, i
         candidates: productSeats.length ? productSeats.filter((seat) => seat.review === "candidate").length : null,
         purchased: confirmed.length ? confirmed.reduce((sum, contract) => sum + contract.seats, 0) : null,
         monthly: confirmed.length ? confirmed.reduce((sum, contract) => sum + contract.seatSpend, 0) : null,
+        contractStatus: (registered.length ? "active" : "missing") as ContractStatus,
         status: registered.length === 0 ? "미등록" : confirmed.length < registered.length ? "확인 대기" : "등록됨",
         contracts: (registered.length ? registered : contracts).map((contract) => ({
           id: contract.id, name: contract.short, plan: contract.planDef?.label ?? "플랜 미등록",
