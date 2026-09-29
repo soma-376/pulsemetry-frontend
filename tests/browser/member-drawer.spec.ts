@@ -1,4 +1,4 @@
-﻿import { expect, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { openDashboard } from "./helpers";
 
 test("row opens the standard-width drawer with vendor-specific seats and independent role edits", async ({ page }) => {
@@ -9,7 +9,7 @@ test("row opens the standard-width drawer with vendor-specific seats and indepen
   for (const state of ["활성", "회수 후보", "신호 대기"]) {
     expect(await initialRows.filter({ has: page.getByText(state, { exact: true }) }).count()).toBeGreaterThanOrEqual(3);
   }
-  const activeColor = await members.getByText("활성", { exact: true }).first().evaluate((element) => getComputedStyle(element).color);
+  const activeColor = await initialRows.getByText("활성", { exact: true }).first().evaluate((element) => getComputedStyle(element).color);
   await members.screenshot({ path: "test-results/member-status-first-page.png" });
   await members.getByRole("textbox", { name: "구성원 검색" }).fill("jiwon.kim@codeworks.io");
   const row = members.getByRole("button", { name: "jiwon.kim@codeworks.io 구성원 상세", exact: true });

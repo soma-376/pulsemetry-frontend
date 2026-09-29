@@ -16,11 +16,17 @@ export function TeamForm({
   onDone,
   onCancel,
   persistDraft = false,
+  onSave,
+  draftName,
+  onDraftChange,
 }: {
   team: Team | null;
   onDone: (name: string) => void;
   onCancel?: () => void;
   persistDraft?: boolean;
+  draftName?: string;
+  onDraftChange?: (name: string) => void;
+  onSave?: (name: string) => Promise<void>;
 }) {
   const { state, update } = useOrganization();
   const fieldId = useId();
@@ -33,15 +39,22 @@ export function TeamForm({
   } = useForm<TeamFormValues>({
     resolver: zodResolver(teamFormSchema),
     defaultValues: {
-      name: team?.name ?? (persistDraft ? state.onboardingDraft.teamName : ""),
+      name: team?.name ?? draftName ?? (persistDraft ? state.onboardingDraft.teamName : ""),
     },
   });
   return (
     <form
       noValidate
       className="flex flex-col gap-4"
-      onSubmit={handleSubmit((values) => {
+      onSubmit={handleSubmit(async (values) => {
         try {
+          if (onSave) {
+            await onSave(values.name);
+            onDraftChange?.("");
+            reset({ name: "" });
+            onDone(values.name);
+            return;
+          }
           const next = saveTeam(
             state,
             values,
@@ -82,6 +95,7 @@ export function TeamForm({
         id={fieldId}
         {...register("name", {
           onChange: (event) => {
+            onDraftChange?.(event.target.value);
             if (persistDraft)
               update((previous) => ({
                 ...previous,

@@ -126,8 +126,8 @@ export type VendorRow = ReturnType<typeof buildVendorRows>[number];
  * 입력이 바뀌면 확인이 풀리고, 확인 전까지 조직 합계는 이전 확인값을 씁니다 —
  * 오타 한 번이 전사 지출을 바꾸지 못하게 하는 장치입니다.
  */
-export function buildVendorRows(edits: VendorEdits, added: VendorRecord[]) {
-  return [...VENDORS, ...added].map((v) => {
+export function buildVendorRows(edits: VendorEdits, added: VendorRecord[], base: VendorRecord[] = VENDORS) {
+  return [...base, ...added].map((v) => {
     const edit = edits[v.id] ?? {};
     const contract: VendorContract & { plan?: string | null } = edit.cleared
       ? { ...edit }
