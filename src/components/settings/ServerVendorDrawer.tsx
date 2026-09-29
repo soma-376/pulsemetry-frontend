@@ -1,5 +1,7 @@
 "use client";
 
+import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge";
+import { contractAmountLabel } from "@/lib/contract-status";
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
@@ -86,7 +88,7 @@ export function ServerVendorDrawer({ organizationId, initial, registeredKinds, e
   return <DetailDrawer open={open} onClose={() => { if (!busy) onClose(); }} onAfterClose={onAfterClose}
     title={current ? `${current.displayName} 계약 설정` : "벤더 추가"} subtitle={plan?.displayName ?? "플랜 미선택"}
     footer={<div className="flex flex-col gap-3">
-      <div className="flex items-baseline gap-2"><span className="text-xs text-text2">{changed ? "입력한 월 계약액" : "월 계약액"}</span><strong className="tnum text-[15px]">{draft.plan && summary.tiers ? usd(summary.spend) : "-"}</strong></div>
+      <div className="flex items-baseline gap-2"><span className="text-xs text-text2">{changed ? "입력한 월 계약액" : current ? contractAmountLabel(current.contractStatus) : "월 계약액"}</span><strong className="tnum text-[15px]">{draft.plan && summary.tiers ? usd(summary.spend) : "-"}</strong></div>
       {confirm && <div role="alert" className="flex flex-wrap items-center gap-2 rounded-md border border-red bg-red-tint px-3 py-2.5">
         <span className="flex-1 text-xs">{confirm === "contract" ? "계약 정보만 비웁니다. 등록한 제품은 유지됩니다." : "등록한 제품을 삭제합니다. 이전 변경 이력은 보존됩니다."}</span>
         <Button size="sm" disabled={busy} onClick={() => setConfirm(null)}>되돌리기</Button>
@@ -100,6 +102,11 @@ export function ServerVendorDrawer({ organizationId, initial, registeredKinds, e
       </div>
     </div>}>
     <div className="flex flex-col gap-6">
+      {current && <div className="flex flex-col gap-2">
+        <ContractStatusBadge status={current.contractStatus} />
+        {current.contract && <p className="text-xs text-text3">계약 기간 {current.contract.effectiveFrom} ~ {current.contract.effectiveTo ?? "종료일 미지정"}</p>}
+        {current.contractStatus === "expired" && <p className="text-xs text-text3">마지막 계약 정보입니다. 갱신 여부를 확인해 주세요.</p>}
+      </div>}
       {errors.length > 0 && <ErrorState message={<>{errors.map((error, index) => <p key={index}>{error!.message}</p>)}</>}>
         {conflict ? <Button size="sm" loading={reload.isPending} loadingLabel="불러오는 중…" disabled={busy} onClick={() => reload.mutate()}>입력 취소 후 최신 내용 불러오기</Button> : (catalog.isError || plans.isError) && <Button size="sm" onClick={() => { void catalog.refetch(); if (draft.kind) void plans.refetch(); }}>다시 조회</Button>}
       </ErrorState>}

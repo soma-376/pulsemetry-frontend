@@ -42,6 +42,7 @@ type Vendor = {
   activeUsers30d: number | null;
   observation: Observation;
   state: "detected_unconfigured" | "needs_review" | "configured";
+  contractStatus: "missing" | "scheduled" | "active" | "expired";
   contract: VendorContractDto | null;
   meteredMonthToDate: Section<{
     startDate: string;
@@ -243,3 +244,11 @@ POST /installation-update-notifications, NotifyInstallationsRequest → 202 Oper
 - 실제 기능이 없는 안내 전송/알림 평가를 가짜 성공으로 응답하지 않는다.
 
 응답 예시: [settings-response.example.json](settings-response.example.json).
+
+### 계약 기간 상태
+
+`contractStatus`는 서버가 서울 시간의 조회 기준일로 계산한다. 계약 미입력은 missing,
+시작일 이전은 scheduled, 종료일 당일까지 active, 다음 날부터 expired다. 종료일 null은 상한 없음이다.
+기존 state는 유지하며 계약 상태를 날짜로 프론트에서 다시 계산하지 않는다.
+만료 계약의 원문·금액·좌석을 보존하고 화면에는 마지막 계약 정보로 표시한다.
+합계는 contractStatus=active인 계약만 포함한다. 만료·시작 예정·미입력은 제외하며 UI에 제외 건수를 표시한다. 유효 계약이 없으면 월 계약액과 좌석 수는 0이다. 유효 계약 자체의 필요한 값이 누락되면 해당 합계는 null이다. 이는 유효 계약 기준 합계이며 실제 전체 지출이나 자동 해지·갱신을 의미하지 않는다.

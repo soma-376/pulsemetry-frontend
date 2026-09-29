@@ -9,10 +9,11 @@ import type { OverviewModel } from "@/lib/metrics/overview";
  * KPI 를 0 으로 채우지 않고 설치 안내로 통째로 대체합니다 —
  * 0 은 "안 썼다"는 뜻이지 "아직 모른다"는 뜻이 아니기 때문입니다.
  */
-export function OverviewEmptyState({ model }: { model: OverviewModel }) {
+export function OverviewEmptyState({ model }: { model: Pick<OverviewModel, "installCmd" | "setupSteps"> }) {
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
+    if (!model.installCmd) return;
     try {
       await navigator.clipboard.writeText(model.installCmd);
       setCopied(true);
@@ -68,9 +69,9 @@ export function OverviewEmptyState({ model }: { model: OverviewModel }) {
         </span>
         <div className="flex items-center gap-2 rounded-md border border-border bg-sub px-3 py-[11px]">
           <code className="min-w-0 flex-1 overflow-x-auto font-mono text-[11.5px] whitespace-nowrap text-text">
-            {model.installCmd}
+            {model.installCmd || "-"}
           </code>
-          <Button size="sm" onClick={copy}>
+          <Button size="sm" onClick={copy} disabled={!model.installCmd}>
             {copied ? "복사됨" : "복사"}
           </Button>
         </div>
