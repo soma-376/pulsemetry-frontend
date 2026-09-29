@@ -1,3 +1,5 @@
+import { SEED_CATALOG } from "@/mocks/catalog";
+
 export type VendorFamily = "anthropic" | "openai" | "generic";
 
 export type Plan = {
@@ -19,43 +21,25 @@ type VendorProduct = {
   plans: Plan[];
 };
 
-const seatPlan = (v: string, label: string, usage = false): Plan => ({
-  v, label, bill: "seat", usage, note: "계약서에 기재된 좌석 수와 월 단가를 입력하세요",
-});
-
-/** 조직용 구독만 지원합니다. 제품 정보는 목 계약·좌석·사용량에서도 함께 사용합니다. */
-export const VENDOR_CATALOG: VendorProduct[] = [
-  {
-    kind: "claude_team", label: "Claude (Anthropic)", short: "Claude",
-    product: "Claude Code · claude.ai", family: "anthropic", color: "var(--purple)", allowsSeatTiers: true,
-    plans: [seatPlan("team", "Team", true), seatPlan("enterprise", "Enterprise", true)],
-  },
-  {
-    kind: "openai_biz", label: "ChatGPT / Codex (OpenAI)", short: "Codex",
-    product: "ChatGPT · Codex", family: "openai", color: "var(--orange-ink)", allowsSeatTiers: false,
-    plans: [seatPlan("business", "Business", true), seatPlan("enterprise", "Enterprise", true)],
-  },
-  {
-    kind: "cursor", label: "Cursor", short: "Cursor",
-    product: "Cursor", family: "generic", color: "var(--text2)", allowsSeatTiers: true,
-    plans: [seatPlan("cursor_teams", "Teams", true), seatPlan("cursor_enterprise", "Enterprise", true)],
-  },
-  {
-    kind: "copilot", label: "GitHub Copilot", short: "GitHub Copilot",
-    product: "GitHub Copilot", family: "generic", color: "var(--text2)", allowsSeatTiers: false,
-    plans: [seatPlan("copilot_business", "Business", true), seatPlan("copilot_enterprise", "Enterprise", true)],
-  },
-  {
-    kind: "gemini", label: "Google Gemini Code Assist", short: "Gemini Code Assist",
-    product: "Gemini Code Assist", family: "generic", color: "var(--text2)", allowsSeatTiers: false,
-    plans: [seatPlan("gemini_standard", "Standard"), seatPlan("gemini_enterprise", "Enterprise")],
-  },
-  {
-    kind: "other", label: "기타 조직 계약 · 직접 입력", short: "기타",
-    product: "기타 조직 계약", family: "generic", color: "var(--text2)", allowsSeatTiers: true,
-    plans: [seatPlan("seat_flat", "좌석 정액"), seatPlan("seat_usage", "좌석 + 사용량", true)],
-  },
-];
+/** API 연동 전 화면의 표시 메타데이터. 제품·플랜 ID와 기능은 백엔드에서 생성한 fixture를 사용한다. */
+const presentation: Record<string, { short: string; color: string }> = {
+  claude_team: { short: "Claude", color: "var(--purple)" },
+  openai_biz: { short: "Codex", color: "var(--orange-ink)" },
+  gemini: { short: "Gemini Code Assist", color: "var(--text2)" },
+  other: { short: "기타", color: "var(--text2)" },
+};
+export const VENDOR_CATALOG: VendorProduct[] = SEED_CATALOG.items.map(product => ({
+  kind: product.id, label: product.displayName,
+  short: presentation[product.id]?.short ?? product.displayName,
+  product: product.product,
+  family: product.provider === "anthropic" || product.provider === "openai" ? product.provider : "generic",
+  color: presentation[product.id]?.color ?? "var(--text2)",
+  allowsSeatTiers: product.allowsSeatTiers,
+  plans: SEED_CATALOG.plans[product.id].map(plan => ({
+    v: plan.id, label: plan.displayName, bill: plan.billing, usage: plan.separateUsageBilling,
+    note: "계약서에 기재된 좌석 수와 월 단가를 입력하세요",
+  })),
+}));
 
 export const ADD_KINDS = VENDOR_CATALOG.map(({ kind, label }) => ({ v: kind, label }));
 

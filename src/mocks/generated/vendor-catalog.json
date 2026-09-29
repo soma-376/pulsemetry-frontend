@@ -1,0 +1,133 @@
+{
+  "catalogVersion": "e9612a8c1aa5ada4fc6ff4486a1eb5c2db7a79981f2c9416e31ae892ffca2e01",
+  "items": [
+    {
+      "id": "claude_team",
+      "provider": "anthropic",
+      "displayName": "Claude (Anthropic)",
+      "product": "Claude Code · claude.ai",
+      "allowsSeatTiers": true
+    },
+    {
+      "id": "openai_biz",
+      "provider": "openai",
+      "displayName": "ChatGPT / Codex (OpenAI)",
+      "product": "ChatGPT · Codex",
+      "allowsSeatTiers": true
+    },
+    {
+      "id": "cursor",
+      "provider": "cursor",
+      "displayName": "Cursor",
+      "product": "Cursor",
+      "allowsSeatTiers": true
+    },
+    {
+      "id": "copilot",
+      "provider": "github",
+      "displayName": "GitHub Copilot",
+      "product": "GitHub Copilot",
+      "allowsSeatTiers": false
+    },
+    {
+      "id": "gemini",
+      "provider": "google",
+      "displayName": "Google Gemini Code Assist",
+      "product": "Gemini Code Assist",
+      "allowsSeatTiers": false
+    },
+    {
+      "id": "other",
+      "provider": "other",
+      "displayName": "기타 조직 계약 · 직접 입력",
+      "product": "기타 조직 계약",
+      "allowsSeatTiers": true
+    }
+  ],
+  "plans": {
+    "claude_team": [
+      {
+        "id": "team",
+        "displayName": "Team",
+        "billing": "seat",
+        "separateUsageBilling": true
+      },
+      {
+        "id": "enterprise",
+        "displayName": "Enterprise",
+        "billing": "seat",
+        "separateUsageBilling": true
+      }
+    ],
+    "openai_biz": [
+      {
+        "id": "business",
+        "displayName": "Business",
+        "billing": "seat",
+        "separateUsageBilling": true
+      },
+      {
+        "id": "enterprise",
+        "displayName": "Enterprise",
+        "billing": "seat",
+        "separateUsageBilling": true
+      }
+    ],
+    "cursor": [
+      {
+        "id": "cursor_teams",
+        "displayName": "Teams",
+        "billing": "seat",
+        "separateUsageBilling": true
+      },
+      {
+        "id": "cursor_enterprise",
+        "displayName": "Enterprise",
+        "billing": "seat",
+        "separateUsageBilling": true
+      }
+    ],
+    "copilot": [
+      {
+        "id": "copilot_business",
+        "displayName": "Business",
+        "billing": "seat",
+        "separateUsageBilling": true
+      },
+      {
+        "id": "copilot_enterprise",
+        "displayName": "Enterprise",
+        "billing": "seat",
+        "separateUsageBilling": true
+      }
+    ],
+    "gemini": [
+      {
+        "id": "gemini_standard",
+        "displayName": "Standard",
+        "billing": "seat",
+        "separateUsageBilling": false
+      },
+      {
+        "id": "gemini_enterprise",
+        "displayName": "Enterprise",
+        "billing": "seat",
+        "separateUsageBilling": false
+      }
+    ],
+    "other": [
+      {
+        "id": "seat_flat",
+        "displayName": "좌석 정액",
+        "billing": "seat",
+        "separateUsageBilling": false
+      },
+      {
+        "id": "seat_usage",
+        "displayName": "좌석 + 사용량",
+        "billing": "seat",
+        "separateUsageBilling": true
+      }
+    ]
+  }
+}

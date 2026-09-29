@@ -1,3 +1,4 @@
+// 기존 Codeworks UI 데모. A회사 백엔드 시드는 ./company-a.ts 참조 (README.md).
 import { vendorIdentity, type VendorFamily } from "@/lib/vendor-catalog";
 export type { VendorFamily } from "@/lib/vendor-catalog";
 import type { SeatTier } from "@/types/domain";
