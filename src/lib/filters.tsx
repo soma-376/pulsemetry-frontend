@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState } from "react";
-import { DAY_MS, TODAY, toIso, type DateRange } from "@/lib/date";
+import { DAY_MS, fromIso, toIso, type DateRange } from "@/lib/date";
 import type { CompareKey, RangeKey } from "@/types/domain";
 
 /**
@@ -23,7 +23,6 @@ type FiltersValue = {
 
 const FiltersContext = createContext<FiltersValue | null>(null);
 
-const DEFAULT_DATES: DateRange = { start: "2026-09-07", end: "2026-09-13" };
 const RANGE_DAYS: Record<RangeKey, number> = {
   "24h": 1,
   "7d": 7,
@@ -31,10 +30,10 @@ const RANGE_DAYS: Record<RangeKey, number> = {
   "90d": 90,
 };
 
-export function FiltersProvider({ children }: { children: React.ReactNode }) {
+export function FiltersProvider({ children, todayIso = "2026-09-13" }: { children: React.ReactNode; todayIso?: string }) {
   const [range, updateRange] = useState<RangeKey | null>("7d");
   const [compare, setCompare] = useState<CompareKey>("prev_week");
-  const [dates, updateDates] = useState<DateRange>(DEFAULT_DATES);
+  const [dates, updateDates] = useState<DateRange>(() => ({ start: toIso(new Date(fromIso(todayIso).getTime() - 6 * DAY_MS)), end: todayIso }));
   const [autoRefresh, setAutoRefresh] = useState(false);
 
   const value = useMemo<FiltersValue>(
@@ -44,9 +43,9 @@ export function FiltersProvider({ children }: { children: React.ReactNode }) {
         updateRange(next);
         updateDates({
           start: toIso(
-            new Date(TODAY.getTime() - (RANGE_DAYS[next] - 1) * DAY_MS),
+            new Date(fromIso(todayIso).getTime() - (RANGE_DAYS[next] - 1) * DAY_MS),
           ),
-          end: toIso(TODAY),
+          end: todayIso,
         });
       },
       compare,
@@ -60,7 +59,7 @@ export function FiltersProvider({ children }: { children: React.ReactNode }) {
       autoRefresh,
       toggleAutoRefresh: () => setAutoRefresh((v) => !v),
     }),
-    [range, compare, dates, autoRefresh],
+    [range, compare, dates, autoRefresh, todayIso],
   );
 
   return (

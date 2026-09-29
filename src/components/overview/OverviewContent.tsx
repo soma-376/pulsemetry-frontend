@@ -1,9 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { CoverageBar } from "@/components/layout/CoverageBar";
-import { FilterToolbar } from "@/components/layout/FilterToolbar";
-import { IngestDownBanner } from "@/components/layout/IngestDownBanner";
 import { KpiCard } from "@/components/overview/KpiCard";
 import { ModelMixCard } from "@/components/overview/ModelMixCard";
 import { OverviewEmptyState } from "@/components/overview/OverviewEmptyState";
@@ -27,24 +24,6 @@ export function OverviewContent() {
 
   return (
     <>
-      <FilterToolbar />
-
-      {model.ingest.isDown && (
-        <IngestDownBanner
-          title={model.ingest.down.title}
-          detail={model.ingest.down.detail}
-        />
-      )}
-
-      <CoverageBar
-        dotColor={model.ingest.dot}
-        installs={model.ingest.liveInstalls}
-        members={model.ingest.liveMembers}
-        coverage={model.ingest.liveCoverage}
-        ingestText={model.ingest.text}
-        ingestColor={model.ingest.fg}
-        coverageNote={model.observation.coverageNote}
-      />
 
       <div className="mx-auto flex w-full max-w-[1440px] items-start gap-4 px-6 pt-5 pb-10">
         <div className="flex min-w-0 flex-1 flex-col gap-4">

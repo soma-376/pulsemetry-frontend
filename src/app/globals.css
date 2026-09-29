@@ -1,18 +1,5 @@
 @import "tailwindcss";
 
-/*
-  Pretendard Variable 동적 서브셋 (자체 호스팅).
-
-  - 한글 variable 전체는 단일 파일 2,009 KB 입니다. 이 서브셋은 unicode-range 로
-    92조각(평균 31 KB)으로 쪼개져 있어 화면에 실제 나온 글자의 조각만 받습니다.
-  - node_modules 에서 직접 import 하므로 번들러가 woff2 에 콘텐츠 해시를 붙여
-    불변 캐시로 내보냅니다. 써드파티 CDN 요청이 없어 DNS+TLS 왕복도,
-    사내망 차단 리스크도 없습니다.
-  - next/font/local 은 쓸 수 없습니다 — src 배열이 path/weight/style 만 받아
-    unicode-range 를 지정할 방법이 없습니다. (next 16.3.5 타입 정의 확인)
-*/
-@import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
-
 /* ──────────────────────────────────────────────────────────────
    디자인 토큰 — claude.ai/design Pulsemetry 원본 팔레트 그대로
    테마는 prefers-color-scheme 이 아니라 html[data-theme] 로 제어합니다.

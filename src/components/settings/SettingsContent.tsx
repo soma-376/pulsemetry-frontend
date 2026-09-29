@@ -2,8 +2,6 @@
 import { allowsSeatTiers } from "@/lib/vendor-catalog";
 
 import { useCallback, useMemo, useState } from "react";
-import { CoverageBar } from "@/components/layout/CoverageBar";
-import { FilterToolbar } from "@/components/layout/FilterToolbar";
 import { SettingRow, SettingSection } from "@/components/settings/SettingRow";
 import { VendorDrawer } from "@/components/settings/VendorDrawer";
 import { VendorTable } from "@/components/settings/VendorTable";
@@ -40,7 +38,7 @@ import {
   type VendorEdits,
   type VendorRow,
 } from "@/lib/settings";
-import { COVERAGE, INGEST } from "@/mocks/overview";
+import { INGEST } from "@/mocks/overview";
 import type { VendorRecord } from "@/mocks/vendors";
 
 /**
@@ -169,16 +167,6 @@ export function SettingsContent() {
 
   return (
     <>
-      <FilterToolbar />
-
-      <CoverageBar
-        dotColor={ingest.dot}
-        installs={String(COVERAGE.activeInstalls)}
-        members={String(COVERAGE.activeMembers)}
-        coverage={COVERAGE.coverageText}
-        ingestText={ingest.text}
-        ingestColor={ingest.fg}
-      />
 
       <div className="mx-auto flex w-full max-w-[1128px] flex-col gap-8 px-6 pt-5 pb-10">
         <h1 className="text-[18px] font-semibold tracking-[-0.01em]">설정</h1>
