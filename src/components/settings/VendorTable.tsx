@@ -18,8 +18,12 @@ export function VendorTable({
   rows,
   onOpen,
   onAdd,
+  addDisabled = false,
+  loadingVendorId = null,
 }: {
   rows: VendorRow[];
+  addDisabled?: boolean;
+  loadingVendorId?: string | null;
   onOpen: (id: string) => void;
   onAdd: () => void;
 }) {
@@ -30,7 +34,7 @@ export function VendorTable({
           연동 벤더 {rows.length}
         </span>
         <div className="flex-1" />
-        <Button onClick={onAdd}>벤더 추가</Button>
+        <Button disabled={addDisabled} onClick={onAdd}>벤더 추가</Button>
       </div>
 
       {rows.map((v, i) => (
@@ -39,11 +43,13 @@ export function VendorTable({
           role="button"
           tabIndex={0}
           aria-label={v.openLabel}
-          onClick={() => onOpen(v.id)}
+          aria-busy={loadingVendorId === v.id || undefined}
+          aria-disabled={loadingVendorId === v.id || undefined}
+          onClick={() => { if (loadingVendorId !== v.id) onOpen(v.id); }}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              onOpen(v.id);
+              if (loadingVendorId !== v.id) onOpen(v.id);
             }
           }}
           className={`${COLS} cursor-pointer px-3.5 py-3 hover:bg-hover ${i === 0 ? "" : "border-t border-border"}`}
@@ -79,7 +85,12 @@ export function VendorTable({
           >
             {v.spendText}
           </span>
-          <span className="flex items-center justify-center text-text3">›</span>
+          <span className="flex items-center justify-center text-text3">
+            {loadingVendorId === v.id ? <>
+              <span aria-hidden="true" className="size-3.5 rounded-full border-2 border-current border-r-transparent motion-safe:animate-spin" />
+              <span role="status" className="sr-only">{v.short} 상세 정보를 불러오는 중입니다…</span>
+            </> : "›"}
+          </span>
         </div>
       ))}
     </div>
