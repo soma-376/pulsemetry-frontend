@@ -1,9 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CoverageBar } from "@/components/layout/CoverageBar";
-import { FilterToolbar } from "@/components/layout/FilterToolbar";
-import { IngestDownBanner } from "@/components/layout/IngestDownBanner";
 import { InviteModal } from "@/components/members/InviteModal";
 import { MemberListCard } from "@/components/members/MemberListCard";
 import { MemberDetailDrawer } from "@/components/members/MemberDetailDrawer";
@@ -22,7 +19,7 @@ import { saveMemberAssignment } from "@/lib/member-assignment";
 /**
  * P6 구성원.
  *
- * 셸(사이드바·필터 툴바·커버리지 바)과 카드·버튼·셀렉트는 기존 것을 그대로 씁니다.
+ * 공통 셸 아래에서 카드·버튼·셀렉트로 구성원 정보를 표시합니다.
  * 좌석 회수·팀 배정·초대와 구성원의 팀·역할을 관리합니다.
  */
 export function MembersContent() {
@@ -60,24 +57,6 @@ export function MembersContent() {
 
   return (
     <>
-      <FilterToolbar />
-
-      {model.ingest.isDown && (
-        <IngestDownBanner
-          title={model.ingest.down.title}
-          detail={model.ingest.down.detail}
-        />
-      )}
-
-      <CoverageBar
-        dotColor={model.ingest.dot}
-        installs={model.ingest.liveInstalls}
-        members={model.ingest.liveMembers}
-        coverage={model.ingest.liveCoverage}
-        ingestText={model.ingest.text}
-        ingestColor={model.ingest.fg}
-      />
-
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-6 pt-5 pb-10">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <div className="flex items-baseline gap-2.5">

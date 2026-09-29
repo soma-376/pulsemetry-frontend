@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FilterToolbar } from "@/components/layout/FilterToolbar";
 import { ModelScatterCard } from "@/components/teams/ModelScatterCard";
 import { TeamAxisPanel } from "@/components/teams/TeamAxisPanel";
 import { TeamDetailDrawer } from "@/components/teams/TeamDetailDrawer";
@@ -34,7 +33,6 @@ export function TeamsContent({ initialTeamId }: { initialTeamId?: string }) {
 
   return (
     <>
-      <FilterToolbar />
 
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-6 pt-5 pb-10">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
