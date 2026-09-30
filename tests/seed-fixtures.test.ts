@@ -21,7 +21,18 @@ test("A fixture는 완료 조직이며 좌석 계약과 관측 인원을 연결�
   assert.equal(openai.contract?.monthlySeatFeeUsd, "400");
   assert.deepEqual(COMPANY_A_VENDORS.map(vendor => vendor.kind).sort(), ["claude_team", "copilot", "cursor", "openai_biz"]);
   assert.equal(COMPANY_A_VENDORS.find(vendor => vendor.kind === "cursor")!.contract, null);
-  assert.ok(COMPANY_A.managedVendors.every(vendor => vendor.activeUsers7d === null));
+  // 관측은 카탈로그의 명시 매핑으로만 붙는다(백엔드 ADR 0044): claude_code → Claude, codex → OpenAI. Cursor·Copilot은 관측할 수 없다.
+  const observed = (kind: string) => COMPANY_A.managedVendors.find(vendor => vendor.kind === kind)!;
+  for (const kind of ["claude_team", "openai_biz"]) {
+    const vendor = observed(kind);
+    assert.equal(vendor.observation, "partial");
+    assert.ok(vendor.firstSeenAt && vendor.lastSeenAt && vendor.firstSeenAt < vendor.lastSeenAt);
+    assert.ok((vendor.activeUsers7d ?? 0) > 0 && (vendor.activeUsers30d ?? 0) >= (vendor.activeUsers7d ?? 0));
+  }
+  for (const kind of ["cursor", "copilot"]) {
+    const vendor = observed(kind);
+    assert.deepEqual([vendor.observation, vendor.activeUsers7d, vendor.activeUsers30d, vendor.firstSeenAt, vendor.lastSeenAt], ["unobserved", null, null, null, null]);
+  }
   assert.equal(COMPANY_A.legacyContracts.find(contract => contract.provider === "openai")!.commitmentAmountUsd, "0");
 });
 
