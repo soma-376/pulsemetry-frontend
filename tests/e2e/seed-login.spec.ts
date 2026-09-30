@@ -47,12 +47,13 @@ test("SEED-AUTH-SWITCH @p0 @read A 로그아웃 후 B의 데이터와 조직명�
   await expect(page.getByRole("region", { name: "사용 관측 인원", exact: true })).toBeVisible();
   await page.getByRole("link", { name: "로그아웃", exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
-  await signIn(page, "admin@seed-b.example.test");
+  // B에는 오너 한 명만 있다.
+  await signIn(page, "owner@seed-b.example.test");
   await page.goto("/overview");
   await expect(page.getByRole("navigation")).toContainText(organizations[1].name);
   await expect(page.getByRole("navigation")).not.toContainText(organizations[0].name);
   await expect(page.getByText("아직 수집된 신호가 없습니다")).toBeVisible();
-  await expect(page.getByText("수집 이력 없음", { exact: false }).first()).toBeVisible();
+  await expect(page.getByLabel("조직 수집 현황", { exact: true })).toContainText("수신 대기 · 아직 수집된 데이터가 없습니다");
   await page.getByRole("link", { name: "로그아웃", exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
 });

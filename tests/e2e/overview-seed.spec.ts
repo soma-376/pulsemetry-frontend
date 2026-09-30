@@ -13,6 +13,15 @@ function seedPeriod() {
   return { start: offset(-28), end: offset(-1) };
 }
 
+/** A의 조회 구간 환산 비용. 시드 생성기의 plan 출력이 원천이며 조회 API의 응답으로 채우지 않는다. */
+function seedCostA() {
+  const value = process.env.E2E_SEED_A_PERIOD_COST_USD ?? "";
+  if (!/^\d+(\.\d+)?$/.test(value)) {
+    throw new Error(".env.local의 E2E_SEED_A_PERIOD_COST_USD를 백엔드 `dev-seed plan <E2E_SEED_DATE>` 출력에서 A의 period_known_estimated_usd 값으로 설정하세요.");
+  }
+  return Number(value);
+}
+
 async function openSeedOverview(page: Page, index: 0 | 2) {
   const org = seedOrganizations[index];
   const { start, end } = seedPeriod();
@@ -38,18 +47,20 @@ async function openSeedOverview(page: Page, index: 0 | 2) {
 }
 
 test("OVERVIEW-A @p0 @read 달력으로 시드 기간 조회 후 관측 인원·비용과 비교 변경을 검증한다", async ({ page }) => {
+  const cost = seedCostA();
+  const costText = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(cost);
   const body = await openSeedOverview(page, 0);
   // 백엔드 시드 시나리오의 독립 기대값. UI와 같은 응답만 비교해서 통과시키지 않는다.
   expect(body.usage.current?.activeUsers).toBe(8);
-  expect(Number(body.usage.current?.equivalentCostUsd)).toBe(0.525980);
+  expect(Number(body.usage.current?.equivalentCostUsd)).toBe(cost);
   await expect(page.getByRole("region", { name: "사용 관측 인원", exact: true }).getByText("8", { exact: true })).toBeVisible();
-  await expect(page.getByRole("region", { name: "토큰 비용", exact: true }).getByText("$0.53", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "토큰 비용", exact: true }).getByText(costText, { exact: true })).toBeVisible();
   const changed = page.waitForResponse(response => response.url().includes("/analytics/overview?") && new URL(response.url()).searchParams.get("compare") === "none");
   await page.getByRole("combobox", { name: "비교", exact: true }).selectOption("none");
   const response = await changed;
   expect(response.status()).toBe(200);
   expect((await response.json()).comparison.status).toBe("disabled");
-  await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toContainText("$0.53");
+  await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toContainText(costText);
   await signOut(page);
 });
 
