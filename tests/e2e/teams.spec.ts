@@ -167,7 +167,7 @@ test("TEAMS-A-COMPLETE @p0 @read 완전한 두 기간이면 증감과 끊기지 
   await signOut(page);
 });
 
-test("OVERVIEW-PRODUCTS @p0 @read 개요의 벤더 관측 인원과 팀별 사용 벤더가 서버의 제품별 사용이다", async ({ page }) => {
+test("OVERVIEW-PRODUCTS @p0 @read 개요의 벤더 관측 인원·팀별 사용 벤더와 설정의 관측 지표가 서버의 제품별 관측이다", async ({ page }) => {
   const { start, end } = seedPeriod();
   await signIn(page, "owner@seed-a.example.test");
   await page.goto("/overview");
@@ -193,6 +193,21 @@ test("OVERVIEW-PRODUCTS @p0 @read 개요의 벤더 관측 인원과 팀별 사�
   for (const team of overview.teamUsage.topTeams) {
     const cell = summary.getByRole("row").filter({ has: page.getByRole("rowheader", { name: team.teamName, exact: true }) }).getByRole("cell").nth(1);
     await expect(cell).toHaveText(MIXED.includes(team.teamName) ? `${CLAUDE} · ${CODEX}` : /^(Claude \(Anthropic\)|ChatGPT \/ Codex \(OpenAI\))$/);
+  }
+
+  // 설정의 등록 제품 관측 지표(기준일 전날까지 7·30일)도 서버 값 그대로다. 관측 제품이 매핑되는 제품만 값이 생긴다.
+  await page.goto("/settings");
+  const observed = (await authenticatedRequest(page, dashboardBase(), `/api/v1/organizations/${A.id}/settings`)).body.vendors.items as
+    { kind: string; displayName: string; observation: string; activeUsers7d: number | null; activeUsers30d: number | null }[];
+  expect(observed.filter((vendor) => vendor.observation !== "unobserved").map((vendor) => vendor.kind).sort()).toEqual(["claude_team", "openai_biz"]);
+  for (const vendor of observed.filter((item) => ["claude_team", "cursor"].includes(item.kind))) {
+    await page.getByRole("button", { name: `${vendor.displayName} 계약 설정 열기`, exact: true }).click();
+    const drawer = page.getByRole("dialog", { name: `${vendor.displayName} 계약 설정`, exact: true });
+    const text = (value: number | null) => value === null ? "-" : `${value}명`;
+    await expect(drawer).toContainText(`활성 사용자 (7일)${text(vendor.activeUsers7d)}`);
+    await expect(drawer).toContainText(`30일 누적 사용자${text(vendor.activeUsers30d)}`);
+    await page.keyboard.press("Escape");
+    await expect(drawer).not.toBeVisible();
   }
   await signOut(page);
 });
