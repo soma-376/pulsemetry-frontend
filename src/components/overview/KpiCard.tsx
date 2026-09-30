@@ -12,6 +12,10 @@ export type KpiCardProps = {
   good: boolean;
   bad: boolean;
   showDelta: boolean;
+  /** 증감률이 숫자일 때만 화살표를 그린다("신규"·"변화 없음"에는 없다) */
+  showArrow?: boolean;
+  /** 비교 기간의 값 — 서버가 비교를 냈을 때만 있다 */
+  previousText?: string;
   noDelta: boolean;
   /** 비교 기준 문구 — "전주 대비" */
   compareLabel: string;
@@ -32,6 +36,8 @@ export function KpiCard({
   good,
   bad,
   showDelta,
+  showArrow = true,
+  previousText,
   noDelta,
   compareLabel,
   noDeltaReason,
@@ -64,11 +70,12 @@ export function KpiCard({
         <div className="tnum flex items-center gap-1.5 text-[12px]">
           <span
             className="font-semibold"
-            style={{ color: deltaColor(up ? 1 : -1, { good, bad }) }}
+            style={{ color: showArrow ? deltaColor(up ? 1 : -1, { good, bad }) : "var(--text2)" }}
           >
-            {arrow(up)} {delta}
+            {showArrow && `${arrow(up)} `}{delta}
           </span>
           {compareLabel && <span className="text-text3">{compareLabel}</span>}
+          {previousText && <span className="text-text3">· 이전 {previousText}</span>}
         </div>
       )}
 

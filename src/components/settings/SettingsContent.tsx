@@ -4,11 +4,11 @@ import { contractSummaryNotice } from "@/lib/contract-status";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { z } from "zod";
 import { useDashboardPageRefresh } from "@/components/layout/DashboardHeader";
 import { SettingRow, SettingSection } from "./SettingRow";
 import { VendorTable } from "./VendorTable";
 import { ServerVendorDrawer } from "./ServerVendorDrawer";
+import { InstallationsModal } from "./InstallationsModal";
 import { Button } from "@/components/ui/Button";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -19,7 +19,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Toast, useToast } from "@/components/ui/Toast";
 import { Toggle } from "@/components/ui/Toggle";
 import { useBackendSession } from "@/lib/api/session";
-import { apiJson, ManagementError, managementKey, orgPath, policySavedSchema, readOptions } from "@/lib/api/management";
+import { apiJson, ManagementError, orgPath, policySavedSchema } from "@/lib/api/management";
 import { settingsOptions, settingsVendorOptions } from "@/lib/api/settings";
 import { catalogOptions } from "@/lib/api/vendor-catalog";
 import { organizationKey } from "@/lib/api/query-keys";
@@ -35,9 +35,6 @@ const labels: Record<string, { title: string; note: string }> = {
   model_not_allowed: { title: "비허용 모델 호출 알림", note: "허용목록에 없는 모델이 호출될 때" },
   tool_unapproved: { title: "미승인 도구 연결 알림", note: "승인되지 않은 도구가 연결될 때" },
 };
-const installationsSchema = z.object({ meta: z.object({ organizationId: z.string() }), installations: z.object({ items: z.array(z.object({
-  installationId: z.string(), account: z.string().nullable(), appliedPolicyVersion: z.number().nullable(), lastHeartbeatAt: z.string().nullable(), team: z.object({ teamName: z.string().nullable() }),
-})), nextCursor: z.string().nullable() }) });
 
 export function SettingsContent() {
   const session = useBackendSession();
@@ -63,17 +60,10 @@ function OrganizationSettings({ organizationId }: { organizationId: string }) {
   const openingVendorId = vendorQuery.isFetching ? editor?.vendorId ?? null : null;
   const [policyChoice, setPolicyChoice] = useState<boolean | null>(null);
   const [installOpen, setInstallOpen] = useState(false);
-  const installs = useQuery({ queryKey: managementKey(organizationId, "outdated-installations"), enabled: installOpen,
-    queryFn: async () => {
-      const response = await apiJson("dashboard", orgPath(organizationId, "/installations?policyStatus=outdated&limit=100"), installationsSchema);
-      if (response.meta.organizationId !== organizationId) throw new ManagementError("invalid_response", 422);
-      return response.installations;
-    }, ...readOptions,
-  });
   const policy = useMutation({ retry: false, mutationFn: (collectRawContent: boolean) => apiJson("enrollment", orgPath(organizationId, "/collection-policy"), policySavedSchema, {
     method: "PUT", body: JSON.stringify({ expectedVersion: query.data!.collectionPolicy.version, collectRawContent }),
   }), onSuccess: () => { setPolicyChoice(null); showToast("수집 정책을 저장했습니다."); void client.invalidateQueries({ queryKey: organizationKey(organizationId) }); } });
-  const forbidden = [query.error, catalog.error, vendorQuery.error, accessError, policy.error, installs.error].some(error => error instanceof ManagementError && [401, 403].includes(error.status));
+  const forbidden = [query.error, catalog.error, vendorQuery.error, accessError, policy.error].some(error => error instanceof ManagementError && [401, 403].includes(error.status));
   const data = forbidden ? undefined : query.data;
   const openVendor = (id: string) => {
     setAccessError(null);
@@ -113,8 +103,8 @@ function OrganizationSettings({ organizationId }: { organizationId: string }) {
         {!rows.length && <EmptyState message="등록된 제품이 없습니다." />}
       </SettingSection>
         <SettingSection id="collection" title="수집 정책"><div className="rounded-lg border border-border bg-card">
-          <SettingRow first title="수집 정책 버전" note={`미적용 ${rollout!.outdatedInstallations}대 · 확인 불가 ${rollout!.unknownInstallations}대`}>
-            <div className="flex items-center gap-2"><span className="tnum text-xs">v{rollout!.desiredVersion}</span><Button size="sm" onClick={() => setInstallOpen(true)}>{rollout!.appliedInstallations} / {rollout!.eligibleInstallations}대</Button></div>
+          <SettingRow first title="수집 정책 버전" note={`적용 ${int(rollout!.appliedInstallations)}대 · 미적용 ${int(rollout!.outdatedInstallations)}대 · 확인 불가 ${int(rollout!.unknownInstallations)}대 · 설치 보고 기준`}>
+            <div className="flex items-center gap-2"><span className="tnum text-xs">v{rollout!.desiredVersion}</span><Button size="sm" aria-label="정책 적용 현황 보기" onClick={() => setInstallOpen(true)}>{int(rollout!.appliedInstallations)} / {int(rollout!.eligibleInstallations)}대</Button></div>
           </SettingRow>
           <SettingRow title="프롬프트 원문 수집" note={data.collectionPolicy.collectRawContent ? "프롬프트와 응답 본문을 수집합니다" : "프롬프트와 응답 본문을 수집하지 않습니다"}>
             <Toggle on={data.collectionPolicy.collectRawContent} label="프롬프트 원문 수집" onColor="var(--red)" disabled={!data.capabilities.editCollectionPolicy || policy.isPending} onChange={() => { policy.reset(); setPolicyChoice(!data.collectionPolicy.collectRawContent); }} />
@@ -130,15 +120,11 @@ function OrganizationSettings({ organizationId }: { organizationId: string }) {
     </PageContainer>
     {data && editor && (!editor.vendorId || vendorQuery.data) && <ServerVendorDrawer key={editor.vendorId ?? "new"} organizationId={organizationId} initial={editor.vendorId ? vendorQuery.data! : null} registeredKinds={data.vendors.items.map(vendor => vendor.kind)} editable={data.capabilities.editContracts} open={open} onClose={() => setOpen(false)} onAfterClose={() => setEditor(null)} onSaved={showToast} onAccessDenied={setAccessError} />}
     <Modal open={policyChoice != null && !!data} onClose={() => { if (!policy.isPending) setPolicyChoice(null); }} title="수집 정책 변경" width={460} footer={<><div className="flex-1" /><Button disabled={policy.isPending} onClick={() => setPolicyChoice(null)}>취소</Button><Button variant="primary" loading={policy.isPending} loadingLabel="저장 중…" disabled={policyChoice == null} onClick={() => { if (policyChoice != null) policy.mutate(policyChoice); }}>변경사항 저장</Button></>}>
-      <p className="text-xs text-text2">이후 설치 등록부터 적용됩니다. 이미 설치된 기기의 정책은 자동으로 변경되지 않습니다.</p>
+      <p className="text-xs text-text2">새로 등록하는 설치에 바로 적용됩니다. 이미 설치된 기기는 다음 보고 때 새 정책이 있다는 것을 알고, 사용자가 로그인한 기기가 스스로 받아 적용합니다. 서버가 원격으로 바꾸지는 않습니다.</p>
+      <p className="text-xs text-text3">적용 여부는 수집 정책 버전의 적용 현황에서 확인합니다.</p>
       {policy.error && <ErrorState message={policy.error.message} />}
     </Modal>
-    <Modal open={installOpen && !!data} onClose={() => setInstallOpen(false)} title={`미적용 설치 ${rollout?.outdatedInstallations ?? 0}대`} subtitle={`수집 정책 v${rollout?.desiredVersion ?? "-"} 미적용`} width={600} footer={<><div className="flex-1" /><Button onClick={() => setInstallOpen(false)}>닫기</Button><Button disabled>업데이트 확인 알림 보내기</Button></>}>
-      {installs.isPending && <LoadingState />}
-      {installs.error && <ErrorState message={installs.error.message} retrying={installs.isFetching} onRetry={() => void installs.refetch({ cancelRefetch: false })} />}
-      <table className="w-full border-collapse text-xs"><thead><tr className="border-b border-border text-text3">{["installation_id", "팀", "버전", "마지막 신호"].map(label => <th key={label} className="pb-2 text-left font-medium">{label}</th>)}</tr></thead><tbody>{installs.data?.items.map(item => <tr key={item.installationId} className="border-b border-border"><td className="py-2.5 font-mono">{item.installationId}</td><td>{item.team.teamName ?? "-"}</td><td>{item.appliedPolicyVersion == null ? "-" : `v${item.appliedPolicyVersion}`}</td><td>{item.lastHeartbeatAt ?? "-"}</td></tr>)}</tbody></table>
-      {installs.data && !installs.data.items.length && <EmptyState message="미적용 설치가 없습니다." />}
-      {installs.data?.nextCursor && <p className="text-xs text-text3">처음 100대를 표시합니다.</p>}
-    </Modal>
+    {data && <InstallationsModal key={rollout!.desiredVersion} organizationId={organizationId} rollout={rollout!} channel={data.capabilities.notifyInstallations}
+      open={installOpen} onClose={() => setInstallOpen(false)} />}
   </>;
 }

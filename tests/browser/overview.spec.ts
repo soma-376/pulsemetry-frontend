@@ -58,7 +58,8 @@ test("부분 관측과 알 수 없는 비용을 0으로 만들지 않는다", as
     Object.assign(data.modelMix.models[0], { equivalentCostUsd: null });
   });
   await page.goto("/overview");
-  await expect(page.getByText("선택·비교 기간의 관측 데이터 부족").first()).toBeVisible();
+  // 선택 기간이 완전하지 않으면 비교하지 않고 그 이유를 보여 준다(0%로 그리지 않는다).
+  await expect(page.getByText("선택 기간에 수집 근거가 완전하지 않은 날이 있습니다").first()).toBeVisible();
   await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toContainText("-");
   await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toContainText("/ 0M");
   await expect(page.getByRole("region", { name: "모델 구성", exact: true }).locator("svg")).toHaveCount(0);

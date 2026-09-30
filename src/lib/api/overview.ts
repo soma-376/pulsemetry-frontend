@@ -15,7 +15,9 @@ const seatPeriod = z.object({ contractedSeats: count, activeSeats: count, monthl
 /** 화면에서 소비하는 필드를 검증한다. 모르는 값과 실제 0은 구분한다. */
 export const overviewSchema = z.object({
   meta: z.object({ organizationId: z.string(), generatedAt: z.iso.datetime({ offset: true }), dataThrough: z.iso.datetime({ offset: true }).nullable(), currency: z.literal("USD"), startDate: z.iso.date(), endDate: z.iso.date(), timeZone: z.literal("Asia/Seoul"), dayCount: z.number().int().min(1).max(366), dataState: z.enum(["ready", "partial", "no_data", "never_observed"]), currentCoverage: coverage }),
-  comparison: z.object({ mode: z.enum(["none", "prev_week", "prev_period"]), status: z.enum(["available", "unavailable", "disabled"]), reason }),
+  // 비교 기간과 그 관측은 서버가 비교를 켰을 때만 싣는다(비교 없음이면 null).
+  comparison: z.object({ mode: z.enum(["none", "prev_week", "prev_period"]), status: z.enum(["available", "unavailable", "disabled"]), reason,
+    startDate: z.iso.date().nullable().optional(), endDate: z.iso.date().nullable().optional(), coverage: coverage.nullable().optional() }),
   ingest: z.object({ status: z.enum(["healthy", "delayed", "down", "empty", "unknown"]), reason, asOf: z.iso.datetime({ offset: true }), lastReceivedAt: z.iso.datetime({ offset: true }).nullable(), windowMinutes: z.number().positive(), activeInstallations: count, observedMembers: count, eligibleMembers: count, coverageRatio: z.number().min(0).max(1).nullable() }),
   usage: z.object({ current: usage.nullable(), previous: usage.nullable() }),
   seats: z.object({ availability, reason, allocationMethod: z.enum(["contract_proration", "estimated_30_day"]).nullable(), current: seatPeriod.nullable(), previous: seatPeriod.nullable(), reclaimEstimate: z.object({ idleSeats: count, monthlySavingsUsd: money, efficiencyAfterReclaim: z.number().nonnegative().nullable() }).nullable() }),

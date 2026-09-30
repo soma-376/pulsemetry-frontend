@@ -25,7 +25,7 @@ export function OverviewData({ data, settings, contractsMessage, retryContracts 
         {model.isEmpty ? <OverviewEmptyState model={model} /> : !model.hasData ? <EmptyState message="선택한 기간에 데이터가 없습니다" description="다른 기간을 선택해 주세요." /> : null}
         {model.observation.coverageNote && <p className="text-xs text-orange-ink">{model.observation.coverageNote}</p>}
         <div className="grid grid-cols-5 gap-4 @max-[1023px]:grid-cols-2 @max-[560px]:grid-cols-1">
-          {model.hasData && model.kpis.map((kpi) => <KpiCard key={kpi.label} {...kpi} compareLabel={model.compareLabel} noDeltaReason={model.noDeltaReason} staleAt={model.ingest.isDown && kpi.label !== "월 좌석 계약액" ? model.ingest.lastIngestAt : undefined} />)}
+          {model.hasData && model.kpis.map((kpi) => <KpiCard key={kpi.label} {...kpi} compareLabel={model.compareLabel} staleAt={model.ingest.isDown && kpi.label !== "월 좌석 계약액" ? model.ingest.lastIngestAt : undefined} />)}
           {model.hasData && <><UsageValueCard key={`chart-${model.periodLabel}`} model={model} /><ModelMixCard key={`mix-${model.periodLabel}`} model={model} /></>}
           <VendorSeatsCard model={model.vendorOverview} message={contractsMessage} onRetry={retryContracts} />
           {model.attribution.show && <TeamUsageTable model={model} />}

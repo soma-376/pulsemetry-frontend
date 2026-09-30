@@ -13,7 +13,7 @@ export function settingsFixture(): Settings {
   const data: Settings = {
     meta: { organizationId: org, snapshotId: "storybook-settings" },
     ingest: { status: "unknown", reason: "source_not_available", asOf: `${COMPANY_A.asOf}T00:00:00Z`, lastReceivedAt: null, windowMinutes: 15, activeInstallations: null, observedMembers: null, eligibleMembers: 12, coverageRatio: null },
-    capabilities: { editContracts: true, editCollectionPolicy: true, editAlertRules: false, notifyInstallations: false },
+    capabilities: { editContracts: true, editCollectionPolicy: true, editAlertRules: false, notifyInstallations: true },
     summary: { configuredVendors: 1, unconfiguredVendors: 1, monthlySeatFeeUsd: null, contractedSeats: null, activeSeats7d: null, meteredMonthToDate: { availability: "unavailable", data: null } },
     vendors: { items: COMPANY_A.managedVendors.map(v => settingsVendorSchema.parse({ ...v, firstSeenAt: null, lastSeenAt: null, activeUsers7d: null, activeUsers30d: null, observation: "unobserved" })), totalCount: COMPANY_A.managedVendors.length, nextCursor: null },
     collectionPolicy: { version: COMPANY_A.policyRollout.desiredVersion, collectRawContent: false, reclaimIdleDays: 14, aggregateRetentionMonths: null },
@@ -54,6 +54,18 @@ export function settingsHandlers(scenario: SettingsScenario) {
   let detailRequests = 0;
   let failSave = scenario === "save-error";
   let conflict = scenario === "conflict";
+  const operations = new Map<string, { polls: number; targets: string[] }>();
+  const operation = (id: string) => {
+    const state = operations.get(id)!;
+    const done = state.polls >= 2;
+    const results = state.targets.map((targetId, index) => ({ targetId, status: !done ? "pending" : index === 0 ? "failed" : "succeeded", reason: done && index === 0 ? "recipient_rejected" : null, action: null }));
+    return { operationId: id, kind: "installation_notification", status: !done ? "running" : results.length > 1 ? "partially_failed" : "failed", createdAt: new Date().toISOString(),
+      completedAt: done ? new Date().toISOString() : null, results, canRestore: false, restoreUntil: null, retention: null };
+  };
+  const installations = () => COMPANY_A.installations.map(row => ({ installationId: row.installationId, memberId: row.memberId,
+    account: COMPANY_A.members.find(member => member.memberId === row.memberId)?.email ?? null, team: { teamId: null, teamName: null },
+    agentVersion: row.agentVersion, appliedPolicyVersion: row.appliedPolicyVersion, lastHeartbeatAt: row.lastHeartbeatAt,
+    canNotify: data.capabilities.notifyInstallations && row.canNotify }));
   const sync = () => {
     const rows = data.vendors.items;
     for (const row of rows) {
@@ -122,10 +134,32 @@ export function settingsHandlers(scenario: SettingsScenario) {
       const body = await request.json() as { expectedVersion: number; collectRawContent: boolean };
       if (body.expectedVersion !== data.collectionPolicy.version) return failure("version_conflict", 409);
       data.collectionPolicy.version++; data.collectionPolicy.collectRawContent = body.collectRawContent;
-      data.policyRollout.desiredVersion++; data.policyRollout.appliedInstallations = 0; data.policyRollout.outdatedInstallations = 10;
+      const rollout = data.policyRollout;
+      rollout.desiredVersion++; rollout.outdatedInstallations += rollout.appliedInstallations; rollout.appliedInstallations = 0;
       return HttpResponse.json({ version: data.collectionPolicy.version, collectRawContent: body.collectRawContent, confirmedAt: new Date().toISOString(), application: "future_enrollments", existingInstallationsUpdated: false });
     }),
-    http.get(`${api}/installations`, () => HttpResponse.json({ meta: data.meta, installations: { items: [], nextCursor: null } })),
+    http.get(`${api}/installations`, ({ request }) => {
+      const status = new URL(request.url).searchParams.get("policyStatus");
+      const desired = data.policyRollout.desiredVersion;
+      const items = installations().filter(row => !status || (row.appliedPolicyVersion == null ? "unknown" : row.appliedPolicyVersion >= desired ? "applied" : "outdated") === status);
+      return HttpResponse.json({ meta: data.meta, desiredPolicyVersion: desired, installations: { items, totalCount: items.length, nextCursor: null } });
+    }),
+    // 안내는 접수(202) 뒤 작업 상태 조회가 한 번 running(Retry-After)을 거쳐 끝난다. 첫 대상은 수신 거부로 실패한다.
+    http.post(`${api}/installation-update-notifications`, async ({ request }) => {
+      if (!data.capabilities.notifyInstallations) return failure("notification_channel_unavailable", 422);
+      const body = await request.json() as { installationIds: string[]; expectedPolicyVersion: number };
+      if (body.expectedPolicyVersion !== data.policyRollout.desiredVersion) return failure("version_conflict", 409);
+      const operationId = crypto.randomUUID();
+      operations.set(operationId, { polls: 0, targets: body.installationIds });
+      return HttpResponse.json(operation(operationId), { status: 202, headers: { Location: `/api/v1/organizations/${org}/operations/${operationId}` } });
+    }),
+    http.get(`${api}/operations/:id`, ({ params }) => {
+      const state = operations.get(String(params.id));
+      if (!state) return failure("not_found", 404);
+      state.polls++;
+      const body = operation(String(params.id));
+      return HttpResponse.json(body, { headers: body.status === "running" ? { "Retry-After": "1" } : {} });
+    }),
     http.delete(`${api}/vendors/:id/contract`, ({ params, request }) => {
       const vendor = data.vendors.items.find(row => row.vendorId === params.id);
       if (!vendor) return failure("not_found", 404);

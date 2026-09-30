@@ -19,15 +19,22 @@ const messages: Record<string, string> = {
   role_not_assignable: "지정할 수 없는 역할입니다.", owner_role_immutable: "소유자의 역할은 바꿀 수 없습니다.",
   self_role_change: "자기 역할은 바꿀 수 없습니다.", member_suspended: "정지된 구성원은 변경할 수 없습니다.",
   invitation_unavailable: "이미 사용했거나 취소된 초대입니다. 목록을 다시 확인하세요.",
+  notification_channel_unavailable: "메일 발송이 설정되지 않아 알림을 보낼 수 없습니다. 서버 관리자에게 메일 설정을 요청하세요.",
+  installation_unavailable: "이미 새 정책을 적용했거나 알림을 보낼 수 없는 설치가 포함돼 있습니다. 목록을 다시 불러왔습니다.",
+  snapshot_expired: "목록이 갱신되었습니다. 처음부터 다시 불러옵니다.",
 };
 export class ManagementError extends Error {
   constructor(public code: string, public status: number, public retryAfter = 0, public fields: { field: string; code: string }[] = []) {
-    const labels: Record<string, string> = { kind: "제품", displayName: "표시 이름", "contract.planId": "플랜", "contract.effectiveFrom": "계약 기간", "contract.effectiveTo": "계약 종료일", "contract.tiers": "좌석 구성", "contract.termNote": "계약 메모", teamName: "팀 이름", teamId: "팀", role: "역할", memberId: "구성원", assignments: "배정 목록" };
+    const labels: Record<string, string> = { kind: "제품", displayName: "표시 이름", "contract.planId": "플랜", "contract.effectiveFrom": "계약 기간", "contract.effectiveTo": "계약 종료일", "contract.tiers": "좌석 구성", "contract.termNote": "계약 메모", teamName: "팀 이름", teamId: "팀", role: "역할", memberId: "구성원", assignments: "배정 목록", installationIds: "설치 목록", expectedPolicyVersion: "정책 판" };
     const fieldMessage = fields.map(field => labels[field.field]).filter(Boolean).join(", ");
     super((messages[code] ?? "요청을 처리하지 못했습니다. 입력값과 연결 상태를 확인해 주세요.") + (fieldMessage ? ` 확인할 항목: ${fieldMessage}` : ""));
   }
 }
 export async function apiJson<T>(service: "dashboard" | "enrollment", path: string, schema: z.ZodType<T>, init: RequestInit = {}): Promise<T> {
+  return (await apiResponse(service, path, schema, init)).data;
+}
+/** 본문과 함께 응답 헤더(`Location`·`Retry-After`)가 필요한 호출용. 오류 처리는 [apiJson]과 같다. */
+export async function apiResponse<T>(service: "dashboard" | "enrollment", path: string, schema: z.ZodType<T>, init: RequestInit = {}): Promise<{ data: T; headers: Headers }> {
   const base = service === "dashboard" ? process.env.NEXT_PUBLIC_DASHBOARD_API_URL ?? "http://localhost:8081" : process.env.NEXT_PUBLIC_ENROLLMENT_API_URL ?? "http://localhost:8080";
   const response = await sessionFetch(`${base.replace(/\/$/, "")}/api/v1${path}`, { ...init, credentials: "omit", cache: "no-store", headers: { ...(init.body ? { "Content-Type": "application/json" } : {}), ...init.headers } });
   if (!response.ok) {
@@ -36,7 +43,7 @@ export async function apiJson<T>(service: "dashboard" | "enrollment", path: stri
   }
   const parsed = schema.safeParse(response.status === 204 ? undefined : await response.json());
   if (!parsed.success) throw new ManagementError("invalid_response", 422);
-  return parsed.data;
+  return { data: parsed.data, headers: response.headers };
 }
 export const orgPath = (organizationId: string, path: string) => `/organizations/${encodeURIComponent(organizationId)}${path}`;
 export const managementKey = (org: string, name: string) => [...organizationKey(org), name] as const;
