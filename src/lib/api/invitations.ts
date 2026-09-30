@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
-import { apiJson, ManagementError, managementKey, orgPath, readOptions } from "./management";
+import { apiJson, ManagementError, managementKey, orgPath, readOptions, type createCommands } from "./management";
 
 export const invitationSchema = z.object({
   invitationId: z.string(), email: z.string(), role: z.string(),
@@ -50,3 +50,26 @@ export const waitingInvitationsOptions = (organizationId: string) => queryOption
   enabled: !!organizationId,
   ...readOptions,
 });
+
+type Post = ReturnType<typeof createCommands>;
+/** 서버가 한 요청에서 받는 초대의 최대 인원. */
+export const INVITATION_LIMIT = 100;
+export type InvitationRequest = { email: string; teamId: string | null; role: string };
+export const invitationResultSchema = z.object({
+  email: z.string(), invitationId: z.string().nullable(),
+  status: z.enum(["issued", "already_member", "already_invited", "rejected"]),
+  reason: z.string().nullable(), expiresAt: z.iso.datetime({ offset: true }).nullable(), code: z.string().nullable(),
+});
+export type InvitationResult = z.infer<typeof invitationResultSchema>;
+const issuedSchema = z.object({ results: z.array(invitationResultSchema) });
+export const reissuedSchema = z.object({ invitationId: z.string(), replacesInvitationId: z.string(), code: z.string(), expiresAt: z.iso.datetime({ offset: true }) });
+export type ReissuedInvitation = z.infer<typeof reissuedSchema>;
+
+/** 초대 코드를 발급한다. 서버는 메일을 보내지 않는다 — 코드는 이 응답에만 있다. */
+export const issueInvitations = async (post: Post, organizationId: string, invitations: InvitationRequest[]) =>
+  (await post(organizationId, "/invitations/batch", { invitations }, issuedSchema)).results;
+/** 기존 코드를 폐기하고 새 코드를 발급한다. 초대 ID도 바뀐다. */
+export const reissueInvitation = (post: Post, organizationId: string, invitationId: string) =>
+  post(organizationId, `/invitations/${encodeURIComponent(invitationId)}/reissue`, {}, reissuedSchema);
+export const revokeInvitation = (post: Post, organizationId: string, invitationId: string) =>
+  post(organizationId, `/invitations/${encodeURIComponent(invitationId)}/revoke`, {}, z.undefined());

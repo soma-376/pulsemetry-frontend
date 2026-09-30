@@ -1,6 +1,7 @@
-import { test, type Page } from "@playwright/test";
+import { test, type Page, type Route } from "@playwright/test";
+import { mockOnboarding } from "./onboarding-fixture";
 
-/** 구성원 화면 UI 테스트용 응답. 실제 서버 검증은 tests/e2e/members-read.spec.ts가 한다. */
+/** 구성원 화면 UI 테스트용 응답. 실제 서버 검증은 tests/e2e/members-read.spec.ts·members-write.spec.ts가 한다. */
 export const fixtureTeams = [
   { teamId: "team-platform", teamName: "플랫폼", version: 1 },
   { teamId: "team-product", teamName: "제품", version: 1 },
@@ -28,17 +29,32 @@ export function fixtureMembers(count = 45) {
 }
 /** 서버가 후보로 준 구성원 — 기간 내 사용이 없는 앞의 셋. */
 export const fixtureCandidates = (members: FixtureMember[]) => members.filter((member) => !member.periodUsage && member.lastUsedAt).slice(0, 3);
-export const fixtureInvitations = [
+export type FixtureInvitation = { invitationId: string; email: string; role: string; createdAt: string; expiresAt: string; installationUsedAt: string | null; signupUsedAt: string | null;
+  revokedAt: string | null; status: string; memberId: string; memberStatus: string; team: { teamId: string; teamName: string } | null; memberVersion: number };
+export const fixtureInvitations: FixtureInvitation[] = [
   { invitationId: "invite-1", email: "waiting@codeworks.io", role: "member", createdAt: "2026-09-20T00:00:00Z", expiresAt: "2026-09-24T00:00:00Z", installationUsedAt: null, signupUsedAt: null, revokedAt: null,
     status: "pending", memberId: "member-waiting", memberStatus: "invited", team: { teamId: "team-platform", teamName: "플랫폼" }, memberVersion: 1 },
   { invitationId: "invite-2", email: "expired@codeworks.io", role: "admin", createdAt: "2026-09-01T00:00:00Z", expiresAt: "2026-09-04T00:00:00Z", installationUsedAt: null, signupUsedAt: null, revokedAt: null,
     status: "expired", memberId: "member-expired", memberStatus: "invited", team: null, memberVersion: 1 },
 ];
 
-export async function mockMembers(page: Page, options: { members?: FixtureMember[]; candidates?: boolean } = {}) {
-  const members = options.members ?? fixtureMembers();
-  const candidates = options.candidates === false ? [] : fixtureCandidates(members);
-  const unassigned = members.filter((member) => member.team.teamId === null);
+export type MembersFixture = Awaited<ReturnType<typeof mockMembers>>;
+
+/**
+ * 구성원·초대·팀의 조회와 변경 명령을 메모리 상태로 흉내 낸다. 돌려주는 상태를 직접 바꾸면 다른 곳에서의 변경이 된다.
+ * 온보딩 fixture보다 나중에 등록해 팀 경로를 이쪽이 맡는다 — `openDashboard` 앞에서 부른다.
+ */
+export async function mockMembers(page: Page, options: { members?: FixtureMember[]; candidates?: boolean; invitations?: FixtureInvitation[] } = {}) {
+  await mockOnboarding(page);
+  const state = {
+    members: structuredClone(options.members ?? fixtureMembers()),
+    teams: structuredClone(fixtureTeams),
+    invitations: structuredClone(options.invitations ?? fixtureInvitations),
+    /** 받은 변경 명령 — 본문과 조건 헤더를 검증한다 */
+    commands: [] as { method: string; path: string; body: unknown; idempotencyKey: string | null; ifMatch: string | null }[],
+    sequence: 0,
+  };
+  const candidateIds = options.candidates === false ? [] : fixtureCandidates(state.members).map((member) => member.memberId);
   const cors = { "access-control-allow-origin": new URL(test.info().project.use.baseURL!).origin, "access-control-allow-headers": "content-type,authorization,idempotency-key,if-match", "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS" };
   const meta = (url: URL) => ({ organizationId: url.pathname.split("/")[4], startDate: url.searchParams.get("startDate"), endDate: url.searchParams.get("endDate"), snapshotId: "fixture-members" });
   const pageOf = (items: FixtureMember[], url: URL, first: number) => {
@@ -46,33 +62,136 @@ export async function mockMembers(page: Page, options: { members?: FixtureMember
     const limit = url.searchParams.has("cursor") ? Number(url.searchParams.get("limit") ?? 20) : first;
     return { items: items.slice(offset, offset + limit), totalCount: items.length, nextCursor: offset + limit < items.length ? String(offset + limit) : null };
   };
-  await page.route((url) => /\/api\/v1\/organizations\/[^/]+\/(members(\/dashboard|\/unassigned)?|invitations)$/.test(url.pathname), (route) => {
-    if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
-    const url = new URL(route.request().url());
-    if (url.pathname.endsWith("/invitations")) {
-      return route.fulfill({ headers: cors, json: { items: fixtureInvitations.filter((item) => item.status === url.searchParams.get("status") && item.memberStatus === url.searchParams.get("memberStatus")), nextCursor: null } });
+  const json = (route: Route, value: unknown, status = 200) => route.fulfill({ status, headers: cors, json: value });
+  const empty = (route: Route) => route.fulfill({ status: 204, headers: cors });
+  const fail = (route: Route, status: number, code: string, field?: string) =>
+    json(route, { error: { code, message: "fixture", fieldErrors: field ? [{ field, code }] : [] }, requestId: "fixture" }, status);
+  const teamRef = (teamId: string | null) => state.teams.find((team) => team.teamId === teamId) ?? null;
+  const waiting = (memberId: string) => state.invitations.find((item) => item.memberId === memberId && item.status !== "revoked");
+  /** 팀을 옮기고 version을 올린다. 명단의 구성원과 초대 대기자 모두 같은 규칙이다. */
+  const move = (memberId: string, teamId: string | null | undefined, role: string | undefined) => {
+    const team = teamId === undefined ? undefined : teamRef(teamId);
+    const member = state.members.find((item) => item.memberId === memberId), invitation = waiting(memberId);
+    if (member) {
+      if (team !== undefined) member.team = team ? { teamId: team.teamId, teamName: team.teamName } : { teamId: null, teamName: "미배정" };
+      if (role) member.role = role;
+      member.version += 1;
+      return { memberId, team: member.team.teamId ? member.team : null, role: member.role, status: "active", version: member.version };
     }
-    if (url.pathname.endsWith("/members/dashboard")) {
-      return route.fulfill({ headers: cors, json: {
+    if (team !== undefined) invitation!.team = team ? { teamId: team.teamId, teamName: team.teamName } : null;
+    if (role) invitation!.role = role;
+    invitation!.memberVersion += 1;
+    return { memberId, team: invitation!.team, role: invitation!.role, status: "invited", version: invitation!.memberVersion };
+  };
+  const versionOf = (memberId: string) => state.members.find((item) => item.memberId === memberId)?.version ?? waiting(memberId)?.memberVersion;
+
+  await page.route((url) => /\/api\/v1\/organizations\/[^/]+\/(members|invitations|teams|member-team-assignments)(\/|$)/.test(url.pathname), (route) => {
+    const request = route.request(), method = request.method();
+    if (method === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+    const url = new URL(request.url());
+    const path = url.pathname.split("/").slice(5).join("/");
+    const body = ["POST", "PATCH"].includes(method) ? request.postDataJSON() : null;
+    const headers = request.headers();
+    if (method !== "GET") state.commands.push({ method, path, body, idempotencyKey: headers["idempotency-key"] ?? null, ifMatch: headers["if-match"] ?? null });
+    if (method === "POST" && !/^[A-Za-z0-9_-]{8,128}$/.test(headers["idempotency-key"] ?? "")) return fail(route, 400, "invalid_request", "Idempotency-Key");
+    const unassigned = state.members.filter((member) => member.team.teamId === null);
+    const candidates = state.members.filter((member) => candidateIds.includes(member.memberId));
+
+    if (method === "GET" && path === "invitations") {
+      return json(route, { items: state.invitations.filter((item) => item.status === url.searchParams.get("status") && item.memberStatus === url.searchParams.get("memberStatus")), nextCursor: null });
+    }
+    if (method === "GET" && path === "members/dashboard") {
+      return json(route, {
         meta: meta(url), asOf: "2026-09-22T00:00:00Z",
-        summary: { rosterMembers: members.length, activeUsers: members.filter((member) => member.periodUsage).length, unassignedMembers: unassigned.length,
+        summary: { rosterMembers: state.members.length, activeUsers: state.members.filter((member) => member.periodUsage).length, unassignedMembers: unassigned.length,
           periodUnassignedEquivalentCostUsd: null, periodTotalEquivalentCostUsd: null,
           seats: candidates.length ? { availability: "available", reason: null, data: { contracted: 50, assigned: 45, unallocated: 5, activeInPeriod: null, inactiveAssigned: null, reclaimCandidates: candidates.length, estimatedMonthlySavingsUsd: null } }
             : { availability: "unavailable", reason: "not_applicable", data: null } },
         policy: { idleDays: 14, version: 0 }, capabilities: { invite: true, assignTeam: true, reclaimSeats: false, restoreSeats: false },
-        members: pageOf(members, url, 20), unassigned: pageOf(unassigned, url, 20),
+        members: pageOf(state.members, url, 20), unassigned: pageOf(unassigned, url, 20),
         reclaimCandidates: candidates.length ? { availability: "available", reason: null, data: { totalCount: candidates.length, nextCursor: null, items: candidates.map((member, index) => ({
           seatAssignmentId: `seat-${index + 1}`, memberId: member.memberId, account: member.account, team: member.team, vendorId: "vendor-1", tierId: "tier-1", version: 1,
           lastUsedAt: member.lastUsedAt, idleDays: 20 + index, estimatedMonthlySavingsUsd: null, canReclaim: false, reason: null })) } }
           : { availability: "unavailable", reason: "not_applicable", data: null },
-      } });
+      });
     }
-    return route.fulfill({ headers: cors, json: { meta: meta(url), members: pageOf(url.pathname.endsWith("/unassigned") ? unassigned : members, url, 20) } });
+    if (method === "GET" && (path === "members" || path === "members/unassigned")) return json(route, { meta: meta(url), members: pageOf(path === "members" ? state.members : unassigned, url, 20) });
+    if (method === "GET" && path === "teams") return json(route, { meta: { organizationId: url.pathname.split("/")[4], snapshotId: "fixture-teams" }, teams: { items: state.teams, nextCursor: null } });
+
+    if (method === "PATCH" && path.startsWith("members/")) {
+      const memberId = path.split("/")[1], version = versionOf(memberId);
+      if (version === undefined) return fail(route, 404, "not_found", "memberId");
+      if (body.expectedVersion !== version) return fail(route, 409, "version_conflict");
+      if (!("teamId" in body) && !("role" in body)) return fail(route, 400, "invalid_request");
+      if (body.teamId && !teamRef(body.teamId)) return fail(route, 404, "not_found", "teamId");
+      if ("role" in body && !["admin", "member"].includes(body.role)) return fail(route, 422, "role_not_assignable", "role");
+      return json(route, move(memberId, "teamId" in body ? body.teamId : undefined, body.role));
+    }
+    if (method === "POST" && path === "member-team-assignments") {
+      const items = body.assignments as { memberId: string; teamId: string | null; expectedVersion: number }[];
+      for (const item of items) {
+        if (versionOf(item.memberId) === undefined) return fail(route, 404, "not_found", "memberId");
+        if (item.teamId && !teamRef(item.teamId)) return fail(route, 404, "not_found", "teamId");
+        if (item.expectedVersion !== versionOf(item.memberId)) return fail(route, 409, "version_conflict");
+      }
+      return json(route, { effectiveAt: new Date().toISOString(), members: items.map((item) => { const saved = move(item.memberId, item.teamId, undefined); return { memberId: item.memberId, teamId: saved.team?.teamId ?? null, version: saved.version }; }) });
+    }
+    // 가짜 코드다. 실제 초대 코드의 형식이나 값이 아니다.
+    const issue = (email: string, role: string, team: FixtureInvitation["team"], memberId: string, memberVersion: number) => {
+      const sequence = ++state.sequence, now = Date.now();
+      const invitation: FixtureInvitation = { invitationId: `invite-new-${sequence}`, email, role, createdAt: new Date(now).toISOString(), expiresAt: new Date(now + 72 * 3_600_000).toISOString(),
+        installationUsedAt: null, signupUsedAt: null, revokedAt: null, status: "pending", memberId, memberStatus: "invited", team, memberVersion };
+      state.invitations.push(invitation);
+      return { invitation, code: `FAKE-CODE-${String(sequence).padStart(4, "0")}` };
+    };
+    if (method === "POST" && path === "invitations/batch") {
+      const results = (body.invitations as { email: string; teamId: string | null; role: string }[]).map((item) => {
+        const email = item.email.toLowerCase(), team = teamRef(item.teamId);
+        const skipped = (status: string, reason: string | null = null) => ({ email, invitationId: null, status, reason, expiresAt: null, code: null });
+        if (item.teamId && !team) return skipped("rejected", "team_not_found");
+        if (!["admin", "member"].includes(item.role)) return skipped("rejected", "role_not_assignable");
+        if (state.members.some((member) => member.account === email)) return skipped("already_member");
+        if (state.invitations.some((invitation) => invitation.email === email)) return skipped("already_invited");
+        const { invitation, code } = issue(email, item.role, team ? { teamId: team.teamId, teamName: team.teamName } : null, `member-invited-${state.sequence + 1}`, 1);
+        return { email, invitationId: invitation.invitationId, status: "issued", reason: null, expiresAt: invitation.expiresAt, code };
+      });
+      return json(route, { results });
+    }
+    const invitationCommand = path.match(/^invitations\/([^/]+)\/(reissue|revoke)$/);
+    if (method === "POST" && invitationCommand) {
+      const old = state.invitations.find((item) => item.invitationId === invitationCommand[1] && item.status !== "revoked");
+      if (!old) return fail(route, 409, "invitation_unavailable");
+      old.status = "revoked"; old.revokedAt = new Date().toISOString();
+      if (invitationCommand[2] === "revoke") return empty(route);
+      const { invitation, code } = issue(old.email, old.role, old.team, old.memberId, old.memberVersion);
+      return json(route, { invitationId: invitation.invitationId, replacesInvitationId: old.invitationId, code, expiresAt: invitation.expiresAt });
+    }
+
+    const sameName = (name: string, except?: string) => state.teams.some((team) => team.teamId !== except && team.teamName.normalize("NFKC").toLowerCase() === name.normalize("NFKC").toLowerCase());
+    if (method === "POST" && path === "teams") {
+      if (sameName(body.teamName)) return fail(route, 409, "team_name_conflict", "teamName");
+      const team = { teamId: `team-new-${++state.sequence}`, teamName: body.teamName as string, version: 1 };
+      state.teams.push(team);
+      return json(route, team, 201);
+    }
+    if (["PATCH", "DELETE"].includes(method) && path.startsWith("teams/")) {
+      const team = state.teams.find((item) => item.teamId === path.split("/")[1]);
+      if (!team) return fail(route, 404, "not_found", "teamId");
+      if (method === "PATCH") {
+        if (body.expectedVersion !== team.version) return fail(route, 409, "version_conflict");
+        if (sameName(body.teamName, team.teamId)) return fail(route, 409, "team_name_conflict", "teamName");
+        team.teamName = body.teamName; team.version += 1;
+        for (const member of state.members) if (member.team.teamId === team.teamId) member.team.teamName = team.teamName;
+        for (const invitation of state.invitations) if (invitation.team?.teamId === team.teamId) invitation.team.teamName = team.teamName;
+        return json(route, team);
+      }
+      if (headers["if-match"] !== `"team-${team.version}"`) return fail(route, 409, "version_conflict");
+      state.teams.splice(state.teams.indexOf(team), 1);
+      for (const member of state.members) if (member.team.teamId === team.teamId) { member.team = { teamId: null, teamName: "미배정" }; member.version += 1; }
+      for (const invitation of state.invitations) if (invitation.team?.teamId === team.teamId) { invitation.team = null; invitation.memberVersion += 1; }
+      return empty(route);
+    }
+    return fail(route, 404, "not_found");
   });
-  // 팀 목록 조회만 바꾼다. 온보딩 fixture의 팀 생성·삭제는 그대로 둔다.
-  await page.route((url) => /\/api\/v1\/organizations\/[^/]+\/teams$/.test(url.pathname), (route) => {
-    if (route.request().method() !== "GET") return route.fallback();
-    const url = new URL(route.request().url());
-    return route.fulfill({ headers: cors, json: { meta: { organizationId: url.pathname.split("/")[4], snapshotId: "fixture-teams" }, teams: { items: fixtureTeams, nextCursor: null } } });
-  });
+  return state;
 }

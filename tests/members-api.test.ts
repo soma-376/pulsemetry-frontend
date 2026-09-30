@@ -136,7 +136,8 @@ test("view keeps unknown values unknown and never invents reclaim candidates", (
 
   assert.deepEqual(model.inviteRows!.map((row) => [row.email, row.teamLabel, row.roleLabel, row.expiryText, row.issuedText]),
     [["new@example.test", "플랫폼", "구성원", "2일 남음", "2026.09.20 발급"], ["late@example.test", "팀 미배정", "관리자", "만료됨", "2026.09.01 발급"]]);
-  assert.equal(model.inviteRows![0].memberVersion, 7);
+  // 대기자 편집은 초대 목록이 준 구성원 ID·팀·역할·version을 그대로 쓴다. 이메일로 짝짓지 않는다.
+  assert.deepEqual(model.inviteRows!.map((row) => [row.memberId, row.teamId, row.role, row.memberVersion]), [["m-new", "team-a", "member", 7], ["m-late", null, "admin", 8]]);
   assert.deepEqual(model.unassignedRows.map((row) => [row.memberId, row.costText]), [["member-3", "-"]]);
 
   // 초대 조회가 실패했으면 0명이 아니라 확인 불가다.

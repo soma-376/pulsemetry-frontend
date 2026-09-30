@@ -34,10 +34,13 @@ test("duplicate drafts and recipients produce errors on the matching fields", ()
 });
 
 test("roles are validated while null overrides and explicit unassigned teams are preserved", () => {
-  for (const role of ["member", "lead", "viewer", "admin"]) {
+  // 서버가 초대에 허용하는 역할은 admin과 member뿐이다.
+  for (const role of ["member", "admin"]) {
     const values = { ...emptyForm, role, invitees: [{ ...recipient, team: "", role }] };
     assert.deepEqual(inviteSubmissionSchema.parse(values), values);
   }
-  assert.equal(inviteFormSchema.safeParse({ ...emptyForm, role: "owner" }).success, false);
-  assert.equal(inviteSubmissionSchema.safeParse({ ...emptyForm, invitees: [{ ...recipient, role: "owner" }] }).success, false);
+  for (const role of ["owner", "lead", "viewer"]) {
+    assert.equal(inviteFormSchema.safeParse({ ...emptyForm, role }).success, false, role);
+    assert.equal(inviteSubmissionSchema.safeParse({ ...emptyForm, invitees: [{ ...recipient, role }] }).success, false, role);
+  }
 });

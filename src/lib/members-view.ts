@@ -1,10 +1,16 @@
-import type { Invitation } from "./api/invitations";
+import type { Invitation, InvitationResult } from "./api/invitations";
 import type { Member, MembersView } from "./api/members";
 import { DAY_MS } from "./date";
 import { int, usd } from "./format";
 
-/** 서버의 화면 역할 어휘. 모르는 값은 원문을 그대로 보여 준다. */
-export const ROLE_LABEL: Record<string, string> = { admin: "관리자", member: "구성원" };
+/** 서버의 역할 어휘. 모르는 값은 원문을 그대로 보여 준다. */
+export const ROLE_LABEL: Record<string, string> = { owner: "소유자", admin: "관리자", member: "구성원" };
+/** 초대와 편집에서 지정할 수 있는 역할. owner는 표시만 한다. */
+export const ASSIGNABLE_ROLES = ["member", "admin"] as const;
+export const ROLE_HINT: Record<string, string> = {
+  admin: "관리자는 계약·수집 정책·팀·구성원을 변경할 수 있습니다",
+  member: "구성원은 조회만 할 수 있습니다",
+};
 const MEMBER_STATE_LABEL: Record<string, string> = { active: "활성 계정", invited: "초대 대기", suspended: "정지" };
 const SEAT_STATE_LABEL: Record<string, string> = { assigned: "배정됨", unassigned: "배정 해제", reclaimed: "회수됨", unknown: "확인 불가" };
 const SECTION_REASON: Record<string, string> = {
@@ -75,7 +81,9 @@ function inviteRow(invitation: Invitation, now: number) {
     memberVersion: invitation.memberVersion,
     email: invitation.email,
     expired,
+    teamId: invitation.team?.teamId ?? null,
     teamLabel: invitation.team?.teamName ?? "팀 미배정",
+    role: invitation.role,
     roleLabel: ROLE_LABEL[invitation.role] ?? invitation.role,
     issuedText: `${formatKst(invitation.createdAt).slice(0, 10)} 발급`,
     // 만료된 초대는 코드가 죽어 있어 기다린다고 들어오지 않는다.
@@ -159,3 +167,39 @@ export function membersCsv(rows: readonly MemberRow[]) {
     row.costValue, row.sessionCount, row.lastUsedAt].map(csvCell).join(","));
   return [header.join(","), ...lines].join("\r\n") + "\r\n";
 }
+
+const REJECTED_REASON: Record<string, string> = {
+  invalid_email: "이메일 형식을 확인하세요",
+  duplicate_email: "같은 이메일이 두 번 들어 있습니다",
+  role_not_assignable: "지정할 수 없는 역할입니다",
+  team_not_found: "선택한 팀을 찾을 수 없습니다",
+  ambiguous_email: "같은 이메일의 계정이 여럿입니다",
+};
+
+/**
+ * 초대 코드 발급 결과. 발급은 발송이 아니다 — 코드를 받은 사람만 대상자에게 전할 수 있다.
+ * 코드는 발급된 항목에만 있고, 나머지는 발급하지 않은 이유를 보여 준다.
+ */
+export function inviteResults(results: readonly InvitationResult[]) {
+  const rows = results.map((result) => {
+    const issued = result.status === "issued" && !!result.code;
+    return {
+      email: result.email,
+      issued,
+      code: issued ? result.code : null,
+      text: issued ? `코드 발급 · ${formatKst(result.expiresAt)} 만료`
+        : result.status === "already_member" ? "이미 구성원입니다"
+          : result.status === "already_invited" ? "이미 초대한 이메일입니다 · 초대 대기 목록에서 코드를 재발급하세요"
+            : REJECTED_REASON[result.reason ?? ""] ?? "발급하지 않았습니다",
+    };
+  });
+  const issued = rows.filter((row) => row.issued).length;
+  const skipped = rows.length - issued;
+  return {
+    rows, issued, skipped,
+    summary: issued
+      ? `초대 코드 ${int(issued)}건을 발급했습니다${skipped ? ` · 발급하지 않음 ${int(skipped)}건` : ""}`
+      : `발급한 초대 코드가 없습니다 · 발급하지 않음 ${int(skipped)}건`,
+  };
+}
+export type InviteResults = ReturnType<typeof inviteResults>;

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { INVITATION_LIMIT } from "@/lib/api/invitations";
 import { memberRoleSchema as roleSchema } from "./member";
 
 const emailSchema = z.string().trim().pipe(z.email("이메일 형식이 아닙니다"));
@@ -46,6 +47,10 @@ export const inviteSubmissionSchema = inviteFormSchema
   .refine(({ invitees }) => invitees.length > 0, {
     path: ["draft"],
     message: "초대할 이메일을 하나 이상 추가하세요",
+  })
+  .refine(({ invitees }) => invitees.length <= INVITATION_LIMIT, {
+    path: ["draft"],
+    message: `한 번에 ${INVITATION_LIMIT}명까지 초대할 수 있습니다`,
   });
 
 export type InviteForm = z.infer<typeof inviteFormSchema>;

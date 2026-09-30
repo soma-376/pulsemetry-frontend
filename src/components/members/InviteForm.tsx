@@ -12,7 +12,10 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
-import { INVITE_TTL_DAYS, ROLE_HINT, ROLE_LABEL } from "@/lib/metrics/members";
+import { InviteCode } from "./InviteCode";
+import type { InvitationRequest, InvitationResult } from "@/lib/api/invitations";
+import type { ServerTeam } from "@/lib/api/management";
+import { ASSIGNABLE_ROLES, inviteResults, ROLE_HINT, ROLE_LABEL, type InviteResults } from "@/lib/members-view";
 
 import {
   inviteFormSchema,
@@ -20,28 +23,32 @@ import {
   type InviteForm as InviteFormValues,
 } from "@/lib/schemas/invite";
 import { useOrganization } from "@/lib/organization-store";
-import { teamLabel } from "@/lib/organization";
 
 /**
  * 구성원 초대.
  *
- * 사내 구성원과 외부 협력사의 팀·역할을 지정해 초대합니다.
+ * 사내 구성원과 외부 협력사의 팀·역할을 지정해 초대 코드를 발급합니다.
  * 여러 명을 한 번에 넣을 수 있고, 두 명 이상이면 기본 배정 아래에서 개별로 바꿉니다 —
  * 한 명씩 초대하며 매번 팀을 고르는 것보다 빠릅니다.
+ *
+ * 발급은 발송이 아닙니다. 코드는 발급 직후에만 볼 수 있어, 창을 닫으면 화면에서 지웁니다.
  */
 export function InviteForm({
   open = false,
   onClose,
-  seatStatus,
+  subtitle,
+  teams,
   onInvite,
   inline = false,
 }: {
   open?: boolean;
   inline?: boolean;
   onClose?: () => void;
-  seatStatus: string;
-  /** 보낸 초대를 대기 목록으로 넘깁니다 */
-  onInvite: (entries: { email: string; team: string; role: string }[]) => void;
+  subtitle?: string;
+  /** 서버의 팀 목록. 아직 읽지 못했으면 undefined */
+  teams: ServerTeam[] | undefined;
+  /** 초대 코드를 발급하고 서버의 결과를 돌려준다 */
+  onInvite: (entries: InvitationRequest[]) => Promise<InvitationResult[]>;
 }) {
   const { state: organization, update } = useOrganization();
   const formId = useId();
@@ -75,7 +82,7 @@ export function InviteForm({
     name: "invitees",
   });
   const [team, role] = useWatch({ control, name: ["team", "role"] });
-  const [sent, setSent] = useState<string | null>(null);
+  const [sent, setSent] = useState<InviteResults | null>(null);
 
   useEffect(() => {
     if (!inline) return;
@@ -91,16 +98,17 @@ export function InviteForm({
     });
   }, [inline, subscribe, update]);
 
+  // 없어진 팀을 고른 채로 남기지 않는다. 목록을 읽기 전에는 판단하지 않는다.
   useEffect(() => {
+    if (!teams) return;
     const values = getValues();
-    const exists = (id: string) =>
-      organization.teams.some((item) => item.id === id);
+    const exists = (id: string) => teams.some((item) => item.teamId === id);
     if (values.team && !exists(values.team)) setValue("team", "");
     values.invitees.forEach((invitee, index) => {
       if (invitee.team && !exists(invitee.team))
         setValue(`invitees.${index}.team`, "");
     });
-  }, [organization.teams, getValues, setValue]);
+  }, [teams, getValues, setValue]);
 
   const invalid = Boolean(errors.draft);
   const multi = invitees.length > 1;
@@ -118,7 +126,7 @@ export function InviteForm({
     setSent(null);
   };
 
-  const send = (values: InviteFormValues) => {
+  const send = async (values: InviteFormValues) => {
     const result = inviteSubmissionSchema.safeParse(values);
     if (!result.success) {
       for (const issue of result.error.issues) {
@@ -130,32 +138,25 @@ export function InviteForm({
       setFocus("draft");
       return;
     }
-    // 배정 요약을 만들어 "몇 명을 어디로 보냈는지"를 닫기 전에 확인시킵니다
-    const byTeam: Record<string, number> = {};
-    const roles = new Set<string>();
-    for (const invitee of values.invitees) {
-      const t = invitee.team ?? values.team;
-      const key = teamLabel(organization.teams, t) || "팀 미배정";
-      byTeam[key] = (byTeam[key] ?? 0) + 1;
-      roles.add(ROLE_LABEL[invitee.role ?? values.role]);
+    try {
+      // 서버가 발급을 확정한 결과만 보여 준다. 실패하면 입력을 그대로 둔다.
+      const results = await onInvite(
+        result.data.invitees.map((invitee) => ({
+          email: invitee.email,
+          teamId: (invitee.team ?? values.team) || null,
+          role: invitee.role ?? values.role,
+        })),
+      );
+      setSent(inviteResults(results));
+    } catch (error) {
+      setError("root", {
+        message:
+          error instanceof Error
+            ? error.message
+            : "초대 코드를 발급하지 못했습니다",
+      });
+      return;
     }
-    const teamPart = Object.entries(byTeam)
-      .map(([k, v]) => `${k} ${v}명`)
-      .join(" · ");
-    const rolePart = roles.size === 1 ? [...roles][0] : `역할 ${roles.size}종`;
-
-    // 보낸 초대는 목록에 남아야 합니다 — 이 창을 닫으면 누구를 불렀는지 확인할 데가 없습니다
-    onInvite(
-      values.invitees.map((invitee) => ({
-        email: invitee.email,
-        team: invitee.team ?? values.team,
-        role: invitee.role ?? values.role,
-      })),
-    );
-
-    setSent(
-      `데모 초대 ${values.invitees.length}명을 추가했습니다 — ${teamPart} · ${rolePart} · ${INVITE_TTL_DAYS}일 후 만료 · 실제 메일은 발송하지 않습니다`,
-    );
     reset({ draft: "", team: values.team, role: values.role, invitees: [] });
   };
 
@@ -164,11 +165,13 @@ export function InviteForm({
       type="submit"
       form={formId}
       variant="primary"
-      disabled={invitees.length === 0 || isSubmitting}
+      disabled={invitees.length === 0}
+      loading={isSubmitting}
+      loadingLabel="발급 중…"
     >
       {invitees.length
-        ? `${invitees.length}명에게 초대 메일 발송`
-        : "초대 메일 발송"}
+        ? `${invitees.length}명 초대 코드 발급`
+        : "초대 코드 발급"}
     </Button>
   );
   const form = (
@@ -209,7 +212,7 @@ export function InviteForm({
                 void commit();
               }
             }}
-            placeholder="name@codeworks.io"
+            placeholder="name@company.com"
             aria-label="초대할 이메일"
             aria-invalid={invalid}
             aria-describedby={emailHintId}
@@ -240,17 +243,18 @@ export function InviteForm({
         <div className="flex flex-wrap gap-2">
           <Select {...register("team")} aria-label="팀">
             <option value="">팀 미배정</option>
-            {organization.teams.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
+            {(teams ?? []).map((t) => (
+              <option key={t.teamId} value={t.teamId}>
+                {t.teamName}
               </option>
             ))}
           </Select>
           <Select {...register("role")} aria-label="역할">
-            <option value="member">구성원</option>
-            <option value="lead">팀 리드 (자기 팀만)</option>
-            <option value="viewer">조회 전용</option>
-            <option value="admin">관리자</option>
+            {ASSIGNABLE_ROLES.map((value) => (
+              <option key={value} value={value}>
+                {ROLE_LABEL[value]}
+              </option>
+            ))}
           </Select>
         </div>
         <span className="pretty text-[11px] text-text3">{ROLE_HINT[role]}</span>
@@ -273,9 +277,9 @@ export function InviteForm({
                       className="h-7"
                     >
                       <option value="">팀 미배정</option>
-                      {organization.teams.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
+                      {(teams ?? []).map((t) => (
+                        <option key={t.teamId} value={t.teamId}>
+                          {t.teamName}
                         </option>
                       ))}
                     </Select>
@@ -291,10 +295,11 @@ export function InviteForm({
                       aria-label={`${email} 역할`}
                       className="h-7"
                     >
-                      <option value="member">구성원</option>
-                      <option value="lead">팀 리드</option>
-                      <option value="viewer">조회 전용</option>
-                      <option value="admin">관리자</option>
+                      {ASSIGNABLE_ROLES.map((value) => (
+                        <option key={value} value={value}>
+                          {ROLE_LABEL[value]}
+                        </option>
+                      ))}
                     </Select>
                   )}
                 />
@@ -312,17 +317,39 @@ export function InviteForm({
         )}
       </div>
 
+      {errors.root && (
+        <p role="alert" className="text-xs text-red">
+          {errors.root.message}
+        </p>
+      )}
+
       {sent && (
         <div
           role="status"
-          className="pretty rounded-md border border-border bg-sub px-3 py-2.5 text-[11.5px] text-text2"
+          className="flex flex-col gap-2 rounded-md border border-border bg-sub px-3 py-2.5 text-[11.5px] text-text2"
         >
-          {sent}
+          <span className="pretty">
+            {sent.summary}
+            {sent.issued > 0 &&
+              " · 코드는 지금만 볼 수 있습니다. 대상자에게 직접 전달하세요."}
+          </span>
+          <ul aria-label="초대 코드 발급 결과" className="flex flex-col gap-2">
+            {sent.rows.map((row) => (
+              <li key={row.email} className="flex flex-col gap-1">
+                <span>
+                  <span className="font-mono text-text">{row.email}</span> ·{" "}
+                  {row.text}
+                </span>
+                {row.code && <InviteCode email={row.email} code={row.code} />}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
       <p className="pretty rounded-md bg-sub px-3 py-2.5 text-[11.5px] text-text2">
-        초대를 수락하면 지정한 팀과 역할이 적용됩니다.
+        초대 코드로 가입하면 지정한 팀과 역할이 적용됩니다. 메일은 발송하지
+        않으므로 발급된 코드를 대상자에게 전달해야 합니다.
       </p>
     </form>
   );
@@ -333,17 +360,25 @@ export function InviteForm({
         <div className="flex justify-end">{submitButton}</div>
       </div>
     );
+  // 닫으면 발급된 코드를 화면에 남기지 않는다. 입력 중인 값은 그대로 둔다.
+  const close = () => {
+    if (isSubmitting) return;
+    setSent(null);
+    onClose?.();
+  };
   return (
     <Modal
       open={open}
-      onClose={onClose ?? (() => {})}
+      onClose={close}
       title="구성원 초대"
-      subtitle={seatStatus}
+      subtitle={subtitle}
       width={560}
       footer={
         <>
           <div className="flex-1" />
-          <Button onClick={onClose}>취소</Button>
+          <Button onClick={close} disabled={isSubmitting}>
+            {sent ? "완료" : "취소"}
+          </Button>
           {submitButton}
         </>
       }

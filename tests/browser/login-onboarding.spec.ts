@@ -115,7 +115,8 @@ test("team create/delete uses server IDs and versions; invite API is not called"
   await page.getByRole("button", { name: "서버 팀 팀 제거", exact: true }).click();
   expect((await request).headers()["if-match"]).toBe('"team-7"');
   await expect(page.getByRole("list", { name: "온보딩 팀 목록" })).not.toContainText("서버 팀");
-  await expect(page.getByRole("button", { name: "초대 메일 발송", exact: true })).toBeDisabled();
+  // 온보딩의 초대 폼은 아직 잠겨 있다. 버튼 이름은 구성원 화면과 같은 코드 발급이다.
+  await expect(page.getByRole("button", { name: "초대 코드 발급", exact: true })).toBeDisabled();
   expect(invitations).toEqual([]);
 });
 

@@ -16,10 +16,13 @@ const messages: Record<string, string> = {
   forbidden: "관리자 권한이 필요합니다.", unauthenticated: "다시 로그인해 주세요.",
   not_found: "요청한 정보를 찾을 수 없습니다.", unavailable: "서버에 연결하지 못했습니다. 잠시 후 다시 시도하세요.",
   catalog_changed: "카탈로그가 갱신되었습니다. 제품과 플랜을 다시 조회해 주세요.",
+  role_not_assignable: "지정할 수 없는 역할입니다.", owner_role_immutable: "소유자의 역할은 바꿀 수 없습니다.",
+  self_role_change: "자기 역할은 바꿀 수 없습니다.", member_suspended: "정지된 구성원은 변경할 수 없습니다.",
+  invitation_unavailable: "이미 사용했거나 취소된 초대입니다. 목록을 다시 확인하세요.",
 };
 export class ManagementError extends Error {
   constructor(public code: string, public status: number, public retryAfter = 0, public fields: { field: string; code: string }[] = []) {
-    const labels: Record<string, string> = { kind: "제품", displayName: "표시 이름", "contract.planId": "플랜", "contract.effectiveFrom": "계약 기간", "contract.effectiveTo": "계약 종료일", "contract.tiers": "좌석 구성", "contract.termNote": "계약 메모", teamName: "팀 이름" };
+    const labels: Record<string, string> = { kind: "제품", displayName: "표시 이름", "contract.planId": "플랜", "contract.effectiveFrom": "계약 기간", "contract.effectiveTo": "계약 종료일", "contract.tiers": "좌석 구성", "contract.termNote": "계약 메모", teamName: "팀 이름", teamId: "팀", role: "역할", memberId: "구성원", assignments: "배정 목록" };
     const fieldMessage = fields.map(field => labels[field.field]).filter(Boolean).join(", ");
     super((messages[code] ?? "요청을 처리하지 못했습니다. 입력값과 연결 상태를 확인해 주세요.") + (fieldMessage ? ` 확인할 항목: ${fieldMessage}` : ""));
   }

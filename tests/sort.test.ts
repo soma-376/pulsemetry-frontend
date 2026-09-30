@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { nextSort, sortRows, type SortValue } from "../src/lib/sort";
 import { buildTeams } from "../src/lib/metrics/teams";
-import { buildMembers } from "../src/lib/metrics/members";
 import { usd } from "../src/lib/format";
 
 test("sorts raw numeric values, leaves input unchanged and keeps missing values last in both directions", () => {
@@ -31,9 +30,6 @@ test("team values remain numeric and missing comparisons are not sorted as zero"
     assert.ok(axis.rows.every((row) => row.deltaValue === null));
     assert.ok(axis.rows.every((row) => Number.isFinite(row.totalValue) && Number.isFinite(row.perUserValue) && Number.isFinite(row.unitValue)));
   }
-  const members = buildMembers(undefined, { assigned: {}, invites: [{ email: "waiting@example.com", team: "", role: "member", invitedAt: "2026-09-13" }] });
-  assert.equal(members.memberRows.find((row) => row.invited)!.costValue, null);
-  assert.equal(members.memberRows.find((row) => row.invited)!.idleDays, null);
 });
 
 test("usage subtotal uses the displayed rows after sorting and pagination", () => {

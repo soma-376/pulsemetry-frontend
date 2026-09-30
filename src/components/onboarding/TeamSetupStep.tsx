@@ -33,9 +33,9 @@ export function TeamSetupStep({ organizationId, onBusy, draft, onDraftChange }: 
       <p role="status" className="mt-2 text-xs text-text2">{notice}</p>
     </section>
     <section aria-label="구성원 초대" className="rounded-lg border border-border bg-card p-5">
-      <h3 className="mb-2 text-sm font-semibold">초대 메일 발송</h3>
+      <h3 className="mb-2 text-sm font-semibold">구성원 초대</h3>
       <p className="mb-5 text-xs leading-5 text-text2">초대 기능은 연동 준비 중입니다. 이 단계는 건너뛸 수 있습니다.</p>
-      <fieldset disabled><InviteForm inline seatStatus="" onInvite={() => {}} /></fieldset>
+      <fieldset disabled><InviteForm inline teams={teams.data} onInvite={async () => []} /></fieldset>
     </section>
   </div>;
 }
