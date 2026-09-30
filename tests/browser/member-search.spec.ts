@@ -1,8 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { openDashboard } from "./helpers";
+import { mockMembers } from "./members-fixture";
 
 test.beforeEach(async ({ page }) => {
+  await mockMembers(page);
   await openDashboard(page, "/members");
+  await expect(page.getByRole("region", { name: "구성원 목록", exact: true })).toBeVisible();
   await page.clock.install({ time: new Date("2026-09-22T00:00:00Z") });
   await page.clock.pauseAt(new Date("2026-09-22T00:00:01Z"));
 });

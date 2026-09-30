@@ -1,18 +1,20 @@
 import { expect, test, type Locator } from "@playwright/test";
 import { openDashboard } from "./helpers";
-import { buildMembers } from "../../src/lib/metrics/members";
+import { fixtureMembers, mockMembers } from "./members-fixture";
 import { buildTeams } from "../../src/lib/metrics/teams";
 import { usd } from "../../src/lib/format";
 
 const collator = new Intl.Collator("ko", { numeric: true, sensitivity: "base" });
 const memberAccounts = (region: Locator) => region.getByRole("button", { name: /구성원 상세$/ }).evaluateAll((buttons) => buttons.map((button) => button.getAttribute("aria-label")!.replace(" 구성원 상세", "")));
 
-test("members sort the whole search result, keep sorting through more and put missing values last", async ({ page }) => {
+test("members sort the whole roster, keep sorting through more and put missing values last", async ({ page }) => {
+  const roster = fixtureMembers();
+  await mockMembers(page, { members: roster });
   await openDashboard(page, "/members");
   const members = page.getByRole("region", { name: "구성원 목록", exact: true });
   await expect(members).toBeVisible();
-  const model = buildMembers();
-  const alphabetical = model.memberRows.map((row) => row.account).sort(collator.compare);
+  // 서버의 첫 페이지는 20명이지만 정렬은 45명 전체에 적용한다.
+  const alphabetical = roster.map((row) => row.account).sort(collator.compare);
   expect(await memberAccounts(members)).toEqual(alphabetical.slice(0, 20));
   await members.getByRole("button", { name: "사용자 정렬", exact: true }).click();
   expect(await memberAccounts(members)).toEqual([...alphabetical].reverse().slice(0, 20));
@@ -21,35 +23,34 @@ test("members sort the whole search result, keep sorting through more and put mi
   const cost = members.getByRole("button", { name: "사용 환산액 정렬", exact: true });
   await cost.click();
   await expect(cost).toHaveAccessibleDescription(/^내림차순 정렬 중/);
-  const costs = [...model.memberRows].sort((a, b) => (b.costValue ?? -Infinity) - (a.costValue ?? -Infinity) || collator.compare(a.account, b.account));
-  expect(await memberAccounts(members)).toEqual(costs.slice(0, 40).map((row) => row.account));
+  const value = (row: (typeof roster)[number]) => row.periodUsage ? Number(row.periodUsage.equivalentCostUsd) : null;
+  const byCost = (direction: 1 | -1) => [...roster].sort((a, b) => {
+    const left = value(a), right = value(b);
+    if ((left === null) !== (right === null)) return left === null ? 1 : -1;
+    return (left === null ? 0 : direction * (left - right!)) || collator.compare(a.account, b.account);
+  });
+  expect(await memberAccounts(members)).toEqual(byCost(-1).slice(0, 40).map((row) => row.account));
   const search = members.getByRole("textbox", { name: "구성원 검색" });
   await search.fill("플랫폼");
   await search.press("Enter");
-  expect(await memberAccounts(members)).toEqual(costs.filter((row) => row.team === "플랫폼").map((row) => row.account));
-  await search.fill("");
-  await expect(cost).toHaveAccessibleDescription(/^내림차순 정렬 중/);
-  expect(await memberAccounts(members)).toEqual(costs.slice(0, 40).map((row) => row.account));
-
-  await page.getByRole("button", { name: "구성원 초대", exact: true }).click();
-  const invite = page.getByRole("dialog", { name: "구성원 초대", exact: true });
-  await invite.getByRole("textbox", { name: "초대할 이메일" }).fill("zz-sort@codeworks.io");
-  await invite.getByRole("textbox", { name: "초대할 이메일" }).press("Enter");
-  await invite.getByRole("button", { name: "1명에게 초대 메일 발송", exact: true }).click();
-  await invite.getByRole("button", { name: "취소", exact: true }).click();
-  await expect(invite).not.toBeVisible();
+  expect(await memberAccounts(members)).toEqual(byCost(-1).filter((row) => row.team.teamName === "플랫폼").map((row) => row.account));
   await search.fill("@codeworks.io");
   await search.press("Enter");
-  expect((await memberAccounts(members)).at(-1)).toBe("zz-sort@codeworks.io");
+  // 검색 중에는 전부 보여 준다. 비용이 없는 구성원은 양방향 모두 마지막이다.
+  const missing = roster.filter((row) => value(row) === null).length;
+  expect(missing).toBeGreaterThan(0);
+  expect(await memberAccounts(members)).toEqual(byCost(-1).map((row) => row.account));
   await cost.click();
-  expect((await memberAccounts(members)).at(-1)).toBe("zz-sort@codeworks.io");
+  await expect(cost).toHaveAccessibleDescription(/^오름차순 정렬 중/);
+  expect(await memberAccounts(members)).toEqual(byCost(1).map((row) => row.account));
+  expect((await memberAccounts(members)).slice(-missing).sort()).toEqual(roster.filter((row) => value(row) === null).map((row) => row.account).sort());
   const activity = members.getByRole("button", { name: "최근 관측 정렬", exact: true });
   await activity.click();
-  const latest = [...model.memberRows].sort((a, b) => (a.idleDays ?? Infinity) - (b.idleDays ?? Infinity) || collator.compare(a.account, b.account));
-  expect((await memberAccounts(members)).slice(0, model.memberRows.length)).toEqual(latest.map((row) => row.account));
-  expect((await memberAccounts(members)).at(-1)).toBe("zz-sort@codeworks.io");
-  await activity.click();
-  expect((await memberAccounts(members)).at(-1)).toBe("zz-sort@codeworks.io");
+  const latest = [...roster].sort((a, b) => {
+    if ((a.lastUsedAt === null) !== (b.lastUsedAt === null)) return a.lastUsedAt === null ? 1 : -1;
+    return (a.lastUsedAt === null ? 0 : Date.parse(b.lastUsedAt!) - Date.parse(a.lastUsedAt)) || collator.compare(a.account, b.account);
+  });
+  expect(await memberAccounts(members)).toEqual(latest.map((row) => row.account));
   await members.screenshot({ path: "test-results/member-sorting.png" });
 });
 

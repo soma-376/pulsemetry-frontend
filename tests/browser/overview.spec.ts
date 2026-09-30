@@ -9,7 +9,7 @@ test("Spring을 직접 조회하고 기간·비교 변경과 수동 새로고침
   page.on("request", (request) => { if (request.url().includes("/analytics/overview?")) requests.push(new URL(request.url())); });
   await page.goto("/overview");
   await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toContainText("$5,000.00");
-  expect(requests[0].origin).toBe("http://localhost:8081");
+  expect(requests[0].origin).toBe(process.env.MOCK_DASHBOARD_API_URL ?? "http://localhost:8081");
   expect(requests[0].searchParams.get("timeZone")).toBe("Asia/Seoul");
   expect(requests[0].searchParams.get("startDate")).toBe("2026-09-07");
   await page.getByRole("combobox", { name: "비교", exact: true }).selectOption("none");

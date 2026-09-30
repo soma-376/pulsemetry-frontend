@@ -1,17 +1,7 @@
 import type { Page } from "@playwright/test";
 import { expect, test, seedOrganizations } from "./fixtures";
-import { signIn, signOut, selectPeriod } from "./helpers";
+import { seedPeriod, signIn, signOut, selectPeriod } from "./helpers";
 import type { Overview } from "../../src/lib/api/overview";
-
-function seedPeriod() {
-  const value = process.env.E2E_SEED_DATE ?? "";
-  const date = new Date(`${value}T00:00:00Z`);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
-    throw new Error(".env.local의 E2E_SEED_DATE를 현재 DB 시드의 생성 기준일(YYYY-MM-DD)로 설정하세요. 시드를 초기화할 필요는 없습니다.");
-  }
-  const offset = (days: number) => new Date(date.getTime() + days * 86_400_000).toISOString().slice(0, 10);
-  return { start: offset(-28), end: offset(-1) };
-}
 
 /** A의 조회 구간 환산 비용. 시드 생성기의 plan 출력이 원천이며 조회 API의 응답으로 채우지 않는다. */
 function seedCostA() {

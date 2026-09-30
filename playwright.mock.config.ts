@@ -1,5 +1,9 @@
 import { defineConfig } from "@playwright/test";
 
+// 목 테스트는 필요한 API를 가로챈다. 가로채지 않은 요청이 닿을 주소만 바꿀 수 있게 한다(기본은 로컬 개발 포트).
+const enrollmentUrl = process.env.MOCK_ENROLLMENT_API_URL ?? "http://localhost:8080";
+const dashboardUrl = process.env.MOCK_DASHBOARD_API_URL ?? "http://localhost:8081";
+
 export default defineConfig({
   testDir: "./tests/browser",
   // Avoid saturating the local server with one worker per CPU core.
@@ -20,6 +24,6 @@ export default defineConfig({
     url: "http://localhost:3107/overview",
     reuseExistingServer: false,
     timeout: 120000,
-    env: { NEXT_PUBLIC_ORGANIZATION_ID: "11111111-1111-4111-8111-111111111111", NEXT_PUBLIC_DASHBOARD_API_URL: "http://localhost:8081", NEXT_PUBLIC_ENROLLMENT_API_URL: "http://localhost:8080", ENROLLMENT_API_URL: "http://localhost:8080" },
+    env: { NEXT_PUBLIC_ORGANIZATION_ID: "11111111-1111-4111-8111-111111111111", NEXT_PUBLIC_DASHBOARD_API_URL: dashboardUrl, NEXT_PUBLIC_ENROLLMENT_API_URL: enrollmentUrl, ENROLLMENT_API_URL: enrollmentUrl },
   },
 });
