@@ -1,4 +1,4 @@
-import type { Invitation, InvitationResult } from "./api/invitations";
+import type { Delivery, Invitation, InvitationResult } from "./api/invitations";
 import type { Member, MembersView } from "./api/members";
 import { DAY_MS } from "./date";
 import { int, usd } from "./format";
@@ -72,6 +72,42 @@ export function memberRow(member: Member, candidates: ReadonlySet<string>) {
 }
 export type MemberRow = ReturnType<typeof memberRow>;
 
+const DELIVERY_FAILURE: Record<string, string> = {
+  recipient_rejected: "받는 메일 서버가 주소를 거부했습니다",
+  message_rejected: "받는 메일 서버가 메일을 거부했습니다",
+  invalid_address: "이메일 주소 형식이 올바르지 않습니다",
+  recipient_deferred: "받는 메일 서버가 잠시 받지 않습니다",
+  smtp_deferred: "메일 서버가 잠시 받지 않습니다",
+  smtp_auth_failed: "메일 서버 인증에 실패했습니다",
+  smtp_unavailable: "메일 서버에 연결하지 못했습니다",
+  send_error: "발송 중 오류가 났습니다",
+  outcome_unknown: "발송 결과를 확인하지 못했습니다",
+};
+
+/**
+ * 초대 메일의 발송 상태를 화면 문구로 옮긴다. 발급은 발송이 아니다 —
+ * "발송됨"은 서버가 `sent`라고 말할 때만 쓰고, 메일이 없으면 없다고 말한다.
+ */
+export function deliveryView(delivery: Delivery) {
+  const reason = delivery.failureCode ? DELIVERY_FAILURE[delivery.failureCode] ?? delivery.failureCode : null;
+  const mailed = delivery.status !== "not_sent";
+  switch (delivery.status) {
+    case "sent": return { mailed, state: "sent" as const, label: "메일 발송됨", detail: formatKst(delivery.sentAt), color: "var(--text2)" };
+    case "queued": return reason
+      ? { mailed, state: "retrying" as const, label: "발송 재시도 대기", detail: reason, color: "var(--orange-ink)" }
+      : { mailed, state: "queued" as const, label: "메일 발송 대기", detail: null, color: "var(--text3)" };
+    case "sending": return { mailed, state: "queued" as const, label: "메일 발송 중", detail: null, color: "var(--text3)" };
+    case "failed": return { mailed, state: "failed" as const, label: "메일 발송 실패", detail: reason, color: "var(--red)" };
+    case "cancelled": return { mailed, state: "cancelled" as const, label: "메일 발송 취소됨", detail: null, color: "var(--text3)" };
+    case "not_sent": return delivery.reason === "mail_disabled"
+      ? { mailed, state: "disabled" as const, label: "메일 발송 꺼짐", detail: "코드를 직접 전달하세요", color: "var(--text3)" }
+      : { mailed, state: "none" as const, label: "보낸 메일 없음", detail: null, color: "var(--text3)" };
+    // 모르는 상태를 발송됨으로 읽지 않는다.
+    default: return { mailed, state: "none" as const, label: `메일 상태 ${delivery.status}`, detail: reason, color: "var(--text3)" };
+  }
+}
+export type DeliveryView = ReturnType<typeof deliveryView>;
+
 function inviteRow(invitation: Invitation, now: number) {
   const expired = invitation.status === "expired";
   const daysLeft = Math.ceil((Date.parse(invitation.expiresAt) - now) / DAY_MS);
@@ -86,6 +122,7 @@ function inviteRow(invitation: Invitation, now: number) {
     role: invitation.role,
     roleLabel: ROLE_LABEL[invitation.role] ?? invitation.role,
     issuedText: `${formatKst(invitation.createdAt).slice(0, 10)} 발급`,
+    delivery: deliveryView(invitation.delivery),
     // 만료된 초대는 코드가 죽어 있어 기다린다고 들어오지 않는다.
     expiryText: expired ? "만료됨" : daysLeft <= 1 ? "24시간 내 만료" : `${daysLeft}일 남음`,
     expiryColor: expired ? "var(--red)" : daysLeft <= 2 ? "var(--orange-ink)" : "var(--text3)",
@@ -177,7 +214,7 @@ const REJECTED_REASON: Record<string, string> = {
 };
 
 /**
- * 초대 코드 발급 결과. 발급은 발송이 아니다 — 코드를 받은 사람만 대상자에게 전할 수 있다.
+ * 초대 코드 발급 결과. 발급은 발송이 아니다 — 메일 상태는 서버가 준 `delivery`로 따로 보여 준다.
  * 코드는 발급된 항목에만 있고, 나머지는 발급하지 않은 이유를 보여 준다.
  */
 export function inviteResults(results: readonly InvitationResult[]) {
@@ -187,6 +224,7 @@ export function inviteResults(results: readonly InvitationResult[]) {
       email: result.email,
       issued,
       code: issued ? result.code : null,
+      delivery: issued && result.delivery ? deliveryView(result.delivery) : null,
       text: issued ? `코드 발급 · ${formatKst(result.expiresAt)} 만료`
         : result.status === "already_member" ? "이미 구성원입니다"
           : result.status === "already_invited" ? "이미 초대한 이메일입니다 · 초대 대기 목록에서 코드를 재발급하세요"
@@ -195,8 +233,14 @@ export function inviteResults(results: readonly InvitationResult[]) {
   });
   const issued = rows.filter((row) => row.issued).length;
   const skipped = rows.length - issued;
+  // 메일을 적재한 항목과 그렇지 않은 항목을 나눠 안내한다.
+  const mailed = rows.filter((row) => row.delivery?.mailed).length;
   return {
-    rows, issued, skipped,
+    rows, issued, skipped, mailed, manual: issued - mailed,
+    guidance: !issued ? null
+      : mailed === issued ? "초대 메일을 발송 대기열에 넣었습니다. 발송 결과는 초대 대기 목록에서 확인하세요."
+        : mailed === 0 ? "메일을 발송하지 않습니다. 코드는 지금만 볼 수 있으니 대상자에게 직접 전달하세요."
+          : `초대 메일 ${int(mailed)}건을 발송 대기열에 넣었습니다. 나머지 ${int(issued - mailed)}건은 코드를 직접 전달하세요.`,
     summary: issued
       ? `초대 코드 ${int(issued)}건을 발급했습니다${skipped ? ` · 발급하지 않음 ${int(skipped)}건` : ""}`
       : `발급한 초대 코드가 없습니다 · 발급하지 않음 ${int(skipped)}건`,

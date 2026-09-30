@@ -3,9 +3,15 @@ import assert from "node:assert/strict";
 import { issueInvitations, reissueInvitation, revokeInvitation, type InvitationResult } from "../src/lib/api/invitations";
 import { createCommands, ManagementError } from "../src/lib/api/management";
 import { ASSIGNMENT_LIMIT, assignTeams, createTeam, deleteTeam, memberChange, renameTeam, saveMember, teamAssignments } from "../src/lib/api/member-commands";
-import { inviteResults } from "../src/lib/members-view";
+import { acceptInvitation, SignupError } from "../src/lib/api/signup";
+import { deliveryPending, type Delivery, type Invitation } from "../src/lib/api/invitations";
+import { deliveryView, inviteResults } from "../src/lib/members-view";
+import { signupSchema } from "../src/lib/schemas/auth";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
+const delivery = (status: string, extra: Partial<Delivery> = {}): Delivery =>
+  ({ status, reason: null, queuedAt: status === "not_sent" ? null : "2026-09-30T00:00:00Z", lastAttemptAt: null, sentAt: null, failureCode: null, attempts: 0, ...extra });
+const mailOff = delivery("not_sent", { reason: "mail_disabled" });
 const base = `http://localhost:8080/api/v1/organizations/${ORG}`;
 type Call = { url: string; method: string; headers: Headers; body: unknown };
 
@@ -95,8 +101,8 @@ test("team commands use POST with a key, PATCH with expectedVersion and DELETE w
 });
 
 test("invitation commands issue, reissue and revoke by invitation id", async () => {
-  const issued: InvitationResult[] = [{ email: "new@example.test", invitationId: "i1", status: "issued", reason: null, expiresAt: "2026-10-03T00:00:00Z", code: "FAKE-CODE-0001" }];
-  const reissued = { invitationId: "i2", replacesInvitationId: "i1", code: "FAKE-CODE-0002", expiresAt: "2026-10-03T01:00:00Z" };
+  const issued: InvitationResult[] = [{ email: "new@example.test", invitationId: "i1", status: "issued", reason: null, expiresAt: "2026-10-03T00:00:00Z", code: "FAKE-CODE-0001", delivery: mailOff }];
+  const reissued = { invitationId: "i2", replacesInvitationId: "i1", code: "FAKE-CODE-0002", expiresAt: "2026-10-03T01:00:00Z", delivery: delivery("queued") };
   const { calls, restore } = record([() => Response.json({ results: issued }), () => Response.json(reissued), () => new Response(null, { status: 204 }), failure(409, "invitation_unavailable")]);
   try {
     const post = createCommands();
@@ -116,11 +122,11 @@ test("invitation commands issue, reissue and revoke by invitation id", async () 
 
 test("issue results show a code only for issued invitations and never claim delivery", () => {
   const results: InvitationResult[] = [
-    { email: "new@example.test", invitationId: "i1", status: "issued", reason: null, expiresAt: "2026-10-03T00:00:00Z", code: "FAKE-CODE-0001" },
-    { email: "member@example.test", invitationId: null, status: "already_member", reason: null, expiresAt: null, code: null },
-    { email: "waiting@example.test", invitationId: null, status: "already_invited", reason: null, expiresAt: null, code: null },
-    { email: "gone@example.test", invitationId: null, status: "rejected", reason: "team_not_found", expiresAt: null, code: null },
-    { email: "odd@example.test", invitationId: null, status: "rejected", reason: "something_new", expiresAt: null, code: null },
+    { email: "new@example.test", invitationId: "i1", status: "issued", reason: null, expiresAt: "2026-10-03T00:00:00Z", code: "FAKE-CODE-0001", delivery: mailOff },
+    { email: "member@example.test", invitationId: null, status: "already_member", reason: null, expiresAt: null, code: null, delivery: null },
+    { email: "waiting@example.test", invitationId: null, status: "already_invited", reason: null, expiresAt: null, code: null, delivery: null },
+    { email: "gone@example.test", invitationId: null, status: "rejected", reason: "team_not_found", expiresAt: null, code: null, delivery: null },
+    { email: "odd@example.test", invitationId: null, status: "rejected", reason: "something_new", expiresAt: null, code: null, delivery: null },
   ];
   const view = inviteResults(results);
   assert.equal(view.issued, 1);
@@ -138,7 +144,87 @@ test("issue results show a code only for issued invitations and never claim deli
   assert.equal(view.rows[4].text, "발급하지 않았습니다");
   for (const text of [view.summary, ...view.rows.map((row) => row.text)]) assert.doesNotMatch(text, /발송|보냈|보냅|전송/);
 
+  // 메일이 꺼진 서버: 발송했다고 말하지 않고 코드를 직접 전달하라고 안내한다.
+  assert.equal(view.mailed, 0);
+  assert.match(view.guidance!, /메일을 발송하지 않습니다.*직접 전달/);
+  assert.deepEqual([view.rows[0].delivery!.state, view.rows[0].delivery!.label], ["disabled", "메일 발송 꺼짐"]);
+  assert.equal(view.rows[1].delivery, null);
+
   const none = inviteResults(results.slice(1, 3));
   assert.equal(none.issued, 0);
   assert.equal(none.summary, "발급한 초대 코드가 없습니다 · 발급하지 않음 2건");
+  assert.equal(none.guidance, null);
+
+  // 메일을 보내는 서버: 발급 직후는 발송 대기다. 발송됨이 아니다.
+  const mailed = inviteResults([{ ...results[0], delivery: delivery("queued") }]);
+  assert.equal(mailed.mailed, 1);
+  assert.match(mailed.guidance!, /발송 대기열/);
+  assert.equal(mailed.rows[0].delivery!.label, "메일 발송 대기");
+  for (const text of [mailed.summary, mailed.guidance!, mailed.rows[0].text, mailed.rows[0].delivery!.label]) assert.doesNotMatch(text, /발송됨|발송 완료|보냈습니다/);
+  const mixed = inviteResults([{ ...results[0], delivery: delivery("queued") }, { ...results[0], email: "other@example.test", delivery: mailOff }]);
+  assert.deepEqual([mixed.mailed, mixed.manual], [1, 1]);
+  assert.match(mixed.guidance!, /1건을 발송 대기열.*나머지 1건은 코드를 직접 전달/);
+});
+
+test("delivery states map to wording that only says sent when the server says sent", () => {
+  const view = (status: string, extra: Partial<Delivery> = {}) => { const v = deliveryView(delivery(status, extra)); return [v.state, v.label, v.detail]; };
+  assert.deepEqual(view("queued"), ["queued", "메일 발송 대기", null]);
+  assert.deepEqual(view("sending"), ["queued", "메일 발송 중", null]);
+  assert.deepEqual(view("sent", { sentAt: "2026-09-30T13:43:38Z", attempts: 1 }), ["sent", "메일 발송됨", "2026.09.30 22:43"]);
+  // 재시도 대기는 서버 상태가 queued이고 마지막 실패 사유가 있다.
+  assert.deepEqual(view("queued", { failureCode: "smtp_unavailable", attempts: 1 }), ["retrying", "발송 재시도 대기", "메일 서버에 연결하지 못했습니다"]);
+  assert.deepEqual(view("failed", { failureCode: "recipient_rejected", attempts: 1 }), ["failed", "메일 발송 실패", "받는 메일 서버가 주소를 거부했습니다"]);
+  // 모르는 실패 코드는 원문을 보여 준다.
+  assert.deepEqual(view("failed", { failureCode: "brand_new_code" }), ["failed", "메일 발송 실패", "brand_new_code"]);
+  assert.deepEqual(view("cancelled"), ["cancelled", "메일 발송 취소됨", null]);
+  assert.deepEqual(view("not_sent", { reason: "mail_disabled" }), ["disabled", "메일 발송 꺼짐", "코드를 직접 전달하세요"]);
+  assert.deepEqual(view("not_sent", { reason: "not_queued" }), ["none", "보낸 메일 없음", null]);
+  // 모르는 상태를 발송됨으로 읽지 않는다.
+  assert.deepEqual(view("teleported"), ["none", "메일 상태 teleported", null]);
+  for (const status of ["queued", "sending", "failed", "cancelled", "not_sent", "teleported"]) assert.notEqual(deliveryView(delivery(status)).state, "sent");
+  assert.deepEqual(["sent", "queued", "failed", "cancelled", "not_sent"].map((status) => deliveryView(delivery(status, status === "not_sent" ? { reason: "mail_disabled" } : {})).mailed), [true, true, true, true, false]);
+
+  // 발송이 끝나지 않은 살아 있는 초대가 있을 때만 목록을 짧은 주기로 다시 읽는다.
+  const invitation = (status: Invitation["status"], mail: Delivery) => ({ status, delivery: mail }) as Invitation;
+  assert.equal(deliveryPending(undefined), false);
+  assert.equal(deliveryPending([invitation("pending", delivery("sent")), invitation("pending", delivery("failed")), invitation("pending", mailOff)]), false);
+  assert.equal(deliveryPending([invitation("pending", delivery("sent")), invitation("pending", delivery("queued"))]), true);
+  assert.equal(deliveryPending([invitation("pending", delivery("sending"))]), true);
+  assert.equal(deliveryPending([invitation("expired", delivery("queued"))]), false);
+});
+
+test("accepting an invitation posts the code, email and password once and explains each refusal", async () => {
+  const input = { code: "FAKE-CODE-0001", email: "new@example.test", password: "correct-password-123" };
+  let server = record([() => new Response(null, { status: 201 })]);
+  try {
+    assert.equal(await acceptInvitation(input), undefined);
+    assert.equal(server.calls[0].url, "http://localhost:8080/v1/auth/signup");
+    assert.equal(server.calls[0].method, "POST");
+    assert.deepEqual(server.calls[0].body, input);
+    assert.equal(server.calls[0].headers.has("Authorization"), false);
+  } finally { server.restore(); }
+  const refused = (check: (error: SignupError) => boolean) => (error: unknown) => error instanceof SignupError && check(error);
+  const reply = (status: number, error: string, headers: Record<string, string> = {}) => () => Response.json({ error, message: "사용자 인증 요청을 처리할 수 없습니다." }, { status, headers });
+  server = record([reply(409, "signup_unavailable"), reply(400, "invalid_request"), reply(429, "rate_limited", { "Retry-After": "17" }), reply(503, "auth_unavailable", { "Retry-After": "1" }), () => { throw new TypeError("fetch failed"); }]);
+  try {
+    await assert.rejects(() => acceptInvitation(input), refused((error) => error.status === 409 && error.code === "signup_unavailable" && /가입할 수 없습니다.*다시 요청/.test(error.message)));
+    await assert.rejects(() => acceptInvitation(input), refused((error) => error.status === 400 && /12글자 이상/.test(error.message)));
+    await assert.rejects(() => acceptInvitation(input), refused((error) => error.status === 429 && error.retryAfterSeconds === 17 && /17초 뒤/.test(error.message)));
+    await assert.rejects(() => acceptInvitation(input), refused((error) => error.status === 503 && /계정을 만들지 못했습니다/.test(error.message)));
+    await assert.rejects(() => acceptInvitation(input), refused((error) => error.code === "network" && /연결하지 못했습니다/.test(error.message)));
+  } finally { server.restore(); }
+});
+
+test("the signup form enforces the server's code format and password rules before sending", () => {
+  const valid = { code: " abcd-efgh-jkmn ", email: " New@Example.test ", password: "correct-password-123", confirm: "correct-password-123" };
+  assert.deepEqual(signupSchema.parse(valid), { code: "ABCD-EFGH-JKMN", email: "new@example.test", password: "correct-password-123", confirm: "correct-password-123" });
+  const fails = (patch: Partial<typeof valid>) => !signupSchema.safeParse({ ...valid, ...patch }).success;
+  // 서버 코드 문자 집합에는 I·L·O·U가 없다.
+  for (const code of ["", "ABCD-EFGH", "ABCD-EFGH-JKMI", "ABCD-EFGH-JKML", "ABCD-EFGH-JKMO", "ABCD-EFGH-JKMU", "ABCDEFGHJKMN"]) assert.ok(fails({ code }), code);
+  assert.ok(fails({ email: "not-an-email" }));
+  assert.ok(fails({ password: "elevenchars", confirm: "elevenchars" }), "11글자");
+  assert.ok(!fails({ password: "twelve-chars", confirm: "twelve-chars" }), "12글자");
+  assert.ok(!fails({ password: "가나다라마바사아자차카타", confirm: "가나다라마바사아자차카타" }), "한글 12글자(36바이트)");
+  assert.ok(fails({ password: "가".repeat(25), confirm: "가".repeat(25) }), "75바이트");
+  assert.ok(fails({ confirm: "different-password-123" }));
 });

@@ -31,7 +31,8 @@ import { useOrganization } from "@/lib/organization-store";
  * 여러 명을 한 번에 넣을 수 있고, 두 명 이상이면 기본 배정 아래에서 개별로 바꿉니다 —
  * 한 명씩 초대하며 매번 팀을 고르는 것보다 빠릅니다.
  *
- * 발급은 발송이 아닙니다. 코드는 발급 직후에만 볼 수 있어, 창을 닫으면 화면에서 지웁니다.
+ * 발급은 발송이 아닙니다. 메일 상태는 서버가 준 발송 상태로만 말하고, 발급 직후에는 "발송 대기"입니다.
+ * 코드는 발급 직후에만 볼 수 있어, 창을 닫으면 화면에서 지웁니다.
  */
 export function InviteForm({
   open = false,
@@ -328,17 +329,21 @@ export function InviteForm({
           role="status"
           className="flex flex-col gap-2 rounded-md border border-border bg-sub px-3 py-2.5 text-[11.5px] text-text2"
         >
-          <span className="pretty">
-            {sent.summary}
-            {sent.issued > 0 &&
-              " · 코드는 지금만 볼 수 있습니다. 대상자에게 직접 전달하세요."}
-          </span>
+          <span className="pretty">{sent.summary}</span>
+          {sent.guidance && <span className="pretty">{sent.guidance}</span>}
           <ul aria-label="초대 코드 발급 결과" className="flex flex-col gap-2">
             {sent.rows.map((row) => (
               <li key={row.email} className="flex flex-col gap-1">
                 <span>
                   <span className="font-mono text-text">{row.email}</span> ·{" "}
                   {row.text}
+                  {row.delivery && (
+                    <span style={{ color: row.delivery.color }}>
+                      {" "}
+                      · {row.delivery.label}
+                      {row.delivery.detail && ` (${row.delivery.detail})`}
+                    </span>
+                  )}
                 </span>
                 {row.code && <InviteCode email={row.email} code={row.code} />}
               </li>
@@ -348,8 +353,8 @@ export function InviteForm({
       )}
 
       <p className="pretty rounded-md bg-sub px-3 py-2.5 text-[11.5px] text-text2">
-        초대 코드로 가입하면 지정한 팀과 역할이 적용됩니다. 메일은 발송하지
-        않으므로 발급된 코드를 대상자에게 전달해야 합니다.
+        초대 코드로 가입하면 지정한 팀과 역할이 적용됩니다. 초대 메일을 보내는
+        서버에서는 코드와 설치 방법이 대상자에게 메일로 갑니다.
       </p>
     </form>
   );

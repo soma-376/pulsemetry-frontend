@@ -343,12 +343,14 @@ test("MEMBERS-W3 @p0 @write 초대 코드를 발급·편집·재발급·취소�
     const edited = (await invitations(page, "pending")).find((item) => item.email === email)!;
     expect([edited.invitationId, edited.memberId, edited.role, edited.team?.teamName]).toEqual([first.invitationId, first.memberId, "admin", "데이터"]);
 
-    // 재발급 — 기존 초대는 폐기되고 같은 사람에게 새 초대와 새 코드가 생긴다.
-    await pending.getByRole("button", { name: `${email} 초대 코드 재발급`, exact: true }).click();
-    await expect(pending.getByRole("status")).toContainText("새 초대 코드를 발급했습니다. 이전 코드는 더 이상 쓸 수 없습니다");
+    // 다시 보내기(재발급) — 먼저 알리고 확인받는다. 기존 초대는 폐기되고 같은 사람에게 새 초대와 새 코드가 생긴다.
+    await pending.getByRole("button", { name: `${email} 초대 다시 보내기`, exact: true }).click();
+    await expect(pending.getByRole("alert")).toContainText("이전 메일의 코드와 링크는 더 이상 쓸 수 없습니다");
+    expect((await invitations(page, "pending")).find((item) => item.email === email)!.invitationId).toBe(first.invitationId);
+    await pending.getByRole("button", { name: "다시 보내기 확인", exact: true }).click();
+    await expect(pending.getByRole("status")).toContainText("새 초대 코드를 발급했습니다. 이전 코드와 링크는 더 이상 쓸 수 없습니다");
     const secondCode = await readCode(pending);
     expect(secondCode !== firstCode, "재발급한 코드는 이전 코드와 다르다").toBe(true);
-    await expect(pending).not.toContainText(/발송|보냈/);
     const reissued = (await invitations(page, "pending")).filter((item) => item.email === email);
     expect(reissued).toHaveLength(1);
     expect(reissued[0].invitationId).not.toBe(first.invitationId);

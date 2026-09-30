@@ -15,6 +15,7 @@ const member = (index: number, extra: Partial<Member> = {}): Member => ({
   observation: "partial", seatState: "unknown", ...extra,
 });
 const unavailable = { availability: "unavailable" as const, reason: "not_applicable", data: null };
+const notSent = { status: "not_sent", reason: "mail_disabled", queuedAt: null, lastAttemptAt: null, sentAt: null, failureCode: null, attempts: 0 };
 const meta = (snapshotId = "snapshot-1") => ({ organizationId: ORG, startDate: period.startDate, endDate: period.endDate, snapshotId });
 const dashboard = (members: Member[], total: number, nextCursor: string | null, unassigned: Member[] = []) => ({
   meta: meta(), asOf: "2026-09-29T00:00:00Z",
@@ -83,7 +84,7 @@ test("an expired snapshot restarts once from the first page; mixed snapshots and
 test("waiting invitations keep the status and member filters on every page", async () => {
   const original = global.fetch, urls: URL[] = [];
   const invitation = (id: string, status: string) => ({ invitationId: id, email: `${id}@example.test`, role: "member", createdAt: "2026-09-20T00:00:00Z", expiresAt: "2026-09-23T00:00:00Z",
-    installationUsedAt: null, signupUsedAt: null, revokedAt: null, status, memberId: `member-${id}`, memberStatus: "invited", team: null, memberVersion: 1 });
+    installationUsedAt: null, signupUsedAt: null, revokedAt: null, status, memberId: `member-${id}`, memberStatus: "invited", team: null, memberVersion: 1, delivery: notSent });
   global.fetch = async (input) => {
     const url = new URL(String(input)); urls.push(url);
     const status = url.searchParams.get("status")!;
@@ -110,9 +111,10 @@ test("view keeps unknown values unknown and never invents reclaim candidates", (
   const now = Date.parse("2026-09-21T00:00:00Z");
   const model = buildMembersView(view, [
     { invitationId: "i1", email: "new@example.test", role: "member", createdAt: "2026-09-20T00:00:00Z", expiresAt: "2026-09-23T00:00:00Z", installationUsedAt: null, signupUsedAt: null, revokedAt: null,
-      status: "pending", memberId: "m-new", memberStatus: "invited", team: { teamId: "team-a", teamName: "플랫폼" }, memberVersion: 7 },
+      status: "pending", memberId: "m-new", memberStatus: "invited", team: { teamId: "team-a", teamName: "플랫폼" }, memberVersion: 7,
+      delivery: { status: "sent", reason: null, queuedAt: "2026-09-20T00:00:00Z", lastAttemptAt: "2026-09-20T00:00:05Z", sentAt: "2026-09-20T00:00:05Z", failureCode: null, attempts: 1 } },
     { invitationId: "i2", email: "late@example.test", role: "admin", createdAt: "2026-09-01T00:00:00Z", expiresAt: "2026-09-04T00:00:00Z", installationUsedAt: null, signupUsedAt: null, revokedAt: null,
-      status: "expired", memberId: "m-late", memberStatus: "invited", team: null, memberVersion: 8 },
+      status: "expired", memberId: "m-late", memberStatus: "invited", team: null, memberVersion: 8, delivery: notSent },
   ], now);
 
   assert.deepEqual(model.memberRows.map((row) => row.activity), ["active", "idle", "unobserved", "active"]);
@@ -144,6 +146,9 @@ test("view keeps unknown values unknown and never invents reclaim candidates", (
   const withoutInvites = buildMembersView(view, undefined, now);
   assert.equal(withoutInvites.memberCards.find((card) => card.label === "초대 대기")!.value, "-");
   assert.equal(withoutInvites.inviteRows, undefined);
+  // 발송 상태는 서버가 준 값을 그대로 옮긴다.
+  assert.deepEqual(model.inviteRows!.map((row) => [row.delivery.state, row.delivery.label, row.delivery.detail]),
+    [["sent", "메일 발송됨", "2026.09.20 09:00"], ["disabled", "메일 발송 꺼짐", "코드를 직접 전달하세요"]]);
 });
 
 test("reclaim candidates and seat totals come only from the server section", () => {

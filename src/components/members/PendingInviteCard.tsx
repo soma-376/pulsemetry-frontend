@@ -10,7 +10,7 @@ import { InviteCode } from "./InviteCode";
 import { reissueInvitation, revokeInvitation, type ReissuedInvitation } from "@/lib/api/invitations";
 import { ManagementError, type createCommands } from "@/lib/api/management";
 import { organizationKey } from "@/lib/api/query-keys";
-import { formatKst, type InviteRow, type MembersModel } from "@/lib/members-view";
+import { deliveryView, formatKst, type InviteRow, type MembersModel } from "@/lib/members-view";
 
 type Action = { kind: "reissue" | "revoke"; invite: InviteRow };
 
@@ -21,7 +21,8 @@ type Action = { kind: "reissue" | "revoke"; invite: InviteRow };
  * 아직 합류하지 않은 사람만 보여 줍니다. 수락 전에는 좌석을 차지하지 않으므로 좌석 지표에 더하지 않습니다.
  *
  * 만료된 초대는 코드가 죽어 있어 기다린다고 들어오지 않습니다 — 다시 발급해야 합니다.
- * 재발급은 코드 발급이지 발송이 아닙니다. 새 코드는 발급 직후에만 볼 수 있습니다.
+ * 코드 발급과 메일 발송은 다른 사실입니다. 발송 상태는 서버가 준 값으로만 보여 주고,
+ * 다시 보내기는 기존 코드를 폐기하고 새 코드를 발급하는 일이라 먼저 확인합니다.
  */
 export function PendingInviteCard({ organizationId, post, model, loading, error, retrying, onRetry, editable, onEdit, onRevoked }: {
   organizationId: string;
@@ -39,7 +40,7 @@ export function PendingInviteCard({ organizationId, post, model, loading, error,
   const client = useQueryClient();
   const rows = model.inviteRows;
   // 초대 ID는 재발급하면 바뀐다. 행의 결과는 바뀌지 않는 구성원 ID로 붙인다.
-  const [confirming, setConfirming] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<{ memberId: string; kind: Action["kind"] } | null>(null);
   const [reissued, setReissued] = useState<Record<string, ReissuedInvitation>>({});
   const refresh = () => client.invalidateQueries({ queryKey: organizationKey(organizationId) });
   const action = useMutation({
@@ -62,6 +63,7 @@ export function PendingInviteCard({ organizationId, post, model, loading, error,
   });
   const run = (kind: Action["kind"], invite: InviteRow) => { if (!action.isPending) action.mutate({ kind, invite }); };
   const running = (kind: Action["kind"], invite: InviteRow) => action.isPending && action.variables.kind === kind && action.variables.invite.memberId === invite.memberId;
+  const ask = (kind: Action["kind"], invite: InviteRow) => { action.reset(); setConfirming({ memberId: invite.memberId, kind }); };
 
   return (
     <Widget label="초대 대기" title="초대 대기" note={model.inviteNote} className="col-span-full">
@@ -72,6 +74,11 @@ export function PendingInviteCard({ organizationId, post, model, loading, error,
         {rows?.map((invite) => {
           const code = reissued[invite.memberId];
           const failed = action.isError && action.variables.invite.memberId === invite.memberId ? action.error : null;
+          const asking = confirming?.memberId === invite.memberId ? confirming.kind : null;
+          // 메일을 보내는 서버에서는 재발급이 곧 다시 보내기다. 메일이 꺼져 있으면 코드만 새로 나온다.
+          const mailed = invite.delivery.state !== "disabled";
+          const again = mailed ? "다시 보내기" : "코드 재발급";
+          const fresh = code ? deliveryView(code.delivery) : null;
           return <div
             key={invite.invitationId}
             className="flex flex-wrap items-center gap-x-2.5 gap-y-2 border-b border-border px-0.5 py-2.5"
@@ -85,6 +92,10 @@ export function PendingInviteCard({ organizationId, post, model, loading, error,
               </span>
             </div>
 
+            <span aria-label={`${invite.email} 메일 발송 상태`} className="tnum shrink-0 text-right text-[12px]" style={{ color: invite.delivery.color }}>
+              {invite.delivery.label}{invite.delivery.detail && ` · ${invite.delivery.detail}`}
+            </span>
+
             <span
               className="tnum min-w-20 shrink-0 text-right text-[12px]"
               style={{ color: invite.expiryColor }}
@@ -94,18 +105,26 @@ export function PendingInviteCard({ organizationId, post, model, loading, error,
 
             {editable && <div className="flex shrink-0 items-center gap-1.5">
               <Button size="sm" disabled={action.isPending} aria-label={`${invite.email} 초대 팀/역할 수정`} onClick={() => onEdit(invite)}>팀/역할 수정</Button>
-              <Button size="sm" variant={invite.expired ? "primary" : "default"} disabled={action.isPending} loading={running("reissue", invite)} loadingLabel="발급 중…"
-                aria-label={`${invite.email} 초대 코드 재발급`} onClick={() => run("reissue", invite)}>코드 재발급</Button>
-              <Button size="sm" disabled={action.isPending} aria-label={`${invite.email} 초대 취소`} onClick={() => { action.reset(); setConfirming(invite.memberId); }}>초대 취소</Button>
+              <Button size="sm" variant={invite.expired || invite.delivery.state === "failed" ? "primary" : "default"} disabled={action.isPending}
+                aria-label={`${invite.email} 초대 ${again}`} onClick={() => ask("reissue", invite)}>{again}</Button>
+              <Button size="sm" disabled={action.isPending} aria-label={`${invite.email} 초대 취소`} onClick={() => ask("revoke", invite)}>초대 취소</Button>
             </div>}
 
-            {confirming === invite.memberId && <div role="alert" className="flex w-full flex-wrap items-center gap-2 rounded-md border border-red bg-red-tint px-3 py-2.5">
-              <span className="flex-1 text-[11.5px]">초대 코드를 폐기합니다. 폐기한 코드로는 가입하거나 설치할 수 없습니다.</span>
+            {asking === "reissue" && <div role="alert" className="flex w-full flex-wrap items-center gap-2 rounded-md border border-border bg-sub px-3 py-2.5">
+              <span className="flex-1 text-[11.5px]">{mailed
+                ? "새 코드를 발급하고 초대 메일을 다시 보냅니다. 이전 메일의 코드와 링크는 더 이상 쓸 수 없습니다."
+                : "새 코드를 발급합니다. 이전 코드는 더 이상 쓸 수 없습니다."}</span>
+              <Button size="sm" disabled={action.isPending} onClick={() => setConfirming(null)}>되돌리기</Button>
+              <Button size="sm" variant="primary" loading={running("reissue", invite)} loadingLabel="발급 중…" disabled={action.isPending} onClick={() => run("reissue", invite)}>{again} 확인</Button>
+            </div>}
+            {asking === "revoke" && <div role="alert" className="flex w-full flex-wrap items-center gap-2 rounded-md border border-red bg-red-tint px-3 py-2.5">
+              <span className="flex-1 text-[11.5px]">초대 코드를 폐기합니다. 폐기한 코드로는 가입하거나 설치할 수 없습니다. 아직 나가지 않은 초대 메일은 보내지 않습니다.</span>
               <Button size="sm" disabled={action.isPending} onClick={() => setConfirming(null)}>되돌리기</Button>
               <Button size="sm" loading={running("revoke", invite)} loadingLabel="취소 중…" disabled={action.isPending} onClick={() => run("revoke", invite)}>초대 취소 확인</Button>
             </div>}
-            {code && <div role="status" className="flex w-full flex-col gap-2 rounded-md bg-sub px-3 py-2.5 text-[11.5px] text-text2">
-              <span>새 초대 코드를 발급했습니다. 이전 코드는 더 이상 쓸 수 없습니다 · {formatKst(code.expiresAt)} 만료. 코드는 지금만 볼 수 있으니 대상자에게 직접 전달하세요.</span>
+            {code && fresh && <div role="status" className="flex w-full flex-col gap-2 rounded-md bg-sub px-3 py-2.5 text-[11.5px] text-text2">
+              <span>새 초대 코드를 발급했습니다. 이전 코드와 링크는 더 이상 쓸 수 없습니다 · {formatKst(code.expiresAt)} 만료.{" "}
+                {fresh.mailed ? "새 코드의 초대 메일을 발송 대기열에 넣었습니다. 발송 결과는 이 목록에 표시됩니다." : "메일을 발송하지 않습니다. 코드는 지금만 볼 수 있으니 대상자에게 직접 전달하세요."}</span>
               <span className="flex flex-wrap items-center gap-2">
                 <InviteCode email={invite.email} code={code.code} />
                 <Button size="sm" variant="ghost" aria-label={`${invite.email} 초대 코드 숨기기`}

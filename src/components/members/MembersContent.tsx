@@ -16,7 +16,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { StatCard } from "@/components/ui/StatCard";
 import { Toast, useToast } from "@/components/ui/Toast";
-import { issueInvitations, waitingInvitationsOptions, type InvitationRequest } from "@/lib/api/invitations";
+import { DELIVERY_POLL_MS, deliveryPending, issueInvitations, waitingInvitationsOptions, type InvitationRequest } from "@/lib/api/invitations";
 import { createCommands, ManagementError, teamsOptions } from "@/lib/api/management";
 import { assignTeams, teamAssignments } from "@/lib/api/member-commands";
 import { membersOptions } from "@/lib/api/members";
@@ -57,7 +57,9 @@ function OrganizationMembers({ organizationId, currentMemberId }: { organization
   const period = { startDate: dates.start, endDate: dates.end ?? dates.start };
   const refetchInterval = autoRefresh ? 300_000 : false as const;
   const query = useQuery({ ...membersOptions(organizationId, period), refetchInterval });
-  const invitations = useQuery({ ...waitingInvitationsOptions(organizationId), refetchInterval });
+  // 발송이 끝나지 않은 초대가 있으면 발송 작업의 결과가 보일 때까지 짧은 주기로 다시 읽는다.
+  const invitations = useQuery({ ...waitingInvitationsOptions(organizationId),
+    refetchInterval: (current) => deliveryPending(current.state.data) ? DELIVERY_POLL_MS : refetchInterval });
   const teams = useQuery(teamsOptions(organizationId));
   const [selected, setSelected] = useState<Selection | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);

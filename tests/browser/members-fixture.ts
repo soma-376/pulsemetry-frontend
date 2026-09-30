@@ -29,13 +29,17 @@ export function fixtureMembers(count = 45) {
 }
 /** 서버가 후보로 준 구성원 — 기간 내 사용이 없는 앞의 셋. */
 export const fixtureCandidates = (members: FixtureMember[]) => members.filter((member) => !member.periodUsage && member.lastUsedAt).slice(0, 3);
+export type FixtureDelivery = { status: string; reason: string | null; queuedAt: string | null; lastAttemptAt: string | null; sentAt: string | null; failureCode: string | null; attempts: number };
+export const notSent = (reason: "mail_disabled" | "not_queued"): FixtureDelivery => ({ status: "not_sent", reason, queuedAt: null, lastAttemptAt: null, sentAt: null, failureCode: null, attempts: 0 });
+export const queued = (): FixtureDelivery => ({ status: "queued", reason: null, queuedAt: new Date().toISOString(), lastAttemptAt: null, sentAt: null, failureCode: null, attempts: 0 });
 export type FixtureInvitation = { invitationId: string; email: string; role: string; createdAt: string; expiresAt: string; installationUsedAt: string | null; signupUsedAt: string | null;
-  revokedAt: string | null; status: string; memberId: string; memberStatus: string; team: { teamId: string; teamName: string } | null; memberVersion: number };
+  revokedAt: string | null; status: string; memberId: string; memberStatus: string; team: { teamId: string; teamName: string } | null; memberVersion: number; delivery: FixtureDelivery };
 export const fixtureInvitations: FixtureInvitation[] = [
   { invitationId: "invite-1", email: "waiting@codeworks.io", role: "member", createdAt: "2026-09-20T00:00:00Z", expiresAt: "2026-09-24T00:00:00Z", installationUsedAt: null, signupUsedAt: null, revokedAt: null,
-    status: "pending", memberId: "member-waiting", memberStatus: "invited", team: { teamId: "team-platform", teamName: "플랫폼" }, memberVersion: 1 },
+    status: "pending", memberId: "member-waiting", memberStatus: "invited", team: { teamId: "team-platform", teamName: "플랫폼" }, memberVersion: 1,
+    delivery: { status: "sent", reason: null, queuedAt: "2026-09-20T00:00:00Z", lastAttemptAt: "2026-09-20T00:00:05Z", sentAt: "2026-09-20T00:00:05Z", failureCode: null, attempts: 1 } },
   { invitationId: "invite-2", email: "expired@codeworks.io", role: "admin", createdAt: "2026-09-01T00:00:00Z", expiresAt: "2026-09-04T00:00:00Z", installationUsedAt: null, signupUsedAt: null, revokedAt: null,
-    status: "expired", memberId: "member-expired", memberStatus: "invited", team: null, memberVersion: 1 },
+    status: "expired", memberId: "member-expired", memberStatus: "invited", team: null, memberVersion: 1, delivery: notSent("not_queued") },
 ];
 
 export type MembersFixture = Awaited<ReturnType<typeof mockMembers>>;
@@ -44,7 +48,9 @@ export type MembersFixture = Awaited<ReturnType<typeof mockMembers>>;
  * 구성원·초대·팀의 조회와 변경 명령을 메모리 상태로 흉내 낸다. 돌려주는 상태를 직접 바꾸면 다른 곳에서의 변경이 된다.
  * 온보딩 fixture보다 나중에 등록해 팀 경로를 이쪽이 맡는다 — `openDashboard` 앞에서 부른다.
  */
-export async function mockMembers(page: Page, options: { members?: FixtureMember[]; candidates?: boolean; invitations?: FixtureInvitation[] } = {}) {
+export async function mockMembers(page: Page, options: { members?: FixtureMember[]; candidates?: boolean; invitations?: FixtureInvitation[]; mail?: boolean } = {}) {
+  // 메일을 보내는 서버가 기본이다. 새 초대의 메일은 적재됨(queued)에서 시작하고, 발송 결과는 테스트가 상태를 바꿔 흉내 낸다.
+  const mail = options.mail !== false;
   await mockOnboarding(page);
   const state = {
     members: structuredClone(options.members ?? fixtureMembers()),
@@ -140,20 +146,21 @@ export async function mockMembers(page: Page, options: { members?: FixtureMember
     const issue = (email: string, role: string, team: FixtureInvitation["team"], memberId: string, memberVersion: number) => {
       const sequence = ++state.sequence, now = Date.now();
       const invitation: FixtureInvitation = { invitationId: `invite-new-${sequence}`, email, role, createdAt: new Date(now).toISOString(), expiresAt: new Date(now + 72 * 3_600_000).toISOString(),
-        installationUsedAt: null, signupUsedAt: null, revokedAt: null, status: "pending", memberId, memberStatus: "invited", team, memberVersion };
+        installationUsedAt: null, signupUsedAt: null, revokedAt: null, status: "pending", memberId, memberStatus: "invited", team, memberVersion,
+        delivery: mail ? queued() : notSent("mail_disabled") };
       state.invitations.push(invitation);
       return { invitation, code: `FAKE-CODE-${String(sequence).padStart(4, "0")}` };
     };
     if (method === "POST" && path === "invitations/batch") {
       const results = (body.invitations as { email: string; teamId: string | null; role: string }[]).map((item) => {
         const email = item.email.toLowerCase(), team = teamRef(item.teamId);
-        const skipped = (status: string, reason: string | null = null) => ({ email, invitationId: null, status, reason, expiresAt: null, code: null });
+        const skipped = (status: string, reason: string | null = null) => ({ email, invitationId: null, status, reason, expiresAt: null, code: null, delivery: null });
         if (item.teamId && !team) return skipped("rejected", "team_not_found");
         if (!["admin", "member"].includes(item.role)) return skipped("rejected", "role_not_assignable");
         if (state.members.some((member) => member.account === email)) return skipped("already_member");
         if (state.invitations.some((invitation) => invitation.email === email)) return skipped("already_invited");
         const { invitation, code } = issue(email, item.role, team ? { teamId: team.teamId, teamName: team.teamName } : null, `member-invited-${state.sequence + 1}`, 1);
-        return { email, invitationId: invitation.invitationId, status: "issued", reason: null, expiresAt: invitation.expiresAt, code };
+        return { email, invitationId: invitation.invitationId, status: "issued", reason: null, expiresAt: invitation.expiresAt, code, delivery: invitation.delivery };
       });
       return json(route, { results });
     }
@@ -162,9 +169,11 @@ export async function mockMembers(page: Page, options: { members?: FixtureMember
       const old = state.invitations.find((item) => item.invitationId === invitationCommand[1] && item.status !== "revoked");
       if (!old) return fail(route, 409, "invitation_unavailable");
       old.status = "revoked"; old.revokedAt = new Date().toISOString();
+      // 폐기한 초대의 아직 나가지 않은 메일은 취소된다.
+      if (old.delivery.status === "queued") old.delivery = { ...old.delivery, status: "cancelled" };
       if (invitationCommand[2] === "revoke") return empty(route);
       const { invitation, code } = issue(old.email, old.role, old.team, old.memberId, old.memberVersion);
-      return json(route, { invitationId: invitation.invitationId, replacesInvitationId: old.invitationId, code, expiresAt: invitation.expiresAt });
+      return json(route, { invitationId: invitation.invitationId, replacesInvitationId: old.invitationId, code, expiresAt: invitation.expiresAt, delivery: invitation.delivery });
     }
 
     const sameName = (name: string, except?: string) => state.teams.some((team) => team.teamId !== except && team.teamName.normalize("NFKC").toLowerCase() === name.normalize("NFKC").toLowerCase());

@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { openDashboard } from "./helpers";
 import { mockMembers } from "./members-fixture";
 
-test("pending invitations remain below the cards with reissue and revoke actions", async ({ page }) => {
+test("pending invitations remain below the cards with resend and revoke actions", async ({ page }) => {
   const api = await mockMembers(page, { invitations: [] });
   await openDashboard(page, "/members");
   await expect(page.getByRole("region", { name: "등록한 개발자", exact: true })).toHaveCount(0);
@@ -26,17 +26,23 @@ test("pending invitations remain below the cards with reissue and revoke actions
   // 목록에는 코드가 없다. 발급 창을 닫으면 다시 볼 수 없다.
   await expect(pending.locator("code")).toHaveCount(0);
 
-  // 재발급은 기존 코드를 폐기하고 새 코드를 그 자리에서 보여 준다. 발송했다고 말하지 않는다.
+  // 발급 직후의 메일은 발송 대기다. 발송됨이라고 말하지 않는다.
+  await expect(pending.getByLabel("pending@example.test 메일 발송 상태", { exact: true })).toHaveText("메일 발송 대기");
+  // 다시 보내기는 기존 코드를 폐기하는 일이라 먼저 알리고 확인받는다.
   const first = api.invitations.find((item) => item.email === "pending@example.test")!.invitationId;
-  await pending.getByRole("button", { name: "pending@example.test 초대 코드 재발급", exact: true }).click();
-  await expect(pending.getByRole("status")).toContainText("새 초대 코드를 발급했습니다. 이전 코드는 더 이상 쓸 수 없습니다");
+  await pending.getByRole("button", { name: "pending@example.test 초대 다시 보내기", exact: true }).click();
+  await expect(pending.getByRole("alert")).toContainText("이전 메일의 코드와 링크는 더 이상 쓸 수 없습니다");
+  expect(api.commands.some((command) => command.path.endsWith("/reissue"))).toBe(false);
+  await pending.getByRole("button", { name: "다시 보내기 확인", exact: true }).click();
+  await expect(pending.getByRole("status")).toContainText("새 초대 코드를 발급했습니다. 이전 코드와 링크는 더 이상 쓸 수 없습니다");
+  await expect(pending.getByRole("status")).toContainText("발송 대기열에 넣었습니다");
   await expect(pending.getByLabel("pending@example.test 초대 코드", { exact: true })).toHaveText("FAKE-CODE-0002");
-  await expect(pending).not.toContainText(/발송|보냈|다시 보내기/);
+  await expect(pending).not.toContainText(/발송됨|발송 완료|보냈습니다/);
   const reissue = api.commands.find((command) => command.path.endsWith("/reissue"))!;
   expect(reissue.path).toBe(`invitations/${first}/reissue`);
   expect(reissue.body).toEqual({});
   expect(reissue.idempotencyKey).toMatch(/^[A-Za-z0-9_-]{8,128}$/);
-  await expect(pending.getByRole("button", { name: "pending@example.test 초대 코드 재발급", exact: true })).toBeEnabled();
+  await expect(pending.getByRole("button", { name: "pending@example.test 초대 다시 보내기", exact: true })).toBeEnabled();
   await expect(pending.locator(".font-mono").filter({ hasText: "pending@example.test" })).toHaveCount(1);
 
   // 초대 대기자는 아직 구성원이 아니다.
