@@ -13,9 +13,16 @@ export const ROLE_HINT: Record<string, string> = {
 };
 const MEMBER_STATE_LABEL: Record<string, string> = { active: "활성 계정", invited: "초대 대기", suspended: "정지" };
 const SEAT_STATE_LABEL: Record<string, string> = { assigned: "배정됨", unassigned: "배정 해제", reclaimed: "회수됨", unknown: "확인 불가" };
+// 좌석 원장의 가용성 사유(서버 대시보드 명세 "좌석 원장 조회"). 제품 단위로 낮춘 사유는 "그런 제품이 있다"로 읽는다.
 const SECTION_REASON: Record<string, string> = {
-  not_applicable: "벤더 좌석 원장이 연결되지 않았습니다",
+  not_applicable: "등록한 제품이 없어 좌석 원장이 없습니다",
   source_not_available: "좌석 원천을 조회할 수 없습니다",
+  observation_incomplete: "관측이 부족한 좌석은 판정하지 않았습니다",
+  seat_source_not_recorded: "좌석을 기록하지 않은 제품이 있습니다",
+  seat_source_provisional: "연결 전 임시 기록을 쓰는 제품이 있습니다",
+  seat_sync_pending: "좌석 동기화를 기다리는 제품이 있습니다",
+  seat_sync_failing: "좌석 동기화가 실패한 제품이 있습니다",
+  seat_sync_outdated: "좌석 동기화가 오래된 제품이 있습니다",
 };
 
 /**
@@ -158,7 +165,8 @@ export function buildMembersView(view: MembersView, invitations: Invitation[] | 
     memberCards: [
       { label: "구성원", value: int(summary.rosterMembers), unit: "명", caption: `기간 활성 ${countText(summary.activeUsers)}명 · 초대 대기 제외`, tone: "var(--text)" },
       { label: "좌석 회수 후보", value: seatsUnavailable ? "-" : countText(seats.reclaimCandidates), unit: "석",
-        caption: seatsUnavailable ? reasonText(summary.seats.reason) : `${policy.idleDays}일 이상 사용 미관측`,
+        caption: seatsUnavailable ? reasonText(summary.seats.reason)
+          : summary.seats.availability === "partial" ? `${policy.idleDays}일 기준 · ${reasonText(summary.seats.reason)}` : `${policy.idleDays}일 이상 사용 미관측`,
         tone: !seatsUnavailable && seats.reclaimCandidates ? "var(--orange-ink)" : "var(--text)" },
       { label: "초대 대기", value: countText(liveInvites), unit: "명", caption: `만료 ${countText(expiredInvites)}명 별도 · 벤더 좌석 배정과 무관`, tone: "var(--text)" },
       { label: "팀 미배정", value: int(summary.unassignedMembers), unit: "명", caption: `기간 미배분 비용 ${moneyText(unassignedCost)}${share}`,
@@ -168,7 +176,9 @@ export function buildMembersView(view: MembersView, invitations: Invitation[] | 
       // 후보를 계산하지 못해도 조직의 회수 기준(설정에서 저장한 값)은 보여 준다.
       ? { available: false as const, message: reasonText(reclaim.reason), note: `후보 계산 안 함 · 회수 기준 ${policy.idleDays}일` }
       : { available: true as const, rows: candidateItems.map((candidate) => ({ ...candidate, lastSeen: formatKst(candidate.lastUsedAt) })),
-          note: `${int(candidateItems.length)}석 표시 · 전체 ${int(reclaim.data!.totalCount)}석 · ${policy.idleDays}일 기준` },
+          // partial 은 판정하지 못한 좌석을 뺀 목록이다 — 빈 목록을 "후보 없음"으로 읽지 않게 사유를 함께 낸다.
+          partial: reclaim.availability === "partial" ? reasonText(reclaim.reason) : null,
+          note: `${int(candidateItems.length)}석 표시 · 전체 ${int(reclaim.data!.totalCount)}석 · 회수 기준 ${policy.idleDays}일` },
     unassignedRows: unassigned.map((row) => ({
       memberId: row.memberId, account: row.account, version: row.version,
       meta: `세션 ${row.sessionText} · 마지막 사용 ${row.lastSeen}`,

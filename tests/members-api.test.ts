@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ManagementError } from "../src/lib/api/management";
 import { fetchWaitingInvitations } from "../src/lib/api/invitations";
-import { fetchMembersView, membersOptions, type Member } from "../src/lib/api/members";
+import { fetchMembersView, membersOptions, reclaimCandidateSchema, type Member } from "../src/lib/api/members";
 import { buildMembersView, memberActivity, membersCsv } from "../src/lib/members-view";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
@@ -129,7 +129,7 @@ test("view keeps unknown values unknown and never invents reclaim candidates", (
   assert.equal(cards["구성원"].value, "4");
   assert.match(cards["구성원"].caption, /기간 활성 -명/);
   assert.equal(cards["좌석 회수 후보"].value, "-", "좌석 원장이 없으면 0석이 아니다");
-  assert.match(cards["좌석 회수 후보"].caption, /연결되지 않았습니다/);
+  assert.match(cards["좌석 회수 후보"].caption, /등록한 제품이 없어 좌석 원장이 없습니다/);
   assert.equal(cards["초대 대기"].value, "1");
   assert.match(cards["초대 대기"].caption, /만료 1명/);
   assert.equal(cards["팀 미배정"].value, "1");
@@ -170,6 +170,31 @@ test("reclaim candidates and seat totals come only from the server section", () 
   assert.match(cards["팀 미배정"].caption, /\$5\.00 \(25\.0%\)/);
   assert.equal(model.reclaim.available && model.reclaim.rows[0].seatAssignmentId, "seat-1");
   assert.equal(model.unassignedNote, "모두 배정됨");
+});
+
+test("a partial seat ledger keeps its reason next to the counted candidates", () => {
+  const roster = [member(1), member(2)];
+  const base = dashboard(roster, 2, null);
+  const view = { ...base, members: roster, unassigned: [],
+    summary: { ...base.summary,
+      seats: { availability: "partial" as const, reason: "seat_sync_outdated", data: { contracted: 18, assigned: 10, unallocated: 11, activeInPeriod: null, inactiveAssigned: null, reclaimCandidates: 0, estimatedMonthlySavingsUsd: null } } },
+    reclaimCandidates: { availability: "partial" as const, reason: "observation_incomplete", data: { items: [], totalCount: 0, nextCursor: null } } };
+  const model = buildMembersView(view, []);
+  const cards = Object.fromEntries(model.memberCards.map((card) => [card.label, card]));
+  // 원장의 값이므로 0석이다 — 다만 낮춘 제품이 있다는 사유를 지우지 않는다.
+  assert.equal(cards["좌석 회수 후보"].value, "0");
+  assert.equal(cards["좌석 회수 후보"].caption, "14일 기준 · 좌석 동기화가 오래된 제품이 있습니다");
+  assert.ok(model.reclaim.available);
+  assert.equal(model.reclaim.available && model.reclaim.partial, "관측이 부족한 좌석은 판정하지 않았습니다");
+  assert.equal(model.reclaim.note, "0석 표시 · 전체 0석 · 회수 기준 14일");
+});
+
+test("a candidate without a known tier parses as null", () => {
+  const candidate = { seatAssignmentId: "seat-1", memberId: "member-2", account: "member2@example.test", team: { teamId: null, teamName: "미배정" }, vendorId: "v", tierId: null,
+    version: 1, lastUsedAt: null, idleDays: 31, estimatedMonthlySavingsUsd: null, canReclaim: false, reason: "vendor_control_unavailable", vendorAccount: "m2@vendor.example.test" };
+  const parsed = reclaimCandidateSchema.parse(candidate);
+  assert.equal(parsed.tierId, null);
+  assert.equal(parsed.vendorAccount, "m2@vendor.example.test");
 });
 
 test("CSV exports the whole roster, leaves unknown values empty and neutralizes formulas", () => {

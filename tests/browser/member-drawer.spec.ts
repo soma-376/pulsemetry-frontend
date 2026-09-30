@@ -53,7 +53,7 @@ test("without a seat ledger no member is a reclaim candidate and unobserved memb
   await mockMembers(page, { candidates: false });
   await openDashboard(page, "/members");
   const list = page.getByRole("region", { name: "구성원 목록", exact: true });
-  await expect(page.getByRole("region", { name: "좌석 회수 후보", exact: true })).toContainText("벤더 좌석 원장이 연결되지 않았습니다");
+  await expect(page.getByRole("region", { name: "좌석 회수 후보", exact: true })).toContainText("등록한 제품이 없어 좌석 원장이 없습니다");
   await expect(page.getByRole("group", { name: "좌석 회수 후보", exact: true })).toContainText("-석");
   const target = members.find((member) => !member.lastUsedAt)!;
   await list.getByRole("textbox", { name: "구성원 검색" }).fill(target.account);

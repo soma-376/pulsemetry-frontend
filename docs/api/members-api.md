@@ -42,13 +42,14 @@ type ReclaimCandidate = {
   account: string;
   team: TeamRef;
   vendorId: string;
-  tierId: string;
+  tierId: string | null;         // 등급을 모르는 좌석은 null
   version: number;
   lastUsedAt: string | null;
   idleDays: number;
   estimatedMonthlySavingsUsd: Money | null;
-  canReclaim: boolean;
-  reason: string | null;
+  canReclaim: boolean;           // 회수 실행이 없어 false
+  reason: string | null;         // vendor_control_unavailable
+  vendorAccount?: string;        // 좌석의 벤더 계정(가산). account 는 구성원의 계정
 };
 type MemberSummary = {
   rosterMembers: number;

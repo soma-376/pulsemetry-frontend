@@ -21,9 +21,11 @@ const page = <T extends z.ZodType>(item: T) => z.object({ items: z.array(item), 
 const section = <T extends z.ZodType>(data: T) => z.object({ availability: z.enum(["available", "partial", "unavailable"]), reason: z.string().nullable(), data: data.nullable() });
 const metaSchema = z.object({ organizationId: z.string(), startDate: z.iso.date(), endDate: z.iso.date(), snapshotId: z.string() });
 export const reclaimCandidateSchema = z.object({
-  seatAssignmentId: z.string(), memberId: z.string(), account: z.string(), team: teamRefSchema, vendorId: z.string(), tierId: z.string(),
+  seatAssignmentId: z.string(), memberId: z.string(), account: z.string(), team: teamRefSchema, vendorId: z.string(), tierId: z.string().nullable(),
   version: z.number(), lastUsedAt: z.iso.datetime({ offset: true }).nullable(), idleDays: count,
   estimatedMonthlySavingsUsd: money.nullable(), canReclaim: z.boolean(), reason: z.string().nullable(),
+  // 좌석의 벤더 계정(가산). account 는 구성원의 계정이다.
+  vendorAccount: z.string().optional(),
 });
 export type ReclaimCandidate = z.infer<typeof reclaimCandidateSchema>;
 const seatSummarySchema = z.object({
