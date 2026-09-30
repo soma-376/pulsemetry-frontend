@@ -16,8 +16,10 @@ export function settingsFixture(): Settings {
     capabilities: { editContracts: true, editCollectionPolicy: true, editAlertRules: false, notifyInstallations: false },
     summary: { configuredVendors: 1, unconfiguredVendors: 1, monthlySeatFeeUsd: null, contractedSeats: null, activeSeats7d: null, meteredMonthToDate: { availability: "unavailable", data: null } },
     vendors: { items: COMPANY_A.managedVendors.map(v => settingsVendorSchema.parse({ ...v, firstSeenAt: null, lastSeenAt: null, activeUsers7d: null, activeUsers30d: null, observation: "unobserved" })), totalCount: COMPANY_A.managedVendors.length, nextCursor: null },
-    collectionPolicy: { version: 1, collectRawContent: false, reclaimIdleDays: 14, aggregateRetentionMonths: null },
-    policyRollout: { desiredVersion: 1, eligibleInstallations: 10, appliedInstallations: 10, outdatedInstallations: 0, unknownInstallations: 0 },
+    collectionPolicy: { version: COMPANY_A.policyRollout.desiredVersion, collectRawContent: false, reclaimIdleDays: 14, aggregateRetentionMonths: null },
+    // 시드 A의 적용 현황(판 2: 적용 7 · 미적용 3 · 미확인 1).
+    policyRollout: { desiredVersion: COMPANY_A.policyRollout.desiredVersion, eligibleInstallations: COMPANY_A.policyRollout.eligible,
+      appliedInstallations: COMPANY_A.policyRollout.applied, outdatedInstallations: COMPANY_A.policyRollout.outdated, unknownInstallations: COMPANY_A.policyRollout.unknown },
     alertRules: [
       { ruleId: "spend_spike", enabled: false, availability: "unavailable", threshold: { value: 0.4, unit: "ratio" } },
       { ruleId: "quota_exceeded", enabled: false, availability: "unavailable", threshold: { value: 5, unit: "users" } },

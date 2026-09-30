@@ -14,10 +14,30 @@ test("A fixture는 완료 조직이며 좌석 계약과 관측 인원을 연결�
   const claude = COMPANY_A_VENDORS.map(vendor => managedVendorSchema.parse(vendor)).find(vendor => vendor.kind === "claude_team")!;
   assert.equal(claude.contract?.planId, "team");
   assert.equal(claude.contract?.monthlySeatFeeUsd, "360");
-  assert.equal(COMPANY_A_VENDORS.find(vendor => vendor.kind === "openai_biz")!.contract, null);
+  // 시드 A 명세: OpenAI는 최초 미입력(v1) 뒤 관리자가 Business 두 좌석 유형(월 $400)을 입력했다(v2). Cursor는 계약 미입력이다.
+  const openai = managedVendorSchema.parse(COMPANY_A_VENDORS.find(vendor => vendor.kind === "openai_biz")!);
+  assert.equal(openai.version, 2);
+  assert.equal(openai.contract?.planId, "business");
+  assert.equal(openai.contract?.monthlySeatFeeUsd, "400");
+  assert.deepEqual(COMPANY_A_VENDORS.map(vendor => vendor.kind).sort(), ["claude_team", "copilot", "cursor", "openai_biz"]);
+  assert.equal(COMPANY_A_VENDORS.find(vendor => vendor.kind === "cursor")!.contract, null);
   assert.ok(COMPANY_A.managedVendors.every(vendor => vendor.activeUsers7d === null));
   assert.equal(COMPANY_A.legacyContracts.find(contract => contract.provider === "openai")!.commitmentAmountUsd, "0");
-  assert.equal(COMPANY_A.policyRollout.applied, 10);
+});
+
+test("A fixture의 정책 적용 현황은 판 2 기준 적용 7 · 미적용 3 · 미확인 1이고 적용하지 않은 설치만 안내할 수 있다", () => {
+  assert.deepEqual(COMPANY_A.policyRollout, { desiredVersion: 2, eligible: 11, applied: 7, outdated: 3, unknown: 1 });
+  assert.equal(COMPANY_A_ONBOARDING.policy.version, 2);
+  const installations = COMPANY_A.installations;
+  assert.equal(installations.length, 11);
+  assert.equal(installations.filter(row => row.appliedPolicyVersion === 2).length, 7);
+  assert.equal(installations.filter(row => row.appliedPolicyVersion === 1).length, 3);
+  const unknown = installations.filter(row => row.appliedPolicyVersion === null);
+  assert.equal(unknown.length, 1);
+  // 미확인 설치는 보고한 적이 없다. 나머지는 기준 시각(기준일의 서울 자정)에 마지막으로 보고했다.
+  assert.equal(unknown[0].lastHeartbeatAt, null);
+  assert.ok(installations.filter(row => row.appliedPolicyVersion !== null).every(row => row.lastHeartbeatAt === "2026-09-27T15:00:00Z"));
+  assert.deepEqual(installations.filter(row => row.canNotify).map(row => row.appliedPolicyVersion).sort(), [1, 1, 1, null]);
 });
 
 test("Storybook과 로컬 표시 카탈로그는 서버 제품·플랜 ID를 사용한다", () => {
@@ -49,18 +69,19 @@ test("단계별 Storybook은 A 원본을 보존하고 서버에 없는 플랜을
     assert.equal(state.completed, false);
     assert.equal(COMPANY_A_ONBOARDING.completed, true);
     const before = await (await fetch(`${base}/vendors`)).json();
-    assert.equal(before.vendors.items.length, 3);
+    assert.equal(before.vendors.items.length, 4);
+    // 등록하지 않은 제품에 다른 제품의 플랜을 보내면 거절한다.
     const rejected = await fetch(`${base}/vendors`, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind: "cursor", displayName: "잘못된 플랜", contract: { planId: "claude_team" } }),
+      body: JSON.stringify({ kind: "gemini", displayName: "잘못된 플랜", contract: { planId: "claude_team" } }),
     });
     assert.equal(rejected.status, 422);
     const duplicate = await fetch(`${base}/vendors`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "claude_team", displayName: "중복" }) });
     assert.equal(duplicate.status, 409);
     await fetch(`${base}/vendors/${COMPANY_A_VENDORS[0].vendorId}`, { method: "DELETE" });
-    assert.equal(COMPANY_A_VENDORS.length, 3);
+    assert.equal(COMPANY_A_VENDORS.length, 4);
     server.resetHandlers(...onboardingHandlers("teams"));
-    assert.equal((await (await fetch(`${base}/vendors`)).json()).vendors.items.length, 3);
+    assert.equal((await (await fetch(`${base}/vendors`)).json()).vendors.items.length, 4);
   } finally {
     server.close();
   }

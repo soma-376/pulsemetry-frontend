@@ -22,15 +22,16 @@ test("A Copilot 만료 계약은 마지막 금액과 좌석을 보존하고 유�
   assert.equal(row.statusLabel, "계약 만료");
   assert.match(row.seatsText, /마지막 계약 5석/);
   assert.match(row.spendText, /마지막 계약 \$95/);
-  assert.equal(settings.summary.monthlySeatFeeUsd, "360");
-  assert.equal(settings.summary.contractedSeats, 10);
+  // 시드 A 명세: 유효 계약은 Claude Team 월 $360(10석)과 OpenAI Business 월 $400(8석)이다. 만료된 Copilot은 합산하지 않는다.
+  assert.equal(settings.summary.monthlySeatFeeUsd, "760");
+  assert.equal(settings.summary.contractedSeats, 18);
   assert.match(contractSummaryNotice(settings.vendors.items)!, /만료 1건 제외/);
   const contracts = overviewSettingsSchema.parse({ ...settings, meta: { ...settings.meta, asOf: "2026-09-28T00:00:00Z" }, catalog: { plans: [] } });
   const model = presentOverview(overviewSchema.parse(example), contracts);
   const detail = model.vendorOverview.rows.find(v => v.id === copilot.vendorId)!;
   assert.equal(detail.status, "계약 만료");
   assert.equal(detail.monthly, 95);
-  assert.equal(model.kpis.find(v => v.label === "월 좌석 계약액")!.value, "$360.00");
+  assert.equal(model.kpis.find(v => v.label === "월 좌석 계약액")!.value, "$760.00");
   const html = renderToStaticMarkup(createElement(VendorSeatsCard, { model: { ...model.vendorOverview, rows: [detail] } }));
   assert.match(html, /계약 만료/);
   assert.match(html, /마지막 계약 금액/);
@@ -47,13 +48,16 @@ test("프론트는 서버 계약 상태를 따르고 모르는 enum을 정상 �
 
 test("유효 계약이 없거나 등록이 비어 있으면 0, 유효 계약의 금액을 모르면 null", () => {
   const data = settingsFixture();
-  data.vendors.items[0].contractStatus = "scheduled";
+  const active = data.vendors.items.filter(vendor => vendor.contractStatus === "active");
+  assert.equal(active.length, 2);
+  for (const vendor of active) vendor.contractStatus = "scheduled";
   syncSettingsSummary(data);
   assert.equal(data.summary.monthlySeatFeeUsd, "0");
   assert.equal(data.summary.contractedSeats, 0);
-  assert.match(contractSummaryNotice(data.vendors.items)!, /시작 예정 1건 제외/);
-  data.vendors.items[0].contractStatus = "active";
-  data.vendors.items[0].contract!.monthlySeatFeeUsd = null;
+  assert.match(contractSummaryNotice(data.vendors.items)!, /시작 예정 2건 제외/);
+  const claude = data.vendors.items.find(vendor => vendor.kind === "claude_team")!;
+  claude.contractStatus = "active";
+  claude.contract!.monthlySeatFeeUsd = null;
   syncSettingsSummary(data);
   assert.equal(data.summary.monthlySeatFeeUsd, null);
   assert.equal(data.summary.contractedSeats, 10);
