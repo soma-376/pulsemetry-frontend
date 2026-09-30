@@ -34,7 +34,8 @@ export async function mockOnboarding(page: Page) {
     if (path === "/collection-policy") {
       if (body.expectedVersion !== state.policy.version) return json({ error: { code: "version_conflict", message: "conflict" } }, 409);
       state.policy = { confirmed: true, confirmedAt: new Date().toISOString(), version: state.policy.version + 1, collectRawContent: body.collectRawContent };
-      return json({ version: state.policy.version, collectRawContent: body.collectRawContent, confirmedAt: state.policy.confirmedAt, application: "future_enrollments", existingInstallationsUpdated: false });
+      return json({ version: state.policy.version, collectRawContent: body.collectRawContent, confirmedAt: state.policy.confirmedAt, application: "future_enrollments", existingInstallationsUpdated: false,
+        reclaimIdleDays: null, aggregateRetentionMonths: null, settingsVersion: 0, settingsUpdatedAt: null, cleanupOperationId: null });
     }
     if (path === "/onboarding/complete") { state.completed = true; state.completedAt = new Date().toISOString(); state.nextStep = "complete"; return json(state); }
     if (path === "/vendors" && method === "GET") return json({ meta, vendors: { items: vendors, nextCursor: null } });

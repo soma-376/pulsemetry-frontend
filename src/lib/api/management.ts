@@ -74,7 +74,11 @@ export async function fetchOnboarding(org: string, signal?: AbortSignal) {
   return data;
 }
 export const onboardingOptions = (org: string) => queryOptions({ queryKey: managementKey(org, "onboarding"), queryFn: ({ signal }) => fetchOnboarding(org, signal), ...readOptions });
-export const policySavedSchema = z.object({ version: z.number(), collectRawContent: z.boolean(), confirmedAt: z.string(), application: z.literal("future_enrollments"), existingInstallationsUpdated: z.literal(false) });
+/** 수집 정책 저장의 응답. 원문 선택을 보내지 않은 저장이면 `collectRawContent`·`confirmedAt`은 지금 값(없으면 null)이다. */
+export const policySavedSchema = z.object({ version: z.number(), collectRawContent: z.boolean().nullable(), confirmedAt: z.string().nullable(),
+  application: z.literal("future_enrollments"), existingInstallationsUpdated: z.literal(false),
+  reclaimIdleDays: z.number().nullable(), aggregateRetentionMonths: z.number().nullable(), settingsVersion: z.number(), settingsUpdatedAt: z.string().nullable(),
+  cleanupOperationId: z.string().nullable() });
 export const managedVendorSchema = z.object({ vendorId: z.string(), displayName: z.string(), kind: z.string(), source: z.string(), version: z.number(), state: z.string(), contract: z.object({ planId: z.string() }).passthrough().nullable() });
 export const vendorResponseSchema = z.object({ vendor: managedVendorSchema });
 export type ManagedVendor = z.infer<typeof managedVendorSchema>;

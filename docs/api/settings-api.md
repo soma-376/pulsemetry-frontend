@@ -53,13 +53,20 @@ type Vendor = {
   checks: { code: string; severity: "info" | "warning" }[];
 };
 type CollectionPolicy = {
-  version: number;
+  version: number; // 원문 선택이 실린 manifest 판(설치에 배포하는 정책)
   collectRawContent: boolean;
   reclaimIdleDays: 7 | 14 | 30 | 60;
   aggregateRetentionMonths: 12 | 24 | 36 | null;
   rawContentRetentionDays: number | null;
   effectiveAt: string;
   updatedBy: string;
+  // 회수 기준·집계 보존은 manifest 와 따로 저장하고 판도 따로 센다
+  settingsVersion: number; // 저장 전 0
+  settingsUpdatedAt: string | null;
+  settingsUpdatedBy: string | null;
+  reclaimIdleDaysSource: "organization" | "default"; // default = 서버 기본 설정
+  options: { reclaimIdleDays: number[]; aggregateRetentionMonths: (number | null)[] };
+  cleanupOperationId: string | null; // 이 조직의 가장 최근 보존 정리 작업
 };
 type AlertRule = {
   ruleId: "spend_spike" | "quota_exceeded" | "model_not_allowed" | "tool_unapproved";
@@ -127,14 +134,18 @@ type SaveContractRequest = {
   displayName: string;
   contract: ContractWrite;
 };
-type PolicyPatchRequest = {
-  expectedVersion: number;
+type PolicySaveRequest = {
+  expectedVersion: number; // manifest 판(필수)
   collectRawContent?: boolean;
+  expectedSettingsVersion?: number; // 아래 둘 중 하나라도 보내면 필수
   reclaimIdleDays?: 7 | 14 | 30 | 60;
   aggregateRetentionMonths?: 12 | 24 | 36 | null;
 };
-type PolicyPatchResponse = {
-  policy: CollectionPolicy;
+type PolicySaved = {
+  version: number; collectRawContent: boolean | null; confirmedAt: string | null;
+  application: "future_enrollments"; existingInstallationsUpdated: false;
+  reclaimIdleDays: number | null; aggregateRetentionMonths: number | null;
+  settingsVersion: number; settingsUpdatedAt: string | null;
   cleanupOperationId: string | null;
 };
 type AlertRulePatchRequest = { expectedVersion: number; enabled: boolean };
@@ -190,15 +201,17 @@ GET 단건 응답 ETag도 같은 형식이다. 저장은 계약과 displayName�
 
 ## 수집 정책
 
-PATCH /settings/collection-policy → 200 PolicyPatchResponse.
-변경하는 필드만 보내며 최소 1개가 필요하다. UI의 “미적용” 보존 옵션은 null(무기한)이다.
-원문 수집 양방향 변경, 집계 보존 기간 단축은 현재 확인 모달 후 요청한다.
-서버는 정책 버전을 올리고 actor/변경 전후/시각을 감사 기록한다.
-변경 없는 값은 같은 버전 반환, 충돌은 409.
+PUT /api/v1/organizations/{organizationId}/collection-policy(enrollment 서비스) + PolicySaveRequest → 200 PolicySaved.
+별도 PATCH 경로는 없다 — 기존 원문 수집 저장(`{expectedVersion, collectRawContent}`)을 선택 필드로 넓혔다.
+변경하는 필드만 보내며 최소 1개가 필요하다. 보존 옵션의 null은 무기한이다.
+원문 수집 변경과 집계 보존 단축은 확인 모달 뒤에 요청한다. 회수 기준과 보존 연장은 바로 저장한다.
+원문 선택은 새 manifest 판을 만들고, 회수 기준·집계 보존은 manifest 판을 올리지 않고 설정의 판을 올린다(설치의 적용 상태가 흔들리지 않는다).
+같은 값을 다시 보내면 같은 판이다. `expectedVersion`(manifest 판)이나 `expectedSettingsVersion`(설정의 판)이 어긋나면 409 `version_conflict`,
+허용 밖의 값·판 누락은 400 `invalid_request`(`fieldErrors`)다.
 
 예:
 ```json
-{"expectedVersion":4,"collectRawContent":false,"aggregateRetentionMonths":12}
+{"expectedVersion":4,"expectedSettingsVersion":2,"aggregateRetentionMonths":12}
 ```
 
 - 원문 정책은 프롬프트·응답뿐 아니라 도구 인수/파일 경로/오류 본문까지 적용할 범위를 수집기와 합의한다.
@@ -207,9 +220,12 @@ PATCH /settings/collection-policy → 200 PolicyPatchResponse.
 - 정책 저장 성공과 전 설치 적용 완료는 다르다. appliedPolicyVersion이 확인된 설치만 applied로 센다.
 - eligible=applied+outdated+unknown. 정책 ACK가 없으면 unknown이며 적용 완료로 추정하지 않는다.
 - 원문 보존 기간과 집계 보존 기간은 별개다. rawContentRetentionDays는 서버의 기존 원문 정책을 읽기만 한다.
-- 집계 보존 단축은 정리 작업을 예약하고 cleanupOperationId로 결과를 조회한다.
-  오래된 집계가 지워지는 정확한 경계는 asOf에서 N개월 전 월력 날짜의 KST 자정 미만으로 한다
-  (일자가 없는 달이면 말일). 원문 삭제는 이 설정의 범위가 아니다.
+- 집계 보존 단축(무기한 → 유한 포함)은 정리 작업을 만들고 cleanupOperationId로 돌려준다. 진행은 `GET /operations/{operationId}`를
+  `Retry-After` 간격으로 조회한다(대기 → 진행 → 완료, 미완이면 진행 중인 채로 `retention.status=incomplete`, 정해진 횟수 안에 못 끝내면 실패).
+  완료는 논리 삭제 완료다. 새로고침 뒤에는 설정의 `collectionPolicy.cleanupOperationId`(가장 최근 정리 작업)로 다시 조회한다.
+  지워지는 범위는 분석 원본(팀·일·구성원 집계의 원천)이고 경계는 저장한 날(KST)에서 N개월 전 같은 날의 KST 자정 미만이다
+  (일자가 없는 달이면 말일). 수신 기록·수집 이력 요약과 원문은 이 설정의 범위가 아니다.
+- 실행 전의 정리 작업은 다음 보존 저장이 대체한다(작업은 `superseded`로 실패).
 - 보존 기간 연장으로 이미 삭제된 기록이 복구되지는 않는다.
 - reclaimIdleDays 변경은 구성원의 현재 회수 후보 판정에도 같은 정책 버전으로 적용한다.
 

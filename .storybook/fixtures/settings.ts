@@ -16,7 +16,9 @@ export function settingsFixture(): Settings {
     capabilities: { editContracts: true, editCollectionPolicy: true, editAlertRules: false, notifyInstallations: true },
     summary: { configuredVendors: 1, unconfiguredVendors: 1, monthlySeatFeeUsd: null, contractedSeats: null, activeSeats7d: null, meteredMonthToDate: { availability: "unavailable", data: null } },
     vendors: { items: COMPANY_A.managedVendors.map(v => settingsVendorSchema.parse({ ...v, firstSeenAt: null, lastSeenAt: null, activeUsers7d: null, activeUsers30d: null, observation: "unobserved" })), totalCount: COMPANY_A.managedVendors.length, nextCursor: null },
-    collectionPolicy: { version: COMPANY_A.policyRollout.desiredVersion, collectRawContent: false, reclaimIdleDays: 14, aggregateRetentionMonths: null },
+    collectionPolicy: { version: COMPANY_A.policyRollout.desiredVersion, collectRawContent: false, reclaimIdleDays: 14, aggregateRetentionMonths: null,
+      settingsVersion: 0, settingsUpdatedAt: null, reclaimIdleDaysSource: "default",
+      options: { reclaimIdleDays: [7, 14, 30, 60], aggregateRetentionMonths: [12, 24, 36, null] }, cleanupOperationId: null },
     // 시드 A의 적용 현황(판 2: 적용 7 · 미적용 3 · 미확인 1).
     policyRollout: { desiredVersion: COMPANY_A.policyRollout.desiredVersion, eligibleInstallations: COMPANY_A.policyRollout.eligible,
       appliedInstallations: COMPANY_A.policyRollout.applied, outdatedInstallations: COMPANY_A.policyRollout.outdated, unknownInstallations: COMPANY_A.policyRollout.unknown },
@@ -55,6 +57,10 @@ export function settingsHandlers(scenario: SettingsScenario) {
   let failSave = scenario === "save-error";
   let conflict = scenario === "conflict";
   const operations = new Map<string, { polls: number; targets: string[] }>();
+  /** 보존 정리 작업 — 보존 작업을 실행하지 않는 Storybook 에서는 대기에 머문다. */
+  const cleanups = new Set<string>();
+  const cleanup = (id: string) => ({ operationId: id, kind: "retention_cleanup", status: "pending", createdAt: new Date().toISOString(), completedAt: null,
+    results: [{ targetId: "analysis_source", status: "pending", reason: null, action: null }], canRestore: false, restoreUntil: null, retention: null });
   const operation = (id: string) => {
     const state = operations.get(id)!;
     const done = state.polls >= 2;
@@ -131,12 +137,32 @@ export function settingsHandlers(scenario: SettingsScenario) {
       return HttpResponse.json({ meta: data.meta, vendor }, { status: 201 });
     }),
     http.put(`${api}/collection-policy`, async ({ request }) => {
-      const body = await request.json() as { expectedVersion: number; collectRawContent: boolean };
-      if (body.expectedVersion !== data.collectionPolicy.version) return failure("version_conflict", 409);
-      data.collectionPolicy.version++; data.collectionPolicy.collectRawContent = body.collectRawContent;
-      const rollout = data.policyRollout;
-      rollout.desiredVersion++; rollout.outdatedInstallations += rollout.appliedInstallations; rollout.appliedInstallations = 0;
-      return HttpResponse.json({ version: data.collectionPolicy.version, collectRawContent: body.collectRawContent, confirmedAt: new Date().toISOString(), application: "future_enrollments", existingInstallationsUpdated: false });
+      const body = await request.json() as { expectedVersion: number; collectRawContent?: boolean; expectedSettingsVersion?: number; reclaimIdleDays?: number; aggregateRetentionMonths?: number | null };
+      const policy = data.collectionPolicy;
+      if (body.expectedVersion !== policy.version) return failure("version_conflict", 409);
+      const settings = "reclaimIdleDays" in body || "aggregateRetentionMonths" in body;
+      if (settings && body.expectedSettingsVersion !== policy.settingsVersion) return failure("version_conflict", 409);
+      if (body.collectRawContent !== undefined) {
+        policy.version++; policy.collectRawContent = body.collectRawContent;
+        const rollout = data.policyRollout;
+        rollout.desiredVersion++; rollout.outdatedInstallations += rollout.appliedInstallations; rollout.appliedInstallations = 0;
+      }
+      let cleanupOperationId: string | null = null;
+      if (settings) {
+        const before = policy.aggregateRetentionMonths;
+        const next = "aggregateRetentionMonths" in body ? body.aggregateRetentionMonths ?? null : before;
+        if (body.reclaimIdleDays !== undefined) { policy.reclaimIdleDays = body.reclaimIdleDays; policy.reclaimIdleDaysSource = "organization"; }
+        policy.aggregateRetentionMonths = next; policy.settingsVersion++; policy.settingsUpdatedAt = new Date().toISOString();
+        // 서버처럼 줄였을 때만 정리 작업을 만든다. Storybook 에서는 대기에 머문다.
+        if (next !== null && (before === null || next < before)) {
+          cleanupOperationId = crypto.randomUUID();
+          cleanups.add(cleanupOperationId);
+          policy.cleanupOperationId = cleanupOperationId;
+        }
+      }
+      return HttpResponse.json({ version: policy.version, collectRawContent: policy.collectRawContent, confirmedAt: new Date().toISOString(), application: "future_enrollments", existingInstallationsUpdated: false,
+        reclaimIdleDays: policy.reclaimIdleDaysSource === "organization" ? policy.reclaimIdleDays : null, aggregateRetentionMonths: policy.aggregateRetentionMonths,
+        settingsVersion: policy.settingsVersion, settingsUpdatedAt: policy.settingsUpdatedAt, cleanupOperationId });
     }),
     http.get(`${api}/installations`, ({ request }) => {
       const status = new URL(request.url).searchParams.get("policyStatus");
@@ -154,6 +180,7 @@ export function settingsHandlers(scenario: SettingsScenario) {
       return HttpResponse.json(operation(operationId), { status: 202, headers: { Location: `/api/v1/organizations/${org}/operations/${operationId}` } });
     }),
     http.get(`${api}/operations/:id`, ({ params }) => {
+      if (cleanups.has(String(params.id))) return HttpResponse.json(cleanup(String(params.id)), { headers: { "Retry-After": "5" } });
       const state = operations.get(String(params.id));
       if (!state) return failure("not_found", 404);
       state.polls++;

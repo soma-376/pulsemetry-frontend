@@ -21,6 +21,12 @@ export const operationSchema = z.object({
   })),
   canRestore: z.boolean(),
   restoreUntil: z.string().nullable(),
+  /** 보존 정리 작업이 가리키는 가장 최근 삭제 실행. 다른 종류의 작업·아직 실행 전이면 null이다. */
+  retention: z.object({
+    status: z.enum(["running", "incomplete", "logically_deleted", "failed"]),
+    requestedBefore: z.iso.datetime({ offset: true }), deletedBefore: z.iso.datetime({ offset: true }).nullable(),
+    startedAt: z.iso.datetime({ offset: true }), finishedAt: z.iso.datetime({ offset: true }).nullable(),
+  }).nullable().optional(),
 });
 export type Operation = z.infer<typeof operationSchema>;
 export type OperationPoll = { operation: Operation; retryAfterMs: number | null };

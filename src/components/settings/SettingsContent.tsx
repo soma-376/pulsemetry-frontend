@@ -21,6 +21,8 @@ import { Toggle } from "@/components/ui/Toggle";
 import { useBackendSession } from "@/lib/api/session";
 import { apiJson, ManagementError, orgPath, policySavedSchema } from "@/lib/api/management";
 import { settingsOptions, settingsVendorOptions } from "@/lib/api/settings";
+import { operationOptions } from "@/lib/api/operations";
+import { cleanupView, isShortening, retentionBoundary, retentionLabel, seoulToday } from "@/lib/policy-settings";
 import { catalogOptions } from "@/lib/api/vendor-catalog";
 import { organizationKey } from "@/lib/api/query-keys";
 import { settingsVendorRow } from "@/lib/settings-vendors";
@@ -63,7 +65,23 @@ function OrganizationSettings({ organizationId }: { organizationId: string }) {
   const policy = useMutation({ retry: false, mutationFn: (collectRawContent: boolean) => apiJson("enrollment", orgPath(organizationId, "/collection-policy"), policySavedSchema, {
     method: "PUT", body: JSON.stringify({ expectedVersion: query.data!.collectionPolicy.version, collectRawContent }),
   }), onSuccess: () => { setPolicyChoice(null); showToast("수집 정책을 저장했습니다."); void client.invalidateQueries({ queryKey: organizationKey(organizationId) }); } });
-  const forbidden = [query.error, catalog.error, vendorQuery.error, accessError, policy.error].some(error => error instanceof ManagementError && [401, 403].includes(error.status));
+  // 회수 기준·집계 보존은 manifest 판과 따로 저장하고 설정의 판으로 충돌을 막는다(백엔드 ADR 0046). 보낸 값만 바뀐다.
+  const [retentionChoice, setRetentionChoice] = useState<{ next: number | null } | null>(null);
+  const settingsSave = useMutation({ retry: false,
+    mutationFn: (change: { reclaimIdleDays: number } | { aggregateRetentionMonths: number | null }) => apiJson("enrollment", orgPath(organizationId, "/collection-policy"), policySavedSchema, {
+      method: "PUT", body: JSON.stringify({ expectedVersion: query.data!.collectionPolicy.version, expectedSettingsVersion: query.data!.collectionPolicy.settingsVersion, ...change }),
+    }),
+    onSuccess: saved => {
+      setRetentionChoice(null);
+      showToast(saved.cleanupOperationId ? "집계 보존을 저장했습니다. 정리 작업이 만들어졌습니다." : "정책을 저장했습니다.");
+      void client.invalidateQueries({ queryKey: organizationKey(organizationId) });
+    },
+    // 다른 곳에서 먼저 바꿨으면 최신 값을 다시 읽는다. 입력은 서버 값으로 돌아간다.
+    onError: error => { if (error instanceof ManagementError && error.code === "version_conflict") void query.refetch({ cancelRefetch: false }); },
+  });
+  const cleanupId = query.data?.collectionPolicy.cleanupOperationId ?? null;
+  const cleanup = useQuery({ ...operationOptions(organizationId, cleanupId), enabled: !!cleanupId });
+  const forbidden = [query.error, catalog.error, vendorQuery.error, accessError, policy.error, settingsSave.error].some(error => error instanceof ManagementError && [401, 403].includes(error.status));
   const data = forbidden ? undefined : query.data;
   const openVendor = (id: string) => {
     setAccessError(null);
@@ -109,8 +127,30 @@ function OrganizationSettings({ organizationId }: { organizationId: string }) {
           <SettingRow title="프롬프트 원문 수집" note={data.collectionPolicy.collectRawContent ? "프롬프트와 응답 본문을 수집합니다" : "프롬프트와 응답 본문을 수집하지 않습니다"}>
             <Toggle on={data.collectionPolicy.collectRawContent} label="프롬프트 원문 수집" onColor="var(--red)" disabled={!data.capabilities.editCollectionPolicy || policy.isPending} onChange={() => { policy.reset(); setPolicyChoice(!data.collectionPolicy.collectRawContent); }} />
           </SettingRow>
-          <SettingRow title="좌석 회수 기준" note="벤더별 배정·관측 정보가 확인된 좌석만 검토합니다 · 자동 회수 없음"><Select disabled value={data.collectionPolicy.reclaimIdleDays} aria-label="좌석 회수 기준"><option value={data.collectionPolicy.reclaimIdleDays}>{data.collectionPolicy.reclaimIdleDays}일</option></Select></SettingRow>
-          <SettingRow title="집계 보존" note="팀·일 단위로 합친 수치"><Select disabled value={data.collectionPolicy.aggregateRetentionMonths ?? ""} aria-label="집계 보존"><option value={data.collectionPolicy.aggregateRetentionMonths ?? ""}>{data.collectionPolicy.aggregateRetentionMonths == null ? "-" : `${data.collectionPolicy.aggregateRetentionMonths}개월`}</option></Select></SettingRow>
+          <SettingRow title="좌석 회수 기준" note={`${data.collectionPolicy.reclaimIdleDaysSource === "default" ? "서버 기본값 · " : ""}벤더별 배정·관측 정보가 확인된 좌석만 검토합니다 · 자동 회수 없음`}>
+            <Select value={data.collectionPolicy.reclaimIdleDays} aria-label="좌석 회수 기준" disabled={!data.capabilities.editCollectionPolicy || settingsSave.isPending}
+              onChange={event => { settingsSave.reset(); settingsSave.mutate({ reclaimIdleDays: Number(event.target.value) }); }}>
+              {[...new Set([...data.collectionPolicy.options.reclaimIdleDays, data.collectionPolicy.reclaimIdleDays])].sort((a, b) => a - b).map(days => <option key={days} value={days}>{days}일</option>)}
+            </Select>
+          </SettingRow>
+          <SettingRow title="집계 보존" note="팀·일·구성원 집계의 원천인 분석 원본을 보관하는 기간 · 줄이면 그 이전 기록을 지웁니다">
+            <Select value={data.collectionPolicy.aggregateRetentionMonths ?? ""} aria-label="집계 보존" disabled={!data.capabilities.editCollectionPolicy || settingsSave.isPending}
+              onChange={event => {
+                const next = event.target.value === "" ? null : Number(event.target.value);
+                settingsSave.reset();
+                // 줄이면 되돌릴 수 없는 삭제로 이어진다 — 확인한 뒤에만 저장한다.
+                if (isShortening(data.collectionPolicy.aggregateRetentionMonths, next)) setRetentionChoice({ next });
+                else settingsSave.mutate({ aggregateRetentionMonths: next });
+              }}>
+              {data.collectionPolicy.options.aggregateRetentionMonths.map(months => <option key={months ?? "none"} value={months ?? ""}>{retentionLabel(months)}</option>)}
+            </Select>
+          </SettingRow>
+          {cleanupId && <SettingRow title="보존 정리" note="가장 최근에 집계 보존을 줄인 저장의 정리 작업 · 보존 작업이 실행할 때 진행됩니다">
+            <span role="status" aria-label="보존 정리 상태" className="max-w-[320px] text-right text-xs" style={{ color: cleanup.data && cleanupView(cleanup.data.operation).tone === "failed" ? "var(--red)" : "var(--text2)" }}>
+              {cleanup.data ? cleanupView(cleanup.data.operation).text : cleanup.isError ? "정리 상태를 불러오지 못했습니다" : "정리 상태를 불러오는 중입니다…"}
+            </span>
+          </SettingRow>}
+          {settingsSave.error && !retentionChoice && <div className="border-t border-border px-4 py-3"><ErrorState variant="inline" message={settingsSave.error.message} /></div>}
           <SettingRow title="마지막 수집" note="최근 신호 수신 시각"><span className="tnum text-xs">{data.ingest.lastReceivedAt ? new Date(data.ingest.lastReceivedAt).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) : "-"}</span></SettingRow>
         </div></SettingSection>
         <SettingSection id="alerts" title="알림 규칙"><div className="rounded-lg border border-border bg-card">{data.alertRules.map((rule, index) => <SettingRow key={rule.ruleId} first={index === 0} title={labels[rule.ruleId]?.title ?? rule.ruleId} note={labels[rule.ruleId]?.note ?? ""}>
@@ -123,6 +163,17 @@ function OrganizationSettings({ organizationId }: { organizationId: string }) {
       <p className="text-xs text-text2">새로 등록하는 설치에 바로 적용됩니다. 이미 설치된 기기는 다음 보고 때 새 정책이 있다는 것을 알고, 사용자가 로그인한 기기가 스스로 받아 적용합니다. 서버가 원격으로 바꾸지는 않습니다.</p>
       <p className="text-xs text-text3">적용 여부는 수집 정책 버전의 적용 현황에서 확인합니다.</p>
       {policy.error && <ErrorState message={policy.error.message} />}
+    </Modal>
+    <Modal open={!!retentionChoice && !!data} onClose={() => { if (!settingsSave.isPending) setRetentionChoice(null); }} title="집계 보존 줄이기" width={480}
+      footer={<><div className="flex-1" /><Button disabled={settingsSave.isPending} onClick={() => setRetentionChoice(null)}>취소</Button>
+        <Button variant="danger" loading={settingsSave.isPending} loadingLabel="저장 중…" onClick={() => { if (retentionChoice) settingsSave.mutate({ aggregateRetentionMonths: retentionChoice.next }); }}>기록 삭제에 동의하고 저장</Button></>}>
+      {data && retentionChoice?.next != null && <>
+        <p className="text-xs text-text2">{retentionLabel(data.collectionPolicy.aggregateRetentionMonths)}에서 {retentionLabel(retentionChoice.next)}로 줄입니다.</p>
+        <p className="text-xs text-text">저장하면 분석 원본(팀·일·구성원 집계의 원천)에서 <strong>{retentionBoundary(seoulToday(), retentionChoice.next)} 00:00(KST) 이전</strong> 기록을 지우는 정리 작업이 만들어집니다.
+          지운 기록은 보존 기간을 다시 늘려도 돌아오지 않습니다.</p>
+        <p className="text-xs text-text3">수신 기록과 수집 이력 요약은 지우지 않습니다. 정리는 보존 작업이 실행할 때 진행되고 상태는 이 화면의 &ldquo;보존 정리&rdquo;에서 확인합니다.</p>
+      </>}
+      {settingsSave.error && <ErrorState message={settingsSave.error.message} />}
     </Modal>
     {data && <InstallationsModal key={rollout!.desiredVersion} organizationId={organizationId} rollout={rollout!} channel={data.capabilities.notifyInstallations}
       open={installOpen} onClose={() => setInstallOpen(false)} />}

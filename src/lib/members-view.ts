@@ -165,7 +165,8 @@ export function buildMembersView(view: MembersView, invitations: Invitation[] | 
         tone: summary.unassignedMembers ? "var(--orange-ink)" : "var(--text)" },
     ],
     reclaim: reclaimUnavailable
-      ? { available: false as const, message: reasonText(reclaim.reason), note: "후보 계산 안 함" }
+      // 후보를 계산하지 못해도 조직의 회수 기준(설정에서 저장한 값)은 보여 준다.
+      ? { available: false as const, message: reasonText(reclaim.reason), note: `후보 계산 안 함 · 회수 기준 ${policy.idleDays}일` }
       : { available: true as const, rows: candidateItems.map((candidate) => ({ ...candidate, lastSeen: formatKst(candidate.lastUsedAt) })),
           note: `${int(candidateItems.length)}석 표시 · 전체 ${int(reclaim.data!.totalCount)}석 · ${policy.idleDays}일 기준` },
     unassignedRows: unassigned.map((row) => ({

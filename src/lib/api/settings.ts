@@ -27,7 +27,12 @@ export const settingsSchema = z.object({
     meteredMonthToDate: z.object({ availability: z.string(), data: z.object({ actualBilledUsd: money.nullable(), equivalentCostUsd: money.nullable() }).nullable() }),
   }),
   vendors: page,
-  collectionPolicy: z.object({ version: count, collectRawContent: z.boolean(), reclaimIdleDays: count, aggregateRetentionMonths: count.nullable() }),
+  // version 은 원문 선택이 실린 manifest 판이고, 회수 기준·집계 보존은 설정의 판(settingsVersion)으로 따로 저장한다(백엔드 ADR 0046).
+  collectionPolicy: z.object({ version: count, collectRawContent: z.boolean(), reclaimIdleDays: count, aggregateRetentionMonths: count.nullable(),
+    settingsVersion: count, settingsUpdatedAt: z.string().nullable(), reclaimIdleDaysSource: z.enum(["organization", "default"]),
+    options: z.object({ reclaimIdleDays: z.array(count), aggregateRetentionMonths: z.array(count.nullable()) }),
+    // 이 조직의 가장 최근 보존 정리 작업(ADR 0047). 새로고침 뒤에도 마지막 정리의 상태를 다시 조회한다.
+    cleanupOperationId: z.string().nullable() }),
   policyRollout: z.object({ desiredVersion: count, eligibleInstallations: count, appliedInstallations: count, outdatedInstallations: count, unknownInstallations: count }),
   alertRules: z.array(z.object({ ruleId: z.string(), enabled: z.boolean(), availability: z.string(), threshold: z.object({ value: z.number(), unit: z.string() }) })),
 });
