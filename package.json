@@ -11,6 +11,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
+    "test:e2e:daemon": "playwright test --config=playwright.daemon.config.ts",
     "test:browser:mock": "playwright test --config=playwright.mock.config.ts",
     "storybook": "storybook dev -p 6006 --no-open --disable-telemetry",
     "build-storybook": "storybook build --disable-telemetry",
