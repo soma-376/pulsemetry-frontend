@@ -1,7 +1,7 @@
 # 팀 분석 API — v1 제안
 
 공통 규칙은 [README](README.md), 기간/비교/금액/관측 의미는 [개요](overview-api.md)를 따른다.
-현 화면: TeamAxisPanel, ModelScatterCard, TeamModelMixCard, UserUsageCard, TeamDetailDrawer.
+현 화면: TeamAxisPanel, ModelScatterCard, TeamVendorMixCard, UserUsageCard, TeamDetailDrawer.
 응답은 표시 문자열이 아닌 원시 수치다. 현재 buildTeams/buildRoster의 임의 사용자 생성·비용 비례 토큰 배분은 구현하지 않는다.
 
 ## 조회
@@ -42,6 +42,7 @@ type TeamAnalytics = TeamRef & {
     totalTokens: number | null;
     cumulativeSessionCount: number | null;
   }[];
+  products: ProductUsage[]; // 팀의 제품별 사용(가산 필드). 타입은 개요 문서
 };
 type TeamsResponse = {
   meta: AnalyticsMeta;
@@ -97,7 +98,8 @@ type TeamUsersResponse = {
 | 토큰 탭 백만당 비용 | equivalentCostUsd / tokens.total × 1,000,000 |
 | 세션 탭 세션당 토큰 | tokens.total / sessionCount |
 | 전주/이전 기간 증감 | 동일 팀 current/previous. 비교 비활성·미관측·이전 0의 처리는 개요 규칙 |
-| 누적 추이 | 비용/토큰은 일별 값을 누적. 세션은 cumulativeSessionCount 직접 사용 |
+| 누적 추이 | 비용/토큰은 일별 값을 누적하고 값이 없는 날부터 선을 끊는다. 세션은 cumulativeSessionCount 직접 사용(null인 날부터 끊는다) |
+| 팀별 벤더(제품) 비중 | products의 선택 축 값(equivalentCostUsd·totalTokens·sessionCount) / 팀의 같은 축 값. 하나라도 null이면 비중을 그리지 않는다. kind null은 "미확인 제품" |
 | 모델 산점도 | x=totalTokens, y=equivalentCostUsd, 점 크기=usingTeamCount |
 | 팀별 모델 구성 | 비용이면 모델 금액 비중, 토큰이면 모델 토큰 비중 |
 | 사용자 표 | users.items + summary. 비용 내림차순, 동률 memberId |
@@ -134,7 +136,9 @@ type TeamUsersResponse = {
 - 비용 합계 = 모든 사용자 페이지 비용 합계 + 미식별 비용(완전 관측일 때).
   세션이 여러 사용자를 포함하면 개인별 distinct 합은 팀 sessionCount와 다를 수 있다.
 - 추이에 모든 날짜를 포함한다. 관측 공백 이후 누적값을 확정 총액처럼 연결하지 않는다.
-  cumulativeSessionCount는 시작부터 해당일까지 관측이 불완전하면 null이다.
+  cumulativeSessionCount는 시작부터 해당일까지 관측이 불완전하면 null이다. 그 팀에 세션 없는 사용 행이 있는 날부터도 null이다.
+  여러 날에 걸친 세션은 처음 관측된 날에 한 번만 더하고, 두 팀에 귀속된 세션은 팀마다 센다. 한 번 null이 되면 그 뒤의 완전한 날도 null이다.
+- products는 현재 기간의 카탈로그 제품별 사용이다(개요의 productUsage와 같은 규칙). 목록·상세·미배정이 같은 snapshot의 같은 값을 낸다.
 
 ## 권한·빈 상태·수용 기준
 

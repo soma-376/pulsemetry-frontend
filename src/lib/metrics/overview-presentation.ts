@@ -27,8 +27,12 @@ const time = (value: string | null) => value ? new Date(value).toLocaleString("k
 /** 서버의 `dataThrough`는 확정된 마지막 날의 다음 자정이다. 표시는 그 마지막 날이다. */
 const confirmedThrough = (value: string | null) => value ? new Date(Date.parse(value) - 1).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric" }) : null;
 
-/** 비교가 나오지 않은 이유 — 서버가 비교를 내지 않은 근거(두 기간의 관측)를 그대로 옮긴다. */
-function comparisonReason(data: Overview) {
+/** 팀에서 관측된 제품 이름. 매핑 없는 관측은 "미확인 제품"이다(서버 순서 — 카탈로그 순, 미확인은 끝). */
+const productNames = (products: Overview["productUsage"]["products"] | Overview["teamUsage"]["unassigned"]["products"]) =>
+  products.map((product) => product.kind === null ? "미확인 제품" : product.displayName ?? product.kind);
+
+/** 비교가 나오지 않은 이유 — 서버가 비교를 내지 않은 근거(두 기간의 관측)를 그대로 옮긴다. 개요와 팀 분석이 같이 쓴다. */
+export function comparisonReason(data: { meta: { currentCoverage: Overview["meta"]["currentCoverage"] }; comparison: Overview["comparison"] }) {
   if (data.comparison.mode === "none") return "";
   if (data.meta.currentCoverage.status !== "complete") return "선택 기간에 수집 근거가 완전하지 않은 날이 있습니다";
   if (data.comparison.status === "available") return "";
@@ -86,11 +90,18 @@ export function presentOverview(data: Overview, settings?: OverviewSettings) {
     // 개요 API는 벤더별 일별 추이를 제공하지 않으므로 실제 조직 전체 계열만 전달한다.
     series: [{ id: "organization", name: "전체", color: "var(--purple)", values: cost }],
   };
+  // 등록 제품의 사용 관측 인원 — 서버가 관측 제품을 명시 매핑으로 이은 선택 기간의 값이다(좌석 수가 아니다).
+  // 목록에 없는 등록 제품은 이 기간에 관측된 사용이 없다는 뜻이다(0). 사용량 자체를 모르면(null) 추정하지 않는다.
+  const productUsers = (kind: string) => {
+    if (!current) return null;
+    const product = data.productUsage.products.find((item) => item.kind === kind);
+    return product ? product.activeUsers : 0;
+  };
   const vendorOverview: OverviewVendorDisplay = {
     snapshotDate: settings?.meta.asOf.slice(0, 10) ?? data.meta.endDate,
     rows: settings?.vendors.items.map((vendor) => ({
       id: vendor.vendorId, name: vendor.displayName, color: getVendorProduct(vendor.kind)?.color ?? "var(--text3)",
-      observedUsers: null, candidates: null,
+      observedUsers: productUsers(vendor.kind), candidates: null,
       purchased: vendor.contract ? vendor.contract.tiers.reduce((sum, tier) => sum + tier.seats, 0) : null,
       monthly: numeric(vendor.contract?.monthlySeatFeeUsd),
       status: CONTRACT_STATUS[vendor.contractStatus].label, contractStatus: vendor.contractStatus, startDate: vendor.contract?.effectiveFrom,
@@ -103,9 +114,9 @@ export function presentOverview(data: Overview, settings?: OverviewSettings) {
   const hasUnmapped = teams.availability !== "unavailable" && ((unmapped.activeUsers ?? 0) > 0 || Number(unmapped.equivalentCostUsd ?? 0) > 0);
   const attribution: OverviewTeamSummary = { show: teams.totalTeamCount > 1 || hasUnmapped, hasUnmapped, moreLabel: `전체 ${teams.totalTeamCount}팀`,
     comparable: comparable && teams.availability !== "unavailable", compareLabel,
-    rows: teams.topTeams.map((team) => ({ teamId: team.teamId, team: team.teamName, users: numberText(team.current.activeUsers), userCount: team.current.activeUsers, vendors: null, cost: numeric(team.current.equivalentCostUsd), costText: moneyText(team.current.equivalentCostUsd),
+    rows: teams.topTeams.map((team) => ({ teamId: team.teamId, team: team.teamName, users: numberText(team.current.activeUsers), userCount: team.current.activeUsers, vendors: productNames(team.products), cost: numeric(team.current.equivalentCostUsd), costText: moneyText(team.current.equivalentCostUsd),
       ...teamChange(team.current, team.previous, data.comparison.status) })),
-    unmappedUsers: numberText(unmapped.activeUsers), unmappedVendors: null, unattributedCostText: moneyText(unmapped.equivalentCostUsd),
+    unmappedUsers: numberText(unmapped.activeUsers), unmappedVendors: productNames(teams.unassigned.products), unattributedCostText: moneyText(unmapped.equivalentCostUsd),
     unmapped: teamChange(unmapped, teams.unassigned.previous, data.comparison.status),
   };
   const ingestText = { healthy: "수집 정상", delayed: "수집 지연", down: "수집 중단", empty: "수집 이력 없음", unknown: "확인 불가" }[data.ingest.status];

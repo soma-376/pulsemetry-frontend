@@ -9,8 +9,8 @@ test("기존 지표·그래프·벤더 표 배치와 상세 드로어를 유지�
   await expect(people).toContainText("100");
   const row = page.getByRole("table", { name: "계약·좌석 현황" }).getByRole("row").filter({ hasText: "Claude" });
   await expect(row).toContainText("100석");
-  // 조직 사용자 수나 계약 좌석으로 벤더 관측 인원·회수 후보를 추측하지 않는다.
-  await expect(row.getByRole("cell").nth(2)).toHaveText("-");
+  // 벤더 관측 인원은 서버의 제품별 사용(productUsage의 claude_team)이다. 조직 사용자 수(100)나 계약 좌석(100석)으로 추측하지 않는다. 회수 후보는 원천이 없다.
+  await expect(row.getByRole("cell").nth(2)).toHaveText("77명");
   await expect(row.getByRole("cell").nth(3)).toHaveText("-");
   await expect(page.getByRole("region", { name: "월 좌석 계약액" })).toContainText("$4,800.00");
   await page.getByRole("button", { name: "Claude 벤더 상세" }).click();

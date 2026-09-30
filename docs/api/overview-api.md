@@ -199,6 +199,7 @@ type OverviewResponse = {
       current: TeamPeriod;
       previous: TeamPeriod | null;
       topModel: TopModel | null;
+      products: ProductRef[]; // 그 팀에서 관측된 제품(가산 필드)
     }[]; // 최대 3개
     otherTeams: {
       count: number;
@@ -208,8 +209,22 @@ type OverviewResponse = {
     unassigned: {
       current: TeamPeriod;
       previous: TeamPeriod | null;
+      products: ProductRef[];
     };
   };
+  productUsage: {
+    availability: Availability;
+    reason: string | null;
+    products: ProductUsage[];
+  };
+};
+/** 카탈로그 제품(등록 제품의 kind). kind가 null이면 어느 등록 제품에도 매핑되지 않은 관측이다(이름도 null). */
+type ProductRef = { kind: string | null; displayName: string | null };
+type ProductUsage = ProductRef & {
+  activeUsers: number | null; // 관측 인원. 좌석 수가 아니다
+  sessionCount: number | null;
+  totalTokens: number | null;
+  equivalentCostUsd: Money | null;
 };
 ```
 
@@ -245,6 +260,16 @@ type OverviewResponse = {
 modelId는 공급자를 포함해 유일해야 하며 미확인 모델도 별도 ID로 포함해 총액을 보존한다.
 effectiveCostPerMillionTokensUsd = 모델 환산가치 / 모델 총 토큰 × 1,000,000.
 이는 입력/출력/캐시가 섞인 **실효 단가**다. 공급자 공시 단일 단가라고 표시하지 않는다.
+
+### 제품별 사용 (가산 필드)
+
+- 관측 제품(`claude_code`·`codex` 등)은 카탈로그의 명시 매핑으로만 등록 제품(`kind`)에 잇는다. 모델 이름이나 공급사로 추정하지 않는다.
+  매핑 없는 관측은 `kind: null` 한 항목으로 끝에 둔다(화면은 "미확인 제품").
+- 순서는 카탈로그 순서, 사용량 행이 없는 제품은 넣지 않는다. 값은 사용량 null 규칙 그대로다(세션 없는 행 → 세션 null, 의미가 섞인 토큰 → 토큰 null, 단가 없는 행 → 금액 null).
+- 제품 금액이 모두 있으면 합은 조직(또는 팀) 금액과 같다. 토큰은 제품 안에서만 더한다 — 조직·팀 토큰이 null이어도 제품 토큰은 있을 수 있다.
+- 벤더 카드의 "사용 관측 인원"은 등록 제품의 `activeUsers`다. 목록에 없는 등록 제품은 그 기간에 관측된 사용이 없다("미관측"). `usage.current`가 null이면 값이 없다(`-`).
+- 상위 팀 표의 "사용 벤더"는 `topTeams[].products`·`unassigned.products`의 이름이다.
+- `availability`: 제품이 없으면 `unavailable`, 금액·토큰이 모두 있으면 `available`, 아니면 `partial`.
 
 ### 팀별 사용량
 

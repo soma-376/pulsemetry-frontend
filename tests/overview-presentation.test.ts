@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import example from "../docs/api/overview-response.example.json";
 import { overviewSchema } from "../src/lib/api/overview";
+import { overviewSettingsSchema } from "../src/lib/api/overview-vendors";
 import { presentOverview } from "../src/lib/metrics/overview-presentation";
 import { nullableLinePath } from "../src/components/charts/scale";
 
@@ -17,8 +18,25 @@ test("기존 5개 지표에 서버 값을 연결하며 미제공 값은 0으로 
   assert.equal(model.kpis[2].value, "-");
   assert.equal(model.kpis[4].value, "-");
   assert.equal(data.usage.current!.equivalentCostUsd, "0.525980");
-  assert.equal(model.attribution.rows[0].vendors, null);
   assert.deepEqual(model.vendorOverview.rows, []);
+});
+test("등록 제품의 사용 관측 인원과 팀별 사용 제품은 서버의 제품별 사용에서 오고 매핑 없는 관측은 미확인 제품이다", () => {
+  const data = overviewSchema.parse(example);
+  const settings = overviewSettingsSchema.parse({ meta: { organizationId: data.meta.organizationId, asOf: "2026-09-14T00:00:00Z", snapshotId: "s" }, summary: { monthlySeatFeeUsd: null },
+    catalog: { plans: [] }, vendors: { totalCount: 3, nextCursor: null, items: [
+      { vendorId: "v1", displayName: "Claude", kind: "claude_team", state: "configured", contractStatus: "active", contract: null },
+      { vendorId: "v2", displayName: "Codex", kind: "openai_biz", state: "configured", contractStatus: "active", contract: null },
+      { vendorId: "v3", displayName: "Cursor", kind: "cursor", state: "configured", contractStatus: "active", contract: null },
+    ] } });
+  const model = presentOverview(data, settings);
+  // 목록에 없는 등록 제품(Cursor)은 그 기간에 관측된 사용이 없다 — 0("미관측"). 제품의 인원이 null이면 null이다.
+  assert.deepEqual(model.vendorOverview.rows.map((row) => [row.name, row.observedUsers]), [["Claude", 77], ["Codex", 28], ["Cursor", 0]]);
+  assert.deepEqual(model.attribution.rows.map((row) => row.vendors), [["Claude (Anthropic)", "ChatGPT / Codex (OpenAI)"], ["Claude (Anthropic)"], ["Claude (Anthropic)", "ChatGPT / Codex (OpenAI)"]]);
+  assert.deepEqual(model.attribution.unmappedVendors, ["Claude (Anthropic)", "미확인 제품"]);
+  data.productUsage.products[0].activeUsers = null;
+  assert.equal(presentOverview(data, settings).vendorOverview.rows[0].observedUsers, null);
+  data.usage.current = null;
+  assert.deepEqual(presentOverview(data, settings).vendorOverview.rows.map((row) => row.observedUsers), [null, null, null]);
 });
 test("미관측 날짜를 원래 차트에서 연결하지 않고 단일 모델은 단일 모델 카드 데이터를 유지한다", () => {
   const data = overviewSchema.parse(example);

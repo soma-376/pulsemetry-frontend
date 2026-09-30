@@ -1,10 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mockOnboarding } from "./onboarding-fixture";
 import { overviewFixture, overviewUrl } from "./overview-fixture";
+import { mockTeams } from "./teams-fixture";
 
 /** UI fixture 테스트 전용. 실제 Spring 인증 검증은 tests/e2e/seed-login.spec.ts에서 수행한다. */
 export async function mockSeedAuth(page: Page) {
   await mockOnboarding(page);
+  await mockTeams(page);
   await page.route("**/api/dev/seed-login", async (route) => {
     const email = route.request().postDataJSON().email;
     if (email !== "admin@seed-a.example.test") return route.fulfill({ status: 400, json: { error: "unknown_account" } });

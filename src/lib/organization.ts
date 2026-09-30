@@ -6,7 +6,6 @@ import type { VendorRecord } from "@/mocks/vendors";
 export { INITIAL_ORGANIZATION, SEED_TEAMS } from "@/mocks/organization";
 export type Team = { id: string; name: string; sourceName: string | null };
 export type OrganizationState = {
-  teams: Team[];
   seatReviewDays: number;
   session: { email: string; name: string; organizationId: string } | null;
   promptRaw: boolean | null;

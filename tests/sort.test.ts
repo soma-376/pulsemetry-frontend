@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { nextSort, sortRows, type SortValue } from "../src/lib/sort";
-import { buildTeams } from "../src/lib/metrics/teams";
-import { usd } from "../src/lib/format";
 
 test("sorts raw numeric values, leaves input unchanged and keeps missing values last in both directions", () => {
   const rows: { id: string; value: SortValue }[] = [
@@ -24,18 +22,3 @@ test("text sorting handles Korean and numeric names and has deterministic ties",
   assert.deepEqual(nextSort({ key: "name", direction: "desc" }, "cost", "desc"), { key: "cost", direction: "desc" });
 });
 
-test("team values remain numeric and missing comparisons are not sorted as zero", () => {
-  const model = buildTeams("none");
-  for (const axis of Object.values(model.axes)) {
-    assert.ok(axis.rows.every((row) => row.deltaValue === null));
-    assert.ok(axis.rows.every((row) => Number.isFinite(row.totalValue) && Number.isFinite(row.perUserValue) && Number.isFinite(row.unitValue)));
-  }
-});
-
-test("usage subtotal uses the displayed rows after sorting and pagination", () => {
-  const model = buildTeams();
-  const data = model.users(model.teams[0].team);
-  const selected = [...data.rows].sort((a, b) => b.costValue - a.costValue).slice(0, 3);
-  const total = selected.reduce((sum, row) => sum + row.costValue, 0);
-  assert.ok(data.sumNote(selected).startsWith(`3명 합계 ${usd(total)} · 팀 전체`));
-});
