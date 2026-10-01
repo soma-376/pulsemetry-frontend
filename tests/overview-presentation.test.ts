@@ -114,3 +114,26 @@ test("서버가 비교를 냈더라도 선택 기간이 완전하지 않으면 �
   assert.ok(model.kpis.filter((_, index) => index !== 2 && index !== 4).every((kpi) => kpi.noDelta && kpi.noDeltaReason === "선택 기간에 수집 근거가 완전하지 않은 날이 있습니다"));
   assert.equal(model.attribution.comparable, false);
 });
+test("계약·좌석 표의 회수 후보와 배정 좌석은 서버 회수 후보 목록·좌석 원장에서 오고, 읽지 못하면 모른다", () => {
+  const data = overviewSchema.parse(example);
+  const base = overviewSettingsSchema.parse({ meta: { organizationId: data.meta.organizationId, asOf: "2026-09-14T00:00:00Z", snapshotId: "s" }, summary: { monthlySeatFeeUsd: null },
+    catalog: { plans: [] }, vendors: { totalCount: 2, nextCursor: null, items: [
+      { vendorId: "v1", displayName: "Claude", kind: "claude_team", state: "configured", contractStatus: "active", contract: null,
+        seats: { availability: "partial", reason: "seat_sync_outdated", data: { assigned: 5, contracted: 10 } } },
+      { vendorId: "v3", displayName: "Cursor", kind: "cursor", state: "configured", contractStatus: "active", contract: null,
+        seats: { availability: "unavailable", reason: "seat_source_not_recorded", data: null } },
+    ] } });
+  const counted = presentOverview(data, { ...base, candidates: { availability: "partial", byVendor: { v1: 2 } } }).vendorOverview;
+  assert.deepEqual(counted.rows.map((row) => [row.name, row.candidates, row.assigned, row.seatsReason]), [["Claude", 2, 5, null], ["Cursor", 0, null, "seat_source_not_recorded"]]);
+  assert.equal(counted.candidatesPartial, true);
+  // 회수 후보 목록을 읽지 못했으면 0이 아니라 모른다.
+  assert.deepEqual(presentOverview(data, { ...base, candidates: null }).vendorOverview.rows.map((row) => row.candidates), [null, null]);
+});
+test("월 좌석 계약액의 설명은 서버의 좌석 효율(좌석료 배분 추정 대비 환산가치)만 쓴다", () => {
+  const data = overviewSchema.parse(example);
+  data.seats = { ...data.seats, availability: "partial", reason: "product_unobservable", allocationMethod: "estimated_30_day",
+    current: { contractedSeats: 10, activeSeats: null, monthlyFeeUsd: "300", allocatedFeeUsd: "70", equivalentCostUsd: "1", efficiency: 1 / 70 }, previous: null, reclaimEstimate: null };
+  assert.match(presentOverview(data).kpis[2].caption, /기간 좌석료 배분 추정 \$70\.00 대비 환산가치 1\.4% · 일부 제품 제외/);
+  data.seats = { ...data.seats, availability: "unavailable", reason: "not_applicable", current: null };
+  assert.doesNotMatch(presentOverview(data).kpis[2].caption, /배분/);
+});

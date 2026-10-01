@@ -5,14 +5,28 @@ import { changeText, groupModels, moneyText, numberText, numeric } from "@/lib/a
 import { signedUsd } from "@/lib/format";
 import { getVendorProduct } from "@/lib/vendor-catalog";
 import type { OverviewModel } from "./overview";
-import type { OverviewVendorsModel } from "./overview-vendors";
 
 export type OverviewChart = Omit<OverviewModel["chart"], "cost" | "series"> & {
   cost: (number | null)[];
   series: { id: string; name: string; color: string; values: (number | null)[] }[];
 };
-export type OverviewVendorDisplay = Omit<OverviewVendorsModel, "rows"> & {
-  rows: (Omit<OverviewVendorsModel["rows"][number], "observedUsers"> & { observedUsers: number | null; contractStatus: ContractStatus; startDate?: string })[];
+/** 개요의 계약·좌석 표 — 서버 설정(계약·좌석 원장)과 회수 후보 목록, 개요의 제품별 관측에서 만든다. 메모리 좌석 데이터를 쓰지 않는다. */
+export type OverviewVendorDisplay = {
+  snapshotDate: string;
+  rows: {
+    id: string; name: string; color: string;
+    /** 선택 기간의 사용 관측 인원(좌석 수가 아니다). 모르면 null */
+    observedUsers: number | null;
+    /** 회수 후보 수 — 서버 회수 후보 목록을 제품별로 센 값. 목록을 읽지 못했으면 null */
+    candidates: number | null;
+    purchased: number | null; monthly: number | null;
+    contractStatus: ContractStatus; status: string; startDate?: string;
+    contracts: { id: string; name: string; plan: string; tiers: { label: string; seats: number; fee: number }[]; confirmed: boolean; term?: string }[];
+    /** 좌석 원장의 배정 좌석(서버). 원장을 쓸 수 없으면 null 과 사유. */
+    assigned?: number | null; seatsReason?: string | null;
+  }[];
+  /** 회수 후보가 판정하지 못한 좌석을 뺀 목록인가(서버 partial). */
+  candidatesPartial?: boolean;
 };
 type TeamChange = { changeText: string; contrib: number | null; contribText: string };
 export type OverviewTeamSummary = {
@@ -47,6 +61,16 @@ function teamChange(current: { equivalentCostUsd: string | null }, previous: { e
 }
 
 /** 기존 개요 컴포넌트의 입력으로만 변환한다. 미제공 값을 목 데이터나 0으로 채우지 않는다. */
+/**
+ * 좌석과 효율(서버 개요의 `seats` — 좌석 원장·관측 매핑 범위) — 기간 좌석료 배분 추정 대비 환산가치. 서버가 내지 않으면 쓰지 않는다(추정하지 않는다).
+ */
+function seatEfficiency(data: Overview): string | null {
+  const current = data.seats.current;
+  if (data.seats.availability === "unavailable" || !current) return null;
+  const efficiency = current.efficiency === null ? "-" : `${numberText(Math.round(current.efficiency * 1000) / 10)}%`;
+  return `기간 좌석료 배분 추정 ${moneyText(current.allocatedFeeUsd)} 대비 환산가치 ${efficiency}${data.seats.availability === "partial" ? " · 일부 제품 제외" : ""}`;
+}
+
 export function presentOverview(data: Overview, settings?: OverviewSettings) {
   const current = data.usage.current;
   const previous = data.usage.previous;
@@ -70,7 +94,7 @@ export function presentOverview(data: Overview, settings?: OverviewSettings) {
   const definitions = [
     { label: "사용 관측 인원", value: numberText(current?.activeUsers), unit: "명", now: current?.activeUsers, before: previous?.activeUsers, previousText: `${numberText(previous?.activeUsers)}명`, def: "선택 기간에 사용 신호가 관측된 고유 구성원 수 · 여러 벤더를 사용해도 한 명으로 계산", caption: "선택 기간 고유 구성원 · 벤더 좌석 수와 별개", good: true, bad: false },
     { label: "토큰 비용", value: moneyText(current?.equivalentCostUsd), unit: ` / ${current?.tokens.total == null ? "-" : `${numberText(current.tokens.total / 1_000_000)}M`}`, now: numeric(current?.equivalentCostUsd), before: numeric(previous?.equivalentCostUsd), previousText: moneyText(previous?.equivalentCostUsd), def: "토큰 × 공시 단가 = 사용 환산액 · 실제 청구액과 별개", caption: `${topName.replace("claude-", "")} 환산가치 ${topShare}`, good: true, bad: false },
-    { label: "월 좌석 계약액", value: moneyText(settings?.summary.monthlySeatFeeUsd), unit: "", now: null, before: null, previousText: "", def: "유효한 좌석제 계약의 수량 × 월 단가 합계(USD) · 종량제·추가 사용료 제외 · 실제 청구액과 별개", caption: settings ? ["유효 계약 기준", contractSummaryNotice(settings.vendors.items)].filter(Boolean).join(" · ") : "유효 계약 기준 · 조회 기간과 별개", good: false, bad: false },
+    { label: "월 좌석 계약액", value: moneyText(settings?.summary.monthlySeatFeeUsd), unit: "", now: null, before: null, previousText: "", def: "유효한 좌석제 계약의 수량 × 월 단가 합계(USD) · 종량제·추가 사용료 제외 · 실제 청구액과 별개", caption: [settings ? ["유효 계약 기준", contractSummaryNotice(settings.vendors.items)].filter(Boolean).join(" · ") : "유효 계약 기준 · 조회 기간과 별개", seatEfficiency(data)].filter(Boolean).join(" · "), good: false, bad: false },
     { label: "세션", value: numberText(current?.sessionCount), unit: "", now: current?.sessionCount, before: previous?.sessionCount, previousText: numberText(previous?.sessionCount), def: "세션 = 도구 프로세스 1회 실행 · fresh = 이어하기 아님", caption: `사용자당 ${current?.activeUsers && current.sessionCount != null ? numberText(current.sessionCount / current.activeUsers) : "-"}회 · 세션당 ${current?.sessionCount && current.equivalentCostUsd !== null ? moneyText(String(Number(current.equivalentCostUsd) / current.sessionCount)) : "-"}`, good: false, bad: false },
     { label: "보안 경보 및 알림", value: numberText(data.alerts.availability === "unavailable" ? null : data.alerts.unacknowledgedTotal), unit: "건", now: null, before: null, previousText: "", def: "현재 미확인 보안 경보 및 비용 알림", caption: `현재 미확인 · 보안 ${numberText(data.alerts.availability === "unavailable" ? null : data.alerts.security)} · 비용 ${numberText(data.alerts.availability === "unavailable" ? null : data.alerts.cost)}`, good: false, bad: data.alerts.availability !== "unavailable" && (data.alerts.unacknowledgedTotal ?? 0) > 0 },
   ];
@@ -99,9 +123,13 @@ export function presentOverview(data: Overview, settings?: OverviewSettings) {
   };
   const vendorOverview: OverviewVendorDisplay = {
     snapshotDate: settings?.meta.asOf.slice(0, 10) ?? data.meta.endDate,
+    candidatesPartial: settings?.candidates?.availability === "partial",
     rows: settings?.vendors.items.map((vendor) => ({
       id: vendor.vendorId, name: vendor.displayName, color: getVendorProduct(vendor.kind)?.color ?? "var(--text3)",
-      observedUsers: productUsers(vendor.kind), candidates: null,
+      observedUsers: productUsers(vendor.kind),
+      // 회수 후보는 서버 회수 후보 목록을 제품별로 센 값이다. 목록을 읽지 못했으면 모른다(null).
+      candidates: settings.candidates ? settings.candidates.byVendor[vendor.vendorId] ?? 0 : null,
+      assigned: vendor.seats?.data?.assigned ?? null, seatsReason: vendor.seats?.data ? null : vendor.seats?.reason ?? null,
       purchased: vendor.contract ? vendor.contract.tiers.reduce((sum, tier) => sum + tier.seats, 0) : null,
       monthly: numeric(vendor.contract?.monthlySeatFeeUsd),
       status: CONTRACT_STATUS[vendor.contractStatus].label, contractStatus: vendor.contractStatus, startDate: vendor.contract?.effectiveFrom,

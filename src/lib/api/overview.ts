@@ -24,7 +24,9 @@ export const overviewSchema = z.object({
   comparison,
   ingest: z.object({ status: z.enum(["healthy", "delayed", "down", "empty", "unknown"]), reason, asOf: z.iso.datetime({ offset: true }), lastReceivedAt: z.iso.datetime({ offset: true }).nullable(), windowMinutes: z.number().positive(), activeInstallations: count, observedMembers: count, eligibleMembers: count, coverageRatio: z.number().min(0).max(1).nullable() }),
   usage: z.object({ current: usage.nullable(), previous: usage.nullable() }),
-  seats: z.object({ availability, reason, allocationMethod: z.enum(["contract_proration", "estimated_30_day"]).nullable(), current: seatPeriod.nullable(), previous: seatPeriod.nullable(), reclaimEstimate: z.object({ idleSeats: count, monthlySavingsUsd: money, efficiencyAfterReclaim: z.number().nonnegative().nullable() }).nullable() }),
+  seats: z.object({ availability, reason, allocationMethod: z.enum(["contract_proration", "estimated_30_day"]).nullable(), current: seatPeriod.nullable(), previous: seatPeriod.nullable(), reclaimEstimate: z.object({ idleSeats: count, monthlySavingsUsd: money, efficiencyAfterReclaim: z.number().nonnegative().nullable() }).nullable(),
+    /** 범위 제품의 회수 후보 수(서버 가산 — ADR 0048). 판정할 수 없으면 null. */
+    reclaimCandidates: count.optional() }),
   alerts: z.object({ availability, reason, unacknowledgedTotal: count, security: count, cost: count }),
   trend: z.object({ bucket: z.literal("day"), points: z.array(z.object({ date: z.iso.date(), observation: z.enum(["complete", "partial", "unobserved"]), equivalentCostUsd: money, allocatedSeatCostUsd: money, totalTokens: count })) }),
   modelMix: z.object({ availability, reason, models: z.array(z.object({ modelId: z.string(), displayName: z.string(), equivalentCostUsd: money, totalTokens: count, effectiveCostPerMillionTokensUsd: money })) }),

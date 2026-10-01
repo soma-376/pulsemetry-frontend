@@ -3,6 +3,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 import { apiJson, managementKey, ManagementError, orgPath, readOptions } from "./management";
 import { overviewSchema } from "./overview";
+import { seatSourceSchema } from "./seats";
 
 const money = z.string().regex(/^\d+(?:\.\d+)?$/);
 const count = z.number().int().nonnegative();
@@ -12,10 +13,18 @@ export const contractSchema = z.object({
   tiers: z.array(z.object({ tierId: z.string(), label: z.string(), seats: count, monthlyFeePerSeatUsd: money })),
   monthlySeatFeeUsd: money.nullable(), confirmedAt: z.string(), confirmedBy: z.string(),
 });
+const section = <T extends z.ZodType>(data: T) => z.object({ availability: z.enum(["available", "partial", "unavailable"]), reason: z.string().nullable(), data: data.nullable() });
+/** 벤더 청구 누계(서버 ADR 0050) — 환산 비용이나 계약액이 아니다. `equivalentCostUsd` 는 이 절에서 늘 null 이다. */
+export const meteredPeriodSchema = z.object({ startDate: z.string(), endDate: z.string(), equivalentCostUsd: money.nullable(), actualBilledUsd: money.nullable(),
+  billingKind: z.string().nullable().optional(), finalized: z.boolean().nullable().optional(), source: z.string().nullable().optional(), fetchedAt: z.string().nullable().optional() });
 export const settingsVendorSchema = z.object({
   vendorId: z.string(), displayName: z.string(), kind: z.string(), source: z.string(), version: count,
   state: z.string(), contractStatus: contractStatusSchema, contract: contractSchema.nullable(), observation: z.string(),
   firstSeenAt: z.string().nullable(), lastSeenAt: z.string().nullable(), activeUsers7d: count.nullable(), activeUsers30d: count.nullable(),
+  // 좌석 원천·좌석 수·종량 지출(서버 가산 — ADR 0048·0050). 옛 서버에는 없다.
+  seatSource: seatSourceSchema.optional(),
+  seats: section(z.object({ assigned: count, contracted: count.nullable(), unallocated: count.nullable() })).optional(),
+  meteredMonthToDate: section(meteredPeriodSchema).optional(),
 });
 export type SettingsVendor = z.infer<typeof settingsVendorSchema>;
 export const settingsVendorResponseSchema = z.object({ meta, vendor: settingsVendorSchema });
@@ -24,7 +33,8 @@ export const settingsSchema = z.object({
   meta, ingest: overviewSchema.shape.ingest,
   capabilities: z.object({ editContracts: z.boolean(), editCollectionPolicy: z.boolean(), editAlertRules: z.boolean(), notifyInstallations: z.boolean() }),
   summary: z.object({ configuredVendors: count, unconfiguredVendors: count, monthlySeatFeeUsd: money.nullable(), contractedSeats: count.nullable(), activeSeats7d: count.nullable(),
-    meteredMonthToDate: z.object({ availability: z.string(), data: z.object({ actualBilledUsd: money.nullable(), equivalentCostUsd: money.nullable() }).nullable() }),
+    assignedSeats: count.nullable().optional(),
+    meteredMonthToDate: z.object({ availability: z.string(), reason: z.string().nullable().optional(), data: z.object({ actualBilledUsd: money.nullable(), equivalentCostUsd: money.nullable() }).nullable() }),
   }),
   vendors: page,
   // version 은 원문 선택이 실린 manifest 판이고, 회수 기준·집계 보존은 설정의 판(settingsVersion)으로 따로 저장한다(백엔드 ADR 0046).

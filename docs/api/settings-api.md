@@ -47,10 +47,16 @@ type Vendor = {
   meteredMonthToDate: Section<{
     startDate: string;
     endDate: string;
-    equivalentCostUsd: Money;
-    actualBilledUsd: Money | null;
+    equivalentCostUsd: Money | null;  // 서버는 이 절에서 늘 null(환산 비용은 개요·팀의 제품별 사용)
+    actualBilledUsd: Money | null;    // 벤더 청구 누계(서버 ADR 0050) — 환산 비용·계약액이 아니다
+    billingKind?: "usage_cost" | "usage_spend" | null;  // 가산: 이번 달 사용 비용 · 이번 청구 주기 사용 지출
+    finalized?: boolean | null;                         // 가산: false 면 벤더가 고칠 수 있는 진행 중 값
+    source?: "connector" | "seed" | null;               // 가산: seed 는 개발 시드(실제 청구 아님)
+    fetchedAt?: string | null;
   }>;
   checks: { code: string; severity: "info" | "warning" }[];
+  seatSource?: SeatSource;                                             // 서버 가산(ADR 0048) — 아래 "좌석 원천·벤더 연결"
+  seats?: Section<{ assigned: number; contracted: number | null; unallocated: number | null }>;  // 서버 가산 — 좌석 원장
 };
 type CollectionPolicy = {
   version: number; // 원문 선택이 실린 manifest 판(설치에 배포하는 정책)
@@ -92,8 +98,9 @@ type SettingsResponse = {
     unconfiguredVendors: number;
     monthlySeatFeeUsd: Money | null;
     contractedSeats: number | null;
-    activeSeats7d: number | null;
-    meteredMonthToDate: Section<{ equivalentCostUsd: Money | null; actualBilledUsd: Money | null }>;
+    activeSeats7d: number | null;     // 지난 7일 그 제품을 쓴 배정 좌석(좌석 원장) — 판정할 수 없으면 null
+    assignedSeats?: number | null;    // 서버 가산 — 배정 좌석 합(쓸 수 있는 원장만)
+    meteredMonthToDate: Section<{ equivalentCostUsd: Money | null; actualBilledUsd: Money | null }>;  // 모든 제품이 같은 기간 값을 가질 때만 합(아니면 사유)
   };
   catalog: {
     kinds: { kind: string; displayName: string }[];
@@ -193,11 +200,43 @@ GET 단건 응답 ETag도 같은 형식이다. 저장은 계약과 displayName�
 - 사용자가 계약 좌석보다 많다는 것만으로 입력 오류를 확정하지 않는다.
   계정/좌석 대응, 좌석 순환, 종량제 사용이 있을 수 있으므로 checks 경고와 근거를 반환한다.
 - 신호 없는 벤더를 미사용 좌석으로 간주하지 않는다. activeSeats7d는 실제 좌석 대응·충분한 관측이 있어야 제공한다.
-- 종량 환산 비용과 실제 청구액은 다르다. 실제 인보이스 원천이 없으면 actualBilledUsd=null.
+- 종량 환산 비용과 실제 청구액은 다르다. actualBilledUsd 는 벤더 청구·비용 API의 누계뿐이고(Claude Enterprise·Cursor Enterprise), 없으면 그 벤더만 사유와 함께 null.
   화면의 “입력 없이 확정”, “콘솔 오차 0.4%” 같은 고정 문구는 실제 연동 시 제거해야 한다.
 - 7일/30일 사용자는 asOf가 속한 조직 날짜를 끝으로 하는 달력 날짜 범위. 당일은 부분 관측이다.
   월 사용량은 조직 시간 기준 이번 달 1일부터 asOf까지이고 월 전체 예상액이 아니다.
 - summary는 목록 전체 범위다. 일부 계약 누락을 0원으로 합쳐 확정 총액으로 보이지 않게 한다.
+
+## 좌석 원천·벤더 연결·좌석 기록
+
+서버 enrollment 명세 §12 "벤더 연결"·"좌석 수동 기록"·"좌석 회수·복원"(ADR 0048·0049).
+
+```ts
+type SeatSource = {
+  authority: "connector" | "manual"; provisional: boolean;
+  connector: { connectorId: string; accountKind: "email" | "github_login"; capabilities: string[]; settingKeys: string[]; supported: string[] } | null;
+  connection: { connectionId: string; version: number; connectorId: string; settings: Record<string, string>;
+    credential: { configured: true; updatedAt: string };   // 비밀은 다시 오지 않는다
+    check: { status: string; checkedAt: string | null };
+    sync: SyncState; billing?: SyncState | null; createdAt: string; updatedAt: string } | null;
+};
+type SyncState = { status: "pending" | "succeeded" | "failing"; lastSucceededAt: string | null; lastFailedAt: string | null; lastError: string | null };
+```
+
+| 요청 | 본문 / 결과 |
+| --- | --- |
+| PUT /vendors/{vendorId}/connection | { expectedVersion(새 연결 0), settings, credential } → 200 { seatSource } |
+| DELETE /vendors/{vendorId}/connection | If-Match: "connection-{version}" → 204 |
+| POST /vendors/{vendorId}/connection/verify | 없음 → 200 { seatSource } |
+| POST /vendors/{vendorId}/connection/sync | {} → 202 OperationResponse(kind seat_sync) |
+| GET /vendors/{vendorId}/seats | limit=50, cursor, snapshotId → VendorSeatsResponse(대시보드) |
+| POST /vendors/{vendorId}/seats | { account, tierId?, note?, memberId?, expectedVersion?(다시 배정) } → 201·200 |
+| PATCH /vendors/{vendorId}/seats/{seatId} | { expectedVersion, tierId?, note?, memberId?, memberLink?: "automatic" } → 200 |
+| POST /vendors/{vendorId}/seats/{seatId}/release | { expectedVersion } → 200 |
+| POST /vendors/{vendorId}/seats/import | { mode: "preview" \| "apply", csv } → 200 { import, provisional } · 오류면 422 seat_import_invalid + details |
+
+- 자격증명은 저장 요청에만 싣는다. 화면은 저장 뒤 입력을 지우고 다시 보여 주지 않는다(브라우저 저장소에도 두지 않는다).
+- 연결이 있는 제품은 동기화가 좌석을 정한다 — 수동 배정·해제·가져오기는 409 connector_managed. 보정(구성원 연결·유형·메모)은 된다.
+- CSV 열은 account(필수)·status·tier·member_email뿐이다. 파일의 행만 바꾸고, 오류가 하나라도 있으면 아무것도 적용하지 않는다.
 
 ## 수집 정책
 

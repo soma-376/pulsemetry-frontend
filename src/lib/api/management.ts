@@ -4,7 +4,9 @@ import { z } from "zod";
 import { sessionFetch } from "./session";
 import { retryAfterMs } from "./overview";
 
-const errorSchema = z.object({ error: z.object({ code: z.string(), message: z.string(), fieldErrors: z.array(z.object({ field: z.string(), code: z.string() })).optional() }) });
+const errorSchema = z.object({ error: z.object({ code: z.string(), message: z.string(), fieldErrors: z.array(z.object({ field: z.string(), code: z.string() })).optional() }),
+  /** 구조화된 사유(예: CSV 가져오기의 행별 오류) — 서버가 가산으로 싣는다. */
+  details: z.unknown().optional() });
 const messages: Record<string, string> = {
   vendor_already_registered: "이미 등록된 제품입니다. 기존 제품의 계약을 수정하세요.",
   version_conflict: "다른 곳에서 변경되었습니다. 최신 내용을 확인한 뒤 다시 시도하세요.",
@@ -34,7 +36,7 @@ const messages: Record<string, string> = {
   connector_unavailable: "이 계약 플랜에는 연결할 수 있는 커넥터가 없습니다.", credential_key_unavailable: "서버의 자격증명 암호화 키가 없습니다. 서버 관리자에게 문의하세요.",
 };
 export class ManagementError extends Error {
-  constructor(public code: string, public status: number, public retryAfter = 0, public fields: { field: string; code: string }[] = []) {
+  constructor(public code: string, public status: number, public retryAfter = 0, public fields: { field: string; code: string }[] = [], public details: unknown = undefined) {
     const labels: Record<string, string> = { kind: "제품", displayName: "표시 이름", "contract.planId": "플랜", "contract.effectiveFrom": "계약 기간", "contract.effectiveTo": "계약 종료일", "contract.tiers": "좌석 구성", "contract.termNote": "계약 메모", teamName: "팀 이름", teamId: "팀", role: "역할", memberId: "구성원", assignments: "배정 목록", installationIds: "설치 목록", expectedPolicyVersion: "정책 판" };
     const fieldMessage = fields.map(field => labels[field.field]).filter(Boolean).join(", ");
     super((messages[code] ?? "요청을 처리하지 못했습니다. 입력값과 연결 상태를 확인해 주세요.") + (fieldMessage ? ` 확인할 항목: ${fieldMessage}` : ""));
@@ -49,7 +51,8 @@ export async function apiResponse<T>(service: "dashboard" | "enrollment", path: 
   const response = await sessionFetch(`${base.replace(/\/$/, "")}/api/v1${path}`, { ...init, credentials: "omit", cache: "no-store", headers: { ...(init.body ? { "Content-Type": "application/json" } : {}), ...init.headers } });
   if (!response.ok) {
     const parsed = errorSchema.safeParse(await response.json().catch(() => null));
-    throw new ManagementError(parsed.success ? parsed.data.error.code : "unavailable", response.status, retryAfterMs(response.headers.get("Retry-After")), parsed.success ? parsed.data.error.fieldErrors : []);
+    throw new ManagementError(parsed.success ? parsed.data.error.code : "unavailable", response.status, retryAfterMs(response.headers.get("Retry-After")),
+      parsed.success ? parsed.data.error.fieldErrors : [], parsed.success ? parsed.data.details : undefined);
   }
   const parsed = schema.safeParse(response.status === 204 ? undefined : await response.json());
   if (!parsed.success) throw new ManagementError("invalid_response", 422);

@@ -148,6 +148,13 @@ const SEAT_REASONS: Record<string, string> = {
   invalid_credentials: "벤더가 자격증명을 거절함", insufficient_permission: "자격증명의 권한 부족", vendor_rejected: "벤더가 요청을 거절함",
   directory_managed: "IdP가 관리하는 구성원이라 벤더가 거절함", rate_limited: "벤더 호출 한도 초과", vendor_unavailable: "벤더 일시 장애",
   invalid_response: "벤더 응답을 해석하지 못함", credential_key_unavailable: "자격증명 암호화 키가 없음", control_error: "처리 중 오류",
+  // 동기화 실패
+  invalid_listing: "벤더 목록을 원장에 넣을 수 없음(계정 형식·중복)", sync_error: "동기화 중 오류", claim_lost: "다른 실행이 가져감", billing_error: "청구 읽기 중 오류",
+  // 종량 지출(벤더 청구 누계 — 서버 ADR 0050)
+  billing_not_supported: "이 플랜에는 청구 조회 API가 없습니다", billing_source_not_connected: "벤더 연결이 없습니다",
+  billing_sync_pending: "청구 누계를 아직 읽지 않았습니다", billing_sync_failing: "청구 누계 읽기가 실패하고 있습니다",
+  billing_sync_outdated: "청구 누계를 읽은 지 오래되었습니다", billing_periods_differ: "벤더마다 정산 기간이 달라 더하지 않습니다",
+  not_applicable: "등록한 제품이 없습니다",
 };
 export const seatReasonText = (reason: string | null | undefined) => reason ? SEAT_REASONS[reason] ?? reason : "-";
 
@@ -156,3 +163,66 @@ export const ACTION_TEXT: Record<string, string> = {
   release_in_vendor_console: "벤더 관리 콘솔에서 이 계정의 좌석(구성원)을 해지한 뒤 '해지 완료 확인'을 누르세요.",
   restore_in_vendor_console: "벤더 관리 콘솔에서 이 계정을 다시 초대·배정한 뒤 '배정 완료 확인'을 누르세요.",
 };
+
+// ---- 좌석 원천(벤더 연결)·수동 기록 (enrollment 명세 §12 "벤더 연결"·"좌석 수동 기록") ----
+
+const syncState = z.object({ status: z.enum(["pending", "succeeded", "failing"]), lastSucceededAt: z.string().nullable(), lastFailedAt: z.string().nullable(), lastError: z.string().nullable() });
+export const seatSourceSchema = z.object({
+  authority: z.enum(["connector", "manual"]), provisional: z.boolean(),
+  connector: z.object({ connectorId: z.string(), accountKind: z.enum(["email", "github_login"]), capabilities: z.array(z.string()), settingKeys: z.array(z.string()), supported: z.array(z.string()) }).nullable(),
+  connection: z.object({
+    connectionId: z.string(), version: z.number(), connectorId: z.string(), settings: z.record(z.string(), z.string()),
+    credential: z.object({ configured: z.boolean(), updatedAt: z.string() }),
+    check: z.object({ status: z.string(), checkedAt: z.string().nullable() }), sync: syncState,
+    createdAt: z.string(), updatedAt: z.string(), billing: syncState.nullable().optional(),
+  }).nullable(),
+});
+export type SeatSource = z.infer<typeof seatSourceSchema>;
+const connectionResponse = z.object({ seatSource: seatSourceSchema });
+
+const enrollment = <T>(path: string, schema: z.ZodType<T>, init: RequestInit) => apiJson("enrollment", path, schema, init);
+/** 연결 추가·교체 — 자격증명은 이 요청에만 싣고 화면·저장소에 남기지 않는다. 응답에도 없다. */
+export const saveConnection = (org: string, vendorId: string, expectedVersion: number, settings: Record<string, string>, credential: string) =>
+  enrollment(orgPath(org, `/vendors/${encodeURIComponent(vendorId)}/connection`), connectionResponse, { method: "PUT", body: JSON.stringify({ expectedVersion, settings, credential }) });
+export const deleteConnection = (org: string, vendorId: string, version: number) =>
+  enrollment(orgPath(org, `/vendors/${encodeURIComponent(vendorId)}/connection`), z.undefined(), { method: "DELETE", headers: { "If-Match": `"connection-${version}"` } });
+export const verifyConnection = (org: string, vendorId: string) =>
+  enrollment(orgPath(org, `/vendors/${encodeURIComponent(vendorId)}/connection/verify`), connectionResponse, { method: "POST" });
+/** 지금 동기화 — 다음 주기 실행이 가져간다(작업 `seat_sync`). */
+export const requestSync = (post: Post, org: string, vendorId: string): Promise<Operation> =>
+  post(org, `/vendors/${encodeURIComponent(vendorId)}/connection/sync`, {}, operationSchema);
+
+const savedSeatSchema = z.object({ seat: z.object({ seatAssignmentId: z.string(), version: z.number(), account: z.string(), state: seatState }).passthrough(),
+  warnings: z.array(z.string()), provisional: z.boolean() });
+export type SavedSeat = z.infer<typeof savedSeatSchema>;
+/** 수동 배정(커넥터가 없거나 연결 전인 제품만 — 연결이 있으면 409 connector_managed). 해제된 좌석을 다시 배정하면 그 판을 보낸다. */
+export const assignSeat = (post: Post, org: string, vendorId: string, body: { account: string; tierId?: string | null; note?: string | null; expectedVersion?: number }) =>
+  post(org, `/vendors/${encodeURIComponent(vendorId)}/seats`, body, savedSeatSchema);
+export const releaseSeat = (post: Post, org: string, vendorId: string, seatId: string, expectedVersion: number) =>
+  post(org, `/vendors/${encodeURIComponent(vendorId)}/seats/${encodeURIComponent(seatId)}/release`, { expectedVersion }, savedSeatSchema);
+/** 보정 — 구성원 연결·계약 등급·메모. 권위와 무관하게 된다. */
+export const correctSeat = (org: string, vendorId: string, seatId: string, body: { expectedVersion: number; tierId?: string | null; note?: string | null; memberId?: string | null; memberLink?: "automatic" }) =>
+  enrollment(orgPath(org, `/vendors/${encodeURIComponent(vendorId)}/seats/${encodeURIComponent(seatId)}`), savedSeatSchema, { method: "PATCH", body: JSON.stringify(body) });
+
+export const seatImportSchema = z.object({
+  mode: z.enum(["preview", "apply"]), applied: z.boolean(), digest: z.string(),
+  summary: z.record(z.string(), z.number()),
+  rows: z.array(z.object({ line: z.number(), account: z.string(), action: z.string().nullable(), seatAssignmentId: z.string().nullable(),
+    errors: z.array(z.object({ field: z.string(), code: z.string() })) })),
+  warnings: z.array(z.string()),
+});
+export type SeatImport = z.infer<typeof seatImportSchema>;
+/** CSV 가져오기 — 미리보기는 쓰지 않고, 적용은 오류가 하나도 없을 때만 한 번에 한다(오류면 422 + 행별 오류). 파일의 행만 바꾼다. */
+export const importSeats = (post: Post, org: string, vendorId: string, mode: "preview" | "apply", csv: string) =>
+  post(org, `/vendors/${encodeURIComponent(vendorId)}/seats/import`, { mode, csv }, z.object({ import: seatImportSchema, provisional: z.boolean() }));
+
+export const IMPORT_ACTION_TEXT: Record<string, string> = { create: "새 배정", reassign: "다시 배정", update: "변경", release: "해제", unchanged: "그대로" };
+export const IMPORT_ERROR_TEXT: Record<string, string> = {
+  required: "필수", invalid_account: "계정 형식이 틀림", duplicate_account: "같은 계정이 두 번", not_found: "없는 좌석", invalid_status: "상태는 assigned·released",
+  seat_not_changeable: "해제 예정·배정 대기는 벤더 제어의 몫", invalid_tier: "지금 계약에 없는 유형", ambiguous_tier: "유형 이름이 여럿과 맞음", not_applicable: "해제 행에 쓸 수 없음",
+  invalid_email: "이메일 형식이 틀림", member_not_found: "구성원이 없음", member_ambiguous: "같은 이메일의 구성원이 여럿", column_count: "열 수가 머리글과 다름",
+};
+export const CHECK_TEXT: Record<string, string> = {
+  unverified: "확인 전", verified: "확인됨", invalid_credentials: "자격증명 거절", insufficient_permission: "권한 부족", unavailable: "확인하지 못함(일시 장애)",
+};
+export const SYNC_TEXT: Record<z.infer<typeof syncState>["status"], string> = { pending: "아직 성공 없음", succeeded: "성공", failing: "실패 중" };

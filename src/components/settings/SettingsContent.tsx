@@ -16,6 +16,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { StatCard } from "@/components/ui/StatCard";
+import { seatReasonText } from "@/lib/api/seats";
 import { Toast, useToast } from "@/components/ui/Toast";
 import { Toggle } from "@/components/ui/Toggle";
 import { useBackendSession } from "@/lib/api/session";
@@ -91,8 +92,10 @@ function OrganizationSettings({ organizationId }: { organizationId: string }) {
   const rollout = data?.policyRollout;
   const cards = [
     { label: "좌석 지출", value: amount(data?.summary.monthlySeatFeeUsd), caption: data?.summary.monthlySeatFeeUsd == null ? "유효 계약 금액 확인 불가" : "유효 계약 기준 월 합계" },
-    { label: "종량 지출", value: amount(data?.summary.meteredMonthToDate.data?.actualBilledUsd), caption: "실제 청구액" },
-    { label: "활성 좌석", value: `${number(data?.summary.activeSeats7d)} / ${number(data?.summary.contractedSeats)}`, caption: "활성 좌석 / 유효 계약 좌석" },
+    // 종량 지출은 벤더 청구 누계의 조직 합계다 — 한 제품이라도 없거나 정산 기간이 다르면 서버가 더하지 않는다(사유를 보여 준다).
+    { label: "종량 지출", value: amount(data?.summary.meteredMonthToDate.data?.actualBilledUsd),
+      caption: data?.summary.meteredMonthToDate.data?.actualBilledUsd != null ? "벤더 청구 누계 합" : seatReasonText(data?.summary.meteredMonthToDate.reason) },
+    { label: "활성 좌석", value: `${number(data?.summary.activeSeats7d)} / ${number(data?.summary.assignedSeats ?? null)}`, caption: `7일 사용 좌석 / 배정 좌석 · 유효 계약 ${number(data?.summary.contractedSeats)}석` },
     { label: "미설정 벤더", value: data ? `${int(data.summary.unconfiguredVendors)}곳` : "-", caption: "계약 정보 확인 필요" },
   ];
   const rows = data?.vendors.items.map(vendor => settingsVendorRow(vendor, catalog.data?.items.find(product => product.id === vendor.kind))) ?? [];
