@@ -157,3 +157,27 @@ test("SEATS-CSV @p0 @write 관리자 기록 제품의 CSV 는 오류가 있으�
   await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
   await signOut(page);
 });
+
+test("SEATS-OVERVIEW @p0 @read 개요의 제품별 배정 좌석은 구성원 요약과 같은 좌석 원장이고, 좌석을 기록하지 않은 제품은 사유를 말한다", async ({ page }) => {
+  // 시드 A 좌석 원장의 독립 기대값 — 보유 10석(Claude 5·OpenAI 2·Copilot 3), Cursor 는 좌석 기록 없음. 쓰기 테스트는 끝에 원래 수로 되돌린다.
+  const expected: Record<string, string> = { "Claude (Anthropic)": "배정 5석", "ChatGPT / Codex (OpenAI)": "배정 2석", "GitHub Copilot": "배정 3석", Cursor: "배정 이 제품은 좌석을 기록하지 않았습니다" };
+  await signIn(page, `owner@seed-${A.seed}.example.test`);
+  const { start, end } = seedPeriod();
+  const summary = (await authenticatedRequest(page, dashboardBase(), `/api/v1/organizations/${A.id}/members/dashboard?startDate=${start}&endDate=${end}&timeZone=Asia/Seoul`)).body.summary.seats;
+  expect(summary.data.assigned).toBe(10);
+  await page.goto("/overview");
+  const table = page.getByRole("table", { name: "계약·좌석 현황" });
+  for (const reload of [false, true]) {
+    if (reload) await page.reload();
+    for (const [name, text] of Object.entries(expected)) {
+      const row = table.getByRole("row").filter({ has: page.getByRole("button", { name: `${name} 벤더 상세`, exact: true }) });
+      await expect(row.getByRole("cell").nth(1)).toContainText(text);
+    }
+  }
+  // 판정하지 못한 좌석이 있으면 후보 수가 판정한 좌석만이라고 말한다(빈 후보를 "0석 확정"으로 보이지 않는다).
+  const candidates = (await authenticatedRequest(page, dashboardBase(), `/api/v1/organizations/${A.id}/seat-reclaim-candidates?limit=50`)).body.candidates;
+  const card = page.getByRole("region", { name: "계약·좌석 현황", exact: true });
+  if (candidates.availability === "partial") await expect(card).toContainText("회수 후보는 판정한 좌석만");
+  else await expect(card).not.toContainText("회수 후보는 판정한 좌석만");
+  await signOut(page);
+});
