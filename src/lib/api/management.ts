@@ -22,6 +22,16 @@ const messages: Record<string, string> = {
   notification_channel_unavailable: "메일 발송이 설정되지 않아 알림을 보낼 수 없습니다. 서버 관리자에게 메일 설정을 요청하세요.",
   installation_unavailable: "이미 새 정책을 적용했거나 알림을 보낼 수 없는 설치가 포함돼 있습니다. 목록을 다시 불러왔습니다.",
   snapshot_expired: "목록이 갱신되었습니다. 처음부터 다시 불러옵니다.",
+  // 좌석 원장·회수·벤더 연결(서버 enrollment 명세 §12)
+  preview_stale: "확인 창을 연 뒤 좌석이 바뀌었습니다. 다시 확인하세요.", preview_expired: "확인한 지 5분이 지났습니다. 다시 확인하세요.",
+  preview_used: "이미 실행한 확인입니다. 작업 상태를 확인하세요.", no_eligible_seats: "회수할 수 있는 좌석이 없습니다.",
+  restore_not_available: "되돌릴 수 없는 회수입니다(기한이 지났거나 되돌릴 좌석이 없습니다).",
+  not_awaiting_admin_action: "조치 대기 중인 대상이 아닙니다. 작업 상태를 다시 확인하세요.",
+  seat_changed: "확인 사이에 좌석이 다른 상태가 되었습니다. 좌석을 다시 확인하세요.",
+  connector_managed: "벤더 연결이 있는 제품은 동기화가 좌석을 정합니다. 연결 전에만 직접 기록할 수 있습니다.",
+  seat_already_held: "이미 배정된 계정입니다.", seat_not_releasable: "배정 상태인 좌석만 해제할 수 있습니다.",
+  invalid_tier: "지금 계약에 없는 좌석 유형입니다.", invalid_csv: "CSV 파일 형식을 확인하세요.", seat_import_invalid: "오류가 있는 행이 있어 아무것도 적용하지 않았습니다.",
+  connector_unavailable: "이 계약 플랜에는 연결할 수 있는 커넥터가 없습니다.", credential_key_unavailable: "서버의 자격증명 암호화 키가 없습니다. 서버 관리자에게 문의하세요.",
 };
 export class ManagementError extends Error {
   constructor(public code: string, public status: number, public retryAfter = 0, public fields: { field: string; code: string }[] = []) {

@@ -178,6 +178,8 @@ export function buildMembersView(view: MembersView, invitations: Invitation[] | 
       : { available: true as const, rows: candidateItems.map((candidate) => ({ ...candidate, lastSeen: formatKst(candidate.lastUsedAt) })),
           // partial 은 판정하지 못한 좌석을 뺀 목록이다 — 빈 목록을 "후보 없음"으로 읽지 않게 사유를 함께 낸다.
           partial: reclaim.availability === "partial" ? reasonText(reclaim.reason) : null,
+          // 다음 페이지는 같은 기준 시각의 cursor 로 잇는다(`GET O/seat-reclaim-candidates`).
+          nextCursor: reclaim.data!.nextCursor, totalCount: reclaim.data!.totalCount, policyNote: `회수 기준 ${policy.idleDays}일`,
           note: `${int(candidateItems.length)}석 표시 · 전체 ${int(reclaim.data!.totalCount)}석 · 회수 기준 ${policy.idleDays}일` },
     unassignedRows: unassigned.map((row) => ({
       memberId: row.memberId, account: row.account, version: row.version,

@@ -2,6 +2,7 @@
 
 import { DetailDrawer } from "@/components/ui/DetailDrawer";
 import { MemberEditForm, type MemberEditTarget } from "./MemberEditForm";
+import { MemberSeatDetails } from "./MemberSeatDetails";
 import { MemberStatusBadges } from "./MemberStatusBadges";
 import type { ServerTeam } from "@/lib/api/management";
 import type { InviteRow, MemberRow } from "@/lib/members-view";
@@ -66,9 +67,10 @@ export function MemberDetailDrawer({ organizationId, subject, open, period, team
           </section>
           <section aria-label="벤더 좌석">
             <h3 className="mb-3 text-[13px] font-semibold">벤더 좌석</h3>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+            <dl className="mb-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
               <Field label="배정 상태">{member.seatStateLabel}</Field>
             </dl>
+            {open && <MemberSeatDetails organizationId={organizationId} memberId={member.memberId} editable={editable} />}
           </section>
         </>}
       </div>}

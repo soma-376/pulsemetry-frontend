@@ -9,7 +9,7 @@ import { retryAfterMs } from "./overview";
  */
 export const operationSchema = z.object({
   operationId: z.string(),
-  kind: z.enum(["seat_reclaim", "seat_restore", "installation_notification", "retention_cleanup"]),
+  kind: z.enum(["seat_reclaim", "seat_restore", "installation_notification", "retention_cleanup", "seat_sync"]),
   status: z.enum(["pending", "running", "awaiting_admin_action", "succeeded", "partially_failed", "failed"]),
   createdAt: z.iso.datetime({ offset: true }),
   completedAt: z.iso.datetime({ offset: true }).nullable(),

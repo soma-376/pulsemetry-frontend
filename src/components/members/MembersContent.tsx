@@ -155,7 +155,7 @@ function OrganizationMembers({ organizationId, currentMemberId }: { organization
           error={denied(invitations.error) ? null : invitations.error} retrying={invitations.isFetching} onRetry={() => void invitations.refetch({ cancelRefetch: false })}
           editable={model.capabilities.invite} onEdit={(row) => openDetail("invite", row.memberId)} onRevoked={showToast} />
 
-        <SeatReclaimCard model={model} onReview={(memberId) => openDetail("member", memberId)} />
+        <SeatReclaimCard organizationId={organizationId} model={model} onReview={(memberId) => openDetail("member", memberId)} />
 
         <UnassignedCard teams={teams.data ?? []} model={model} picks={picks}
           onPick={(memberId, teamId) => { assign.reset(); setPicks((previous) => ({ ...previous, [memberId]: teamId })); }}

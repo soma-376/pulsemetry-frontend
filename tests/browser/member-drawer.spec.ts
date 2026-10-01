@@ -44,7 +44,12 @@ test("candidate entry opens the drawer of the member the server named", async ({
   await candidates.getByRole("button", { name: `${candidate.account} 좌석 상세`, exact: true }).click();
   const drawer = page.getByRole("dialog", { name: "구성원 상세", exact: true });
   await expect(drawer).toContainText(candidate.account);
-  await expect(drawer.getByText("회수 후보", { exact: true })).toBeVisible();
+  await expect(drawer.getByText("회수 후보", { exact: true }).first()).toBeVisible();
+  // 좌석은 서버의 구성원 좌석이다 — 회수 후보여도 회수할 수 있는지는 서버가 말한다.
+  const seats = drawer.getByRole("list", { name: "벤더별 좌석 상세" });
+  await expect(seats).toContainText("Claude");
+  await expect(seats).toContainText("회수할 수 없음 — 관리 기능이 꺼진 서버입니다");
+  await expect(seats.getByRole("button", { name: /좌석 회수$/ })).toHaveCount(0);
   await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
   await expect(drawer).not.toBeVisible();
 });

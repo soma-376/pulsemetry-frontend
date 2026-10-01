@@ -48,7 +48,9 @@ export type MembersFixture = Awaited<ReturnType<typeof mockMembers>>;
  * 구성원·초대·팀의 조회와 변경 명령을 메모리 상태로 흉내 낸다. 돌려주는 상태를 직접 바꾸면 다른 곳에서의 변경이 된다.
  * 온보딩 fixture보다 나중에 등록해 팀 경로를 이쪽이 맡는다 — `openDashboard` 앞에서 부른다.
  */
-export async function mockMembers(page: Page, options: { members?: FixtureMember[]; candidates?: boolean; invitations?: FixtureInvitation[]; mail?: boolean } = {}) {
+export async function mockMembers(page: Page, options: { members?: FixtureMember[]; candidates?: boolean; invitations?: FixtureInvitation[]; mail?: boolean;
+  /** 관리 기능이 켜진 서버 — 후보 좌석을 관리자 조치로 회수할 수 있다. [seatControls] 의 좌석 ID → 작업 ID 가 그 좌석의 최근 작업이다. */
+  reclaimable?: boolean } = {}) {
   // 메일을 보내는 서버가 기본이다. 새 초대의 메일은 적재됨(queued)에서 시작하고, 발송 결과는 테스트가 상태를 바꿔 흉내 낸다.
   const mail = options.mail !== false;
   await mockOnboarding(page);
@@ -59,6 +61,10 @@ export async function mockMembers(page: Page, options: { members?: FixtureMember
     /** 받은 변경 명령 — 본문과 조건 헤더를 검증한다 */
     commands: [] as { method: string; path: string; body: unknown; idempotencyKey: string | null; ifMatch: string | null }[],
     sequence: 0,
+    /** 좌석 ID → 최근 회수·복원 작업(종류) */
+    seatControls: new Map<string, { operationId: string; kind: "seat_reclaim" | "seat_restore" }>(),
+    /** 좌석 ID → 원장 상태 */
+    seatStates: new Map<string, string>(),
   };
   const candidateIds = options.candidates === false ? [] : fixtureCandidates(state.members).map((member) => member.memberId);
   const cors = { "access-control-allow-origin": new URL(test.info().project.use.baseURL!).origin, "access-control-allow-headers": "content-type,authorization,idempotency-key,if-match", "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS" };
@@ -113,7 +119,7 @@ export async function mockMembers(page: Page, options: { members?: FixtureMember
           periodUnassignedEquivalentCostUsd: null, periodTotalEquivalentCostUsd: null,
           seats: candidates.length ? { availability: "available", reason: null, data: { contracted: 50, assigned: 45, unallocated: 5, activeInPeriod: null, inactiveAssigned: null, reclaimCandidates: candidates.length, estimatedMonthlySavingsUsd: null } }
             : { availability: "unavailable", reason: "not_applicable", data: null } },
-        policy: { idleDays: 14, version: 0 }, capabilities: { invite: true, assignTeam: true, reclaimSeats: false, restoreSeats: false },
+        policy: { idleDays: 14, version: 0 }, capabilities: { invite: true, assignTeam: true, reclaimSeats: !!options.reclaimable, restoreSeats: !!options.reclaimable },
         members: pageOf(state.members, url, 20), unassigned: pageOf(unassigned, url, 20),
         reclaimCandidates: candidates.length ? { availability: "available", reason: null, data: { totalCount: candidates.length, nextCursor: null, items: candidates.map((member, index) => ({
           seatAssignmentId: `seat-${index + 1}`, memberId: member.memberId, account: member.account, team: member.team, vendorId: "vendor-1", tierId: "tier-1", version: 1,
@@ -122,6 +128,22 @@ export async function mockMembers(page: Page, options: { members?: FixtureMember
       });
     }
     if (method === "GET" && (path === "members" || path === "members/unassigned")) return json(route, { meta: meta(url), members: pageOf(path === "members" ? state.members : unassigned, url, 20) });
+    const seatsOf = /^members\/([^/]+)\/seats$/.exec(path);
+    if (method === "GET" && seatsOf) {
+      // 후보인 구성원에게만 좌석 하나(관리 기능이 꺼진 서버 — 회수할 수 없음). 나머지는 좌석 없음.
+      const index = candidates.findIndex((member) => member.memberId === seatsOf[1]);
+      const member = state.members.find((item) => item.memberId === seatsOf[1]);
+      if (!member) return fail(route, 404, "not_found");
+      return json(route, { meta: { organizationId: url.pathname.split("/")[4], asOf: "2026-09-22T00:00:00Z", snapshotId: "fixture-seats" }, memberId: member.memberId,
+        policy: { idleDays: 14, version: 0 }, seats: index < 0 ? [] : [{ seatAssignmentId: `seat-${index + 1}`, version: 1, vendorId: "vendor-1", vendorName: "Claude", kind: "claude_team",
+          contractVersion: 1, tierId: "tier-1", tierLabel: "Standard", vendorTier: null, account: member.account, accountKind: "email", state: "assigned", source: "manual",
+          memberLink: "email_match", assignedAt: "2026-08-01T00:00:00Z", releaseEffectiveOn: null, releasedAt: null, ledgerAvailability: "available", ledgerReason: null,
+          lastUsedAt: member.lastUsedAt, idleDays: 20 + index, reviewReason: null, reclaimCandidate: true,
+          ...(state.seatStates.get(`seat-${index + 1}`) ? { state: state.seatStates.get(`seat-${index + 1}`), reclaimCandidate: false } : {}),
+          ...(options.reclaimable && !state.seatControls.has(`seat-${index + 1}`) ? { canReclaim: true, reclaimReason: null, reclaimMethod: "admin_action" }
+            : { canReclaim: false, reclaimReason: options.reclaimable ? "control_in_progress" : "management_disabled", reclaimMethod: null }),
+          lastControl: state.seatControls.get(`seat-${index + 1}`) ?? null }] });
+    }
     if (method === "GET" && path === "teams") return json(route, { meta: { organizationId: url.pathname.split("/")[4], snapshotId: "fixture-teams" }, teams: { items: state.teams, nextCursor: null } });
 
     if (method === "PATCH" && path.startsWith("members/")) {
