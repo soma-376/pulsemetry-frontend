@@ -181,3 +181,34 @@ test("SEATS-OVERVIEW @p0 @read 개요의 제품별 배정 좌석은 구성원 �
   else await expect(card).not.toContainText("회수 후보는 판정한 좌석만");
   await signOut(page);
 });
+
+test("SEATS-BILLING @p0 @read 설정의 종량 지출은 벤더 청구 누계이고 원천·사유를 함께 보이며, 청구 원천이 없는 제품은 금액을 만들지 않는다", async ({ page }) => {
+  // 시드 C: Cursor Enterprise 연결의 청구 누계 $137.42(원천 seed — 실제 청구가 아님, 계약액 $120 과 다름). 시드 A 는 청구 API 가 있는 플랜이 없다.
+  const C = seedOrganizations[2];
+  await signIn(page, `owner@seed-${C.seed}.example.test`);
+  await page.goto("/settings");
+  const settings = (await authenticatedRequest(page, dashboardBase(), `/api/v1/organizations/${C.id}/settings`)).body;
+  const cursor = settings.vendors.items.find((vendor: { kind: string }) => vendor.kind === "cursor");
+  expect(cursor.meteredMonthToDate.data).toMatchObject({ billingKind: "usage_spend", source: "seed", equivalentCostUsd: null });
+  expect(Number(cursor.meteredMonthToDate.data.actualBilledUsd)).toBe(137.42);
+  const total = page.getByRole("group", { name: "종량 지출", exact: true });
+  await expect(total).toContainText(settings.summary.meteredMonthToDate.data?.actualBilledUsd != null ? "$137.42" : "-");
+  await page.getByRole("button", { name: "Cursor 계약 설정 열기" }).click();
+  let drawer = page.getByRole("dialog", { name: "Cursor 계약 설정" });
+  const metered = drawer.getByRole("region", { name: "종량 지출" });
+  await expect(metered).toContainText("$137.42");
+  await expect(metered).toContainText("이번 청구 주기의 사용 지출");
+  await expect(metered).toContainText("개발 시드(실제 청구 아님)");
+  if (cursor.meteredMonthToDate.reason) await expect(metered).toContainText(cursor.meteredMonthToDate.reason === "billing_sync_failing" ? "청구 누계 읽기가 실패하고 있습니다" : "청구 누계를 읽은 지 오래되었습니다");
+  await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
+  await signOut(page);
+
+  await signIn(page, `owner@seed-${A.seed}.example.test`);
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Claude (Anthropic) 계약 설정 열기" }).click();
+  drawer = page.getByRole("dialog", { name: "Claude (Anthropic) 계약 설정" });
+  await expect(drawer.getByRole("region", { name: "종량 지출" })).toContainText("이 플랜에는 청구 조회 API가 없습니다 — 환산 비용이나 계약액으로 채우지 않습니다.");
+  await expect(page.getByRole("group", { name: "종량 지출", exact: true })).toContainText("이 플랜에는 청구 조회 API가 없습니다");
+  await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
+  await signOut(page);
+});
