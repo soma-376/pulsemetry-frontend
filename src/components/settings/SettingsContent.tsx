@@ -9,6 +9,7 @@ import { SettingRow, SettingSection } from "./SettingRow";
 import { VendorTable } from "./VendorTable";
 import { ServerVendorDrawer } from "./ServerVendorDrawer";
 import { InstallationsModal } from "./InstallationsModal";
+import { AlertRulesSection } from "./AlertRulesSection";
 import { Button } from "@/components/ui/Button";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -32,12 +33,6 @@ import { int, usd } from "@/lib/format";
 
 const number = (value: number | null | undefined) => value == null ? "-" : int(value);
 const amount = (value: string | null | undefined) => value == null ? "-" : usd(Number(value));
-const labels: Record<string, { title: string; note: string }> = {
-  spend_spike: { title: "비용 급증 알림", note: "팀 사용량이 전주 대비 급증할 때" },
-  quota_exceeded: { title: "한도 초과 알림", note: "좌석 한도에 걸려 요청이 차단될 때" },
-  model_not_allowed: { title: "비허용 모델 호출 알림", note: "허용목록에 없는 모델이 호출될 때" },
-  tool_unapproved: { title: "미승인 도구 연결 알림", note: "승인되지 않은 도구가 연결될 때" },
-};
 
 export function SettingsContent() {
   const session = useBackendSession();
@@ -156,9 +151,7 @@ function OrganizationSettings({ organizationId }: { organizationId: string }) {
           {settingsSave.error && !retentionChoice && <div className="border-t border-border px-4 py-3"><ErrorState variant="inline" message={settingsSave.error.message} /></div>}
           <SettingRow title="마지막 수집" note="최근 신호 수신 시각"><span className="tnum text-xs">{data.ingest.lastReceivedAt ? new Date(data.ingest.lastReceivedAt).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) : "-"}</span></SettingRow>
         </div></SettingSection>
-        <SettingSection id="alerts" title="알림 규칙"><div className="rounded-lg border border-border bg-card">{data.alertRules.map((rule, index) => <SettingRow key={rule.ruleId} first={index === 0} title={labels[rule.ruleId]?.title ?? rule.ruleId} note={labels[rule.ruleId]?.note ?? ""}>
-          <div className="flex items-center gap-3"><span className="tnum text-xs">{rule.threshold.unit === "ratio" ? `${Math.round(rule.threshold.value * 100)}%` : `${rule.threshold.value}${rule.threshold.unit === "users" ? "명" : "회"}`}</span><Toggle disabled on={rule.enabled} label={labels[rule.ruleId]?.title ?? rule.ruleId} onChange={() => {}} /></div>
-        </SettingRow>)}</div></SettingSection>
+        <AlertRulesSection organizationId={organizationId} rules={data.alertRules} lists={data.alertLists} editable={data.capabilities.editAlertRules} onSaved={showToast} />
       </>}
     </PageContainer>
     {data && editor && (!editor.vendorId || vendorQuery.data) && <ServerVendorDrawer key={editor.vendorId ?? "new"} organizationId={organizationId} initial={editor.vendorId ? vendorQuery.data! : null} registeredKinds={data.vendors.items.map(vendor => vendor.kind)} editable={data.capabilities.editContracts} open={open} onClose={() => setOpen(false)} onAfterClose={() => setEditor(null)} onSaved={showToast} onAccessDenied={setAccessError} />}

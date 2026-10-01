@@ -84,6 +84,7 @@ type AlertRule = {
   evaluationWindow: string;
   comparisonWindow: string | null;
 };
+type AlertList = { listId: "allowed_models" | "approved_tools"; version: number; entries: string[]; updatedAt: string | null };
 type SettingsResponse = {
   meta: CurrentMeta;
   ingest: OverviewResponse["ingest"];
@@ -116,6 +117,8 @@ type SettingsResponse = {
     appliedInstallations: number; outdatedInstallations: number; unknownInstallations: number;
   };
   alertRules: AlertRule[];
+  /** 알림 규칙이 기대는 두 목록(서버 가산 — ADR 0051). 저장한 적 없으면 entries [] · version 0 */
+  alertLists?: { allowedModels: AlertList; approvedTools: AlertList };
 };
 type VendorsResponse = { meta: CurrentMeta; vendors: Page<Vendor> };
 type VendorResponse = { meta: CurrentMeta; vendor: Vendor };
@@ -156,6 +159,7 @@ type PolicySaved = {
   cleanupOperationId: string | null;
 };
 type AlertRulePatchRequest = { expectedVersion: number; enabled: boolean };
+type AlertListPutRequest = { expectedVersion: number; entries: string[] };
 type NotifyInstallationsRequest = { installationIds: string[]; expectedPolicyVersion: number };
 ```
 
@@ -270,13 +274,18 @@ PUT /api/v1/organizations/{organizationId}/collection-policy(enrollment 서비�
 
 ## 알림과 미적용 설치
 
-PATCH /settings/alert-rules/{ruleId}, AlertRulePatchRequest → 200 AlertRule.
-v1은 토글만 수정한다. UI의 고정 임계값은 서버 값으로 대체한다.
+PATCH /settings/alert-rules/{ruleId}, AlertRulePatchRequest → 200 AlertRule (enrollment-api, 서버 ADR 0051).
+PUT /settings/alert-lists/{listId}(`allowed_models`·`approved_tools`), AlertListPutRequest → 200 `{ list: AlertList; alertRules: AlertRule[] }` — 전체 교체.
+v1은 토글과 두 목록만 수정한다. UI의 고정 임계값은 서버 값으로 대체한다. 임계값 편집 UI는 없다.
 spend_spike는 직전 완전한 KST 7일 대 이전 7일 비용 증가율 0.4,
 quota_exceeded는 최근 24시간 차단된 고유 사용자 5명,
 model_not_allowed/tool_unapproved는 최근 24시간 해당 이벤트 1회가 **초기 제안 기준**이다.
-평가 창·허용 목록·차단 이벤트가 없다면 unavailable/reason을 반환하고 토글을 비활성화한다.
-이 명세가 알림 평가 엔진이나 실제 전송 채널까지 구현되었다는 뜻은 아니다.
+켤 수 없는 규칙은 unavailable과 reason을 반환하고 화면은 토글을 비활성화한 채 사유를 보여 준다 —
+`completeness_not_available`(설치의 수집 구간 보고 없음), `source_not_available`(한도 초과 — 검증된 관측 없음),
+`allowed_models_not_configured`·`approved_tools_not_configured`(목록이 비었음). 켜진 규칙은 언제나 끌 수 있다.
+켤 수 없는 규칙을 켜면 422 `alert_rule_unavailable`, 켜진 규칙이 기대는 목록을 비우면 422 `alert_list_in_use`, 판이 다르면 409다.
+목록은 줄마다 하나(앞뒤 공백·빈 줄·중복은 화면이 정리), 대소문자를 구분하는 정확 일치이고 끝의 `*` 하나는 접두사 일치다.
+평가와 알림 확인은 개요 명세의 "수집 상태와 알림"이다. 알림 발송(메일 등) 채널은 없다.
 
 GET /installations의 outdated는 적용 버전이 알려져 있고 desiredVersion보다 낮은 설치다.
 미확인 버전은 unknown으로 별도 취급한다. 이메일 등 개인 식별 정보는 기존 서버 권한 정책을 따른다.

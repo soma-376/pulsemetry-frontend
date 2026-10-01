@@ -27,7 +27,8 @@ export const overviewSchema = z.object({
   seats: z.object({ availability, reason, allocationMethod: z.enum(["contract_proration", "estimated_30_day"]).nullable(), current: seatPeriod.nullable(), previous: seatPeriod.nullable(), reclaimEstimate: z.object({ idleSeats: count, monthlySavingsUsd: money, efficiencyAfterReclaim: z.number().nonnegative().nullable() }).nullable(),
     /** 범위 제품의 회수 후보 수(서버 가산 — ADR 0048). 판정할 수 없으면 null. */
     reclaimCandidates: count.optional() }),
-  alerts: z.object({ availability, reason, unacknowledgedTotal: count, security: count, cost: count }),
+  // 지금의 미확인 알림(서버 ADR 0051) — 조회 기간과 무관하다. asOf 는 마지막 평가 시각(평가 전이면 응답 시각).
+  alerts: z.object({ availability, reason, asOf: z.string().optional(), unacknowledgedTotal: count, security: count, cost: count }),
   trend: z.object({ bucket: z.literal("day"), points: z.array(z.object({ date: z.iso.date(), observation: z.enum(["complete", "partial", "unobserved"]), equivalentCostUsd: money, allocatedSeatCostUsd: money, totalTokens: count })) }),
   modelMix: z.object({ availability, reason, models: z.array(z.object({ modelId: z.string(), displayName: z.string(), equivalentCostUsd: money, totalTokens: count, effectiveCostPerMillionTokensUsd: money })) }),
   teamUsage: z.object({ availability, reason, attributionBasis: z.literal("event_time"), totalTeamCount: z.number().int().nonnegative(), topTeams: z.array(z.object({ teamId: z.string(), teamName: z.string(), current: teamPeriod, previous: teamPeriod.nullable(), topModel: z.object({ modelId: z.string(), displayName: z.string(), share: z.number().min(0).max(1) }).nullable(), products: z.array(productRef) })), otherTeams: z.object({ count: z.number().int().nonnegative(), currentEquivalentCostUsd: money, previousEquivalentCostUsd: money }), unassigned: z.object({ current: teamPeriod, previous: teamPeriod.nullable(), products: z.array(productRef) }) }),

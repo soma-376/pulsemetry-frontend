@@ -1,4 +1,5 @@
 import { CONTRACT_STATUS, contractSummaryNotice, type ContractStatus } from "../contract-status";
+import { alertReasonText } from "@/lib/api/alerts";
 import type { Overview } from "@/lib/api/overview";
 import type { OverviewSettings } from "@/lib/api/overview-vendors";
 import { changeText, groupModels, moneyText, numberText, numeric } from "@/lib/api/overview-format";
@@ -37,6 +38,8 @@ export type OverviewTeamSummary = {
   unmappedUsers: string; unmappedVendors: string[] | null; unattributedCostText: string; unmapped: TeamChange;
 };
 const colors = ["var(--purple)", "var(--blue)", "var(--orange-ink)", "var(--green)", "var(--gray)"];
+/** 개요의 알림 KPI 이름 — 화면이 이 카드에서 알림 목록을 연다. */
+export const ALERTS_KPI = "보안 경보 및 알림";
 const time = (value: string | null) => value ? new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) : "-";
 /** 서버의 `dataThrough`는 확정된 마지막 날의 다음 자정이다. 표시는 그 마지막 날이다. */
 const confirmedThrough = (value: string | null) => value ? new Date(Date.parse(value) - 1).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric" }) : null;
@@ -96,7 +99,11 @@ export function presentOverview(data: Overview, settings?: OverviewSettings) {
     { label: "토큰 비용", value: moneyText(current?.equivalentCostUsd), unit: ` / ${current?.tokens.total == null ? "-" : `${numberText(current.tokens.total / 1_000_000)}M`}`, now: numeric(current?.equivalentCostUsd), before: numeric(previous?.equivalentCostUsd), previousText: moneyText(previous?.equivalentCostUsd), def: "토큰 × 공시 단가 = 사용 환산액 · 실제 청구액과 별개", caption: `${topName.replace("claude-", "")} 환산가치 ${topShare}`, good: true, bad: false },
     { label: "월 좌석 계약액", value: moneyText(settings?.summary.monthlySeatFeeUsd), unit: "", now: null, before: null, previousText: "", def: "유효한 좌석제 계약의 수량 × 월 단가 합계(USD) · 종량제·추가 사용료 제외 · 실제 청구액과 별개", caption: [settings ? ["유효 계약 기준", contractSummaryNotice(settings.vendors.items)].filter(Boolean).join(" · ") : "유효 계약 기준 · 조회 기간과 별개", seatEfficiency(data)].filter(Boolean).join(" · "), good: false, bad: false },
     { label: "세션", value: numberText(current?.sessionCount), unit: "", now: current?.sessionCount, before: previous?.sessionCount, previousText: numberText(previous?.sessionCount), def: "세션 = 도구 프로세스 1회 실행 · fresh = 이어하기 아님", caption: `사용자당 ${current?.activeUsers && current.sessionCount != null ? numberText(current.sessionCount / current.activeUsers) : "-"}회 · 세션당 ${current?.sessionCount && current.equivalentCostUsd !== null ? moneyText(String(Number(current.equivalentCostUsd) / current.sessionCount)) : "-"}`, good: false, bad: false },
-    { label: "보안 경보 및 알림", value: numberText(data.alerts.availability === "unavailable" ? null : data.alerts.unacknowledgedTotal), unit: "건", now: null, before: null, previousText: "", def: "현재 미확인 보안 경보 및 비용 알림", caption: `현재 미확인 · 보안 ${numberText(data.alerts.availability === "unavailable" ? null : data.alerts.security)} · 비용 ${numberText(data.alerts.availability === "unavailable" ? null : data.alerts.cost)}`, good: false, bad: data.alerts.availability !== "unavailable" && (data.alerts.unacknowledgedTotal ?? 0) > 0 },
+    { label: ALERTS_KPI, value: numberText(data.alerts.availability === "unavailable" ? null : data.alerts.unacknowledgedTotal), unit: "건", now: null, before: null, previousText: "", def: "현재 미확인 보안 경보 및 비용 알림 · 조회 기간과 무관",
+      // 평가 전·켜진 규칙 없음이면 서버 사유를 그대로 보여 준다(0건으로 보이지 않는다).
+      caption: data.alerts.availability === "unavailable" ? alertReasonText(data.alerts.reason)
+        : `현재 미확인 · 보안 ${numberText(data.alerts.security)} · 비용 ${numberText(data.alerts.cost)} · 평가 ${time(data.alerts.asOf ?? null)}`,
+      good: false, bad: data.alerts.availability !== "unavailable" && (data.alerts.unacknowledgedTotal ?? 0) > 0 },
   ];
   const kpis = definitions.map(({ now, before, previousText, ...item }, index) => {
     const compared = data.comparison.mode !== "none" && index !== 2 && index !== 4;

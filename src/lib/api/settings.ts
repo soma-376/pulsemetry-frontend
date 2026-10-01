@@ -4,6 +4,7 @@ import { z } from "zod";
 import { apiJson, managementKey, ManagementError, orgPath, readOptions } from "./management";
 import { overviewSchema } from "./overview";
 import { seatSourceSchema } from "./seats";
+import { alertListsSchema, alertRuleSchema } from "./alerts";
 
 const money = z.string().regex(/^\d+(?:\.\d+)?$/);
 const count = z.number().int().nonnegative();
@@ -44,7 +45,9 @@ export const settingsSchema = z.object({
     // 이 조직의 가장 최근 보존 정리 작업(ADR 0047). 새로고침 뒤에도 마지막 정리의 상태를 다시 조회한다.
     cleanupOperationId: z.string().nullable() }),
   policyRollout: z.object({ desiredVersion: count, eligibleInstallations: count, appliedInstallations: count, outdatedInstallations: count, unknownInstallations: count }),
-  alertRules: z.array(z.object({ ruleId: z.string(), enabled: z.boolean(), availability: z.string(), threshold: z.object({ value: z.number(), unit: z.string() }) })),
+  // 알림 규칙의 저장값·가용성·사유와 두 목록(서버 ADR 0051 — alertLists 는 가산).
+  alertRules: z.array(alertRuleSchema),
+  alertLists: alertListsSchema.optional(),
 });
 export type Settings = z.infer<typeof settingsSchema>;
 export async function fetchSettings(org: string, signal?: AbortSignal): Promise<Settings> {

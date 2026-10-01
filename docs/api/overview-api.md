@@ -307,8 +307,13 @@ effectiveCostPerMillionTokensUsd = 모델 환산가치 / 모델 총 토큰 × 1,
 - eligibleMembers=0이면 coverageRatio=null. 수집 상태 조회 실패도 0이 아닌 null/unknown이다.
 - 마지막 사용 이벤트가 오래됐다는 이유만으로 down을 판정하지 않는다. 하트비트·수집기 상태와 백엔드의 운영 기준을 사용한다.
 - 장애 때문에 과거 사용량을 0으로 덮지 않는다. dataThrough/마지막 수신 시각으로 신선도를 표시한다.
-- alerts는 asOf의 현재 미확인 알림이다. 조회 기간으로 필터링하지 않는다.
+- alerts는 asOf의 현재 미확인 알림이다. 조회 기간으로 필터링하지 않는다. asOf는 마지막 평가 시각이다(서버 ADR 0051).
 - v1 알림 분류는 security와 cost이며 total=security+cost다. 다른 분류가 실제로 존재하면 계약을 확장한다.
+- 평가 기록이 없으면 unavailable과 reason — `evaluation_not_configured`(켠 규칙 없음)·`evaluation_pending`(켰지만 평가 전). 화면은 0건으로 보이지 않고 사유를 보여 준다.
+- 알림 목록은 `GET O/alerts?status=unacknowledged|acknowledged|all&category=security|cost&limit&cursor&snapshotId`(dashboard-api) — 항목마다
+  `alertId·version·ruleId·category·status(open|closed)·occurredAt·lastSeenAt·subject·eventCount·memberCount·members·summary·acknowledgement`,
+  `evaluation.rules[]`가 규칙마다 마지막 평가(`evaluated`·`not_evaluated`+사유·`failed`)를 싣는다. 확인은 `POST O/alerts/{alertId}/acknowledge`
+  `{ expectedVersion }`(enrollment-api) — 판이 다르면 409, 이미 확인했으면 같은 기록. 확인 뒤 개요의 미확인 수를 다시 읽는다. 화면은 건수를 직접 세지 않는다.
 
 ### 사용 낭비
 

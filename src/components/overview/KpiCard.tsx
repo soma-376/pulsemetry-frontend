@@ -23,6 +23,8 @@ export type KpiCardProps = {
   noDeltaReason: string;
   /** 수집이 끊긴 경우 기준 시각을 각주로 답니다 */
   staleAt?: string;
+  /** 카드에서 여는 상세(예: 알림 목록) */
+  action?: { label: string; onClick: () => void };
 };
 
 export function KpiCard({
@@ -42,6 +44,7 @@ export function KpiCard({
   compareLabel,
   noDeltaReason,
   staleAt,
+  action,
 }: KpiCardProps) {
   return (
     <div role="region" aria-label={label} className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-border bg-card p-4">
@@ -52,6 +55,7 @@ export function KpiCard({
         >
           {label}
         </span>
+        {action && <button type="button" onClick={action.onClick} className="shrink-0 cursor-pointer rounded px-1 text-[11px] text-text2 hover:bg-hover hover:text-text">{action.label}</button>}
       </div>
 
       <div className="tnum flex flex-wrap items-baseline gap-[3px] leading-[1.1] tracking-[-0.02em]">

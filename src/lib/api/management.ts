@@ -32,12 +32,14 @@ const messages: Record<string, string> = {
   seat_changed: "확인 사이에 좌석이 다른 상태가 되었습니다. 좌석을 다시 확인하세요.",
   connector_managed: "벤더 연결이 있는 제품은 동기화가 좌석을 정합니다. 연결 전에만 직접 기록할 수 있습니다.",
   seat_already_held: "이미 배정된 계정입니다.", seat_not_releasable: "배정 상태인 좌석만 해제할 수 있습니다.",
+  // 알림 규칙·목록·확인(서버 ADR 0051)
+  alert_rule_unavailable: "이 규칙은 아직 켤 수 없습니다. 아래 사유를 확인하세요.", alert_list_in_use: "켜진 규칙이 쓰는 목록은 비울 수 없습니다. 규칙을 먼저 끄세요.",
   invalid_tier: "지금 계약에 없는 좌석 유형입니다.", invalid_csv: "CSV 파일 형식을 확인하세요.", seat_import_invalid: "오류가 있는 행이 있어 아무것도 적용하지 않았습니다.",
   connector_unavailable: "이 계약 플랜에는 연결할 수 있는 커넥터가 없습니다.", credential_key_unavailable: "서버의 자격증명 암호화 키가 없습니다. 서버 관리자에게 문의하세요.",
 };
 export class ManagementError extends Error {
   constructor(public code: string, public status: number, public retryAfter = 0, public fields: { field: string; code: string }[] = [], public details: unknown = undefined) {
-    const labels: Record<string, string> = { kind: "제품", displayName: "표시 이름", "contract.planId": "플랜", "contract.effectiveFrom": "계약 기간", "contract.effectiveTo": "계약 종료일", "contract.tiers": "좌석 구성", "contract.termNote": "계약 메모", teamName: "팀 이름", teamId: "팀", role: "역할", memberId: "구성원", assignments: "배정 목록", installationIds: "설치 목록", expectedPolicyVersion: "정책 판" };
+    const labels: Record<string, string> = { kind: "제품", displayName: "표시 이름", "contract.planId": "플랜", "contract.effectiveFrom": "계약 기간", "contract.effectiveTo": "계약 종료일", "contract.tiers": "좌석 구성", "contract.termNote": "계약 메모", teamName: "팀 이름", teamId: "팀", role: "역할", memberId: "구성원", assignments: "배정 목록", installationIds: "설치 목록", expectedPolicyVersion: "정책 판", entries: "목록 항목(줄마다 하나, 끝의 * 만 허용, 200자·200개 이하)" };
     const fieldMessage = fields.map(field => labels[field.field]).filter(Boolean).join(", ");
     super((messages[code] ?? "요청을 처리하지 못했습니다. 입력값과 연결 상태를 확인해 주세요.") + (fieldMessage ? ` 확인할 항목: ${fieldMessage}` : ""));
   }
