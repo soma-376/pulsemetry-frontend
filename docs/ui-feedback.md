@@ -159,9 +159,8 @@
 개요의 선택 기간별 관측 일수는 헤더가 아닌 개요 본문에서 표시한다.
 
 [공통 헤더 스토리](../src/components/layout/DashboardHeader.stories.tsx)에서 로딩·오류·재시도·재조회·본문 전환을 검증한다.
-서버 변경은 [backend-ingest-status.patch](../patches/backend-ingest-status.patch)에 준비되어 있다.
-이 대화에서는 백엔드 디렉터리에 쓰기 권한이 없어 실제 적용·서버 테스트는 하지 않았다.
-서버 패치 적용 전에는 실서비스 연결 시 수집 현황 줄이 API 오류를 표시할 수 있다. 목 응답으로 대체하지 않는다.
+수집 현황은 백엔드의 수집 상태 조회(`GET /api/v1/organizations/{organizationId}/ingest-status` — 백엔드 대시보드 명세 "공통 헤더 수집 현황", ADR 0041)의
+판정·사유·보고 중인 설치 수를 그대로 보여 준다. 조회가 실패하면 오류를 표시하고 목 응답으로 대체하지 않는다.
 
 백엔드 저장소에서 패치 적용 확인과 적용 후 테스트:
 
