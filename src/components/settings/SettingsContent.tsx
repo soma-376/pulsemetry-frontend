@@ -4,7 +4,7 @@ import { contractSummaryNotice } from "@/lib/contract-status";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDashboardPageRefresh } from "@/components/layout/DashboardHeader";
+import { useDashboardPageExport, useDashboardPageRefresh } from "@/components/layout/DashboardHeader";
 import { SettingRow, SettingSection } from "./SettingRow";
 import { VendorTable } from "./VendorTable";
 import { ServerVendorDrawer } from "./ServerVendorDrawer";
@@ -31,6 +31,7 @@ import { settingsVendorRow } from "@/lib/settings-vendors";
 import { useFilters } from "@/lib/filters";
 import { int, usd } from "@/lib/format";
 import { rolloutEvidenceText } from "@/lib/policy-rollout";
+import { downloadCsv, settingsCsv } from "@/lib/csv-export";
 
 /** 원문 보존 일수가 없을 때의 설명 — 집계 보존과 다른 원천이다(백엔드 ADR 0046). */
 const RAW_RETENTION_UNKNOWN = "원본 아카이브의 보관 기간은 인프라 저장소 규칙을 따르며 이 서비스가 조회하지 않습니다 · 집계 보존과 별개입니다";
@@ -45,6 +46,7 @@ export function SettingsContent() {
   return <OrganizationSettings key={session.user.organizationId} organizationId={session.user.organizationId} />;
 }
 function OrganizationSettings({ organizationId }: { organizationId: string }) {
+  const session = useBackendSession();
   const client = useQueryClient();
   const { autoRefresh } = useFilters();
   const query = useQuery({ ...settingsOptions(organizationId), refetchInterval: autoRefresh ? 300_000 : false });
@@ -90,6 +92,9 @@ function OrganizationSettings({ organizationId }: { organizationId: string }) {
     setOpen(true);
   };
   const rollout = data?.policyRollout;
+  // 등록 제품·계약·좌석 요약·종량 지출 — 설정 응답의 전 페이지(같은 snapshot)다.
+  useDashboardPageExport(data ? () => downloadCsv(`settings_${new Date().toISOString().slice(0, 10)}.csv`,
+    settingsCsv(data, session?.user.organizationName ?? organizationId, new Date().toISOString())) : null, "설정을 불러온 뒤 내보낼 수 있습니다");
   const cards = [
     { label: "좌석 지출", value: amount(data?.summary.monthlySeatFeeUsd), caption: data?.summary.monthlySeatFeeUsd == null ? "유효 계약 금액 확인 불가" : "유효 계약 기준 월 합계" },
     // 종량 지출은 벤더 청구 누계의 조직 합계다 — 한 제품이라도 없거나 정산 기간이 다르면 서버가 더하지 않는다(사유를 보여 준다).

@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDashboardPageRefresh } from "@/components/layout/DashboardHeader";
+import { useDashboardPageExport, useDashboardPageRefresh } from "@/components/layout/DashboardHeader";
 import { ModelScatterCard } from "@/components/teams/ModelScatterCard";
 import { TeamAxisPanel } from "@/components/teams/TeamAxisPanel";
 import { TeamDetailDrawer } from "@/components/teams/TeamDetailDrawer";
@@ -14,9 +14,10 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { ManagementError } from "@/lib/api/management";
 import { useBackendSession } from "@/lib/api/session";
-import { teamDetailOptions, teamsKey, teamsOptions, type TeamsPeriod } from "@/lib/api/teams";
+import { fetchTeams, fetchTeamUsers, teamDetailOptions, teamsKey, teamsOptions, UNASSIGNED, type TeamsPeriod, type TeamsView, type TeamUser } from "@/lib/api/teams";
 import { useFilters } from "@/lib/filters";
 import { presentTeams, teamDetail, type AxisKey } from "@/lib/metrics/teams-presentation";
+import { downloadCsv, teamsCsv } from "@/lib/csv-export";
 
 /**
  * P2 팀 분석.
@@ -54,6 +55,35 @@ function OrganizationTeams({ organizationId, initialTeamId }: { organizationId: 
 
   const refreshList = useCallback(() => void client.invalidateQueries({ queryKey: teamsKey(organizationId) }), [client, organizationId]);
   useDashboardPageRefresh(() => void query.refetch({ cancelRefetch: false }), query.isFetching);
+  const session = useBackendSession();
+  // 사용자 표에서 고른 팀(공통 헤더의 CSV 가 그 팀의 사용자를 내보낸다).
+  const [usersTeam, setUsersTeam] = useState<string | null>(null);
+  // 팀 목록 전 페이지(화면과 같은 snapshot)와, 사용자 표에서 고른 팀의 사용자 전부. 사용자 페이지를 읽다 snapshot 이 만료되면 처음부터 한 번 다시 읽는다.
+  const exportTeams = async () => {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const view: TeamsView = attempt === 0 && data ? data : await fetchTeams(organizationId, period);
+        let chosen: { teamId: string; teamName: string; users: TeamUser[] } | null = null;
+        if (usersTeam) {
+          const users: TeamUser[] = [];
+          let cursor: string | null = null;
+          do {
+            const page = await fetchTeamUsers(organizationId, usersTeam, period, view.meta.snapshotId, cursor);
+            users.push(...page.users.items);
+            cursor = page.users.nextCursor;
+          } while (cursor);
+          const teamName = view.teams.find((team) => team.teamId === usersTeam)?.teamName ?? (usersTeam === UNASSIGNED ? view.unassigned.teamName : usersTeam);
+          chosen = { teamId: usersTeam, teamName, users };
+        }
+        downloadCsv(`teams_${view.meta.startDate}_${view.meta.endDate}.csv`, teamsCsv(view, session?.user.organizationName ?? organizationId, new Date().toISOString(), chosen));
+        return;
+      } catch (error) {
+        if (attempt === 0 && error instanceof ManagementError && error.code === "snapshot_expired") continue;
+        throw error;
+      }
+    }
+  };
+  useDashboardPageExport(data ? exportTeams : null, "팀 분석을 불러온 뒤 내보낼 수 있습니다");
 
   const toggleTeam = (key: string) => setHidden((prev) => ({ ...prev, [key]: !prev[key] }));
 
@@ -120,6 +150,7 @@ function OrganizationTeams({ organizationId, initialTeamId }: { organizationId: 
               snapshotId={model.snapshotId}
               teams={model.teams}
               onSnapshotExpired={refreshList}
+              onTeamChange={setUsersTeam}
             />
           </div>
         ))}

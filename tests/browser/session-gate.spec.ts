@@ -38,3 +38,12 @@ test("세션이 있으면 사이드바가 세션의 조직·계정·역할을 �
   await expect(page.getByRole("heading", { name: "로그인이 필요합니다", exact: true })).toBeVisible();
   await expect(page.getByLabel("로그인한 계정")).toHaveCount(0);
 });
+
+test("내보낼 목록이 없는 화면의 CSV 는 꺼진 이유를 말한다", async ({ page }) => {
+  await mockSession(page);
+  await mockOverview(page);
+  await page.goto("/ops");
+  const csv = page.getByRole("button", { name: "CSV", exact: true });
+  await expect(csv).toBeDisabled();
+  await expect(csv).toHaveAttribute("title", "이 화면에는 CSV로 내보낼 목록이 없습니다");
+});

@@ -33,13 +33,15 @@ const COLS =
 type SortKey = "account" | "sessionCount" | "tokenValue" | "costValue" | "cacheValue" | "lastValue";
 const SERVER_ORDER: SortState<SortKey> = { key: "costValue", direction: "desc" };
 
-export function UserUsageCard({ organizationId, period, snapshotId, teams, onSnapshotExpired }: {
+export function UserUsageCard({ organizationId, period, snapshotId, teams, onSnapshotExpired, onTeamChange }: {
   organizationId: string;
   period: { startDate: string; endDate: string };
   snapshotId: string;
   teams: TeamsModel["teams"];
   /** 사용자 조회 중 snapshot이 만료되면 목록부터 다시 읽는다(다른 snapshot의 값을 섞지 않는다). */
   onSnapshotExpired: () => void;
+  /** 고른 팀을 화면에 알린다 — 공통 헤더의 CSV 가 그 팀의 사용자를 내보낸다. */
+  onTeamChange?: (team: string) => void;
 }) {
   const [team, setTeam] = useState(teams[0]?.key ?? "");
   const [visible, setVisible] = useState(TEAM_USERS_PAGE);
@@ -59,6 +61,7 @@ export function UserUsageCard({ organizationId, period, snapshotId, teams, onSna
   }, [needsMore, hasNextPage, isFetching, isError, fetchNextPage]);
   const expired = query.error instanceof ManagementError && query.error.code === "snapshot_expired";
   useEffect(() => { if (expired) onSnapshotExpired(); }, [expired, onSnapshotExpired]);
+  useEffect(() => { if (team) onTeamChange?.(team); }, [team, onTeamChange]);
 
   const ordered = serverOrder ? data.rows : complete ? sortRows(data.rows, (row) => row[sort.key], sort.direction, (row) => row.account) : [];
   const rows = ordered.slice(0, visible);

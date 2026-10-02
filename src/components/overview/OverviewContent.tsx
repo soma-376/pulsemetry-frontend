@@ -2,7 +2,7 @@
 
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useQuery } from "@tanstack/react-query";
-import { useDashboardPageRefresh } from "@/components/layout/DashboardHeader";
+import { useDashboardPageExport, useDashboardPageRefresh } from "@/components/layout/DashboardHeader";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -11,6 +11,7 @@ import { DashboardError, overviewQueryOptions } from "@/lib/api/overview";
 import { overviewSettingsOptions } from "@/lib/api/overview-vendors";
 import { useBackendSession } from "@/lib/api/session";
 import { useFilters } from "@/lib/filters";
+import { downloadCsv, overviewCsv } from "@/lib/csv-export";
 
 export function OverviewContent() {
   const session = useBackendSession();
@@ -31,6 +32,9 @@ export function OverviewContent() {
   const denied = query.error instanceof DashboardError && [401, 403, 404].includes(query.error.status);
   const contractsDenied = contracts.error instanceof DashboardError && [401, 403, 404].includes(contracts.error.status);
   const data = denied ? undefined : query.data;
+  // CSV 는 화면이 쓰는 같은 응답(기간·비교·서버 기준 시각)으로 만든다.
+  useDashboardPageExport(data ? () => downloadCsv(`overview_${data.meta.startDate}_${data.meta.endDate}.csv`,
+    overviewCsv(data, session?.user.organizationName ?? data.meta.organizationId, new Date().toISOString())) : null, "개요를 불러온 뒤 내보낼 수 있습니다");
   useDashboardPageRefresh(() => {
     if (configured) void Promise.all([query.refetch({ cancelRefetch: false }), contracts.refetch({ cancelRefetch: false })]);
   }, !configured || query.isFetching || contracts.isFetching);

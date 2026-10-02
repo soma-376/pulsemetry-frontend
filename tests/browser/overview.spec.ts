@@ -38,7 +38,17 @@ test("Spring을 직접 조회하고 기간·비교 변경과 수동 새로고침
   const count = requests.length;
   await page.getByRole("button", { name: "새로고침", exact: true }).click();
   await expect.poll(() => requests.length).toBe(count + 1);
-  await expect(page.getByRole("button", { name: "CSV", exact: true })).toBeDisabled();
+  // 공통 헤더의 CSV 는 화면과 같은 응답(같은 기간·비교)으로 파일을 만든다.
+  const csvButton = page.getByRole("button", { name: "CSV", exact: true });
+  await expect(csvButton).toBeEnabled();
+  const download = page.waitForEvent("download");
+  await csvButton.click();
+  const file = await download;
+  expect(file.suggestedFilename()).toBe(`overview_${period.end}_${period.end}.csv`);
+  const text = await (await import("node:fs/promises")).readFile((await file.path())!, "utf8");
+  expect(text.startsWith("\uFEFF화면,개요\r\n")).toBe(true);
+  expect(text).toContain(`기간,${period.end} ~ ${period.end} (Asia/Seoul)`);
+  expect(text).toContain("\r\nsection,date,observation,equivalentCostUsd,allocatedSeatCostUsd,totalTokens,reason\r\n");
 });
 
 test("날짜 탐색·모델 선택·팀 정렬이 실제 응답을 사용한다", async ({ page }) => {

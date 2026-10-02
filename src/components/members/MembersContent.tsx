@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDashboardPageRefresh } from "@/components/layout/DashboardHeader";
+import { useDashboardPageRefresh, useDashboardPageExport } from "@/components/layout/DashboardHeader";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { InviteModal } from "@/components/members/InviteModal";
 import { editTarget, MemberDetailDrawer, type MemberSubject } from "@/components/members/MemberDetailDrawer";
@@ -126,6 +126,8 @@ function OrganizationMembers({ organizationId, currentMemberId, initialInvite }:
     link.click();
     URL.revokeObjectURL(url);
   };
+  // 공통 헤더의 CSV 도 화면의 전체 명단 CSV 와 같은 파일이다.
+  useDashboardPageExport(model ? exportCsv : null, "구성원을 불러온 뒤 내보낼 수 있습니다");
 
   return <>
     <PageContainer className="flex flex-col gap-4 pt-5 pb-10">
