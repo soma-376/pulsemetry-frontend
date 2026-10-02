@@ -175,7 +175,7 @@ function OrganizationMembers({ organizationId, currentMemberId, initialInvite }:
     <InviteModal open={inviteOpen && !!capabilities?.invite} onClose={() => { setInviteOpen(false); if (initialInvite) window.history.replaceState(null, "", "/members"); }}
       subtitle="초대 코드를 발급합니다 · 벤더 좌석은 별도로 배정합니다"
       teams={teams.data} onInvite={invite} />
-    {model && <MemberDetailDrawer organizationId={organizationId} subject={subjectOf(model, selected)} teams={teams.data ?? []}
+    {model && <MemberDetailDrawer organizationId={organizationId} post={post} subject={subjectOf(model, selected)} teams={teams.data ?? []}
       currentMemberId={currentMemberId} editable={model.capabilities.assignTeam}
       open={drawerOpen} period={model.period} onClose={() => setDrawerOpen(false)} onAfterClose={() => setSelected(null)}
       onSaved={(message) => { showToast(message); setDrawerOpen(false); }} onReload={reloadSubject} />}

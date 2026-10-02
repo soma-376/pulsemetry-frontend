@@ -41,6 +41,7 @@
 | 구성원 팀·역할 | E PATCH /members/{memberId} | 저장 |
 | 팀 배정 | E POST /member-team-assignments | 적용 |
 | 초대 | E POST /invitations/batch · GET /invitations · POST /invitations/{invitationId}/revoke·/reissue | 초대 전송·대기 목록 |
+| 설치 코드 | E POST /members/{memberId}/installation-invitations · GET /invitations?status=pending&memberStatus=active | 활성 구성원의 설치 전용 코드(서버 ADR 0055)·쓰지 않은 설치 코드의 발송 상태 |
 | 회수 후보 | D GET /seat-reclaim-candidates | 더보기·기준 변경 후 |
 | 구성원 좌석 | D GET /members/{memberId}/seats | 구성원 상세 |
 | 좌석 회수 미리보기 | E POST /seat-reclaims/preview | 회수 확인창 열기 |

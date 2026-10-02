@@ -110,7 +110,9 @@ export async function mockMembers(page: Page, options: { members?: FixtureMember
     const candidates = state.members.filter((member) => candidateIds.includes(member.memberId));
 
     if (method === "GET" && path === "invitations") {
-      return json(route, { items: state.invitations.filter((item) => item.status === url.searchParams.get("status") && item.memberStatus === url.searchParams.get("memberStatus")), nextCursor: null });
+      // 보내지 않은 필터는 거르지 않는다(서버와 같다).
+      const status = url.searchParams.get("status"), memberStatus = url.searchParams.get("memberStatus");
+      return json(route, { items: state.invitations.filter((item) => (!status || item.status === status) && (!memberStatus || item.memberStatus === memberStatus)), nextCursor: null });
     }
     if (method === "GET" && path === "members/dashboard") {
       return json(route, {
@@ -185,6 +187,24 @@ export async function mockMembers(page: Page, options: { members?: FixtureMember
         return { email, invitationId: invitation.invitationId, status: "issued", reason: null, expiresAt: invitation.expiresAt, code, delivery: invitation.delivery };
       });
       return json(route, { results });
+    }
+    // 활성 구성원의 설치 전용 코드(서버 ADR 0055) — 가입 소비를 발급 시각으로 기록하고, 그 구성원의 남은 설치 코드는 폐기한다.
+    const installationCode = /^members\/([^/]+)\/installation-invitations$/.exec(path);
+    if (method === "POST" && installationCode) {
+      const member = state.members.find((item) => item.memberId === installationCode[1]);
+      if (!member) return fail(route, 404, "not_found", "memberId");
+      if (member.status === "suspended") return fail(route, 409, "member_suspended");
+      if (member.status !== "active") return fail(route, 409, "member_not_active");
+      if (body.expectedVersion !== member.version) return fail(route, 409, "version_conflict");
+      const replaced = state.invitations.filter((item) => item.memberId === member.memberId && item.status !== "revoked" && !item.installationUsedAt && item.signupUsedAt);
+      for (const old of replaced) {
+        old.status = "revoked"; old.revokedAt = new Date().toISOString();
+        if (old.delivery.status === "queued") old.delivery = { ...old.delivery, status: "cancelled" };
+      }
+      const { invitation, code } = issue(member.account, member.role, member.team.teamId ? { teamId: member.team.teamId, teamName: member.team.teamName } : null, member.memberId, member.version);
+      invitation.memberStatus = "active"; invitation.signupUsedAt = invitation.createdAt;
+      return json(route, { invitationId: invitation.invitationId, memberId: member.memberId, replacesInvitationIds: replaced.map((item) => item.invitationId),
+        code: code.replace("FAKE-CODE", "FAKE-INST"), expiresAt: invitation.expiresAt, delivery: invitation.delivery });
     }
     const invitationCommand = path.match(/^invitations\/([^/]+)\/(reissue|revoke)$/);
     if (method === "POST" && invitationCommand) {

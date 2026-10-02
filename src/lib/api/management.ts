@@ -20,6 +20,7 @@ const messages: Record<string, string> = {
   catalog_changed: "카탈로그가 갱신되었습니다. 제품과 플랜을 다시 조회해 주세요.",
   role_not_assignable: "지정할 수 없는 역할입니다.", owner_role_immutable: "소유자의 역할은 바꿀 수 없습니다.",
   self_role_change: "자기 역할은 바꿀 수 없습니다.", member_suspended: "정지된 구성원은 변경할 수 없습니다.",
+  member_not_active: "아직 합류하지 않은 구성원입니다. 초대 대기 목록에서 초대를 다시 보내세요.",
   invitation_unavailable: "이미 사용했거나 취소된 초대입니다. 목록을 다시 확인하세요.",
   notification_channel_unavailable: "메일 발송이 설정되지 않아 알림을 보낼 수 없습니다. 서버 관리자에게 메일 설정을 요청하세요.",
   installation_unavailable: "이미 새 정책을 적용했거나 알림을 보낼 수 없는 설치가 포함돼 있습니다. 목록을 다시 불러왔습니다.",

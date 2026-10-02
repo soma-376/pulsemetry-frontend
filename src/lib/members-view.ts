@@ -71,6 +71,7 @@ export function memberRow(member: Member, candidates: ReadonlySet<string>) {
     teamColor: member.team.teamId ? "var(--text2)" : "var(--orange-ink)",
     role: member.role,
     roleLabel: ROLE_LABEL[member.role] ?? member.role,
+    status: member.status,
     stateLabel: MEMBER_STATE_LABEL[member.status] ?? member.status,
     version: member.version,
     seatStateLabel: SEAT_STATE_LABEL[member.seatState] ?? member.seatState,

@@ -1,10 +1,11 @@
 "use client";
 
 import { DetailDrawer } from "@/components/ui/DetailDrawer";
+import { InstallationCodePanel } from "./InstallationCodePanel";
 import { MemberEditForm, type MemberEditTarget } from "./MemberEditForm";
 import { MemberSeatDetails } from "./MemberSeatDetails";
 import { MemberStatusBadges } from "./MemberStatusBadges";
-import type { ServerTeam } from "@/lib/api/management";
+import type { createCommands, ServerTeam } from "@/lib/api/management";
 import type { InviteRow, MemberRow } from "@/lib/members-view";
 
 /** 상세에 올릴 대상 — 명단의 구성원이거나 아직 합류하지 않은 초대 대기자. */
@@ -12,6 +13,7 @@ export type MemberSubject = { kind: "member"; row: MemberRow } | { kind: "invite
 
 type Props = {
   organizationId: string;
+  post: ReturnType<typeof createCommands>;
   subject: MemberSubject | null;
   open: boolean;
   /** 조회 기간 (YYYY-MM-DD) */
@@ -36,7 +38,7 @@ export function editTarget(subject: MemberSubject): MemberEditTarget {
 }
 
 /** 서버가 준 구성원 한 명의 값과 팀·역할 편집. 좌석 배정 상태는 사용 관측 상태와 따로 보여 준다. */
-export function MemberDetailDrawer({ organizationId, subject, open, period, teams, currentMemberId, editable, onClose, onAfterClose, onSaved, onReload }: Props) {
+export function MemberDetailDrawer({ organizationId, post, subject, open, period, teams, currentMemberId, editable, onClose, onAfterClose, onSaved, onReload }: Props) {
   const target = subject ? editTarget(subject) : null;
   const member = subject?.kind === "member" ? subject.row : null;
   const invite = subject?.kind === "invite" ? subject.row : null;
@@ -55,6 +57,8 @@ export function MemberDetailDrawer({ organizationId, subject, open, period, team
           </dl>
           {fields}
         </section>
+        {member?.status === "active" && editable && <InstallationCodePanel organizationId={organizationId} post={post}
+          memberId={member.memberId} account={member.account} version={member.version} />}
         {member && <>
           <section aria-label="기간 사용">
             <h3 className="mb-3 text-[13px] font-semibold">기간 사용</h3>
