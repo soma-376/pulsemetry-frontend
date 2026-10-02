@@ -1,5 +1,6 @@
 import { organizationKey } from "./query-keys";
-import { sessionFetch } from "./session";
+import { AuthError, sessionFetch } from "./session";
+import { retryAfterMs } from "./retry-after";
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 
@@ -43,11 +44,7 @@ export class DashboardError extends Error {
   constructor(message: string, public status = 0, public retryAfterMs = 0) { super(message); }
 }
 
-export function retryAfterMs(value: string | null, now = Date.now()) {
-  if (!value) return 0;
-  const delay = /^\d+$/.test(value) ? Number(value) * 1000 : Date.parse(value) - now;
-  return Number.isFinite(delay) ? Math.max(0, delay) : 0;
-}
+export { retryAfterMs };
 
 export async function fetchOverview(params: OverviewParams, signal?: AbortSignal): Promise<Overview> {
   const { organizationId, ...filters } = params;
@@ -74,7 +71,8 @@ export async function fetchOverview(params: OverviewParams, signal?: AbortSignal
 }
 
 export function shouldRetryOverview(failures: number, error: Error) {
-  if (failures >= 2 || error.name === "AbortError") return false;
+  // 인증 실패(제한 429 포함)는 세션 갱신이 이미 기다렸다가 한 번 다시 시도한 결과다. 조회 재시도로 인증 요청을 늘리지 않는다.
+  if (failures >= 2 || error.name === "AbortError" || error instanceof AuthError) return false;
   return !(error instanceof DashboardError) || ((error.status >= 500 || error.status === 429) && error.retryAfterMs <= 60_000);
 }
 

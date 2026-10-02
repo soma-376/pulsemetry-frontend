@@ -28,3 +28,32 @@ test("시드 인증은 명시적으로 켠 로컬 환경에서만 허용하고 �
     if (vercel === undefined) delete process.env.VERCEL; else process.env.VERCEL = vercel;
   }
 });
+test("백엔드의 요청 제한(429)은 502로 바꾸지 않고 429와 Retry-After를 넘긴다", async () => {
+  const saved = { enabled: process.env.DEV_SEED_AUTH_ENABLED, password: process.env.DEV_SEED_AUTH_PASSWORD, base: process.env.ENROLLMENT_API_URL, vercel: process.env.VERCEL, fetch: globalThis.fetch };
+  const request = () => new Request("http://localhost:3000/api/dev/seed-login", { method: "POST", headers: { origin: "http://localhost:3000", "Content-Type": "application/json" }, body: JSON.stringify({ email: "owner@seed-a.example.test" }) });
+  const backend = (status: number, headers: Record<string, string> = {}) => {
+    const calls: string[] = [];
+    globalThis.fetch = (async (input: RequestInfo | URL) => { calls.push(String(input)); return new Response(JSON.stringify({ error: "x", message: "사용자 인증 요청을 처리할 수 없습니다." }), { status, headers }); }) as typeof fetch;
+    return calls;
+  };
+  try {
+    process.env.DEV_SEED_AUTH_ENABLED = "true";
+    process.env.DEV_SEED_AUTH_PASSWORD = "local-only-password";
+    process.env.ENROLLMENT_API_URL = "http://localhost:9";
+    delete process.env.VERCEL;
+    const calls = backend(429, { "Retry-After": "42" });
+    const limited = await POST(request());
+    assert.equal(limited.status, 429);
+    assert.equal(limited.headers.get("Retry-After"), "42");
+    assert.equal((await limited.json()).error, "rate_limited");
+    assert.deepEqual(calls, ["http://localhost:9/v1/auth/login"]);
+    backend(401);
+    assert.equal((await POST(request())).status, 401);
+    backend(500);
+    assert.equal((await POST(request())).status, 502);
+  } finally {
+    globalThis.fetch = saved.fetch;
+    for (const [key, value] of [["DEV_SEED_AUTH_ENABLED", saved.enabled], ["DEV_SEED_AUTH_PASSWORD", saved.password], ["ENROLLMENT_API_URL", saved.base], ["VERCEL", saved.vercel]] as const)
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+  }
+});

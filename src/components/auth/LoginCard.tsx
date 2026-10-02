@@ -14,6 +14,7 @@ import { ownerMailto, type DemoLoginResult, type LoginView } from "@/lib/auth";
 import { fetchOnboarding, onboardingOptions } from "@/lib/api/management";
 import { AuthError, seedLogin } from "@/lib/api/session";
 import { useOrganization } from "@/lib/organization-store";
+import { useRateLimit } from "@/lib/use-rate-limit";
 
 export function LoginCard() {
   const { update } = useOrganization();
@@ -22,6 +23,7 @@ export function LoginCard() {
   const [view, setView] = useState<LoginView>("form");
   const [scenario, setScenario] = useState<DemoLoginResult>("success");
   const [error, setError] = useState("");
+  const limit = useRateLimit();
   const request = useRef<AbortController | null>(null);
   useEffect(() => () => request.current?.abort(), []);
   const { register, handleSubmit, getValues, formState: { errors, isSubmitting } } = useForm<LoginForm>({
@@ -53,6 +55,8 @@ export function LoginCard() {
     } catch (cause) {
       if (controller.signal.aborted) return;
       if (cause instanceof AuthError && cause.status === 400) { setView("unknown"); return; }
+      // 요청 제한은 계정·서버 설정 오류가 아니다. 입력한 이메일을 그대로 두고 대기 뒤 다시 보낼 수 있게 한다.
+      if (limit.capture(cause)) { setView("form"); return; }
       setError(cause instanceof Error ? cause.message : "로그인에 실패했습니다.");
       setView("error");
     }
@@ -64,9 +68,9 @@ export function LoginCard() {
         <Input {...register("email", { onChange: () => { setView("form"); setError(""); } })} type="email" autoComplete="email" placeholder="you@company.com" className="h-10" disabled={isSubmitting} aria-invalid={!!errors.email || view === "unknown"} aria-describedby="login-message" />
       </label>
       <div id="login-message" aria-live="polite" className="text-xs text-red">
-        {errors.email?.message || error || (view === "unknown" ? "등록된 조직을 찾지 못했습니다. 이메일을 확인하거나 조직 관리자에게 초대를 요청해 주세요." : "")}
+        {errors.email?.message || limit.message || error || (view === "unknown" ? "등록된 조직을 찾지 못했습니다. 이메일을 확인하거나 조직 관리자에게 초대를 요청해 주세요." : "")}
       </div>
-      <Button type="submit" variant="primary" className="h-10" disabled={isSubmitting}>{isSubmitting ? "로그인 방법 확인 중…" : "회사 계정으로 계속"}</Button>
+      <Button type="submit" variant="primary" className="h-10" disabled={isSubmitting || limit.waiting}>{limit.waiting ? `${limit.seconds}초 뒤 다시 시도` : isSubmitting ? "로그인 방법 확인 중…" : "회사 계정으로 계속"}</Button>
     </form>}
     {view === "redirect" && <>
       <div role="status" className="rounded-lg bg-sub p-4 text-sm"><p className="font-semibold">회사 계정으로 로그인 중</p><p className="mt-2 break-all text-text2">{getValues("email")}</p></div>

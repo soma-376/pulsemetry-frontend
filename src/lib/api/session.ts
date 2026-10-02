@@ -1,6 +1,9 @@
 "use client";
 import { useSyncExternalStore } from "react";
 import { z } from "zod";
+import { AuthError, authErrorFrom } from "./auth-error";
+
+export { AuthError };
 
 const tokensSchema = z.object({
   access_token: z.string(),
@@ -82,14 +85,8 @@ export function useBackendSession() {
     () => null,
   );
 }
-export class AuthError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-  ) {
-    super(message);
-  }
-}
+/** 갱신 429 에서 서버가 준 대기 시간이 이보다 길면 기다리지 않고 실패로 알린다(서버 기본 창 60초). */
+const maxRefreshWaitMs = 60_000;
 const enrollmentUrl = () =>
   (
     process.env.NEXT_PUBLIC_ENROLLMENT_API_URL ?? "http://localhost:8080"
@@ -104,13 +101,8 @@ export async function seedLogin(email: string, signal?: AbortSignal) {
     signal,
     cache: "no-store",
   });
-  const body = await response.json();
-  if (!response.ok)
-    throw new AuthError(
-      body.message ?? "로그인에 실패했습니다.",
-      response.status,
-    );
-  const session = sessionSchema.parse(body);
+  if (!response.ok) throw await authErrorFrom(response, "로그인에 실패했습니다.");
+  const session = sessionSchema.parse(await response.json());
   signal?.throwIfAborted();
   if (generation !== epoch)
     throw new DOMException("로그인이 취소되었습니다.", "AbortError");
@@ -123,20 +115,33 @@ async function refreshSession() {
   const epoch = generation;
   if (!previous) throw new AuthError("로그인이 필요합니다.", 401);
   const task = (async () => {
-    const response = await fetch(`${enrollmentUrl()}/v1/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: previous.tokens.refresh_token }),
-      cache: "no-store",
-    });
+    const post = () =>
+      fetch(`${enrollmentUrl()}/v1/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: previous.tokens.refresh_token }),
+        cache: "no-store",
+      });
+    let response = await post();
+    if (response.status === 429) {
+      // 요청 제한은 세션 만료가 아니다. 세션을 지우지 않는다. 서버는 RT 를 소비하기 전에 429 를 주므로
+      // 같은 RT 로 서버가 준 시간만큼 기다린 뒤 한 번만 다시 시도한다. 그동안의 다른 갱신은 이 작업을 함께 기다린다.
+      const limited = await authErrorFrom(response, "");
+      if (limited.retryAfterMs <= 0 || limited.retryAfterMs > maxRefreshWaitMs) throw limited;
+      await new Promise((resolve) => setTimeout(resolve, limited.retryAfterMs));
+      if (generation !== epoch || current !== previous)
+        throw new AuthError("로그인이 변경되었습니다.", 401);
+      response = await post();
+    }
     if (!response.ok) {
       if (generation === epoch && [400, 401, 403].includes(response.status))
         clearBackendSession();
-      throw new AuthError(
+      throw await authErrorFrom(
+        response,
+        "",
         response.status >= 500
           ? "인증 서버에 연결하지 못했습니다."
           : "세션이 만료되었습니다. 다시 로그인해 주세요.",
-        response.status,
       );
     }
     const tokens = tokensSchema.parse(await response.json());
@@ -187,10 +192,12 @@ export async function backendLogout() {
       body: JSON.stringify({ refresh_token: session.tokens.refresh_token }),
       cache: "no-store",
     });
+    // 요청 제한(429)이면 세션을 그대로 두고 대기 시간을 담아 알린다. 같은 RT 로 다시 시도할 수 있다.
     if (!response.ok && response.status !== 401)
-      throw new AuthError(
+      throw await authErrorFrom(
+        response,
+        "",
         "로그아웃에 실패했습니다. 다시 시도해 주세요.",
-        response.status,
       );
   }
   clearBackendSession();

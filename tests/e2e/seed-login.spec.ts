@@ -1,4 +1,4 @@
-import { expect, test, seedOrganizations as organizations } from "./fixtures";
+import { enrollmentBase, expect, test, seedOrganizations as organizations } from "./fixtures";
 import { signIn } from "./helpers";
 
 for (const organization of organizations) {
@@ -75,4 +75,68 @@ test("SEED-AUTH-REFRESH @p1 @read 유효하지 않은 AT의 401에서 실제 RT 
   expect(refreshCount).toBe(1);
   await page.getByRole("link", { name: "로그아웃", exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
+});
+
+test("SEED-AUTH-RATE-LIMIT @p1 @read 로그인·로그아웃의 429(주입)는 대기 안내 뒤 같은 입력으로 복구한다", async ({ page, baseURL }) => {
+  // 429 는 page.route 로 한 번씩만 주입한다 — 실제 요청 제한 버킷을 쓰지 않는다. 나머지는 실서버로 간다.
+  let logins = 0;
+  await page.route("**/api/dev/seed-login", async (route) => {
+    logins++;
+    if (logins === 1) return route.fulfill({ status: 429, headers: { "Retry-After": "2" }, json: { error: "rate_limited", message: "로그인 요청이 많아 잠시 제한되었습니다." } });
+    return route.continue();
+  });
+  await page.goto("/login");
+  await page.getByLabel("회사 이메일", { exact: true }).fill("owner@seed-b.example.test");
+  await page.getByRole("button", { name: "회사 계정으로 계속", exact: true }).click();
+  await expect(page.locator("#login-message")).toHaveText("요청이 많아 잠시 제한되었습니다. 2초 뒤에 다시 시도해 주세요.");
+  await expect(page.getByRole("button", { name: /초 뒤 다시 시도$/ })).toBeDisabled();
+  const submit = page.getByRole("button", { name: "회사 계정으로 계속", exact: true });
+  await expect(submit).toBeEnabled({ timeout: 5_000 });
+  const login = page.waitForResponse((response) => response.url().endsWith("/api/dev/seed-login") && response.status() === 200);
+  await submit.click();
+  await login;
+  expect(logins).toBe(2);
+  await page.goto("/overview");
+  await expect(page.getByRole("navigation")).toContainText(organizations[1].name);
+
+  let logouts = 0;
+  await page.route("**/v1/auth/logout", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    logouts++;
+    if (logouts > 1) return route.continue();
+    return route.fulfill({ status: 429, json: { error: "rate_limited", message: "사용자 인증 요청을 처리할 수 없습니다." },
+      headers: { "Retry-After": "2", "Access-Control-Allow-Origin": new URL(baseURL!).origin, "Access-Control-Expose-Headers": "Retry-After" } });
+  });
+  await page.getByRole("link", { name: "로그아웃", exact: true }).click();
+  await expect(page.getByRole("navigation").getByRole("alert")).toHaveText("요청이 많아 잠시 제한되었습니다. 2초 뒤에 다시 시도해 주세요.");
+  expect(await page.evaluate(() => sessionStorage.getItem("pulsemetry.seed-session.v1"))).not.toBeNull();
+  await page.getByRole("link", { name: /^로그아웃 · \d+초 뒤$/ }).click({ force: true });
+  expect(logouts).toBe(1);
+  const logout = page.waitForResponse((response) => response.url().endsWith("/v1/auth/logout") && response.request().method() === "POST" && response.status() === 204);
+  await page.getByRole("link", { name: "로그아웃", exact: true }).click({ timeout: 5_000 });
+  await logout;
+  await expect(page).toHaveURL(/\/login$/);
+  expect(await page.evaluate(() => sessionStorage.getItem("pulsemetry.seed-session.v1"))).toBeNull();
+});
+
+test("SEED-AUTH-RETRY-AFTER @p1 @read 실서버의 세션 요청 제한 429에서 브라우저가 Retry-After를 읽는다", async ({ page }) => {
+  // 세션 단위 버킷(서버 ADR 0052)만 채운다 — IP 버킷은 로그인 한 번만 쓴다. 이 세션은 한도가 찬 채로 컨텍스트와 함께 버린다.
+  await signIn(page, "owner@seed-b.example.test");
+  const result = await page.evaluate(async (origin) => {
+    const session = JSON.parse(sessionStorage.getItem("pulsemetry.seed-session.v1")!);
+    const statuses: number[] = [];
+    for (let i = 0; i < 40; i++) {
+      const response = await fetch(`${origin}/v1/auth/me`, { headers: { Authorization: `Bearer ${session.tokens.access_token}` } });
+      statuses.push(response.status);
+      if (response.status === 429) return { statuses, retryAfter: response.headers.get("Retry-After"), contentType: response.headers.get("Content-Type"), body: await response.json() };
+    }
+    return { statuses, retryAfter: null, contentType: null, body: null };
+  }, enrollmentBase());
+  expect(result.statuses.at(-1)).toBe(429);
+  expect(result.statuses.slice(0, -1).every((status) => status === 200)).toBe(true);
+  expect(result.statuses.length).toBeLessThanOrEqual(31);
+  expect(result.retryAfter).toMatch(/^[1-9]\d*$/);
+  expect(Number(result.retryAfter)).toBeLessThanOrEqual(60);
+  expect(result.contentType?.toLowerCase()).toContain("charset=utf-8");
+  expect(result.body).toEqual({ error: "rate_limited", message: "사용자 인증 요청을 처리할 수 없습니다." });
 });

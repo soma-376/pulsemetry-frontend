@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useOrganization } from "@/lib/organization-store";
 import { backendLogout, useBackendSession } from "@/lib/api/session";
+import { useRateLimit } from "@/lib/use-rate-limit";
 import { AUTH_SEED } from "@/mocks/auth";
 import { Icon, type IconName } from "@/components/ui/Icon";
 
@@ -22,6 +23,7 @@ export function Sidebar() {
   const session = useBackendSession();
   const router = useRouter();
   const [logoutError, setLogoutError] = useState("");
+  const logoutLimit = useRateLimit();
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -93,8 +95,9 @@ export function Sidebar() {
             </div>
           </div>
         )}
-        <Link href="/login" onClick={async (event) => { event.preventDefault(); try { await backendLogout(); update((previous) => ({ ...previous, session: null })); router.replace("/login"); } catch (cause) { setLogoutError(cause instanceof Error ? cause.message : "로그아웃에 실패했습니다."); } }} className="rounded-md px-2 py-1 text-xs text-text3 hover:bg-hover">로그아웃</Link>
-        {logoutError && <p role="alert" className="text-xs text-red">{logoutError}</p>}
+        {/* 요청 제한(429)이면 세션을 유지한 채 서버가 준 시간 동안 다시 보내지 않는다. */}
+        <Link href="/login" aria-disabled={logoutLimit.waiting || undefined} onClick={async (event) => { event.preventDefault(); if (logoutLimit.waiting) return; try { await backendLogout(); update((previous) => ({ ...previous, session: null })); router.replace("/login"); } catch (cause) { setLogoutError(logoutLimit.capture(cause) ? "" : cause instanceof Error ? cause.message : "로그아웃에 실패했습니다."); } }} className="rounded-md px-2 py-1 text-xs text-text3 hover:bg-hover aria-disabled:cursor-not-allowed aria-disabled:opacity-60">{logoutLimit.waiting ? `로그아웃 · ${logoutLimit.seconds}초 뒤` : "로그아웃"}</Link>
+        {(logoutLimit.message || logoutError) && <p role="alert" className="text-xs text-red">{logoutLimit.message || logoutError}</p>}
       </div>
     </nav>
   );
