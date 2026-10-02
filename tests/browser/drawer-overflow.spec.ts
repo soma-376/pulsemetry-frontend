@@ -1,4 +1,5 @@
 import { openDashboard } from "./helpers";
+import { serveSettings } from "./onboarding-fixture";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 async function sampleOverflow(page: Page) {
@@ -55,6 +56,7 @@ async function sampleSlide(trigger: Locator) {
 for (const route of ["teams", "settings"]) {
   test(`${route} drawer slides left on entry and right on exit without fading the panel`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
+    if (route === "settings") serveSettings(page);
     await openDashboard(page, `/${route}`);
     const trigger = route === "teams"
       ? page.getByRole("region", { name: "팀별 사용량 비교" }).getByRole("button", { name: "플랫폼", exact: true })
@@ -79,6 +81,7 @@ for (const route of ["teams", "settings"]) {
 
   test(`${route} drawer closes with reduced motion`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
+    if (route === "settings") serveSettings(page);
     await openDashboard(page, `/${route}`);
     const trigger = route === "teams"
       ? page.getByRole("region", { name: "팀별 사용량 비교" }).getByRole("button", { name: "플랫폼", exact: true })
@@ -95,9 +98,12 @@ for (const route of ["teams", "settings"]) {
 
 test("settings save and delete keep the drawer mounted until its exit ends", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
+  serveSettings(page);
   await openDashboard(page, "/settings");
   await page.getByRole("button", { name: "벤더 추가", exact: true }).click();
   const addDialog = page.getByRole("dialog", { name: "벤더 추가", exact: true });
+  await addDialog.getByLabel("제품", { exact: true }).selectOption("claude_team");
+  await addDialog.getByLabel("플랜", { exact: true }).selectOption("team");
   await addDialog.getByLabel("표시 이름", { exact: true }).fill("Animation vendor");
   await addDialog.getByLabel("좌석 수", { exact: true }).fill("5");
   await addDialog.getByLabel("월 단가", { exact: true }).fill("10");
@@ -117,7 +123,7 @@ test("settings save and delete keep the drawer mounted until its exit ends", asy
   await trigger.click();
   await expect(dialog.getByLabel("좌석 수", { exact: true })).toHaveValue("5");
   await dialog.getByRole("button", { name: "벤더 삭제", exact: true }).click();
-  const deleting = await sampleSlide(dialog.getByRole("button", { name: "삭제", exact: true }));
+  const deleting = await sampleSlide(dialog.getByRole("button", { name: "제품 삭제 확인", exact: true }));
   expect(deleting.length).toBeGreaterThan(2);
   expect(deleting.at(-1)!.x).toBeGreaterThan(deleting[0].x + 50);
   await expect(dialog).not.toBeVisible();

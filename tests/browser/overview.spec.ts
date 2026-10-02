@@ -3,7 +3,19 @@ import { mockOverview, overviewFixture, overviewUrl, corsHeaders, mockOverviewSe
 
 test.beforeEach(async ({ page }) => { await mockOverviewSettings(page); });
 
+/**
+ * 기본 기간은 서버가 렌더링할 때의 서울 날짜로 정해진다(`src/app/(dashboard)/layout.tsx` 의 `todayIso`) — 브라우저 시계를 고정해도 바뀌지 않는다.
+ * 같은 기계에서 도는 서버이므로 지금 시각의 서울 날짜에서 기대값을 낸다: 오늘을 포함한 최근 7일.
+ */
+function defaultPeriod() {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  const day = (offset: number) => new Date(Date.parse(`${today}T00:00:00Z`) + offset * 86_400_000).toISOString().slice(0, 10);
+  const dots = (value: string) => value.replaceAll("-", ".");
+  return { start: day(-6), second: day(-5), end: today, label: `${dots(day(-6))} ~ ${dots(today)}`, todayLabel: `${dots(today)} ~ ${dots(today)}` };
+}
+
 test("Spring을 직접 조회하고 기간·비교 변경과 수동 새로고침을 반영한다", async ({ page }) => {
+  const period = defaultPeriod();
   const requests: URL[] = [];
   await mockOverview(page);
   page.on("request", (request) => { if (request.url().includes("/analytics/overview?")) requests.push(new URL(request.url())); });
@@ -11,15 +23,16 @@ test("Spring을 직접 조회하고 기간·비교 변경과 수동 새로고침
   await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toContainText("$5,000.00");
   expect(requests[0].origin).toBe(process.env.MOCK_DASHBOARD_API_URL ?? "http://localhost:8081");
   expect(requests[0].searchParams.get("timeZone")).toBe("Asia/Seoul");
-  expect(requests[0].searchParams.get("startDate")).toBe("2026-09-07");
+  expect(requests[0].searchParams.get("startDate")).toBe(period.start);
+  expect(requests[0].searchParams.get("endDate")).toBe(period.end);
   await page.getByRole("combobox", { name: "비교", exact: true }).selectOption("none");
   await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).not.toContainText("전주 대비");
   expect(requests.at(-1)!.searchParams.get("compare")).toBe("none");
-  await page.getByRole("button", { name: "2026.09.07 ~ 2026.09.13", exact: true }).click();
+  await page.getByRole("button", { name: period.label, exact: true }).click();
   await page.getByRole("button", { name: "오늘", exact: true }).click();
   await page.getByRole("button", { name: "적용", exact: true }).click();
-  await expect(page.getByRole("button", { name: "2026.09.13 ~ 2026.09.13", exact: true })).toBeVisible();
-  await expect.poll(() => requests.at(-1)!.searchParams.get("startDate")).toBe("2026-09-13");
+  await expect(page.getByRole("button", { name: period.todayLabel, exact: true })).toBeVisible();
+  await expect.poll(() => requests.at(-1)!.searchParams.get("startDate")).toBe(period.end);
   const count = requests.length;
   await page.getByRole("button", { name: "새로고침", exact: true }).click();
   await expect.poll(() => requests.length).toBe(count + 1);
@@ -27,15 +40,16 @@ test("Spring을 직접 조회하고 기간·비교 변경과 수동 새로고침
 });
 
 test("날짜 탐색·모델 선택·팀 정렬이 실제 응답을 사용한다", async ({ page }) => {
+  const period = defaultPeriod();
   await mockOverview(page);
   await page.goto("/overview");
   const slider = page.getByRole("slider", { name: "날짜별 환산가치. 좌우 방향키로 날짜를 이동하세요" });
   await expect(slider).toBeVisible();
   await slider.focus();
   await slider.press("Home");
-  await expect(slider).toHaveAttribute("aria-valuetext", /2026-09-07/);
+  await expect(slider).toHaveAttribute("aria-valuetext", new RegExp(period.start));
   await slider.press("ArrowRight");
-  await expect(slider).toHaveAttribute("aria-valuetext", /2026-09-08/);
+  await expect(slider).toHaveAttribute("aria-valuetext", new RegExp(period.second));
   const model = page.getByRole("button", { name: /Model Pro/ });
   await model.click();
   await expect(model).toHaveAttribute("aria-pressed", "true");

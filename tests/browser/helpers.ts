@@ -1,10 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mockOnboarding } from "./onboarding-fixture";
-import { overviewFixture, overviewUrl } from "./overview-fixture";
+import { mockIngestStatus, overviewFixture, overviewUrl } from "./overview-fixture";
 import { mockTeams } from "./teams-fixture";
 
 /** UI fixture 테스트 전용. 실제 Spring 인증 검증은 tests/e2e/seed-login.spec.ts에서 수행한다. */
 export async function mockSeedAuth(page: Page) {
+  await mockIngestStatus(page);
   await mockOnboarding(page);
   await mockTeams(page);
   await page.route("**/api/dev/seed-login", async (route) => {
