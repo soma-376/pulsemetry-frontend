@@ -8,7 +8,9 @@ import { signIn, signOut } from "../e2e/helpers";
 // 그 데몬은 설치 보고를 보내지 않는다(백엔드 ADR 0053) — 적용 판은 확인 불가이고, 수신이 있어도 보고 없이 "수집 정상"이라고 하지 않는다.
 // 걸음은 단계 디렉터리의 파일로 맞춘다: 데몬 쪽이 <단계>.ready(관찰값 JSON)를 쓰면 화면을 확인하고 <단계>.seen을 쓴다.
 // 기대값은 대시보드 명세의 판정 규칙이다 — 수신 이력이 없으면 수신 대기, 수집 중이라고 보고한 설치가 없으면 확인 불가(source_not_available).
+// 정책 적용의 근거도 명세 표대로다 — 설치 보고도 적용 확인 기록도 없는 설치는 근거 없음(`none`, 판 null·`unknown`)이고 근거 시각이 없다.
 const B = seedOrganizations[1];
+const ROLLOUT = "적용 0대 · 미적용 0대 · 확인 불가 1대 · 근거: 근거 없음 1대 — 설치 보고를 받은 설치가 없습니다";
 
 function stageDir() {
   const dir = process.env.E2E_DAEMON_STAGE_DIR;
@@ -34,7 +36,7 @@ test("DAEMON-FLOW @p0 @write 데몬의 등록·전달·업데이트 확인이 �
   const enrolled = await reached<{ installationId: string }>("enrolled");
   await signIn(page, `owner@seed-${B.seed}.example.test`);
   await page.goto("/settings");
-  await expect(page.getByText("적용 0대 · 미적용 0대 · 확인 불가 1대 · 설치 보고 기준", { exact: true })).toBeVisible();
+  await expect(page.getByText(ROLLOUT, { exact: true })).toBeVisible();
   await expect(bar).toContainText("수신 대기");
   await expect(bar).toContainText("아직 수집된 데이터가 없습니다");
   await expect(bar).not.toContainText("보고 중인 설치");
@@ -42,6 +44,7 @@ test("DAEMON-FLOW @p0 @write 데몬의 등록·전달·업데이트 확인이 �
   await dialog.getByRole("button", { name: /^확인 불가 1$/ }).click();
   const row = dialog.getByRole("table", { name: "설치 목록" }).locator("tbody tr").filter({ has: page.locator(`[title="${enrolled.installationId}"]`) });
   await expect(row).toContainText("확인 불가");
+  await expect(row.locator("td").nth(5)).toHaveText("근거 없음");
   await expect(row.locator("td").last()).toHaveText("-");
   await dialog.getByRole("button", { name: "닫기", exact: true }).last().click();
   seen("enrolled");
@@ -55,7 +58,7 @@ test("DAEMON-FLOW @p0 @write 데몬의 등록·전달·업데이트 확인이 �
   await expect(bar).toContainText("수집 상태 확인 불가");
   await expect(bar).toContainText("수집 기기의 보고가 없어 판정할 수 없습니다");
   await expect(bar).not.toContainText("수집 정상");
-  await expect(page.getByText("적용 0대 · 미적용 0대 · 확인 불가 1대 · 설치 보고 기준", { exact: true })).toBeVisible();
+  await expect(page.getByText(ROLLOUT, { exact: true })).toBeVisible();
   seen("collecting");
 
   // 3. 업데이트 확인은 데몬 쪽 상태다(화면 없음). 데몬 쪽이 끝날 수 있게 걸음만 맞춘다.
