@@ -2,6 +2,7 @@
 import { useSyncExternalStore } from "react";
 import { z } from "zod";
 import { AuthError, authErrorFrom } from "./auth-error";
+import { SESSION_STORAGE_KEY } from "./session-key";
 
 export { AuthError };
 
@@ -21,7 +22,7 @@ const userSchema = z.object({
 });
 const sessionSchema = z.object({ tokens: tokensSchema, user: userSchema });
 export type BackendSession = z.infer<typeof sessionSchema>;
-const storageKey = "pulsemetry.seed-session.v1";
+const storageKey = SESSION_STORAGE_KEY;
 let current: BackendSession | null = null;
 let restored = false;
 let generation = 0;
@@ -67,6 +68,21 @@ function save(value: BackendSession | null) {
   }
   if (identityChanged) identityListeners.forEach((listener) => listener());
   notify();
+}
+/**
+ * 화면에 보일 역할. AT 의 `role` 클레임(owner·admin·member)을 읽는다 — 표시용이며 서버가 매 요청 다시 검사한다.
+ * 읽을 수 없으면 현재 사용자 응답의 역할(admin·member)을 쓴다.
+ */
+export function sessionRole(session: BackendSession): "owner" | "admin" | "member" {
+  try {
+    const payload = session.tokens.access_token.split(".")[1];
+    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(payload.length / 4) * 4, "="));
+    const role = (JSON.parse(json) as { role?: unknown }).role;
+    if (role === "owner" || role === "admin" || role === "member") return role;
+  } catch {
+    // 형식이 다른 토큰(목 fixture 등)이면 아래로 간다.
+  }
+  return session.user.role;
 }
 export function clearBackendSession() {
   generation++;

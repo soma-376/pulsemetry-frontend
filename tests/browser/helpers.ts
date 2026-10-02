@@ -1,9 +1,23 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mockOnboarding } from "./onboarding-fixture";
-import { mockIngestStatus, overviewFixture, overviewUrl } from "./overview-fixture";
+import { mockIngestStatus, overviewFixture, overviewUrl, testOrganizationId } from "./overview-fixture";
+import { SESSION_STORAGE_KEY } from "../../src/lib/api/session-key";
 import { mockTeams } from "./teams-fixture";
 
 /** UI fixture 테스트 전용. 실제 Spring 인증 검증은 tests/e2e/seed-login.spec.ts에서 수행한다. */
+/** 목 세션: 로그인 화면을 거치지 않는 대시보드 목 테스트가 쓴다. 이 page 의 sessionStorage 에 한 번만 넣는다(로그아웃 뒤 되살아나지 않는다). */
+export async function mockSession(page: Page) {
+  const session = {
+    tokens: { access_token: "ui-fixture-access", refresh_token: "ui-fixture-refresh", token_type: "Bearer", expires_in: 300 },
+    user: { memberId: "fixture-admin", organizationId: testOrganizationId, organizationName: "코드웍스", email: "admin@seed-a.example.test", displayName: "관리자", role: "admin" },
+  };
+  await page.addInitScript(({ key, value }) => {
+    if (sessionStorage.getItem("pulsemetry.mock-session-injected")) return;
+    sessionStorage.setItem("pulsemetry.mock-session-injected", "1");
+    sessionStorage.setItem(key, value);
+  }, { key: SESSION_STORAGE_KEY, value: JSON.stringify(session) });
+}
+
 export async function mockSeedAuth(page: Page) {
   await mockIngestStatus(page);
   await mockOnboarding(page);

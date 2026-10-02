@@ -1,5 +1,6 @@
 import { enrollmentBase, expect, test, seedOrganizations as organizations } from "./fixtures";
-import { paceSignIn, signIn } from "./helpers";
+import { editStoredSession, paceSignIn, signIn, storedSession } from "./helpers";
+import { SESSION_STORAGE_KEY } from "../../src/lib/api/session-key";
 import { ANNOTATION } from "./harness";
 
 for (const organization of organizations) {
@@ -27,7 +28,7 @@ for (const organization of organizations) {
     await page.getByRole("link", { name: "로그아웃", exact: true }).click();
     expect((await logout).status()).toBe(204);
     await expect(page).toHaveURL(/\/login$/);
-    expect(await page.evaluate(() => sessionStorage.getItem("pulsemetry.seed-session.v1"))).toBeNull();
+    expect(await storedSession(page)).toBeNull();
     expect(errors).toEqual([]);
   });
 }
@@ -62,11 +63,7 @@ test("SEED-AUTH-SWITCH @p0 @read A 로그아웃 후 B의 데이터와 조직명�
 test("SEED-AUTH-REFRESH @p1 @read 유효하지 않은 AT의 401에서 실제 RT 회전 후 개요 조회를 복구한다", async ({ page }) => {
   await signIn(page, "admin@seed-c.example.test");
   // 서버 만료 시간 시험과는 별개로, 401 복구 경로만 검증한다.
-  await page.evaluate(() => {
-    const saved = JSON.parse(sessionStorage.getItem("pulsemetry.seed-session.v1")!);
-    saved.tokens.access_token = "invalid-access-token-for-401-test";
-    sessionStorage.setItem("pulsemetry.seed-session.v1", JSON.stringify(saved));
-  });
+  await editStoredSession(page, { access_token: "invalid-access-token-for-401-test" });
   let refreshCount = 0;
   page.on("request", (request) => { if (request.url().endsWith("/v1/auth/refresh")) refreshCount++; });
   const refreshed = page.waitForResponse((response) => response.url().endsWith("/v1/auth/refresh"));
@@ -111,22 +108,22 @@ test("SEED-AUTH-RATE-LIMIT @p1 @read 로그인·로그아웃의 429(주입)는 �
   });
   await page.getByRole("link", { name: "로그아웃", exact: true }).click();
   await expect(page.getByRole("navigation").getByRole("alert")).toHaveText("요청이 많아 잠시 제한되었습니다. 2초 뒤에 다시 시도해 주세요.");
-  expect(await page.evaluate(() => sessionStorage.getItem("pulsemetry.seed-session.v1"))).not.toBeNull();
+  expect(await storedSession(page)).not.toBeNull();
   await page.getByRole("link", { name: /^로그아웃 · \d+초 뒤$/ }).click({ force: true });
   expect(logouts).toBe(1);
   const logout = page.waitForResponse((response) => response.url().endsWith("/v1/auth/logout") && response.request().method() === "POST" && response.status() === 204);
   await page.getByRole("link", { name: "로그아웃", exact: true }).click({ timeout: 5_000 });
   await logout;
   await expect(page).toHaveURL(/\/login$/);
-  expect(await page.evaluate(() => sessionStorage.getItem("pulsemetry.seed-session.v1"))).toBeNull();
+  expect(await storedSession(page)).toBeNull();
 });
 
 test("SEED-AUTH-RETRY-AFTER @p1 @read 실서버의 세션 요청 제한 429에서 브라우저가 Retry-After를 읽는다", async ({ page }) => {
   test.info().annotations.push({ type: ANNOTATION.intended429, description: "세션 버킷의 실제 429 시험" });
   // 세션 단위 버킷(서버 ADR 0052)만 채운다 — IP 버킷은 로그인 한 번만 쓴다. 이 세션은 한도가 찬 채로 컨텍스트와 함께 버린다.
   await signIn(page, "owner@seed-b.example.test");
-  const result = await page.evaluate(async (origin) => {
-    const session = JSON.parse(sessionStorage.getItem("pulsemetry.seed-session.v1")!);
+  const result = await page.evaluate(async ({ origin, key }) => {
+    const session = JSON.parse(sessionStorage.getItem(key)!);
     const statuses: number[] = [];
     for (let i = 0; i < 40; i++) {
       const response = await fetch(`${origin}/v1/auth/me`, { headers: { Authorization: `Bearer ${session.tokens.access_token}` } });
@@ -134,7 +131,7 @@ test("SEED-AUTH-RETRY-AFTER @p1 @read 실서버의 세션 요청 제한 429에�
       if (response.status === 429) return { statuses, retryAfter: response.headers.get("Retry-After"), contentType: response.headers.get("Content-Type"), body: await response.json() };
     }
     return { statuses, retryAfter: null, contentType: null, body: null };
-  }, enrollmentBase());
+  }, { origin: enrollmentBase(), key: SESSION_STORAGE_KEY });
   expect(result.statuses.at(-1)).toBe(429);
   expect(result.statuses.slice(0, -1).every((status) => status === 200)).toBe(true);
   expect(result.statuses.length).toBeLessThanOrEqual(31);

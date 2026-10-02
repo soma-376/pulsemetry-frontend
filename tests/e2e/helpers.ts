@@ -1,8 +1,22 @@
 import { expect, test, type Page } from "@playwright/test";
 import { enrollmentBase } from "./fixtures";
 import { ANNOTATION, paceLogin, PreparationError } from "./harness";
+import { SESSION_STORAGE_KEY } from "../../src/lib/api/session-key";
 
-const sessionKey = "pulsemetry.seed-session.v1";
+const sessionKey = SESSION_STORAGE_KEY;
+
+/** 이 page 의 저장된 세션(앱과 같은 키). 없으면 null. 토큰을 로그에 싣지 않는다. */
+export async function storedSession(page: Page): Promise<{ tokens: { access_token: string; refresh_token: string }; user: { organizationId: string; email: string } } | null> {
+  return JSON.parse(await page.evaluate((key) => sessionStorage.getItem(key), sessionKey) ?? "null");
+}
+/** 이 page 의 저장된 세션을 바꾼다(만료·위조 토큰 시험용). */
+export async function editStoredSession(page: Page, change: { access_token?: string; refresh_token?: string }) {
+  await page.evaluate(({ key, change }) => {
+    const saved = JSON.parse(sessionStorage.getItem(key)!);
+    Object.assign(saved.tokens, change);
+    sessionStorage.setItem(key, JSON.stringify(saved));
+  }, { key: sessionKey, change });
+}
 
 /** 로그인 한 번을 pacer 에 맡긴다. 기다린 만큼 테스트 제한 시간을 늘린다 — 대기는 실패가 아니다. */
 export async function paceSignIn(email: string) {
@@ -52,6 +66,9 @@ export async function signIn(page: Page, email: string, options: { ui?: boolean 
   }, { key: sessionKey, marker: `pulsemetry.e2e-session.${crypto.randomUUID()}`, value: JSON.stringify(session), origin });
   await page.goto(landing);
   await expect(page).toHaveURL(new RegExp(`${landing}$`));
+  // 앱이 저장된 세션을 읽어 화면에 조직명을 그릴 때까지 기다린다. 그 전에 테스트가 저장된 세션을 바꾸면(만료 시험 등)
+  // 아직 뜨는 화면과 다음 화면이 같은 갱신 토큰을 함께 써서 서버의 재사용 탐지가 세션을 폐기한다.
+  await expect(page.getByText(session.user.organizationName).first()).toBeVisible();
 }
 
 export async function signOut(page: Page) {
@@ -63,11 +80,11 @@ export async function signOut(page: Page) {
 
 /** 브라우저의 실제 세션으로 API 결과를 보조 검증한다. 토큰은 Node/로그로 반환하지 않는다. */
 export function authenticatedRequest(page: Page, origin: string, path: string, method = "GET", body?: unknown, headers: Record<string, string> = {}) {
-  return page.evaluate(async ({ origin, path, method, body, headers }) => {
-    const session = JSON.parse(sessionStorage.getItem("pulsemetry.seed-session.v1")!);
+  return page.evaluate(async ({ origin, path, method, body, headers, key }) => {
+    const session = JSON.parse(sessionStorage.getItem(key)!);
     const response = await fetch(origin + path, { method, headers: { Authorization: `Bearer ${session.tokens.access_token}`, ...(body ? { "Content-Type": "application/json" } : {}), ...headers }, body: body ? JSON.stringify(body) : undefined });
     return { status: response.status, body: response.status === 204 ? null : await response.json() };
-  }, { origin, path, method, body, headers });
+  }, { origin, path, method, body, headers, key: sessionKey });
 }
 
 export async function selectPeriod(page: Page, start: string, end: string) {

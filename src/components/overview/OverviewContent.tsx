@@ -14,7 +14,7 @@ import { useFilters } from "@/lib/filters";
 
 export function OverviewContent() {
   const session = useBackendSession();
-  const organizationId = session?.user.organizationId ?? process.env.NEXT_PUBLIC_ORGANIZATION_ID ?? "";
+  const organizationId = session?.user.organizationId ?? "";
   const { compare, dates, autoRefresh } = useFilters();
   const configured = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(organizationId);
   const query = useQuery({

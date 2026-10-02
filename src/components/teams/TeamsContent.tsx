@@ -25,7 +25,8 @@ import { presentTeams, teamDetail, type AxisKey } from "@/lib/metrics/teams-pres
  */
 export function TeamsContent({ initialTeamId }: { initialTeamId?: string }) {
   const session = useBackendSession();
-  if (!session) return <div className="p-6 text-sm text-text2">팀 분석을 조회하려면 <a href="/login" className="underline">로그인</a>해 주세요.</div>;
+  // 세션이 없을 때의 안내는 대시보드 레이아웃의 SessionGate 하나가 맡는다.
+  if (!session) return null;
   return <OrganizationTeams key={session.user.organizationId} organizationId={session.user.organizationId} initialTeamId={initialTeamId} />;
 }
 

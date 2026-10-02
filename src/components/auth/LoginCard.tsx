@@ -16,7 +16,11 @@ import { AuthError, seedLogin } from "@/lib/api/session";
 import { useOrganization } from "@/lib/organization-store";
 import { useRateLimit } from "@/lib/use-rate-limit";
 
-export function LoginCard() {
+/**
+ * 회사 계정 로그인. `demo`는 목 모드(브라우저 목 테스트)에서만 켠다 — 회사 로그인 결과를 고르는 데모 시나리오와 데모 관리자 연락처는
+ * 실제 조직의 것이 아니므로 실서버 모드에서는 보이지 않는다.
+ */
+export function LoginCard({ demo = false }: { demo?: boolean }) {
   const { update } = useOrganization();
   const router = useRouter();
   const client = useQueryClient();
@@ -80,16 +84,16 @@ export function LoginCard() {
     {(view === "denied" || view === "error") && <>
       <p role="alert" className="text-sm leading-6">{view === "denied" ? "로그인은 완료했지만 이 조직에 접근할 권한이 없습니다. 관리자에게 초대와 역할을 확인해 주세요." : error}</p>
       <Button onClick={retry}>다시 시도</Button>
-      <ButtonLink href={ownerMailto}>조직 관리자에게 문의</ButtonLink>
+      {demo && <ButtonLink href={ownerMailto}>조직 관리자에게 문의</ButtonLink>}
     </>}
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-xs text-text2"><span>아직 도입 전인가요?</span><ButtonLink href="/contact">도입 문의</ButtonLink></div>
-    <details className="text-xs text-text3"><summary className="cursor-pointer">데모 시나리오</summary>
+    {demo && <details className="text-xs text-text3"><summary className="cursor-pointer">데모 시나리오</summary>
       <div className="mt-3 flex flex-col gap-3">
         <p>관리자: owner@seed-a.example.test<br />B·C 조직은 seed-b·seed-c 이메일을 사용합니다.</p>
         <label className="flex flex-col gap-1">회사 로그인 결과<Select value={scenario} disabled={isSubmitting} onChange={(event) => { setScenario(event.target.value as DemoLoginResult); retry(); }}>
           <option value="success">정상</option><option value="cancelled">사용자 취소</option><option value="configuration">연결 오류</option><option value="denied">권한 부족</option><option value="network">조회 실패</option>
         </Select></label>
       </div>
-    </details>
+    </details>}
   </AuthFrame>;
 }

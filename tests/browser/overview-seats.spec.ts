@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { mockOverview, settingsUrl, corsHeaders } from "./overview-fixture";
+import { mockSession } from "./helpers";
 
 test("기존 지표·그래프·벤더 표 배치와 상세 드로어를 유지한다", async ({ page }) => {
+  await mockSession(page);
   await mockOverview(page);
   await page.goto("/overview");
   for (const name of ["사용 관측 인원", "토큰 비용", "월 좌석 계약액", "세션", "보안 경보 및 알림", "사용 환산액 추이", "모델 구성", "계약·좌석 현황", "팀별 요약"]) await expect(page.getByRole("region", { name, exact: true })).toBeVisible();
@@ -29,6 +31,7 @@ test("기존 지표·그래프·벤더 표 배치와 상세 드로어를 유지�
 });
 
 test("계약 조회만 실패하면 기존 표에서 재시도하고 다른 카드는 유지한다", async ({ page }) => {
+  await mockSession(page);
   await mockOverview(page);
   await page.route(settingsUrl, (route) => route.fulfill({ status: 403, json: {}, headers: corsHeaders(page) }));
   await page.goto("/overview");

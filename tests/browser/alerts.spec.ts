@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import example from "../../docs/api/settings-response.example.json";
-import { openDashboard } from "./helpers";
+import { mockSession, openDashboard } from "./helpers";
 import { mockOverview } from "./overview-fixture";
 
 /**
@@ -61,6 +61,7 @@ test("알림 규칙은 서버가 켤 수 있다고 할 때만 켜지고, 목록�
 });
 
 test("개요의 알림 KPI 에서 목록을 열고 확인하면 미확인 수가 서버 값으로 줄어든다", async ({ page }) => {
+  await mockSession(page);
   const state = { acked: new Set<string>() };
   const alerts = [
     { alertId: "a1", version: 1, ruleId: "model_not_allowed", category: "security", status: "open", occurredAt: "2026-09-12T01:00:00Z", lastSeenAt: "2026-09-12T03:00:00Z",

@@ -1,5 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { mockSeedAuth, openDashboard, signIn } from "./helpers";
+import { SESSION_STORAGE_KEY } from "../../src/lib/api/session-key";
 
 /** 인증 요청 제한(429) 안내 — 서버(enrollment ADR 0052)는 `Retry-After`를 CORS 로 노출한다. 목 응답도 같은 헤더를 준다. */
 const cors = (page: Page) => ({
@@ -10,7 +11,7 @@ const cors = (page: Page) => ({
 });
 const limited = (page: Page, seconds: number) => ({ status: 429, headers: { ...cors(page), "Retry-After": String(seconds) },
   json: { error: "rate_limited", message: "사용자 인증 요청을 처리할 수 없습니다." } });
-const session = (page: Page) => page.evaluate(() => sessionStorage.getItem("pulsemetry.seed-session.v1"));
+const session = (page: Page) => page.evaluate((key) => sessionStorage.getItem(key), SESSION_STORAGE_KEY);
 
 test("로그인 429는 인증 실패가 아니라 대기 안내이고, 그동안 버튼을 잠갔다가 같은 이메일로 다시 로그인한다", async ({ page }) => {
   await mockSeedAuth(page);

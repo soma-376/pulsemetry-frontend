@@ -17,7 +17,8 @@ export function DashboardHeaderProvider({ children, todayIso }: { children: Reac
   const register = useCallback((value: PageRefresh | null) => setPage(value), []);
   const session = useBackendSession();
   const { autoRefresh } = useFilters();
-  const organizationId = session?.user.organizationId ?? process.env.NEXT_PUBLIC_ORGANIZATION_ID ?? "";
+  // 세션이 없으면 SessionGate 가 이 셸을 그리지 않는다. 익명 조직 조회는 없다.
+  const organizationId = session?.user.organizationId ?? "";
   const ingest = useQuery({ ...ingestStatusOptions(organizationId), refetchInterval: autoRefresh ? 300_000 : false });
 
   return <RegisterRefresh.Provider value={register}>

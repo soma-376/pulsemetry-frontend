@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { mockOverview, overviewFixture, overviewUrl, corsHeaders, mockOverviewSettings } from "./overview-fixture";
+import { mockSession } from "./helpers";
 
-test.beforeEach(async ({ page }) => { await mockOverviewSettings(page); });
+// 대시보드는 세션이 있어야 조회한다 — 목 세션으로 연다.
+test.beforeEach(async ({ page }) => { await mockSession(page); await mockOverviewSettings(page); });
 
 /**
  * 기본 기간은 서버가 렌더링할 때의 서울 날짜로 정해진다(`src/app/(dashboard)/layout.tsx` 의 `todayIso`) — 브라우저 시계를 고정해도 바뀌지 않는다.
@@ -79,7 +81,31 @@ test("부분 관측과 알 수 없는 비용을 0으로 만들지 않는다", as
   await expect(page.getByRole("region", { name: "모델 구성", exact: true }).locator("svg")).toHaveCount(0);
 });
 
-for (const status of [401, 403, 503]) {
+/** 갱신 토큰도 거절되는 서버 — 세션이 끝난 상황이다. */
+async function rejectRefresh(page: import("@playwright/test").Page) {
+  const calls = { count: 0 };
+  await page.route("**/v1/auth/refresh", (route) => {
+    const headers = { ...corsHeaders(page), "access-control-allow-headers": "content-type" };
+    if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers });
+    calls.count++;
+    return route.fulfill({ status: 401, json: { error: "invalid_credentials", message: "사용자 인증 요청을 처리할 수 없습니다." }, headers });
+  });
+  return calls;
+}
+
+test("HTTP 401 에서 세션 갱신도 거절되면 세션을 지우고 대시보드 공통 로그인 안내를 보인다", async ({ page }) => {
+  let calls = 0;
+  await page.route(overviewUrl, async (route) => { calls++; await route.fulfill({ status: 401, json: { error: { code: "unauthenticated" } }, headers: corsHeaders(page) }); });
+  const refresh = await rejectRefresh(page);
+  await page.goto("/overview");
+  await expect(page.getByRole("heading", { name: "로그인이 필요합니다", exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("로그인한 계정")).toHaveCount(0);
+  expect(refresh.count).toBe(1);
+  expect(calls).toBe(1);
+});
+
+for (const status of [403, 503]) {
   test(`HTTP ${status} 오류는 목 데이터로 대체하지 않고 재시도할 수 있다`, async ({ page }) => {
     let calls = 0;
     let fail = true;
@@ -102,9 +128,21 @@ test("권한 상실 시 재조회 이전의 데이터도 숨긴다", async ({ pa
   await page.goto("/overview");
   const cost = page.getByRole("region", { name: "토큰 비용", exact: true });
   await expect(cost).toBeVisible();
-  await page.route(overviewUrl, (route) => route.fulfill({ status: 401, json: {}, headers: corsHeaders(page) }));
+  await page.route(overviewUrl, (route) => route.fulfill({ status: 403, json: {}, headers: corsHeaders(page) }));
   await page.getByRole("button", { name: "새로고침", exact: true }).click();
-  await expect(page.getByRole("main").getByRole("alert")).toContainText("로그인이 필요합니다");
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("권한이 없습니다");
+  await expect(cost).toHaveCount(0);
+});
+
+test("세션이 끝나면 재조회 이전의 데이터도 숨기고 공통 로그인 안내를 보인다", async ({ page }) => {
+  await mockOverview(page);
+  await page.goto("/overview");
+  const cost = page.getByRole("region", { name: "토큰 비용", exact: true });
+  await expect(cost).toBeVisible();
+  await page.route(overviewUrl, (route) => route.fulfill({ status: 401, json: {}, headers: corsHeaders(page) }));
+  await rejectRefresh(page);
+  await page.getByRole("button", { name: "새로고침", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "로그인이 필요합니다", exact: true })).toBeVisible();
   await expect(cost).toHaveCount(0);
 });
 

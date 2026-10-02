@@ -36,7 +36,8 @@ const amount = (value: string | null | undefined) => value == null ? "-" : usd(N
 
 export function SettingsContent() {
   const session = useBackendSession();
-  if (!session) return <div className="p-6 text-sm text-text2">설정을 조회하려면 <a href="/login" className="underline">로그인</a>해 주세요.</div>;
+  // 세션이 없을 때의 안내는 대시보드 레이아웃의 SessionGate 하나가 맡는다.
+  if (!session) return null;
   return <OrganizationSettings key={session.user.organizationId} organizationId={session.user.organizationId} />;
 }
 function OrganizationSettings({ organizationId }: { organizationId: string }) {

@@ -24,6 +24,7 @@ export default defineConfig({
     url: "http://localhost:3107/overview",
     reuseExistingServer: false,
     timeout: 120000,
-    env: { NEXT_PUBLIC_ORGANIZATION_ID: "11111111-1111-4111-8111-111111111111", NEXT_PUBLIC_DASHBOARD_API_URL: dashboardUrl, NEXT_PUBLIC_ENROLLMENT_API_URL: enrollmentUrl, ENROLLMENT_API_URL: enrollmentUrl },
+    // 대시보드는 세션이 있어야 조회한다 — 목 테스트는 목 세션(tests/browser/helpers.ts mockSession)이나 목 로그인을 쓴다. 로그인 화면은 데모 시나리오를 켠다.
+    env: { NEXT_PUBLIC_DEMO_LOGIN: "true", NEXT_PUBLIC_DASHBOARD_API_URL: dashboardUrl, NEXT_PUBLIC_ENROLLMENT_API_URL: enrollmentUrl, ENROLLMENT_API_URL: enrollmentUrl },
   },
 });
