@@ -1,4 +1,4 @@
-import { expect, test, type Route } from "@playwright/test";
+import { expect, test, type Page, type Route } from "@playwright/test";
 import example from "../../docs/api/settings-response.example.json";
 import { openDashboard } from "./helpers";
 
@@ -6,7 +6,8 @@ import { openDashboard } from "./helpers";
  * 설정 드로어의 좌석 원천·벤더 연결·좌석 기록·종량 지출(UI 테스트). 서버 규칙(enrollment §12, 서버 ADR 0048·0050)을 흉내 낸 응답을 쓴다.
  * 실제 서버 검증은 tests/e2e/seats.spec.ts 가 한다. 자격증명은 보내기만 하고 다시 보이지 않는다. CSV 는 오류가 있으면 적용할 수 없다.
  */
-test("settings drawer records seats, imports CSV only without row errors, and never shows a saved credential again", async ({ page }) => {
+/** 설정 드로어의 좌석 API 흉내 — enrollment 명세 §12 "좌석 수동 기록"의 규칙(보정은 판이 다르면 409, 상태·원천을 바꾸지 않는다). */
+async function serveSeats(page: Page) {
   const cors = { "access-control-allow-origin": new URL(test.info().project.use.baseURL!).origin, "access-control-allow-headers": "content-type,authorization,idempotency-key,if-match",
     "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS" };
   const json = (route: Route, value: unknown, status = 200) => route.fulfill({ status, headers: cors, json: value });
@@ -51,6 +52,17 @@ test("settings drawer records seats, imports CSV only without row errors, and ne
         rows: [{ line: 2, account: "eli@example.test", action: bad ? null : "create", seatAssignmentId: null, errors: bad ? [{ field: "status", code: "invalid_status" }] : [] }], warnings: [] };
       return json(route, { import: result, provisional: true });
     }
+    if (method === "PATCH" && path.startsWith("vendors/vendor-a/seats/")) {
+      const body = request.postDataJSON();
+      const seat = seats.find((item) => item.seatAssignmentId === path.split("/")[3])!;
+      if (body.expectedVersion !== seat.version) return json(route, { error: { code: "version_conflict", message: "conflict" } }, 409);
+      if ("note" in body) seat.note = body.note;
+      if ("tierId" in body) { seat.tierId = body.tierId; seat.tierLabel = body.tierId ? "표준" : null; }
+      if (body.memberLink === "automatic") { seat.memberLink = "email_match"; }
+      if ("memberId" in body && body.memberId === null) { seat.memberId = null; seat.memberAccount = null; seat.memberLink = "admin"; }
+      seat.version = (seat.version as number) + 1;
+      return json(route, { seat: { seatAssignmentId: seat.seatAssignmentId, version: seat.version, account: seat.account, state: seat.state }, warnings: [], provisional: !state.connection });
+    }
     if (method === "PUT" && path === "vendors/vendor-a/connection") {
       state.connection = { connectionId: "c-1", version: 1, connectorId: "cursor_enterprise", settings: {}, credential: { configured: true, updatedAt: "2026-10-01T00:00:00Z" },
         check: { status: "unverified", checkedAt: null }, sync: { status: "pending", lastSucceededAt: null, lastFailedAt: null, lastError: null }, createdAt: "2026-10-01T00:00:00Z",
@@ -59,6 +71,11 @@ test("settings drawer records seats, imports CSV only without row errors, and ne
     }
     return json(route, { error: { code: "not_found", message: "fixture" } }, 404);
   });
+  return { seats, posted, state };
+}
+
+test("settings drawer records seats, imports CSV only without row errors, and never shows a saved credential again", async ({ page }) => {
+  const { posted } = await serveSeats(page);
   await openDashboard(page, "/settings");
   // 종량 지출은 벤더 청구 누계이고, 합계의 사유(낡음)를 보여 준다.
   await expect(page.getByRole("group", { name: "종량 지출", exact: true })).toContainText("$137.42");
@@ -73,7 +90,7 @@ test("settings drawer records seats, imports CSV only without row errors, and ne
   await seatList.getByLabel("벤더 계정(이메일)").fill("new@example.test");
   await seatList.getByRole("button", { name: "배정 기록" }).click();
   await expect(seatList).toContainText("new@example.test");
-  expect(posted.find((item) => item.path === "POST vendors/vendor-a/seats")?.body).toEqual({ account: "new@example.test", tierId: null });
+  expect(posted.find((item) => item.path === "POST vendors/vendor-a/seats")?.body).toEqual({ account: "new@example.test", tierId: null, note: null });
 
   // CSV — 오류가 있는 미리보기는 적용할 수 없다.
   await seatList.getByLabel("좌석 CSV").fill("account,status,name\neli@example.test,used,Eli");
@@ -98,4 +115,61 @@ test("settings drawer records seats, imports CSV only without row errors, and ne
   await expect(page.locator(`input[value="${secret}"]`)).toHaveCount(0);
   expect(await page.content()).not.toContain(secret);
   expect(await page.evaluate(() => JSON.stringify({ ...localStorage }) + JSON.stringify({ ...sessionStorage }))).not.toContain("fake-vendor-credential");
+});
+
+test("관리자 기록 좌석의 메모·유형을 고치면 상태·원천은 그대로이고, 오래된 판은 409 로 알리고 최신 값으로 다시 편집한다", async ({ page }) => {
+  const { seats, posted } = await serveSeats(page);
+  await openDashboard(page, "/settings");
+  await page.getByRole("button", { name: "Vendor A 계약 설정 열기" }).click();
+  const seatList = page.getByRole("dialog", { name: "Vendor A 계약 설정" }).getByRole("region", { name: "좌석", exact: true });
+  // 배정 기록에 메모를 함께 남긴다.
+  await seatList.getByLabel("벤더 계정(이메일)").fill("memo@example.test");
+  await seatList.getByLabel("배정 메모").fill("디자인팀 임시");
+  await seatList.getByRole("button", { name: "배정 기록" }).click();
+  expect(posted.find((item) => item.path === "POST vendors/vendor-a/seats")?.body).toEqual({ account: "memo@example.test", tierId: null, note: "디자인팀 임시" });
+
+  await seatList.getByRole("button", { name: "dana@example.test 좌석 정보 수정" }).click();
+  const editor = seatList.getByRole("form", { name: "dana@example.test 좌석 정보 수정" });
+  await expect(editor.getByRole("button", { name: "저장", exact: true })).toBeDisabled();
+  await editor.getByLabel("좌석 메모").fill("계약 갱신 때 확인");
+  await editor.getByLabel("좌석 유형").selectOption("");
+  await editor.getByRole("button", { name: "저장", exact: true }).click();
+  await expect(seatList.getByRole("status")).toContainText("좌석 상태와 원천은 그대로입니다");
+  expect(posted.filter((item) => item.path.startsWith("PATCH")).at(-1)?.body).toEqual({ expectedVersion: 1, note: "계약 갱신 때 확인", tierId: null });
+  await expect(seatList).toContainText("메모: 계약 갱신 때 확인");
+  expect(seats[0]).toMatchObject({ state: "assigned", source: "manual", version: 2 });
+
+  // 다른 곳에서 먼저 바꿨다 — 열어 둔 편집기의 판이 낡았다.
+  await seatList.getByRole("button", { name: "dana@example.test 좌석 정보 수정" }).click();
+  seats[0].version = 3;
+  seats[0].note = "다른 관리자의 메모";
+  await editor.getByLabel("좌석 메모").fill("내 메모");
+  await editor.getByRole("button", { name: "저장", exact: true }).click();
+  await expect(editor.getByRole("alert")).toContainText("다른 곳에서 이 좌석을 먼저 바꿨습니다");
+  await expect(editor.getByLabel("좌석 메모")).toHaveValue("내 메모");
+  await editor.getByRole("button", { name: "최신 값으로 다시 편집" }).click();
+  await expect(editor.getByLabel("좌석 메모")).toHaveValue("다른 관리자의 메모");
+  await editor.getByLabel("좌석 메모").fill("내 메모");
+  await editor.getByRole("button", { name: "저장", exact: true }).click();
+  expect(posted.filter((item) => item.path.startsWith("PATCH")).at(-1)?.body).toEqual({ expectedVersion: 3, note: "내 메모" });
+});
+
+test("벤더 연결이 있는 제품은 배정·해제·가져오기를 하지 않지만 메모·유형 보정은 된다", async ({ page }) => {
+  const { state, posted } = await serveSeats(page);
+  state.connection = { connectionId: "c-1", version: 1, connectorId: "cursor_enterprise", settings: {}, credential: { configured: true, updatedAt: "2026-10-01T00:00:00Z" },
+    check: { status: "verified", checkedAt: "2026-10-01T00:00:00Z" }, sync: { status: "succeeded", lastSucceededAt: "2026-10-01T00:00:00Z", lastFailedAt: null, lastError: null },
+    createdAt: "2026-10-01T00:00:00Z", updatedAt: "2026-10-01T00:00:00Z", billing: null };
+  await openDashboard(page, "/settings");
+  await page.getByRole("button", { name: "Vendor A 계약 설정 열기" }).click();
+  const seatList = page.getByRole("dialog", { name: "Vendor A 계약 설정" }).getByRole("region", { name: "좌석", exact: true });
+  await expect(seatList).toContainText("벤더 연결이 있는 제품은 동기화가 좌석을 정합니다");
+  await expect(seatList.getByRole("form", { name: "좌석 배정 기록" })).toHaveCount(0);
+  await expect(seatList.getByRole("button", { name: "dana@example.test 해제 기록" })).toHaveCount(0);
+  await expect(seatList.getByLabel("좌석 CSV")).toHaveCount(0);
+  await seatList.getByRole("button", { name: "dana@example.test 좌석 정보 수정" }).click();
+  const editor = seatList.getByRole("form", { name: "dana@example.test 좌석 정보 수정" });
+  await editor.getByLabel("좌석 메모").fill("커넥터 좌석 메모");
+  await editor.getByRole("button", { name: "저장", exact: true }).click();
+  await expect(seatList.getByRole("status")).toContainText("좌석 정보를 고쳤습니다");
+  expect(posted.map((item) => item.path)).toEqual(["PATCH vendors/vendor-a/seats/seat-1"]);
 });
