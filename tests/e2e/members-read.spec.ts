@@ -4,7 +4,7 @@ import { authenticatedRequest, seedPeriod, selectPeriod, signIn, signOut } from 
 // 백엔드 tools/dev-seed/README.md의 A 시나리오: 관리자 2명 + 일반 구성원 10명, 미배정 1명,
 // 팀 플랫폼 4·제품 4·데이터 2·디자인 1, 최근 28일 활성 8명, 미사용 초대 2개(대기·만료 각 1개).
 const A = { roster: 12, unassigned: "member9@seed-a.example.test", active: 8, product: 4, teams: ["플랫폼", "제품", "데이터", "디자인"],
-  waiting: "member12@seed-a.example.test", expired: "member13@seed-a.example.test", seats: 10 };
+  waiting: "member12@seed-a.example.test", expired: "member13@seed-a.example.test", seats: 7 };
 
 test("MEMBERS-A @p0 @read 명단·요약·미배정·초대 대기를 서버 값으로 표시하고 검색·새로고침·내보내기가 전체 명단을 쓴다", async ({ page }) => {
   const org = seedOrganizations[0];
@@ -34,7 +34,7 @@ test("MEMBERS-A @p0 @read 명단·요약·미배정·초대 대기를 서버 값
   await expect(page.getByRole("group", { name: "구성원", exact: true })).toContainText(`${A.roster}명`);
   await expect(page.getByRole("group", { name: "구성원", exact: true })).toContainText(`기간 활성 ${A.active}명`);
   await expect(page.getByRole("group", { name: "팀 미배정", exact: true })).toContainText("1명");
-  // 좌석은 시드 A 의 좌석 원장이다 — 보유 10석(Claude 5·OpenAI 2·Copilot 3). Cursor 는 좌석을 기록하지 않아 요약은 늘 partial 이다.
+  // 좌석은 시드 A 의 좌석 원장이다 — 보유 7석(Claude 5·OpenAI 2, 백엔드 tools/dev-seed/README.md). Copilot·Cursor 는 좌석을 기록하지 않아 요약은 늘 partial 이다.
   // 후보 수는 원장의 값(0 포함)이고, 낮춘 사유를 화면에서 지우지 않는다.
   expect(body.summary.seats).toMatchObject({ availability: "partial", data: { assigned: A.seats } });
   const seatCard = page.getByRole("group", { name: "좌석 회수 후보", exact: true });

@@ -70,7 +70,7 @@ test("settings drawer records seats, imports CSV only without row errors, and ne
 
   const seatList = drawer.getByRole("region", { name: "좌석", exact: true });
   await expect(seatList).toContainText("dana@example.test");
-  await seatList.getByLabel("벤더 계정(이메일·GitHub 로그인)").fill("new@example.test");
+  await seatList.getByLabel("벤더 계정(이메일)").fill("new@example.test");
   await seatList.getByRole("button", { name: "배정 기록" }).click();
   await expect(seatList).toContainText("new@example.test");
   expect(posted.find((item) => item.path === "POST vendors/vendor-a/seats")?.body).toEqual({ account: "new@example.test", tierId: null });

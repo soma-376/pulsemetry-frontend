@@ -2,9 +2,10 @@ import { expect, test, dashboardBase, seedOrganizations } from "./fixtures";
 import { authenticatedRequest, seedPeriod, signIn, signOut } from "./helpers";
 import type { Page } from "@playwright/test";
 
-// 백엔드 tools/dev-seed/README.md 의 A 좌석 원장: Claude(Team — 벤더 API 없음) member4 등 수동 기록, Copilot 연결 원천 seed-dev-7(member7 에 관리자가 이음).
-// 커넥터 경로는 모의 벤더 서버(Copilot 좌석 API 흉내)를 가리키는 서버로만 돌린다 — 실제 벤더를 부르지 않는다.
+// 백엔드 tools/dev-seed/README.md 의 A 좌석 원장: Claude(Team — 벤더 API 없음) member4 등 관리자 기록. C 는 Cursor Enterprise 연결(자리표시자 자격증명).
+// 커넥터 경로는 모의 벤더 서버(Cursor Enterprise 좌석 API 흉내 — 백엔드 tools/mock-vendor)를 가리키는 서버로만 돌린다 — 실제 벤더를 부르지 않는다.
 const A = seedOrganizations[0];
+const C = seedOrganizations[2];
 
 function mockVendor() {
   const value = process.env.E2E_MOCK_VENDOR_URL;
@@ -13,17 +14,17 @@ function mockVendor() {
   if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) throw new Error("모의 벤더 서버는 로컬 주소여야 합니다.");
   return value.replace(/\/$/, "");
 }
-type VendorCall = { method: string; path: string; body: { selected_usernames?: string[] } | null; authorization: string | null };
+type VendorCall = { method: string; path: string; body: { userId?: string; email?: string } | null; authorization: string | null };
 const vendorCalls = async (): Promise<VendorCall[]> => (await (await fetch(`${mockVendor()}/__calls`)).json()).calls;
 
-async function memberId(page: Page, email: string) {
+async function memberId(page: Page, email: string, org: string = A.id) {
   const { start, end } = seedPeriod();
-  const members = await authenticatedRequest(page, dashboardBase(), `/api/v1/organizations/${A.id}/members?startDate=${start}&endDate=${end}&timeZone=Asia/Seoul&limit=100`);
+  const members = await authenticatedRequest(page, dashboardBase(), `/api/v1/organizations/${org}/members?startDate=${start}&endDate=${end}&timeZone=Asia/Seoul&limit=100`);
   expect(members.status).toBe(200);
   return members.body.members.items.find((member: { account: string }) => member.account === email).memberId as string;
 }
-const seatsOf = async (page: Page, id: string) =>
-  (await authenticatedRequest(page, dashboardBase(), `/api/v1/organizations/${A.id}/members/${id}/seats`)).body.seats as { account: string; state: string; source: string; reclaimMethod: string | null }[];
+const seatsOf = async (page: Page, id: string, org: string = A.id) =>
+  (await authenticatedRequest(page, dashboardBase(), `/api/v1/organizations/${org}/members/${id}/seats`)).body.seats as { account: string; state: string; source: string; reclaimMethod: string | null }[];
 
 async function openMember(page: Page, email: string) {
   await page.goto("/members");
@@ -73,22 +74,22 @@ test("SEATS-ADMIN @p0 @write 벤더 API 가 없는 좌석의 회수는 관리자
   await signOut(page);
 });
 
-test("SEATS-CONNECTOR @p0 @write 벤더 연결을 다시 만들고 동기화한 뒤 커넥터로 회수·복원하며 모의 벤더가 실제 요청을 받는다", async ({ page }) => {
+test("SEATS-CONNECTOR @p0 @write 벤더 연결을 다시 만들고 동기화한 뒤 커넥터로 회수하며 모의 벤더가 실제 요청을 받고, 복원은 관리자 조치 확인으로 끝난다", async ({ page }) => {
   test.setTimeout(180_000);
   const vendor = mockVendor();
   await fetch(`${vendor}/__reset`, { method: "POST" });
   const credential = `fake-vendor-credential-e2e-${Date.now()}`;
-  await signIn(page, `owner@seed-${A.seed}.example.test`);
+  await signIn(page, `owner@seed-${C.seed}.example.test`);
   await page.goto("/settings");
-  await page.getByRole("button", { name: "GitHub Copilot 계약 설정 열기" }).click();
-  const source = page.getByRole("dialog", { name: "GitHub Copilot 계약 설정" }).getByRole("region", { name: "좌석 원천" });
+  await page.getByRole("button", { name: "Cursor 계약 설정 열기" }).click();
+  const source = page.getByRole("dialog", { name: "Cursor 계약 설정" }).getByRole("region", { name: "좌석 원천" });
   // 시드의 연결은 이 서버의 키로 풀 수 없는 자리표시자다(다시 돌리면 앞 실행이 만든 연결) — 지우고 다시 만든다.
   await expect(source).toContainText("벤더 동기화");
   await source.getByRole("button", { name: "연결 삭제", exact: true }).click();
   await source.getByRole("button", { name: "연결 삭제 확인", exact: true }).click();
   await expect(source).toContainText("관리자 기록(연결 전 임시)");
   await source.getByRole("button", { name: "연결 추가" }).click();
-  await source.getByLabel("organization").fill("seed-org");
+  // Cursor Enterprise 는 비밀 아닌 설정이 없다 — 자격증명만 받는다.
   await source.getByLabel("관리자 자격증명(저장 후 다시 보이지 않습니다)").fill(credential);
   await source.getByRole("button", { name: "연결 저장" }).click();
   await expect(source).toContainText("설정됨");
@@ -96,31 +97,41 @@ test("SEATS-CONNECTOR @p0 @write 벤더 연결을 다시 만들고 동기화한 
   expect(await page.content()).not.toContain(credential);
   await source.getByRole("button", { name: "지금 동기화" }).click();
   await expect(source.getByRole("status")).toContainText("완료", { timeout: 30_000 });
-  const listed = (await vendorCalls()).filter(call => call.method === "GET" && call.path === "/orgs/seed-org/copilot/billing/seats");
+  const listed = (await vendorCalls()).filter(call => call.method === "GET" && call.path === "/teams/members");
   expect(listed.length).toBeGreaterThan(0);
-  expect(listed.every(call => call.authorization === `Bearer ${credential}`)).toBe(true);
+  // 문서의 인증 방식: Basic, API 키가 사용자 이름이고 비밀번호는 비운다.
+  expect(listed.every(call => call.authorization === `Basic ${Buffer.from(`${credential}:`).toString("base64")}`)).toBe(true);
 
-  const account = "member7@seed-a.example.test";
-  const id = await memberId(page, account);
-  await expect.poll(async () => (await seatsOf(page, id)).find(seat => seat.account === "seed-dev-7")).toMatchObject({ state: "assigned", source: "connector", reclaimMethod: "vendor_control" });
+  const account = "member2@seed-c.example.test";
+  const id = await memberId(page, account, C.id);
+  // 같은 이메일의 구성원에 이었다(email_match). 연결이 권위라 회수는 벤더 제어다.
+  await expect.poll(async () => (await seatsOf(page, id, C.id)).find(seat => seat.account === account)).toMatchObject({ state: "assigned", source: "connector", reclaimMethod: "vendor_control" });
   let drawer = await openMember(page, account);
-  await drawer.locator("li[data-seat-id]").filter({ hasText: "seed-dev-7" }).getByRole("button", { name: /좌석 회수$/ }).click();
+  await drawer.locator("li[data-seat-id]").filter({ hasText: "Cursor" }).getByRole("button", { name: /좌석 회수$/ }).click();
   const modal = page.getByRole("dialog", { name: "좌석 회수 확인", exact: true });
   await expect(modal).toContainText("벤더 API로 해지");
   await modal.getByRole("button", { name: "회수 실행" }).click();
-  // 주기 실행이 벤더를 부른 뒤에야 끝난다(Copilot 취소는 주기 말 효력 — 해제 예정).
+  // 주기 실행이 벤더를 부른 뒤에야 끝난다. Cursor 의 제거는 그 자리에서 끝난다 — 해제.
   await expect(modal.getByRole("region", { name: "좌석 회수 작업" }).getByRole("status")).toContainText("회수 · 완료", { timeout: 30_000 });
-  await expect.poll(async () => (await seatsOf(page, id)).find(seat => seat.account === "seed-dev-7")?.state).toBe("pending_release");
-  expect((await vendorCalls()).filter(call => call.method === "DELETE").map(call => call.body?.selected_usernames)).toEqual([["seed-dev-7"]]);
+  await expect.poll(async () => (await seatsOf(page, id, C.id)).find(seat => seat.account === account)).toMatchObject({ state: "released", source: "vendor_control" });
+  expect((await vendorCalls()).filter(call => call.method === "POST" && call.path === "/teams/remove-member").map(call => call.body))
+    .toEqual([{ userId: "user_seed_c_member2" }]);
 
+  // 복원 — Cursor 에는 재추가 API 가 없다(백엔드 ADR 0049·0054). 관리자가 대시보드에서 다시 초대하고 확인해야 끝난다. 벤더는 부르지 않는다.
   await page.reload();
   drawer = await openMember(page, account);
   const reclaim = drawer.getByRole("region", { name: "좌석 회수 작업" });
   await expect(reclaim.getByRole("status")).toContainText("회수 · 완료");
+  // 주기 동기화의 읽기(구성원 목록·지출)를 빼면 벤더를 바꾸는 호출은 회수의 제거 하나뿐이어야 한다.
+  const controls = async () => (await vendorCalls()).filter(call => !(call.method === "GET" && call.path === "/teams/members") && call.path !== "/teams/spend");
+  const before = (await controls()).length;
   await reclaim.getByRole("button", { name: "복원" }).click();
-  await expect(drawer.getByRole("region", { name: "좌석 복원 작업" }).getByRole("status")).toContainText("복원 · 완료", { timeout: 30_000 });
-  await expect.poll(async () => (await seatsOf(page, id)).find(seat => seat.account === "seed-dev-7")).toMatchObject({ state: "assigned", source: "vendor_control" });
-  expect((await vendorCalls()).filter(call => call.method === "POST").map(call => call.body?.selected_usernames)).toEqual([["seed-dev-7"]]);
+  const restore = drawer.getByRole("region", { name: "좌석 복원 작업" });
+  await expect(restore.getByRole("status")).toContainText("관리자 조치 대기");
+  await restore.getByRole("button", { name: "배정 완료 확인" }).click();
+  await expect(restore.getByRole("status")).toContainText("복원 · 완료");
+  await expect.poll(async () => (await seatsOf(page, id, C.id)).find(seat => seat.account === account)).toMatchObject({ state: "assigned", source: "admin_action" });
+  expect(await controls()).toHaveLength(before);
   await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
   await signOut(page);
 });
@@ -159,12 +170,14 @@ test("SEATS-CSV @p0 @write 관리자 기록 제품의 CSV 는 오류가 있으�
 });
 
 test("SEATS-OVERVIEW @p0 @read 개요의 제품별 배정 좌석은 구성원 요약과 같은 좌석 원장이고, 좌석을 기록하지 않은 제품은 사유를 말한다", async ({ page }) => {
-  // 시드 A 좌석 원장의 독립 기대값 — 보유 10석(Claude 5·OpenAI 2·Copilot 3), Cursor 는 좌석 기록 없음. 쓰기 테스트는 끝에 원래 수로 되돌린다.
-  const expected: Record<string, string> = { "Claude (Anthropic)": "배정 5석", "ChatGPT / Codex (OpenAI)": "배정 2석", "GitHub Copilot": "배정 3석", Cursor: "배정 이 제품은 좌석을 기록하지 않았습니다" };
+  // 시드 A 좌석 원장의 독립 기대값(백엔드 tools/dev-seed/README.md) — 보유 7석(Claude 5·OpenAI 2), Copilot·Cursor 는 좌석 기록 없음.
+  // Copilot 은 커넥터가 없는 플랜이다(백엔드 ADR 0054). 쓰기 테스트는 끝에 원래 수로 되돌린다.
+  const expected: Record<string, string> = { "Claude (Anthropic)": "배정 5석", "ChatGPT / Codex (OpenAI)": "배정 2석",
+    "GitHub Copilot": "배정 이 제품은 좌석을 기록하지 않았습니다", Cursor: "배정 이 제품은 좌석을 기록하지 않았습니다" };
   await signIn(page, `owner@seed-${A.seed}.example.test`);
   const { start, end } = seedPeriod();
   const summary = (await authenticatedRequest(page, dashboardBase(), `/api/v1/organizations/${A.id}/members/dashboard?startDate=${start}&endDate=${end}&timeZone=Asia/Seoul`)).body.summary.seats;
-  expect(summary.data.assigned).toBe(10);
+  expect(summary.data.assigned).toBe(7);
   await page.goto("/overview");
   const table = page.getByRole("table", { name: "계약·좌석 현황" });
   for (const reload of [false, true]) {

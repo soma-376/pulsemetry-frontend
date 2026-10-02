@@ -73,7 +73,7 @@ export function VendorSeats({ organizationId, vendorId, vendorName, manual, tier
 
     {editable && manual && <>
       <form aria-label="좌석 배정 기록" className="flex flex-wrap items-end gap-2 border-t border-border pt-3" onSubmit={(event) => { event.preventDefault(); assign.mutate(); }}>
-        <label className="flex min-w-48 flex-1 flex-col gap-1"><span className="text-[11px] text-text3">벤더 계정(이메일·GitHub 로그인)</span>
+        <label className="flex min-w-48 flex-1 flex-col gap-1"><span className="text-[11px] text-text3">벤더 계정(이메일)</span>
           <Input value={account} onChange={(event) => setAccount(event.target.value)} required /></label>
         <label className="flex flex-col gap-1"><span className="text-[11px] text-text3">좌석 유형</span>
           <select className="h-[30px] rounded-md border border-border bg-card px-2" value={tier} onChange={(event) => setTier(event.target.value)}>

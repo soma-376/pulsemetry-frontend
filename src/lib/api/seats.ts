@@ -19,7 +19,7 @@ const currentMeta = z.object({ organizationId: z.string(), asOf: z.iso.datetime(
 export const memberSeatSchema = z.object({
   seatAssignmentId: z.string(), version: z.number(), vendorId: z.string(), vendorName: z.string(), kind: z.string(),
   contractVersion: z.number().nullable(), tierId: z.string().nullable(), tierLabel: z.string().nullable(), vendorTier: z.string().nullable(),
-  account: z.string(), accountKind: z.enum(["email", "github_login"]), state: seatState, source: z.string(), memberLink: z.string().nullable(),
+  account: z.string(), accountKind: z.enum(["email"]), state: seatState, source: z.string(), memberLink: z.string().nullable(),
   assignedAt: z.iso.datetime({ offset: true }), releaseEffectiveOn: z.string().nullable(), releasedAt: z.iso.datetime({ offset: true }).nullable(),
   ledgerAvailability: availability, ledgerReason: z.string().nullable(),
   lastUsedAt: z.iso.datetime({ offset: true }).nullable(), idleDays: count.nullable(), reviewReason: z.string().nullable(),
@@ -31,7 +31,7 @@ const memberSeatsSchema = z.object({ meta: currentMeta, memberId: z.string(), po
 export type MemberSeats = z.infer<typeof memberSeatsSchema>;
 
 export const vendorSeatSchema = z.object({
-  seatAssignmentId: z.string(), version: z.number(), account: z.string(), accountKind: z.enum(["email", "github_login"]), state: seatState, source: z.string(),
+  seatAssignmentId: z.string(), version: z.number(), account: z.string(), accountKind: z.enum(["email"]), state: seatState, source: z.string(),
   memberId: z.string().nullable(), memberAccount: z.string().nullable(), memberLink: z.string().nullable(),
   tierId: z.string().nullable(), tierLabel: z.string().nullable(), vendorTier: z.string().nullable(),
   assignedAt: z.iso.datetime({ offset: true }), releaseEffectiveOn: z.string().nullable(), releasedAt: z.iso.datetime({ offset: true }).nullable(), note: z.string().nullable(),
@@ -169,7 +169,7 @@ export const ACTION_TEXT: Record<string, string> = {
 const syncState = z.object({ status: z.enum(["pending", "succeeded", "failing"]), lastSucceededAt: z.string().nullable(), lastFailedAt: z.string().nullable(), lastError: z.string().nullable() });
 export const seatSourceSchema = z.object({
   authority: z.enum(["connector", "manual"]), provisional: z.boolean(),
-  connector: z.object({ connectorId: z.string(), accountKind: z.enum(["email", "github_login"]), capabilities: z.array(z.string()), settingKeys: z.array(z.string()), supported: z.array(z.string()) }).nullable(),
+  connector: z.object({ connectorId: z.string(), accountKind: z.enum(["email"]), capabilities: z.array(z.string()), settingKeys: z.array(z.string()), supported: z.array(z.string()) }).nullable(),
   connection: z.object({
     connectionId: z.string(), version: z.number(), connectorId: z.string(), settings: z.record(z.string(), z.string()),
     credential: z.object({ configured: z.boolean(), updatedAt: z.string() }),

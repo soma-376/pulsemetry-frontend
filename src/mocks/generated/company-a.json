@@ -449,45 +449,6 @@
       "tierId": "9bb780bc-b3cc-3c81-9fde-2de4bdee39a3",
       "assignedAt": "2026-07-29T15:00:00Z",
       "version": 1
-    },
-    {
-      "seatAssignmentId": "af5d274b-8b3d-3003-86c3-cb325d09a48d",
-      "vendorId": "31d4d9c7-5a48-325d-91d8-11d9397e9587",
-      "account": "seed-dev-7",
-      "accountKind": "github_login",
-      "state": "assigned",
-      "source": "connector",
-      "memberId": "37b35f00-ed7c-3633-8cce-35732692538e",
-      "memberLink": "admin",
-      "tierId": null,
-      "assignedAt": "2026-07-29T15:00:00Z",
-      "version": 1
-    },
-    {
-      "seatAssignmentId": "6b59d97b-0f8f-3fc9-9a75-ecf8770b250a",
-      "vendorId": "31d4d9c7-5a48-325d-91d8-11d9397e9587",
-      "account": "seed-dev-11",
-      "accountKind": "github_login",
-      "state": "assigned",
-      "source": "connector",
-      "memberId": "831adb13-5886-3e01-baee-2e6ec7901e3c",
-      "memberLink": "admin",
-      "tierId": null,
-      "assignedAt": "2026-07-29T15:00:00Z",
-      "version": 1
-    },
-    {
-      "seatAssignmentId": "282f9d85-8b11-35e9-8581-8835d3474b01",
-      "vendorId": "31d4d9c7-5a48-325d-91d8-11d9397e9587",
-      "account": "seed-bot",
-      "accountKind": "github_login",
-      "state": "assigned",
-      "source": "connector",
-      "memberId": null,
-      "memberLink": null,
-      "tierId": null,
-      "assignedAt": "2026-07-29T15:00:00Z",
-      "version": 1
     }
   ],
   "onboarding": {
