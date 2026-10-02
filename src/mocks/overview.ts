@@ -34,9 +34,6 @@ export const COVERAGE = {
   coverageText: "83%",
 };
 
-export const INSTALL_CMD =
-  "curl -fsSL https://get.pulsemetry.io | sh -s -- --org codeworks --token pm_live_8f3a";
-
 /* ── 조직 기준 사실 · 아래 모든 델타와 팀 수치가 여기서 분해됩니다 ── */
 export const ORG = {
   activeUsers: 117,

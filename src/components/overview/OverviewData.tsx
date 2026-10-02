@@ -27,7 +27,7 @@ export function OverviewData({ data, settings, contractsMessage, retryContracts 
           <h1 className="text-[18px] font-semibold tracking-[-0.01em]">개요</h1>
           <span role="status" className="text-[12px] text-text3">조직 전체 · {model.periodLabel}</span>
         </div></div>
-        {model.isEmpty ? <OverviewEmptyState model={model} /> : !model.hasData ? <EmptyState message="선택한 기간에 데이터가 없습니다" description="다른 기간을 선택해 주세요." /> : null}
+        {model.isEmpty ? <OverviewEmptyState /> : !model.hasData ? <EmptyState message="선택한 기간에 데이터가 없습니다" description="다른 기간을 선택해 주세요." /> : null}
         {model.observation.coverageNote && <p className="text-xs text-orange-ink">{model.observation.coverageNote}</p>}
         <div className="grid grid-cols-5 gap-4 @max-[1023px]:grid-cols-2 @max-[560px]:grid-cols-1">
           {model.hasData && model.kpis.map((kpi) => <KpiCard key={kpi.label} {...kpi} compareLabel={model.compareLabel} staleAt={model.ingest.isDown && kpi.label !== "월 좌석 계약액" ? model.ingest.lastIngestAt : undefined}

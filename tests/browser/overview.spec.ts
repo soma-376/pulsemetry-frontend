@@ -169,6 +169,16 @@ for (const state of ["no_data", "never_observed"]) {
     });
     await page.goto("/overview");
     await expect(page.getByText(state === "no_data" ? "선택한 기간에 데이터가 없습니다" : "아직 수집된 신호가 없습니다")).toBeVisible();
+    if (state === "never_observed") {
+      // 첫 수집 안내 — 초대가 주 행동이고, 복사할 수 없는 빈 설치 명령·MDM·이미 끝낸 계약 입력을 내세우지 않는다.
+      const steps = page.getByRole("list", { name: "첫 수집 단계" });
+      await expect(steps).toContainText("구성원이 초대 메일의 설치 명령을 터미널에 붙여넣으면");
+      await expect(page.getByRole("main")).not.toContainText(/MDM|설치 명령 ·|계약 정보 먼저 입력/);
+      await expect(page.getByRole("main").getByRole("button", { name: "복사" })).toHaveCount(0);
+      await expect(page.getByRole("main").getByRole("link", { name: "구성원 초대", exact: true })).toHaveAttribute("href", "/members?invite=1");
+      // 자동 갱신 기본값은 꺼짐 — 화면이 스스로 바뀐다고 약속하지 않는다.
+      await expect(page.getByText(/자동 갱신이 꺼져 있습니다/)).toBeVisible();
+    }
     await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toHaveCount(0);
     await expect(page.getByRole("region", { name: "계약·좌석 현황" })).toContainText("100석");
   });

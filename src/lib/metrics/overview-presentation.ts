@@ -164,12 +164,6 @@ export function presentOverview(data: Overview, settings?: OverviewSettings) {
     observation: { firstObservedIndex: Math.max(0, cost.findIndex((value) => value !== null)), hasGap: data.meta.currentCoverage.status !== "complete", chartNote: "데이터가 없는 날짜는 차트에서 제외됩니다. 전체 기간 비교는 보류합니다.", coverageNote: data.meta.currentCoverage.status === "complete" ? "" : [`선택 ${data.meta.dayCount}일 중 ${data.meta.currentCoverage.observedDays}일 관측`,
       confirmedThrough(data.meta.dataThrough) && `${confirmedThrough(data.meta.dataThrough)}까지 확정`].filter(Boolean).join(" · ") },
     ingest: { isDown: data.ingest.status === "down", dot: ingestColor, fg: ingestColor, text: ingestText, liveInstalls: numberText(data.ingest.activeInstallations), liveMembers: numberText(data.ingest.observedMembers), liveCoverage: data.ingest.coverageRatio === null ? "-" : `${numberText(data.ingest.coverageRatio * 100)}%`, lastIngestAt: time(data.ingest.lastReceivedAt), down: { title: "수집이 중단되었습니다", detail: `마지막 수신 ${time(data.ingest.lastReceivedAt)}` } },
-    installCmd: "",
-    setupSteps: [
-      { n: "1", title: "데몬 설치", note: "MDM으로 배포하거나 개발자가 직접 실행합니다", state: "대기 중", stateFg: "var(--orange-ink)", badgeBg: "var(--text)", badgeFg: "var(--card)" },
-      { n: "2", title: "계약 정보 입력", note: "플랜·좌석 단가·좌석 수 · 신호와 무관하게 지금 입력할 수 있습니다", state: "지금 가능", stateFg: "var(--blue)", badgeBg: "var(--sub)", badgeFg: "var(--text2)" },
-      { n: "3", title: "팀 매핑", note: "첫 신호가 들어오면 사용자가 나타납니다 · 그때 팀을 배정합니다", state: "신호 이후", stateFg: "var(--text3)", badgeBg: "var(--sub)", badgeFg: "var(--text3)" },
-    ],
     defs: { w12: "날짜별 토큰 사용량의 공시 단가 환산액 · 실제 청구액과 별개 · 관측된 날짜만 표시합니다", w14: "모델 구성: 모델별 환산가치 ÷ 전체 환산가치 · 좌석료가 아니라 사용량의 구성을 봅니다", w17: "이벤트 당시 팀별 사용 환산액" },
   };
 }

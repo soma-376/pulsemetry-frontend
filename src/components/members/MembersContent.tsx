@@ -32,11 +32,11 @@ import { buildMembersView, membersCsv, type MembersModel } from "@/lib/members-v
  * 한 조회의 실패가 다른 정상 영역을 지우지 않는다.
  * 팀·역할·초대의 변경은 서버 명령이고, 서버가 확정한 뒤에 다시 조회한 값으로 화면을 바꾼다.
  */
-export function MembersContent() {
+export function MembersContent({ initialInvite = false }: { initialInvite?: boolean }) {
   const session = useBackendSession();
   // 세션이 없을 때의 안내는 대시보드 레이아웃의 SessionGate 하나가 맡는다.
   if (!session) return null;
-  return <OrganizationMembers key={session.user.organizationId} organizationId={session.user.organizationId} currentMemberId={session.user.memberId} />;
+  return <OrganizationMembers key={session.user.organizationId} organizationId={session.user.organizationId} currentMemberId={session.user.memberId} initialInvite={initialInvite} />;
 }
 
 const denied = (error: Error | null) => error instanceof ManagementError && [401, 403].includes(error.status);
@@ -52,7 +52,7 @@ function subjectOf(model: MembersModel | null, selection: Selection | null): Mem
   return row ? { kind: "invite", row } : null;
 }
 
-function OrganizationMembers({ organizationId, currentMemberId }: { organizationId: string; currentMemberId: string }) {
+function OrganizationMembers({ organizationId, currentMemberId, initialInvite }: { organizationId: string; currentMemberId: string; initialInvite: boolean }) {
   const client = useQueryClient();
   const { dates, autoRefresh } = useFilters();
   const period = { startDate: dates.start, endDate: dates.end ?? dates.start };
@@ -64,7 +64,7 @@ function OrganizationMembers({ organizationId, currentMemberId }: { organization
   const teams = useQuery(teamsOptions(organizationId));
   const [selected, setSelected] = useState<Selection | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(initialInvite);
   const [picks, setPicks] = useState<Record<string, string>>({});
   const [post] = useState(createCommands);
   const { toast, showToast, dismissToast } = useToast();
@@ -169,7 +169,9 @@ function OrganizationMembers({ organizationId, currentMemberId }: { organization
       </div>}
     </PageContainer>
 
-    <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} subtitle="초대 코드를 발급합니다 · 벤더 좌석은 별도로 배정합니다"
+    {/* 딥링크로 열린 창도 초대 권한이 확인된 뒤에만 연다. 닫으면 주소의 ?invite 를 지워 새로고침에서 다시 열리지 않게 한다. */}
+    <InviteModal open={inviteOpen && !!capabilities?.invite} onClose={() => { setInviteOpen(false); if (initialInvite) window.history.replaceState(null, "", "/members"); }}
+      subtitle="초대 코드를 발급합니다 · 벤더 좌석은 별도로 배정합니다"
       teams={teams.data} onInvite={invite} />
     {model && <MemberDetailDrawer organizationId={organizationId} subject={subjectOf(model, selected)} teams={teams.data ?? []}
       currentMemberId={currentMemberId} editable={model.capabilities.assignTeam}
