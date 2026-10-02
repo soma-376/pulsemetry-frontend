@@ -1,4 +1,4 @@
-import { expect, test, dashboardBase, enrollmentBase, seedOrganizations } from "./fixtures";
+import { allowHttpErrors, expect, test, dashboardBase, enrollmentBase, seedOrganizations } from "./fixtures";
 import { authenticatedRequest, paceSignIn, seedPeriod, signIn } from "./helpers";
 import { PreparationError } from "./harness";
 
@@ -29,6 +29,9 @@ async function bodyOf(mail: Mail): Promise<string> {
 type Listed = { invitationId: string; memberId: string; createdAt: string; signupUsedAt: string | null; installationUsedAt: string | null; delivery: { status: string } };
 
 test("INSTALL-CODE-A @p1 @write 활성 구성원에게 설치 코드를 내면 설치 경로만 담은 메일이 도착하고, 그 코드로는 가입할 수 없으며, 새로고침 뒤에도 발급·발송 상태가 남는다", async ({ page, context }) => {
+  allowHttpErrors(
+    { status: 409, path: /^\/v1\/auth\/signup$/, method: "POST", reason: "설치 전용 코드로는 가입할 수 없다(409)를 시험한다" },
+  );
   test.setTimeout(120_000);
   const { start, end } = seedPeriod();
   const base = new URL(test.info().project.use.baseURL!).origin;

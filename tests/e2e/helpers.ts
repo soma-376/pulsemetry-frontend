@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { enrollmentBase } from "./fixtures";
-import { ANNOTATION, paceLogin, PreparationError } from "./harness";
+import { ANNOTATION, paceLogin, PreparationError, probeRequests } from "./harness";
 import { SESSION_STORAGE_KEY } from "../../src/lib/api/session-key";
 
 const sessionKey = SESSION_STORAGE_KEY;
@@ -80,6 +80,9 @@ export async function signOut(page: Page) {
 
 /** 브라우저의 실제 세션으로 API 결과를 보조 검증한다. 토큰은 Node/로그로 반환하지 않는다. */
 export function authenticatedRequest(page: Page, origin: string, path: string, method = "GET", body?: unknown, headers: Record<string, string> = {}) {
+  // 시험의 확인 요청이다 — 앱의 오류 수집(fixtures 의 httpErrors)에서 뺀다.
+  if (!probeRequests.has(page)) probeRequests.set(page, new Set());
+  probeRequests.get(page)!.add(`${method} ${origin}${path}`);
   return page.evaluate(async ({ origin, path, method, body, headers, key }) => {
     const session = JSON.parse(sessionStorage.getItem(key)!);
     const response = await fetch(origin + path, { method, headers: { Authorization: `Bearer ${session.tokens.access_token}`, ...(body ? { "Content-Type": "application/json" } : {}), ...headers }, body: body ? JSON.stringify(body) : undefined });

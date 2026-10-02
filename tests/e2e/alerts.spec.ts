@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { expect, test, dashboardBase, seedOrganizations } from "./fixtures";
+import { allowHttpErrors, expect, test, dashboardBase, seedOrganizations } from "./fixtures";
 import { authenticatedRequest, seedPeriod, selectPeriod, signIn } from "./helpers";
 import { PreparationError } from "./harness";
 
@@ -18,6 +18,9 @@ const overviewAlerts = async (page: Page) => {
 };
 
 test("ALERTS-RULES @p0 @write 목록을 비우면 규칙을 켤 수 없고, 목록을 저장하면 서버가 켤 수 있다고 바꾸며 새로고침 뒤에도 남는다", async ({ page }) => {
+  allowHttpErrors(
+    { status: 422, path: /\/settings\/alert-lists\/approved_tools$/, method: "PUT", reason: "켜진 규칙이 쓰는 목록 비우기 — 422 alert_list_in_use 를 시험한다" },
+  );
   await signIn(page, `owner@seed-${A.seed}.example.test`);
   await page.goto("/settings");
   const section = page.getByRole("region", { name: "알림 규칙", exact: true });

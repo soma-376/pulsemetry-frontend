@@ -1,4 +1,4 @@
-import { expect, test, dashboardBase, seedOrganizations } from "./fixtures";
+import { allowHttpErrors, expect, test, dashboardBase, seedOrganizations } from "./fixtures";
 import { authenticatedRequest, seedPeriod, signIn } from "./helpers";
 import type { Page } from "@playwright/test";
 
@@ -63,6 +63,9 @@ test("SEATS-ADMIN @p0 @write 벤더 API 가 없는 좌석의 회수는 관리자
 });
 
 test("SEATS-CSV @p0 @write 관리자 기록 제품의 CSV 는 오류가 있으면 파일을 거절하고, 미리보기 뒤 적용한 행만 원장에 남는다", async ({ page }) => {
+  allowHttpErrors(
+    { status: 400, path: /\/seats\/import$/, method: "POST", reason: "허용하지 않는 열의 CSV 거절(400 invalid_csv)을 시험한다" },
+  );
   const account = "e2e-csv@seed-a.example.test";
   await signIn(page, `owner@seed-${A.seed}.example.test`);
   await page.goto("/settings");

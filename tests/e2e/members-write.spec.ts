@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { expect, test, dashboardBase, enrollmentBase, seedOrganizations } from "./fixtures";
+import { allowHttpErrors, expect, test, dashboardBase, enrollmentBase, seedOrganizations } from "./fixtures";
 import { authenticatedRequest, seedPeriod, signIn } from "./helpers";
 
 // 시드 A(백엔드 tools/dev-seed/README.md): member5는 디자인 팀의 일반 구성원, member9만 미배정, 팀은 넷, 초대 대기 1·만료 1.
@@ -57,6 +57,9 @@ function editor(page: Page) {
 }
 
 test("MEMBERS-W1 @p0 @write 팀·역할 저장이 새로고침 뒤에도 남고, 미배정 배정과 다른 탭의 변경 뒤 409를 처리한다", async ({ page, context }) => {
+  allowHttpErrors(
+    { status: 409, path: /\/members\/[^/]+$/, method: "PATCH", reason: "다른 탭이 먼저 바꾼 구성원의 판 충돌(409)을 시험한다" },
+  );
   await openMembers(page, OWNER);
   try {
     const teamId = Object.fromEntries((await teams(page)).map((team) => [team.teamName, team.teamId]));
@@ -190,6 +193,9 @@ test("MEMBERS-W1 @p0 @write 팀·역할 저장이 새로고침 뒤에도 남고,
 });
 
 test("MEMBERS-W2 @p0 @write 팀을 만들고 이름을 바꾸고 삭제하면 서버 목록과 새로고침 뒤 화면이 같다", async ({ page }) => {
+  allowHttpErrors(
+    { status: 409, path: /\/teams$/, method: "POST", reason: "같은 이름의 팀 만들기 거절(409 team_name_conflict)을 시험한다" },
+  );
   await openMembers(page, OWNER);
   const name = `E2E 팀 ${unique()}`, renamed = `${name} 2`;
   try {

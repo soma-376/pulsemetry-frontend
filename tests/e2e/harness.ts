@@ -23,7 +23,15 @@ export const ANNOTATION = {
   observed429: "e2e-429",
   /** 429 처리 자체를 시험하는 테스트가 단다 — 그 테스트의 429 는 따로 센다. */
   intended429: "e2e-intended-429",
+  /** 시험이 기대한다고 밝힌 HTTP 오류(allowHttpErrors). 브라우저가 받은 그 밖의 4xx·5xx 는 실패다. */
+  allowedHttpError: "e2e-allowed-http-error",
 } as const;
+
+/**
+ * 시험 코드가 직접 보낸 확인 요청(helpers 의 authenticatedRequest — 페이지 안에서 fetch 한다). 앱이 보낸 요청이 아니므로 기대하지 않은
+ * HTTP 오류 수집에서 뺀다 — 그 결과는 시험이 스스로 단언한다. 키는 `메서드 URL`.
+ */
+export const probeRequests = new WeakMap<object, Set<string>>();
 
 /** 로그인 pacer: 60초 이동 창에 20회. 서버 한도(30회)보다 낮게 두어 가입처럼 세지 않는 진입 요청의 여유를 남긴다. */
 export const LOGIN_WINDOW_MS = 60_000;

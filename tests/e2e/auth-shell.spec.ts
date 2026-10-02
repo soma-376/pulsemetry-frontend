@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { expect, test, seedOrganizations } from "./fixtures";
+import { allowHttpErrors, expect, test, seedOrganizations } from "./fixtures";
 import { editStoredSession, signIn, storedSession } from "./helpers";
 
 const [A, , C] = seedOrganizations;
@@ -50,6 +50,10 @@ test("AUTH-SHELL-LOGOUT-BACK @p0 @read 로그인하면 세션의 조직·계정�
 });
 
 test("AUTH-SHELL-EXPIRED @p1 @read 세션이 끝나 갱신이 거절되면 저장된 세션을 지우고 같은 로그인 안내를 보인다", async ({ page }) => {
+  allowHttpErrors(
+    { status: 401, path: /^\/api\/v1\/organizations\//, method: "GET", reason: "만료된 AT 의 조회 — 갱신으로 넘어간다" },
+    { status: 401, path: /^\/v1\/auth\/refresh$/, method: "POST", reason: "끝난 세션의 갱신 거절을 시험한다" },
+  );
   await signIn(page, "admin@seed-c.example.test");
   await page.goto("/overview");
   await expect(page.getByLabel("로그인한 계정")).toContainText("관리자");

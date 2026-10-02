@@ -31,6 +31,8 @@ export function OverviewContent() {
   const contracts = useQuery({ ...overviewSettingsOptions(organizationId), enabled: configured, refetchInterval: autoRefresh ? 300_000 : false });
   const denied = query.error instanceof DashboardError && [401, 403, 404].includes(query.error.status);
   const contractsDenied = contracts.error instanceof DashboardError && [401, 403, 404].includes(contracts.error.status);
+  // 설정 조회의 404 는 활성 manifest 가 없는 조직 — 최초 수집 정책을 저장하기 전이라 조회할 계약이 없다(대시보드 명세). 조회 실패가 아니다.
+  const contractsMissing = contracts.error instanceof DashboardError && contracts.error.status === 404;
   const data = denied ? undefined : query.data;
   // CSV 는 화면이 쓰는 같은 응답(기간·비교·서버 기준 시각)으로 만든다.
   useDashboardPageExport(data ? () => downloadCsv(`overview_${data.meta.startDate}_${data.meta.endDate}.csv`,
@@ -49,6 +51,6 @@ export function OverviewContent() {
         />}
       </>}
     </PageContainer>}
-    {configured && data && <OverviewData key={[organizationId, dates.start, dates.end, compare].join(":")} data={data} settings={contractsDenied ? undefined : contracts.data} contractsMessage={contracts.error ? "계약 정보를 불러오지 못했습니다." : contracts.isPending ? "계약 정보를 불러오는 중입니다…" : undefined} retryContracts={contracts.error ? () => void contracts.refetch({ cancelRefetch: false }) : undefined} />}
+    {configured && data && <OverviewData key={[organizationId, dates.start, dates.end, compare].join(":")} data={data} settings={contractsDenied ? undefined : contracts.data} contractsMessage={contractsMissing ? "수집 정책을 저장하기 전이라 계약 정보가 없습니다." : contracts.error ? "계약 정보를 불러오지 못했습니다." : contracts.isPending ? "계약 정보를 불러오는 중입니다…" : undefined} retryContracts={contracts.error && !contractsMissing ? () => void contracts.refetch({ cancelRefetch: false }) : undefined} />}
   </>;
 }

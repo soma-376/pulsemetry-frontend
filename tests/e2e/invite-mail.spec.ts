@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { expect, test, enrollmentBase, seedOrganizations } from "./fixtures";
+import { allowHttpErrors, expect, test, enrollmentBase, seedOrganizations } from "./fixtures";
 import { authenticatedRequest, signIn } from "./helpers";
 import { PreparationError } from "./harness";
 
@@ -36,6 +36,9 @@ async function waiting(page: Page, email: string) {
 }
 
 test("INVITE-MAIL-01 @p0 @write 초대 메일이 실제로 도착하고, 발송 상태가 목록에 반영되고, 다시 보내면 옛 코드는 쓸 수 없다", async ({ page, context }) => {
+  allowHttpErrors(
+    { status: 409, path: /^\/v1\/auth\/signup$/, method: "POST", reason: "재발급으로 폐기된 코드의 가입 거절을 시험한다" },
+  );
   const email = `e2e-mail-${Date.now().toString(36)}@example.test`;
   const base = new URL(test.info().project.use.baseURL!).origin;
   await signIn(page, "owner@seed-a.example.test");

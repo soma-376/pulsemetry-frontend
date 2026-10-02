@@ -40,3 +40,15 @@ test("계약 조회만 실패하면 기존 표에서 재시도하고 다른 카�
   await expect(page.getByRole("region", { name: "토큰 비용" })).toContainText("$5,000.00");
   await expect(page.getByRole("button", { name: "계약 다시 조회" })).toBeVisible();
 });
+
+test("설정 전 조직(설정 조회 404)은 조회 실패가 아니라 정책 저장 전이라고 말하고 다시 조회를 두지 않는다", async ({ page }) => {
+  await mockSession(page);
+  await mockOverview(page);
+  await page.route(settingsUrl, (route) => route.fulfill({ status: 404, json: { error: { code: "not_found", message: "fixture", fieldErrors: [] } }, headers: corsHeaders(page) }));
+  await page.goto("/overview");
+  const card = page.getByRole("region", { name: "계약·좌석 현황" });
+  await expect(card).toContainText("수집 정책을 저장하기 전이라 계약 정보가 없습니다.");
+  await expect(card).not.toContainText("불러오지 못했습니다");
+  await expect(page.getByRole("button", { name: "계약 다시 조회" })).toHaveCount(0);
+});
+

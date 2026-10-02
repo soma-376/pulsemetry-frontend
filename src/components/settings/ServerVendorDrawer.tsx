@@ -44,7 +44,8 @@ export function ServerVendorDrawer({ organizationId, initial, registeredKinds, e
   const summary = validateServerTiers(draft.tiers ?? [], product?.allowsSeatTiers ?? false);
   const plan = plans.data?.plans.find(item => item.id === draft.plan);
   const row = current ? settingsVendorRow(current, product) : NEW_CONTRACT_ROW;
-  const refresh = () => client.invalidateQueries({ queryKey: organizationKey(organizationId) });
+  // 지운 제품의 조회(상세·좌석)는 다시 읽지 않는다 — 서버에 없는 제품이라 404 다. 창이 닫히면 버려진다.
+  const refresh = (removed?: string) => client.invalidateQueries({ queryKey: organizationKey(organizationId), predicate: (query) => !removed || !query.queryKey.includes(removed) });
   const mutation = useMutation({
     retry: false,
     mutationFn: async (action: "save" | "vendor" | "contract") => {
@@ -70,7 +71,7 @@ export function ServerVendorDrawer({ organizationId, initial, registeredKinds, e
       }
       return current ? "변경사항을 저장했습니다." : "벤더를 추가했습니다.";
     },
-    onSuccess: message => { onSaved(message); onClose(); void refresh(); },
+    onSuccess: (message, action) => { onSaved(message); onClose(); void refresh(action === "vendor" ? current?.vendorId : undefined); },
     onError: error => { if (error instanceof ManagementError && [401, 403].includes(error.status)) onAccessDenied(error); },
     onSettled: () => { inFlight.current = false; },
   });

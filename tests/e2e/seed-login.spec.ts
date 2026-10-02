@@ -1,10 +1,11 @@
-import { enrollmentBase, expect, test, seedOrganizations as organizations } from "./fixtures";
+import { allowHttpErrors, enrollmentBase, expect, test, seedOrganizations as organizations } from "./fixtures";
 import { editStoredSession, paceSignIn, signIn, storedSession } from "./helpers";
 import { SESSION_STORAGE_KEY } from "../../src/lib/api/session-key";
 import { ANNOTATION } from "./harness";
 
 for (const organization of organizations) {
   test(`SEED-AUTH-${organization.seed.toUpperCase()} @p0 @read 이메일만으로 실제 인증 후 조직별 개요 조회·새로고침·로그아웃`, async ({ page }) => {
+    if (organization.seed === "b") allowHttpErrors({ status: 404, path: /^\/api\/v1\/organizations\/[^/]+\/settings$/, method: "GET", reason: "시드 B 는 수집 정책 저장 전 — 설정 조회 404(대시보드 명세), 개요는 정책 저장 전이라고 말한다" });
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     await signIn(page, `owner@seed-${organization.seed}.example.test`, { ui: true });
@@ -33,6 +34,9 @@ for (const organization of organizations) {
   });
 }
 test("SEED-AUTH-UNKNOWN @p0 @read 등록되지 않은 이메일은 인증하지 않는다", async ({ page }) => {
+  allowHttpErrors(
+    { status: 400, path: /^\/api\/dev\/seed-login$/, method: "POST", reason: "등록되지 않은 이메일의 로그인 거절을 시험한다" },
+  );
   await page.goto("/login");
   await page.getByLabel("회사 이메일", { exact: true }).fill("owner@seed-a.example.test.evil.com");
   const response = page.waitForResponse((response) => response.url().endsWith("/api/dev/seed-login"));
@@ -43,6 +47,9 @@ test("SEED-AUTH-UNKNOWN @p0 @read 등록되지 않은 이메일은 인증하지 
 });
 
 test("SEED-AUTH-SWITCH @p0 @read A 로그아웃 후 B의 데이터와 조직명만 표시한다", async ({ page }) => {
+  allowHttpErrors(
+    { status: 404, path: /^\/api\/v1\/organizations\/[^/]+\/settings$/, method: "GET", reason: "시드 B 는 수집 정책 저장 전 — 설정 조회 404(대시보드 명세), 개요는 정책 저장 전이라고 말한다" },
+  );
   await signIn(page, "admin@seed-a.example.test", { ui: true });
   await page.goto("/overview");
   await expect(page.getByRole("navigation")).toContainText(organizations[0].name);
@@ -61,6 +68,9 @@ test("SEED-AUTH-SWITCH @p0 @read A 로그아웃 후 B의 데이터와 조직명�
 });
 
 test("SEED-AUTH-REFRESH @p1 @read 유효하지 않은 AT의 401에서 실제 RT 회전 후 개요 조회를 복구한다", async ({ page }) => {
+  allowHttpErrors(
+    { status: 401, path: /^\/api\/v1\/organizations\//, method: "GET", reason: "일부러 망가뜨린 AT 의 401 에서 갱신으로 복구하는 것을 시험한다" },
+  );
   await signIn(page, "admin@seed-c.example.test");
   // 서버 만료 시간 시험과는 별개로, 401 복구 경로만 검증한다.
   await editStoredSession(page, { access_token: "invalid-access-token-for-401-test" });
@@ -74,6 +84,9 @@ test("SEED-AUTH-REFRESH @p1 @read 유효하지 않은 AT의 401에서 실제 RT 
 });
 
 test("SEED-AUTH-RATE-LIMIT @p1 @read 로그인·로그아웃의 429(주입)는 대기 안내 뒤 같은 입력으로 복구한다", async ({ page, baseURL }) => {
+  allowHttpErrors(
+    { status: 404, path: /^\/api\/v1\/organizations\/[^/]+\/settings$/, method: "GET", reason: "시드 B 는 수집 정책 저장 전 — 설정 조회 404(대시보드 명세), 개요는 정책 저장 전이라고 말한다" },
+  );
   test.info().annotations.push({ type: ANNOTATION.intended429, description: "429 안내 시험(page.route 주입)" });
   // 429 는 page.route 로 한 번씩만 주입한다 — 실제 요청 제한 버킷을 쓰지 않는다. 나머지는 실서버로 간다.
   let logins = 0;
