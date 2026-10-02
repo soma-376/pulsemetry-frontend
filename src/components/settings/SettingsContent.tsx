@@ -32,6 +32,9 @@ import { useFilters } from "@/lib/filters";
 import { int, usd } from "@/lib/format";
 import { rolloutEvidenceText } from "@/lib/policy-rollout";
 
+/** 원문 보존 일수가 없을 때의 설명 — 집계 보존과 다른 원천이다(백엔드 ADR 0046). */
+const RAW_RETENTION_UNKNOWN = "원본 아카이브의 보관 기간은 인프라 저장소 규칙을 따르며 이 서비스가 조회하지 않습니다 · 집계 보존과 별개입니다";
+
 const number = (value: number | null | undefined) => value == null ? "-" : int(value);
 const amount = (value: string | null | undefined) => value == null ? "-" : usd(Number(value));
 
@@ -144,6 +147,10 @@ function OrganizationSettings({ organizationId }: { organizationId: string }) {
               }}>
               {data.collectionPolicy.options.aggregateRetentionMonths.map(months => <option key={months ?? "none"} value={months ?? ""}>{retentionLabel(months)}</option>)}
             </Select>
+          </SettingRow>
+          {/* 원문 보존은 집계 보존과 별개다. 값이 없으면 고정값이나 집계 보존으로 채우지 않고 왜 없는지 말한다. */}
+          <SettingRow title="원문 보존" note={data.collectionPolicy.rawContentRetentionDays == null ? RAW_RETENTION_UNKNOWN : "수집한 프롬프트·응답 원문을 보관하는 기간 · 집계 보존과 별개입니다"}>
+            <span aria-label="원문 보존 기간" className="tnum text-xs text-text2">{data.collectionPolicy.rawContentRetentionDays == null ? "-" : `${int(data.collectionPolicy.rawContentRetentionDays)}일`}</span>
           </SettingRow>
           {cleanupId && <SettingRow title="보존 정리" note="가장 최근에 집계 보존을 줄인 저장의 정리 작업 · 보존 작업이 실행할 때 진행됩니다">
             <span role="status" aria-label="보존 정리 상태" className="max-w-[320px] text-right text-xs" style={{ color: cleanup.data && cleanupView(cleanup.data.operation).tone === "failed" ? "var(--red)" : "var(--text2)" }}>

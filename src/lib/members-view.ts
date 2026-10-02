@@ -7,10 +7,17 @@ import { int, usd } from "./format";
 export const ROLE_LABEL: Record<string, string> = { owner: "소유자", admin: "관리자", member: "구성원" };
 /** 초대와 편집에서 지정할 수 있는 역할. owner는 표시만 한다. */
 export const ASSIGNABLE_ROLES = ["member", "admin"] as const;
+/**
+ * 역할의 권한 설명 — 서버 인가와 같다(백엔드 대시보드 명세 §1: 조직 조회는 owner·admin 만, 구성원은 403 · 관리 명령도 owner·admin 만).
+ * 초대·온보딩 팀 단계·역할 편집·초대 수락이 이 문장을 같이 쓴다. 읽기 전용 대시보드 역할은 없다.
+ */
 export const ROLE_HINT: Record<string, string> = {
-  admin: "관리자는 계약·수집 정책·팀·구성원을 변경할 수 있습니다",
-  member: "구성원은 조회만 할 수 있습니다",
+  owner: "소유자는 관리자와 같이 웹 대시보드를 보고 조직 설정을 변경합니다. 소유자의 역할은 바꿀 수 없습니다",
+  admin: "관리자는 웹 대시보드를 보고 계약·수집 정책·팀·구성원을 변경합니다",
+  member: "구성원은 웹 대시보드에 접근하지 않습니다. CLI를 설치해 자기 사용량을 수집하는 대상입니다",
 };
+/** 역할별 접근 요약 — 역할을 고르기 전이나 역할을 모를 때(초대 수락) 쓴다. */
+export const ROLE_ACCESS_NOTE = "웹 대시보드는 관리자와 소유자만 볼 수 있습니다. 구성원은 CLI를 설치해 사용량을 수집하는 대상이며 대시보드에 접근하지 않습니다.";
 const MEMBER_STATE_LABEL: Record<string, string> = { active: "활성 계정", invited: "초대 대기", suspended: "정지" };
 const SEAT_STATE_LABEL: Record<string, string> = { assigned: "배정됨", unassigned: "배정 해제", reclaimed: "회수됨", unknown: "확인 불가" };
 // 좌석 원장의 가용성 사유(서버 대시보드 명세 "좌석 원장 조회"). 제품 단위로 낮춘 사유는 "그런 제품이 있다"로 읽는다.

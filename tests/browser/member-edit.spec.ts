@@ -22,6 +22,8 @@ test("member edits prefill current values, discard cancellation, persist saves a
   await expect(role).toHaveValue("member");
   // 역할 선택지는 서버가 받는 두 가지뿐이다.
   await expect(role.getByRole("option")).toHaveText(["구성원", "관리자"]);
+  // 고른 역할의 권한 설명은 초대 폼과 같은 문장이다.
+  await expect(modal).toContainText("구성원은 웹 대시보드에 접근하지 않습니다. CLI를 설치해 자기 사용량을 수집하는 대상입니다");
   await expect(modal.locator("header").getByLabel("팀", { exact: true })).toHaveCount(0);
   await expect(modal.locator("header").getByLabel("역할", { exact: true })).toHaveCount(0);
   await expect(modal.getByRole("heading", { name: "팀 · 역할", exact: true })).toBeVisible();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type ReactNode } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -9,7 +9,7 @@ import { Select } from "@/components/ui/Select";
 import { ManagementError, type ServerTeam } from "@/lib/api/management";
 import { memberChange, saveMember, type MemberBaseline } from "@/lib/api/member-commands";
 import { organizationKey } from "@/lib/api/query-keys";
-import { ASSIGNABLE_ROLES, ROLE_LABEL } from "@/lib/members-view";
+import { ASSIGNABLE_ROLES, ROLE_HINT, ROLE_LABEL } from "@/lib/members-view";
 
 /** 편집 대상. 구성원과 초대 대기자 모두 서버의 memberId와 version으로 가리킨다. */
 export type MemberEditTarget = MemberBaseline & { account: string; invited: boolean };
@@ -39,7 +39,8 @@ export function MemberEditForm({ organizationId, target, teams, self, editable, 
   const client = useQueryClient();
   // 열어 둔 사이 목록이 다시 조회돼도 입력과 기준 version을 바꾸지 않는다.
   const [baseline, setBaseline] = useState(target);
-  const { register, handleSubmit, reset, setFocus, formState: { isDirty } } = useForm<Values>({ defaultValues: valuesOf(target) });
+  const { register, handleSubmit, reset, setFocus, control, formState: { isDirty } } = useForm<Values>({ defaultValues: valuesOf(target) });
+  const role = useWatch({ control, name: "role" });
   const save = useMutation({
     retry: false,
     mutationFn: async (values: Values) => {
@@ -81,10 +82,11 @@ export function MemberEditForm({ organizationId, target, teams, self, editable, 
       </div>
       <div className="flex min-w-0 flex-col gap-1.5">
         <label htmlFor={`${id}-role`} className="text-[11px] text-text3">역할</label>
-        <Select id={`${id}-role`} {...register("role", { onChange: () => save.reset() })} disabled={self} className="h-9 w-full" aria-describedby={self ? `${id}-role-hint` : undefined}>
+        <Select id={`${id}-role`} {...register("role", { onChange: () => save.reset() })} disabled={self} className="h-9 w-full" aria-describedby={`${id}-role-access${self ? ` ${id}-role-hint` : ""}`}>
           {!knownRole && baseline && <option value={baseline.role} disabled>{ROLE_LABEL[baseline.role] ?? baseline.role}</option>}
           {ASSIGNABLE_ROLES.map((value) => <option key={value} value={value}>{ROLE_LABEL[value]}</option>)}
         </Select>
+        {ROLE_HINT[role] && <p id={`${id}-role-access`} className="pretty text-[11px] text-text3">{ROLE_HINT[role]}</p>}
         {self && <p id={`${id}-role-hint`} className="text-[11px] text-text3">자기 역할은 바꿀 수 없습니다.</p>}
       </div>
     </fieldset>

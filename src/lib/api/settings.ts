@@ -43,7 +43,9 @@ export const settingsSchema = z.object({
     settingsVersion: count, settingsUpdatedAt: z.string().nullable(), reclaimIdleDaysSource: z.enum(["organization", "default"]),
     options: z.object({ reclaimIdleDays: z.array(count), aggregateRetentionMonths: z.array(count.nullable()) }),
     // 이 조직의 가장 최근 보존 정리 작업(ADR 0047). 새로고침 뒤에도 마지막 정리의 상태를 다시 조회한다.
-    cleanupOperationId: z.string().nullable() }),
+    cleanupOperationId: z.string().nullable(),
+    // 원문 보존 일수. 서버는 null 을 준다 — 원본 아카이브의 수명은 인프라 저장소 규칙이고 이 서비스가 조회하지 않는다(백엔드 ADR 0046).
+    rawContentRetentionDays: count.nullable().optional() }),
   // evidence: 판정 근거별 설치 수(서버 가산) — 최근 설치 보고 · 보고가 없어 쓴 적용 확인 기록 · 근거 없음.
   // 가산 전의 서버는 보내지 않는다 — 없으면 근거를 말하지 않는다("설치 보고 기준"처럼 꾸미지 않는다).
   policyRollout: z.object({ desiredVersion: count, eligibleInstallations: count, appliedInstallations: count, outdatedInstallations: count, unknownInstallations: count,

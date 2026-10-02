@@ -44,6 +44,8 @@ test("the invitation link fills the code from the fragment, removes it from the 
   // 다시 보내면 서버가 받는다. 계정은 서버가 201을 준 뒤에만 만들어졌다고 말한다.
   await submit.click();
   await expect(page.getByRole("status")).toContainText("계정을 만들었습니다");
+  // 가입한 역할이 구성원이면 대시보드로 들어갈 수 없다 — 그 사실을 같은 문장으로 말한다.
+  await expect(page.getByRole("main")).toContainText("웹 대시보드는 관리자와 소유자만 볼 수 있습니다");
   expect(requests).toEqual([
     { code: "ABCD-EFGH-JKMN", email: "new@example.test", password: "correct-password-123" },
     { code: "ABCD-EFGH-JKMN", email: "new@example.test", password: "correct-password-123" },

@@ -78,6 +78,12 @@ test("inherits defaults, preserves explicit assignments and resets after submiss
   const role = dialog.getByRole("combobox", { name: "역할", exact: true });
   // 지정할 수 있는 역할은 서버의 두 가지뿐이다.
   await expect(role.getByRole("option")).toHaveText(["구성원", "관리자"]);
+  // 역할 설명은 서버 인가와 같다 — 구성원은 대시보드에 접근하지 않는다(읽기 전용 역할은 없다).
+  await expect(dialog).toContainText("구성원은 웹 대시보드에 접근하지 않습니다. CLI를 설치해 자기 사용량을 수집하는 대상입니다");
+  await expect(dialog).not.toContainText("조회만");
+  await role.selectOption("admin");
+  await expect(dialog).toContainText("관리자는 웹 대시보드를 보고 계약·수집 정책·팀·구성원을 변경합니다");
+  await role.selectOption("member");
   await team.selectOption({ label: "플랫폼" });
   await addEmail(dialog, "first@example.test");
   await addEmail(dialog, "second@example.test", ",");

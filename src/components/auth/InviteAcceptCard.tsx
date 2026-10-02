@@ -10,6 +10,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { Input } from "@/components/ui/Input";
 import { acceptInvitation } from "@/lib/api/signup";
 import { INVITATION_CODE, signupSchema, type SignupForm } from "@/lib/schemas/auth";
+import { ROLE_ACCESS_NOTE } from "@/lib/members-view";
 
 /**
  * 초대 수락 — 초대 메일의 링크가 가리키는 화면.
@@ -33,6 +34,7 @@ export function InviteAcceptCard() {
   if (signup.isSuccess) return <AuthFrame title="초대 수락">
     <p role="status" className="rounded-lg bg-sub p-3 text-sm leading-6">계정을 만들었습니다. 초대에 지정된 팀과 역할이 적용되었습니다.</p>
     <p className="text-sm leading-6 text-text2">CLI를 설치하려면 초대 메일의 설치 명령을 터미널에 붙여넣으세요. 설치는 가입과 따로 한 번 할 수 있습니다.</p>
+    <p className="text-sm leading-6 text-text2">{ROLE_ACCESS_NOTE}</p>
     <ButtonLink href="/login">로그인으로 이동</ButtonLink>
   </AuthFrame>;
 
