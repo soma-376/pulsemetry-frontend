@@ -4,7 +4,8 @@ import overviewExample from "../docs/api/overview-response.example.json";
 import teamsExample from "../docs/api/teams-response.example.json";
 import usersExample from "../docs/api/team-users-response.example.json";
 import settingsExample from "../docs/api/settings-response.example.json";
-import { buildCsv, csvCell, overviewCsv, settingsCsv, teamsCsv } from "../src/lib/csv-export";
+import { alertsCsv, buildCsv, csvCell, overviewCsv, settingsCsv, teamsCsv } from "../src/lib/csv-export";
+import type { Alert, AlertsPage } from "../src/lib/api/alerts";
 import type { Overview } from "../src/lib/api/overview";
 import type { Settings } from "../src/lib/api/settings";
 import type { TeamsView, TeamUser } from "../src/lib/api/teams";
@@ -85,4 +86,30 @@ test("설정: 등록 제품마다 계약·좌석·종량 지출 원천과 사유
   assert.equal(vendors[0].meteredActualBilledUsd, "");
   assert.equal(vendors[0].meteredReason, "not_applicable");
   assert.equal(section(csv, "contract_tiers").length, data.vendors.items.flatMap((vendor) => vendor.contract?.tiers ?? []).length);
+});
+
+test("운영 · 보안: 그 범주의 규칙만, 알림은 받은 전부 — 값이 없으면 빈 칸과 이유, 확인 시각은 확인 기록이 있을 때만", () => {
+  const alert = (id: string, patch: Partial<Alert>): Alert => ({
+    alertId: id, version: 1, ruleId: "model_not_allowed", category: "security", status: "open", occurredAt: "2026-10-01T01:00:00Z", lastSeenAt: "2026-10-01T02:00:00Z",
+    windowStart: "2026-10-01T00:00:00Z", windowEnd: "2026-10-01T03:00:00Z", subject: "claude-opus-4", eventCount: 3, memberCount: 2,
+    members: [{ memberId: "m-1", account: "a@example.test" }, { memberId: "m-2", account: null }], summary: {}, acknowledgement: null, ...patch,
+  });
+  const items = [alert("al-1", {}), alert("al-2", { ruleId: "tool_unapproved", subject: null, acknowledgement: { acknowledgedAt: "2026-10-01T05:00:00Z", acknowledgedBy: "u-1" } })];
+  const first: AlertsPage = {
+    meta: { organizationId: "org", snapshotId: "snap-1", asOf: "2026-10-01T06:00:00Z" },
+    evaluation: { availability: "available", reason: null, asOf: "2026-10-01T06:00:00Z", rules: [
+      { ruleId: "model_not_allowed", enabled: true, evaluatedAt: "2026-10-01T06:00:00Z", status: "evaluated", reason: null, windowStart: null, windowEnd: null },
+      { ruleId: "tool_unapproved", enabled: true, evaluatedAt: null, status: null, reason: null, windowStart: null, windowEnd: null },
+      { ruleId: "spend_spike", enabled: true, evaluatedAt: "2026-10-01T06:00:00Z", status: "evaluated", reason: null, windowStart: null, windowEnd: null },
+    ] },
+    alerts: { items: items.slice(0, 1), totalCount: 2, nextCursor: "c-2" },
+  };
+  const csv = alertsCsv(first, items, "예시 조직", "all", "security", "2026-10-02T00:00:00.000Z");
+  assert.match(csv, /^화면,운영 · 보안\r\n조직,예시 조직\r\n범주,security\r\n상태,all\r\n/);
+  assert.match(csv, /\r\nsnapshot,snap-1\r\n알림 수,2\r\n/);
+  assert.deepEqual(section(csv, "rules").map((row) => [row.ruleId, row.reason]), [["model_not_allowed", ""], ["tool_unapproved", "not_evaluated_yet"]]);
+  const rows = section(csv, "alerts");
+  assert.equal(rows.length, 2);
+  assert.deepEqual([rows[0].members, rows[0].acknowledgedAt, rows[0].reason], ["a@example.test m-2", "", ""]);
+  assert.deepEqual([rows[1].subject, rows[1].acknowledgedAt, rows[1].reason], ["", "2026-10-01T05:00:00Z", "unknown"]);
 });

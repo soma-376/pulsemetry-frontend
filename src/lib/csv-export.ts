@@ -1,3 +1,4 @@
+import { RULE_CATEGORY, type Alert, type AlertCategory, type AlertsPage, type AlertStatus } from "./api/alerts";
 import type { Overview } from "./api/overview";
 import type { Settings } from "./api/settings";
 import type { TeamAnalytics, TeamsView, TeamUser } from "./api/teams";
@@ -157,4 +158,21 @@ export function downloadCsv(filename: string, text: string) {
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+/** 운영 · 보안의 알림 목록(화면의 상태·범주와 같은 조건, 같은 snapshot 의 전 페이지)과 규칙별 평가. 확인 기록이 없으면 빈 칸이다. */
+export function alertsCsv(first: AlertsPage, items: Alert[], organization: string, status: AlertStatus, category: AlertCategory, exportedAt: string) {
+  const rules = first.evaluation.rules.filter((rule) => RULE_CATEGORY[rule.ruleId] === category);
+  return buildCsv([
+    ["화면", "운영 · 보안"], ["조직", organization], ["범주", category], ["상태", status], ["평가 가용성", first.evaluation.availability],
+    ["평가 사유", first.evaluation.reason], ["평가 시각", first.evaluation.asOf], ["snapshot", first.meta.snapshotId], ["알림 수", items.length], ["내보낸 시각", exportedAt],
+  ], [
+    { name: "rules", columns: ["ruleId", "enabled", "status", "evaluatedAt", "reason"],
+      rows: rules.map((rule) => [rule.ruleId, rule.enabled, rule.status, rule.evaluatedAt, rule.reason ?? (rule.status === null && rule.enabled ? "not_evaluated_yet" : "")]) },
+    { name: "alerts", columns: ["alertId", "ruleId", "category", "status", "subject", "eventCount", "memberCount", "members", "occurredAt", "lastSeenAt", "windowStart", "windowEnd",
+      "acknowledgedAt", "reason"],
+    rows: items.map((alert) => [alert.alertId, alert.ruleId, alert.category, alert.status, alert.subject, alert.eventCount, alert.memberCount,
+      alert.members.map((member) => member.account ?? member.memberId).join(" "), alert.occurredAt, alert.lastSeenAt, alert.windowStart, alert.windowEnd,
+      alert.acknowledgement?.acknowledgedAt ?? null, reasonOf([alert.subject, alert.eventCount, alert.memberCount])]) },
+  ]);
 }

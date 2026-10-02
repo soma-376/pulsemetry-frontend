@@ -51,17 +51,24 @@ export const alertsResponseSchema = z.object({
 });
 export type AlertsPage = z.infer<typeof alertsResponseSchema>;
 export type AlertStatus = "unacknowledged" | "acknowledged" | "all";
+export type AlertCategory = "security" | "cost";
+/** 규칙의 범주(서버 ADR 0051) — 보안은 모델·도구, 비용은 급증·한도. */
+export const RULE_CATEGORY: Record<string, AlertCategory> = { model_not_allowed: "security", tool_unapproved: "security", spend_spike: "cost", quota_exceeded: "cost" };
+
+/** 알림 목록 한 페이지(`GET O/alerts`). 범주를 주면 서버가 그 범주만 준다. */
+export async function fetchAlerts(org: string, status: AlertStatus, category: AlertCategory | undefined, page: { cursor: string; snapshotId: string } | null, signal?: AbortSignal) {
+  const query = new URLSearchParams({ status, limit: "20" });
+  if (category) query.set("category", category);
+  if (page) { query.set("cursor", page.cursor); query.set("snapshotId", page.snapshotId); }
+  const result = await apiJson("dashboard", orgPath(org, `/alerts?${query}`), alertsResponseSchema, { signal });
+  if (result.meta.organizationId !== org || (page && result.meta.snapshotId !== page.snapshotId)) throw new ManagementError("invalid_response", 422);
+  return result;
+}
 
 /** 알림 목록(`GET O/alerts`) — 첫 페이지의 현재 상태 토큰으로 다음 페이지를 읽는다. */
-export const alertsOptions = (org: string, status: AlertStatus) => infiniteQueryOptions({
-  queryKey: [...managementKey(org, "alerts"), status] as const,
-  queryFn: async ({ pageParam, signal }) => {
-    const query = new URLSearchParams({ status, limit: "20" });
-    if (pageParam) { query.set("cursor", pageParam.cursor); query.set("snapshotId", pageParam.snapshotId); }
-    const page = await apiJson("dashboard", orgPath(org, `/alerts?${query}`), alertsResponseSchema, { signal });
-    if (page.meta.organizationId !== org) throw new ManagementError("invalid_response", 422);
-    return page;
-  },
+export const alertsOptions = (org: string, status: AlertStatus, category?: AlertCategory) => infiniteQueryOptions({
+  queryKey: [...managementKey(org, "alerts"), status, category ?? "all"] as const,
+  queryFn: ({ pageParam, signal }) => fetchAlerts(org, status, category, pageParam, signal),
   initialPageParam: null as { cursor: string; snapshotId: string } | null,
   getNextPageParam: (last) => last.alerts.nextCursor ? { cursor: last.alerts.nextCursor, snapshotId: last.meta.snapshotId } : null,
   enabled: !!org,
