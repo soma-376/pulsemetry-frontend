@@ -108,6 +108,9 @@ test("ROLLOUT-A @p0 @write 정책 적용 현황을 설치 보고 기준으로 �
   await expect(page.getByText("적용 7대 · 미적용 3대 · 확인 불가 1대 · 설치 보고 기준", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "정책 적용 현황 보기", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "수집 정책 적용 현황", exact: true });
+  // 지금의 데몬(telemetryctl 기본 브랜치)은 새 정책을 스스로 받지 않는다 — 없는 동작(로그인 뒤 자동 적용)을 안내하지 않는다.
+  await expect(dialog).toContainText("다시 설치를 안내합니다");
+  await expect(dialog).not.toContainText("로그인한 기기");
   const rows = dialog.getByRole("table", { name: "설치 목록" }).locator("tbody tr");
   // 기본은 미적용 — 이전 판(v1)을 보고한 설치 셋, 마지막 보고 시각이 있다.
   await expect(rows).toHaveCount(3);

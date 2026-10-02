@@ -156,7 +156,7 @@ function OrganizationSettings({ organizationId }: { organizationId: string }) {
     </PageContainer>
     {data && editor && (!editor.vendorId || vendorQuery.data) && <ServerVendorDrawer key={editor.vendorId ?? "new"} organizationId={organizationId} initial={editor.vendorId ? vendorQuery.data! : null} registeredKinds={data.vendors.items.map(vendor => vendor.kind)} editable={data.capabilities.editContracts} open={open} onClose={() => setOpen(false)} onAfterClose={() => setEditor(null)} onSaved={showToast} onAccessDenied={setAccessError} />}
     <Modal open={policyChoice != null && !!data} onClose={() => { if (!policy.isPending) setPolicyChoice(null); }} title="수집 정책 변경" width={460} footer={<><div className="flex-1" /><Button disabled={policy.isPending} onClick={() => setPolicyChoice(null)}>취소</Button><Button variant="primary" loading={policy.isPending} loadingLabel="저장 중…" disabled={policyChoice == null} onClick={() => { if (policyChoice != null) policy.mutate(policyChoice); }}>변경사항 저장</Button></>}>
-      <p className="text-xs text-text2">새로 등록하는 설치에 바로 적용됩니다. 이미 설치된 기기는 다음 보고 때 새 정책이 있다는 것을 알고, 사용자가 로그인한 기기가 스스로 받아 적용합니다. 서버가 원격으로 바꾸지는 않습니다.</p>
+      <p className="text-xs text-text2">새로 등록하는 설치에 바로 적용됩니다. 이미 설치된 기기의 데몬은 새 정책을 스스로 받지 않습니다 — 다시 설치해야 새 정책이 적용됩니다. 서버가 원격으로 바꾸지는 않습니다.</p>
       <p className="text-xs text-text3">적용 여부는 수집 정책 버전의 적용 현황에서 확인합니다.</p>
       {policy.error && <ErrorState message={policy.error.message} />}
     </Modal>

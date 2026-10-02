@@ -76,7 +76,7 @@ export function InstallationsModal({ organizationId, rollout, channel, open, onC
       ]} />
       <p className="text-xs text-text2">
         {status === "outdated" ? "이전 판을 적용하고 있다고 보고한 설치입니다." : status === "unknown" ? "적용한 판을 보고하지 않은 설치입니다. 적용 완료나 미적용으로 추정하지 않습니다." : "현재 판을 적용했다고 보고한 설치입니다."}
-        {" "}알림은 원격으로 업데이트하지 않습니다. 사용자가 로그인한 기기는 다음 보고 때 새 정책을 받아 적용합니다.
+        {" "}알림은 원격으로 업데이트하지 않습니다. 지금의 데몬은 새 정책을 스스로 받지 않으므로 알림은 사용자에게 다시 설치를 안내합니다.
       </p>
       {notify.error && <ErrorState message={notify.error.message} />}
       {operationId && <OperationResult query={operation} rows={byId} />}

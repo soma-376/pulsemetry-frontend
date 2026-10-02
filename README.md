@@ -169,8 +169,11 @@ npm run test:e2e -- --grep @read
 수집 정책 변경·온보딩 완료·시드 초기화는 실행하지 않습니다. 정상 API 응답을 가로채지 않으며, 서버가 없거나 구버전이면 선행 조건 오류로 실패합니다. 실패 스크린샷은 `.e2e-artifacts/backend`에 저장합니다. 실제 인증 토큰이 포함될 수 있는 네트워크 trace는 기본적으로 저장하지 않습니다.
 
 데몬 → 서버 → 화면 실경로 검증은 별도 설정(`playwright.daemon.config.ts`, `tests/e2e-daemon`)으로 `npm run test:e2e:daemon`을 실행합니다.
-telemetryctl의 통합 테스트(`TestIntegrationEndToEnd…`)와 같은 단계 디렉터리(`E2E_DAEMON_STAGE_DIR`)로 **함께** 돌려야 하며, 혼자 돌리면 선행 조건 오류로 실패합니다.
-절차는 백엔드 `docs/enrollment-server-spec.md` §10.2에 있습니다. 시드 B에 정책·설치·수집 데이터를 실제로 만들므로 끝나면 DB 볼륨을 새로 만듭니다.
+telemetryctl 기본 브랜치의 데몬이 할 수 있는 단계(등록 → OTLP 전달 → 업데이트 확인)만 봅니다. 데몬 쪽이 같은 단계 디렉터리(`E2E_DAEMON_STAGE_DIR`)에
+단계 파일을 써야 하며, 혼자 돌리면 선행 조건 오류로 실패합니다. 절차는 백엔드 `docs/enrollment-server-spec.md` §10.2에 있습니다.
+그 데몬은 설치 보고와 정책 재조회를 하지 않으므로(백엔드 ADR 0053) 적용·미적용·수집 정상·지연 같은 보고 기반 화면 상태는 이 검증에 없습니다 —
+실서버 E2E의 시드 A(`ingest-and-rollout.spec.ts`)와 목 테스트 fixture가 서버의 판정을 확인합니다.
+시드 B에 정책·설치·수집 데이터를 실제로 만들므로 끝나면 DB 볼륨을 새로 만듭니다.
 
 기존 목 API 브라우저 테스트는 `tests/browser`에 유지하며 별도 설정으로 실행합니다.
 가로채지 않은 요청이 닿을 백엔드 주소는 `MOCK_ENROLLMENT_API_URL`·`MOCK_DASHBOARD_API_URL`로 바꿀 수 있습니다(기본 8080·8081).
