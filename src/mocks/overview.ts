@@ -228,7 +228,7 @@ export const FINDINGS: Finding[] = [
       { k: "team", v: "데이터 (+$856)" },
     ],
     action:
-      "query_source=subagent 비중 71% → 에이전트 루프 의심. 데이터 팀 9/3 14h 세션을 P3 세션 조회(사유 필수)로 확인.",
+      "query_source=subagent 비중 71% → 에이전트 루프 의심. 팀 분석에서 데이터 팀의 9/3 사용량을 확인.",
   },
   {
     sev: "주의",
