@@ -45,6 +45,15 @@ export async function signIn(page: Page, email: string, options: { ui?: boolean 
     await expect(page).toHaveURL(/\/(onboarding|overview)$/);
     return;
   }
+  await injectSession(page, await seedSession(email, false));
+}
+
+/** 저장할 세션 — 시드 로그인 어댑터와 같은 모양(`{tokens, user}`). user 는 서버의 현재 사용자 조회 응답이다. */
+export type StoredSession = { tokens: { access_token: string; refresh_token: string }; user: { organizationId: string; organizationName: string; email: string; role: string } };
+
+/** 시드 관리자의 세션을 Node 에서 받는다(화면에 넣지 않는다). 로그인 한 번이라 pacer 를 거친다. */
+export async function seedSession(email: string, pace = true): Promise<StoredSession> {
+  if (pace) await paceSignIn(email);
   const origin = new URL(test.info().project.use.baseURL!).origin;
   let response: Response;
   try {
@@ -54,11 +63,36 @@ export async function signIn(page: Page, email: string, options: { ui?: boolean 
   }
   if (response.status === 429) test.info().annotations.push({ type: ANNOTATION.observed429, description: "POST /api/dev/seed-login" });
   if (!response.ok) throw new PreparationError(`${email} 로그인 → 시드 로그인 어댑터 HTTP ${response.status}`);
-  const session = await response.json();
-  // 로그인 화면과 같은 곳으로 간다 — 온보딩을 마친 조직은 개요, 아니면 온보딩.
-  const onboarding = await fetch(`${enrollmentBase()}/api/v1/organizations/${session.user.organizationId}/onboarding`, { headers: { Authorization: `Bearer ${session.tokens.access_token}` }, signal: AbortSignal.timeout(20_000) });
-  if (!onboarding.ok) throw new PreparationError(`${email} 온보딩 조회 → HTTP ${onboarding.status}`);
-  const landing = (await onboarding.json()).completed ? "/overview" : "/onboarding";
+  return response.json();
+}
+
+/**
+ * 시드 관리자가 아닌 계정(구성원·시험이 만든 관리자)의 실제 로그인 — 시드 로그인 어댑터는 시드 관리자만 받는다.
+ * 백엔드의 로그인·현재 사용자 조회를 Node 에서 부르고 어댑터와 같은 모양으로 돌려준다. 진입 요청이라 pacer 를 거친다. 가입 UI 는 쓰지 않는다.
+ */
+export async function apiSession(organizationId: string, email: string, password: string): Promise<StoredSession> {
+  await paceSignIn(email);
+  const login = await fetch(`${enrollmentBase()}/v1/auth/login`, { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tenant_id: organizationId, email, password }), signal: AbortSignal.timeout(20_000) });
+  if (login.status === 429) test.info().annotations.push({ type: ANNOTATION.observed429, description: "POST /v1/auth/login" });
+  if (!login.ok) throw new PreparationError(`${email} 로그인 → HTTP ${login.status}`);
+  const tokens = await login.json();
+  const me = await fetch(`${enrollmentBase()}/v1/auth/me`, { headers: { Authorization: `Bearer ${tokens.access_token}` }, signal: AbortSignal.timeout(20_000) });
+  if (!me.ok) throw new PreparationError(`${email} 현재 사용자 조회 → HTTP ${me.status}`);
+  return { tokens, user: await me.json() };
+}
+
+/**
+ * [session] 을 이 page 의 sessionStorage 에 **한 번만** 넣고(표식 키 — 로그아웃 뒤 다시 살아나지 않는다) [landing] 으로 간다.
+ * landing 을 주지 않으면 로그인 화면이 가는 곳(온보딩을 마친 조직은 개요, 아니면 온보딩)이다. 앱이 조직명을 그릴 때까지 기다린다.
+ */
+export async function injectSession(page: Page, session: StoredSession, landing?: string) {
+  const origin = new URL(test.info().project.use.baseURL!).origin;
+  if (!landing) {
+    const onboarding = await fetch(`${enrollmentBase()}/api/v1/organizations/${session.user.organizationId}/onboarding`, { headers: { Authorization: `Bearer ${session.tokens.access_token}` }, signal: AbortSignal.timeout(20_000) });
+    if (!onboarding.ok) throw new PreparationError(`${session.user.email} 온보딩 조회 → HTTP ${onboarding.status}`);
+    landing = (await onboarding.json()).completed ? "/overview" : "/onboarding";
+  }
   await page.addInitScript(({ key, marker, value, origin }) => {
     if (location.origin !== origin || sessionStorage.getItem(marker)) return;
     sessionStorage.setItem(marker, "1");
