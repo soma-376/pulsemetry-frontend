@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
 import { expect, test, dashboardBase, seedOrganizations } from "./fixtures";
-import { authenticatedRequest, seedPeriod, selectPeriod, signIn, signOut } from "./helpers";
+import { authenticatedRequest, seedPeriod, selectPeriod, signIn } from "./helpers";
+import { PreparationError } from "./harness";
 
 // 백엔드 tools/dev-seed/README.md 의 A 알림 규칙: 기준일 7일 전 급증·비허용 모델·미승인 도구를 켰고, 모델 허용 목록 밖의 Opus·o3 호출이 있어
 // dashboard-api 의 주기 평가(로컬 1분)가 돌면 비허용 모델 알림이 생긴다. 한도 초과는 근거가 없어 켤 수 없다(백엔드 ADR 0051).
@@ -55,16 +56,22 @@ test("ALERTS-RULES @p0 @write 목록을 비우면 규칙을 켤 수 없고, 목�
   const stored = await settings(page);
   expect(stored.alertRules.find((rule) => rule.ruleId === "tool_unapproved")).toMatchObject({ enabled: true, availability: "available", reason: null });
   expect(stored.alertLists.approvedTools.entries).toEqual(TOOLS);
-  await signOut(page);
 });
 
 test("ALERTS-ACK @p0 @write 개요의 알림 건수는 서버의 미확인 수이고, 목록에서 확인하면 줄어든 채 새로고침 뒤에도 남는다", async ({ page }) => {
   test.setTimeout(180_000);
   await signIn(page, `owner@seed-${A.seed}.example.test`);
-  // 서버의 주기 평가가 한 번은 돌아야 한다(로컬 1분).
-  await expect.poll(async () => (await overviewAlerts(page)).availability, { timeout: 120_000, intervals: [2_000] }).toBe("available");
+  // 선행 조건: 서버의 주기 평가(로컬 1분)가 켜진 규칙을 모두 한 번은 평가했다 — 규칙별 평가 시각(알림 목록의 evaluation.rules)으로 본다.
+  // 개요의 availability 는 첫 평가 회차 도중에도 available 이 될 수 있어(규칙 하나라도 기록되면) 그것만으로는 기다리지 않는다.
+  const rulesEvaluated = async () => {
+    const response = await authenticatedRequest(page, dashboardBase(), `/api/v1/organizations/${A.id}/alerts?limit=1`);
+    const rules = (response.body?.evaluation?.rules ?? []) as { enabled: boolean; evaluatedAt: string | null }[];
+    return response.status === 200 && rules.some((rule) => rule.enabled) && rules.filter((rule) => rule.enabled).every((rule) => rule.evaluatedAt !== null);
+  };
+  await expect.poll(rulesEvaluated, { timeout: 120_000, intervals: [2_000] }).toBe(true);
+  expect((await overviewAlerts(page)).availability).toBe("available");
   const before = await overviewAlerts(page);
-  if (!before.unacknowledgedTotal) throw new Error("E2E 선행 조건 실패: 시드 A 에 미확인 알림이 없습니다. 이 테스트는 실행마다 하나를 확인합니다 — " +
+  if (!before.unacknowledgedTotal) throw new PreparationError("시드 A 에 미확인 알림이 없습니다. 이 테스트는 실행마다 하나를 확인합니다 — " +
     "격리 DB 에서 `DELETE FROM enrollment.alert_acknowledgements WHERE tenant_id = '" + A.id + "'` 로 확인 기록을 지우거나 시드를 초기화하세요.");
   expect(before.security! + before.cost!).toBe(before.unacknowledgedTotal);
 
@@ -98,5 +105,4 @@ test("ALERTS-ACK @p0 @write 개요의 알림 건수는 서버의 미확인 수�
   await drawer.getByRole("group", { name: "알림 상태" }).getByRole("button", { name: "확인함" }).click();
   await expect(drawer.getByRole("list", { name: "알림 목록" }).locator(`li[data-alert-id="${alertId}"]`)).toContainText("확인함");
   await page.keyboard.press("Escape");
-  await signOut(page);
 });

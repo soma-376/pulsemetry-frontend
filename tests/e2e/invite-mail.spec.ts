@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
 import { expect, test, enrollmentBase, seedOrganizations } from "./fixtures";
-import { authenticatedRequest, signIn, signOut } from "./helpers";
+import { authenticatedRequest, signIn } from "./helpers";
+import { PreparationError } from "./harness";
 
 // 초대 → 서버의 발송 작업 → SMTP → 메일 수신 컨테이너까지의 실제 경로를 본다.
 // 받은 메일은 수신 컨테이너의 조회 API로 확인한다. 밖으로 나가는 메일은 없다.
@@ -10,15 +11,15 @@ const CODE_LINE = /초대 코드: ([0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4})/;
 
 function mailApi() {
   const value = process.env.E2E_MAIL_API_URL;
-  if (!value) throw new Error("E2E 선행 조건 실패: E2E_MAIL_API_URL에 메일 수신 컨테이너의 조회 API 주소(예: http://127.0.0.1:8025)를 설정하세요. 백엔드의 Compose가 컨테이너를 띄웁니다.");
+  if (!value) throw new PreparationError("E2E_MAIL_API_URL에 메일 수신 컨테이너의 조회 API 주소(예: http://127.0.0.1:8025)를 설정하세요. 백엔드의 Compose가 컨테이너를 띄웁니다.");
   const url = new URL(value);
-  if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) throw new Error("메일 수신 컨테이너는 로컬 주소여야 합니다.");
+  if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) throw new PreparationError("메일 수신 컨테이너는 로컬 주소여야 합니다.");
   return value.replace(/\/$/, "");
 }
 type Mail = { ID: string; Subject: string; To: { Address: string }[] };
 async function mailsTo(email: string): Promise<Mail[]> {
   const response = await fetch(`${mailApi()}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`);
-  if (!response.ok) throw new Error(`메일 수신 컨테이너 조회 실패: HTTP ${response.status}`);
+  if (!response.ok) throw new PreparationError(`메일 수신 컨테이너 조회 실패: HTTP ${response.status}`);
   // 최신 메일이 먼저 온다. 도착 순서로 돌려준다.
   return ((await response.json()).messages as Mail[]).filter((mail) => mail.To.some((to) => to.Address === email)).reverse();
 }
@@ -113,5 +114,4 @@ test("INVITE-MAIL-01 @p0 @write 초대 메일이 실제로 도착하고, 발송 
     }
   }
   expect(await waiting(page, email)).toHaveLength(0);
-  await signOut(page);
 });

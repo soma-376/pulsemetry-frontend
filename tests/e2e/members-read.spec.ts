@@ -1,5 +1,5 @@
 import { expect, test, dashboardBase, seedOrganizations } from "./fixtures";
-import { authenticatedRequest, seedPeriod, selectPeriod, signIn, signOut } from "./helpers";
+import { authenticatedRequest, seedPeriod, selectPeriod, signIn } from "./helpers";
 
 // 백엔드 tools/dev-seed/README.md의 A 시나리오: 관리자 2명 + 일반 구성원 10명, 미배정 1명,
 // 팀 플랫폼 4·제품 4·데이터 2·디자인 1, 최근 28일 활성 8명, 미사용 초대 2개(대기·만료 각 1개).
@@ -119,7 +119,6 @@ test("MEMBERS-A @p0 @read 명단·요약·미배정·초대 대기를 서버 값
   await reloaded;
   await expect(rows).toHaveCount(A.roster);
   await expect(page.getByRole("region", { name: "팀 미배정 사용자", exact: true })).toContainText(A.unassigned);
-  await signOut(page);
 });
 
 test("MEMBERS-B @p0 @read 구성원이 오너뿐인 조직도 빈 값으로 지어내지 않고 표시한다", async ({ page }) => {
@@ -134,5 +133,4 @@ test("MEMBERS-B @p0 @read 구성원이 오너뿐인 조직도 빈 값으로 지�
   await expect(page.getByRole("group", { name: "구성원", exact: true })).toContainText("1명");
   await expect(page.getByRole("region", { name: "초대 대기", exact: true })).toContainText("초대 대기 중인 구성원이 없습니다");
   await expect(page.getByRole("region", { name: "팀 미배정 사용자", exact: true })).toContainText("owner@seed-b.example.test");
-  await signOut(page);
 });

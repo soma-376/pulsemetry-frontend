@@ -1,13 +1,14 @@
 import type { Page } from "@playwright/test";
 import { expect, test, seedOrganizations } from "./fixtures";
-import { seedPeriod, signIn, signOut, selectPeriod } from "./helpers";
+import { seedPeriod, signIn, selectPeriod } from "./helpers";
 import type { Overview } from "../../src/lib/api/overview";
+import { PreparationError } from "./harness";
 
 /** A의 조회 구간 환산 비용. 시드 생성기의 plan 출력이 원천이며 조회 API의 응답으로 채우지 않는다. */
 function seedCostA() {
   const value = process.env.E2E_SEED_A_PERIOD_COST_USD ?? "";
   if (!/^\d+(\.\d+)?$/.test(value)) {
-    throw new Error(".env.local의 E2E_SEED_A_PERIOD_COST_USD를 백엔드 `dev-seed plan <E2E_SEED_DATE>` 출력에서 A의 period_known_estimated_usd 값으로 설정하세요.");
+    throw new PreparationError(".env.local의 E2E_SEED_A_PERIOD_COST_USD를 백엔드 `dev-seed plan <E2E_SEED_DATE>` 출력에서 A의 period_known_estimated_usd 값으로 설정하세요.");
   }
   return Number(value);
 }
@@ -51,7 +52,6 @@ test("OVERVIEW-A @p0 @read 달력으로 시드 기간 조회 후 관측 인원·
   expect(response.status()).toBe(200);
   expect((await response.json()).comparison.status).toBe("disabled");
   await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toContainText(costText);
-  await signOut(page);
 });
 
 test("OVERVIEW-C @p0 @read 미등록 모델과 비용 미확정 값을 0으로 바꾸지 않는다", async ({ page }) => {
@@ -66,5 +66,4 @@ test("OVERVIEW-C @p0 @read 미등록 모델과 비용 미확정 값을 0으로 �
   await expect(row).toBeVisible();
   await expect(row.getByText("-", { exact: true }).first()).toBeVisible();
   await expect(row).not.toContainText("$0.00");
-  await signOut(page);
 });

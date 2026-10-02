@@ -13,6 +13,10 @@ if (!["localhost", "127.0.0.1", "[::1]"].includes(target.hostname) || !target.po
 export default defineConfig({
   testDir: "./tests/e2e",
   testMatch: "**/*.spec.ts",
+  // 서버·인증 설정·시드의 선행 확인은 실행 전에 한 번이다. 로그인은 pacer(tests/e2e/harness.ts)를 거친다 — 서버 한도를 풀지 않는다.
+  globalSetup: "./tests/e2e/global-setup.ts",
+  // 기능 실패·준비 실패·건너뜀·pacer 대기·429 를 따로 센다(E2E_RESULTS_DIR 의 e2e-summary.json).
+  reporter: [["list"], ["./tests/e2e/reporter.ts"]],
   workers: 1,
   retries: 0,
   timeout: 60_000,

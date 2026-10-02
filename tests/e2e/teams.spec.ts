@@ -1,9 +1,10 @@
 import type { Page } from "@playwright/test";
 import { expect, test, dashboardBase, seedOrganizations } from "./fixtures";
-import { authenticatedRequest, seedPeriod, selectPeriod, signIn, signOut } from "./helpers";
+import { authenticatedRequest, seedPeriod, selectPeriod, signIn } from "./helpers";
 import type { TeamsResponse, TeamUsersPage } from "../../src/lib/api/teams";
 import type { Overview } from "../../src/lib/api/overview";
 import { usd } from "../../src/lib/format";
+import { PreparationError } from "./harness";
 
 // 팀 분석 화면과 개요의 제품 관측을 실제 서버·시드로 본다. 기대값은 백엔드 tools/dev-seed/README.md의 A 시나리오와 대시보드 명세에서 쓴다:
 // 팀 플랫폼·제품·데이터·디자인 + 미배정 사용자, member2(플랫폼 → 제품 이동)·member6이 Claude Code와 Codex를 함께 사용 — 두 도구가 섞인 팀은 플랫폼·제품이고 데이터·디자인은 한 도구,
@@ -15,13 +16,13 @@ const CLAUDE = "Claude (Anthropic)", CODEX = "ChatGPT / Codex (OpenAI)";
 
 function seedDate() {
   const value = process.env.E2E_SEED_DATE ?? "";
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error(".env.local의 E2E_SEED_DATE를 현재 DB 시드의 생성 기준일로 설정하세요.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new PreparationError(".env.local의 E2E_SEED_DATE를 현재 DB 시드의 생성 기준일로 설정하세요.");
   return new Date(`${value}T00:00:00Z`);
 }
 const day = (offset: number) => new Date(seedDate().getTime() + offset * 86_400_000).toISOString().slice(0, 10);
 function seedCostA() {
   const value = process.env.E2E_SEED_A_PERIOD_COST_USD ?? "";
-  if (!/^\d+(\.\d+)?$/.test(value)) throw new Error(".env.local의 E2E_SEED_A_PERIOD_COST_USD를 백엔드 `dev-seed plan <E2E_SEED_DATE>` 출력의 A period_known_estimated_usd로 설정하세요.");
+  if (!/^\d+(\.\d+)?$/.test(value)) throw new PreparationError(".env.local의 E2E_SEED_A_PERIOD_COST_USD를 백엔드 `dev-seed plan <E2E_SEED_DATE>` 출력의 A period_known_estimated_usd로 설정하세요.");
   return Number(value);
 }
 
@@ -136,7 +137,6 @@ test("TEAMS-A-PARTIAL @p0 @read 팀 목록·제품 비중·드로어·사용자 
   expect(await accountsOf(product.teamId!)).toContain("member2@seed-a.example.test");
   await usage.getByRole("button", { name: "미배정", exact: true }).click();
   await expect.poll(accounts).toEqual(["member9@seed-a.example.test"]);
-  await signOut(page);
 });
 
 test("TEAMS-A-COMPLETE @p0 @read 완전한 두 기간이면 증감과 끊기지 않은 누적 세션을 그리고, 직접 링크는 그 팀의 드로어를 연다", async ({ page }) => {
@@ -164,7 +164,6 @@ test("TEAMS-A-COMPLETE @p0 @read 완전한 두 기간이면 증감과 끊기지 
   await expect(page.getByRole("dialog", { name: "디자인 팀", exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog", { name: "디자인 팀", exact: true })).not.toBeVisible();
-  await signOut(page);
 });
 
 test("OVERVIEW-PRODUCTS @p0 @read 개요의 벤더 관측 인원·팀별 사용 벤더와 설정의 관측 지표가 서버의 제품별 관측이다", async ({ page }) => {
@@ -209,5 +208,4 @@ test("OVERVIEW-PRODUCTS @p0 @read 개요의 벤더 관측 인원·팀별 사용 
     await page.keyboard.press("Escape");
     await expect(drawer).not.toBeVisible();
   }
-  await signOut(page);
 });

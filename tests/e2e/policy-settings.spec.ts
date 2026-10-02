@@ -1,8 +1,9 @@
 import { execFileSync } from "node:child_process";
 import type { Page } from "@playwright/test";
 import { expect, test, dashboardBase, enrollmentBase, seedOrganizations } from "./fixtures";
-import { authenticatedRequest, signIn, signOut } from "./helpers";
+import { authenticatedRequest, signIn } from "./helpers";
 import { retentionBoundary, seoulToday } from "../../src/lib/policy-settings";
+import { PreparationError } from "./harness";
 
 // 설정의 회수 기준·집계 보존 저장과 보존 정리 작업(백엔드 ADR 0046·0047)을 실제 서버로 본다. 기대값은 백엔드 명세 §13.2의 규칙에서 쓴다:
 // 회수 기준은 조직별로 저장되고 구성원 화면이 같은 기준을 쓴다, 보존을 줄이면 확인 뒤 정리 작업이 생기고, 보존 작업의 요청 모드가 실행하면
@@ -12,9 +13,9 @@ const A = seedOrganizations[0];
 /** 보존 작업 요청 모드의 실행 명령(JSON 배열). 격리 스택의 DB·ClickHouse 설정은 환경 변수로 넘어간다. */
 function workerCommand(): string[] {
   const value = process.env.E2E_RETENTION_WORKER_CMD;
-  if (!value) throw new Error("E2E 선행 조건 실패: E2E_RETENTION_WORKER_CMD에 보존 작업 요청 모드의 실행 명령(JSON 배열, 예: [\"java\",\"-jar\",\"retention-worker.jar\",\"--requests\"])을 설정하세요.");
+  if (!value) throw new PreparationError("E2E_RETENTION_WORKER_CMD에 보존 작업 요청 모드의 실행 명령(JSON 배열, 예: [\"java\",\"-jar\",\"retention-worker.jar\",\"--requests\"])을 설정하세요.");
   const command = JSON.parse(value) as string[];
-  if (!Array.isArray(command) || !command.length || !command.includes("--requests")) throw new Error("E2E_RETENTION_WORKER_CMD는 --requests 를 포함한 JSON 배열이어야 합니다.");
+  if (!Array.isArray(command) || !command.length || !command.includes("--requests")) throw new PreparationError("E2E_RETENTION_WORKER_CMD는 --requests 를 포함한 JSON 배열이어야 합니다.");
   return command;
 }
 
@@ -50,7 +51,6 @@ test("POLICY-A @p0 @write 회수 기준을 저장하면 새로고침 뒤에도 �
     await page.goto("/settings");
     if ((await settingsOf(page)).collectionPolicy.reclaimIdleDays !== original) await save(page, () => reclaim.selectOption(String(original)));
   }
-  await signOut(page);
 });
 
 test("RETENTION-A @p0 @write 보존을 줄이면 확인 뒤 정리 작업이 생기고, 보존 작업 실행 뒤 완료로 보이며 새로고침 뒤에도 그 상태를 본다", async ({ page }) => {
@@ -96,5 +96,4 @@ test("RETENTION-A @p0 @write 보존을 줄이면 확인 뒤 정리 작업이 생
       expect(restored.cleanupOperationId).toBeNull();
     }
   }
-  await signOut(page);
 });

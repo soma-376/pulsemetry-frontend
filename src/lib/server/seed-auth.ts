@@ -5,6 +5,9 @@ const organizations: Record<string, string> = {
   "seed-a.example.test": "1b59ab21-1788-35e0-bfd7-23baa88a35b4",
   "seed-b.example.test": "db1c8c6b-6970-38c6-821a-eb5e61b7a180",
   "seed-c.example.test": "4769355c-a20e-327f-89fc-fef69e94dfb6",
+  // 파괴적 시험용 빈 조직(백엔드 tools/dev-seed — 명시할 때만 적재한다). D 는 조직과 오너뿐, E 는 정책 1판과 설치 초대 코드.
+  "seed-d.example.test": "e77dd38f-4e6c-33ff-84bd-79c8a53ba900",
+  "seed-e.example.test": "bd6fe5c2-6fdd-3433-b77e-5d5334b0bb8e",
 };
 export function resolveSeedAccount(input: unknown) {
   const parsed = loginSchema.safeParse(input);

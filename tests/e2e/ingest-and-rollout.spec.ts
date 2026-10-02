@@ -1,7 +1,8 @@
 import type { Page } from "@playwright/test";
 import { expect, test, dashboardBase, seedOrganizations } from "./fixtures";
-import { authenticatedRequest, seedPeriod, selectPeriod, signIn, signOut } from "./helpers";
+import { authenticatedRequest, seedPeriod, selectPeriod, signIn } from "./helpers";
 import type { Overview } from "../../src/lib/api/overview";
+import { PreparationError } from "./harness";
 
 // 헤더의 수집 상태, 개요의 기간 비교, 설정의 정책 적용 현황과 업데이트 확인 알림을 실제 서버·시드로 본다.
 // 기대값은 백엔드 명세와 시드 명세(tools/dev-seed/README.md)에서 쓴다 — 조회 API의 출력을 기대값으로 붙이지 않는다.
@@ -9,21 +10,21 @@ const A = seedOrganizations[0];
 
 function seedDate() {
   const value = process.env.E2E_SEED_DATE ?? "";
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error(".env.local의 E2E_SEED_DATE를 현재 DB 시드의 생성 기준일로 설정하세요.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new PreparationError(".env.local의 E2E_SEED_DATE를 현재 DB 시드의 생성 기준일로 설정하세요.");
   return new Date(`${value}T00:00:00Z`);
 }
 const day = (offset: number) => new Date(seedDate().getTime() + offset * 86_400_000).toISOString().slice(0, 10);
 
 function mailApi() {
   const value = process.env.E2E_MAIL_API_URL;
-  if (!value) throw new Error("E2E 선행 조건 실패: E2E_MAIL_API_URL에 메일 수신 컨테이너의 조회 API 주소를 설정하세요.");
-  if (!["localhost", "127.0.0.1", "[::1]"].includes(new URL(value).hostname)) throw new Error("메일 수신 컨테이너는 로컬 주소여야 합니다.");
+  if (!value) throw new PreparationError("E2E_MAIL_API_URL에 메일 수신 컨테이너의 조회 API 주소를 설정하세요.");
+  if (!["localhost", "127.0.0.1", "[::1]"].includes(new URL(value).hostname)) throw new PreparationError("메일 수신 컨테이너는 로컬 주소여야 합니다.");
   return value.replace(/\/$/, "");
 }
 type Mail = { ID: string; Subject: string; To: { Address: string }[] };
 async function mailsTo(email: string): Promise<Mail[]> {
   const response = await fetch(`${mailApi()}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`);
-  if (!response.ok) throw new Error(`메일 수신 컨테이너 조회 실패: HTTP ${response.status}`);
+  if (!response.ok) throw new PreparationError(`메일 수신 컨테이너 조회 실패: HTTP ${response.status}`);
   return ((await response.json()).messages as Mail[]).filter(mail => mail.To.some(to => to.Address === email));
 }
 
@@ -54,7 +55,6 @@ test("INGEST-HEADER @p0 @read 헤더가 서버의 수집 판정과 사유·보�
   expect(status.body).toMatchObject({ reason: "installations_silent", activeInstallations: 0 });
   await expect(bar).toContainText(status.body.status === "down" ? "수집 중단" : "수집 상태 확인 불가");
   await expect(bar).not.toContainText("수집 정상");
-  await signOut(page);
 
   // C: 설치 보고가 한 번도 없는 조직 — 판정 근거 없음. 서버가 null로 준 설치 수는 보여 주지 않는다.
   await signIn(page, "owner@seed-c.example.test");
@@ -62,7 +62,6 @@ test("INGEST-HEADER @p0 @read 헤더가 서버의 수집 판정과 사유·보�
   await expect(bar).toContainText("수집 상태 확인 불가");
   await expect(bar).toContainText("수집 기기의 보고가 없어 판정할 수 없습니다");
   await expect(bar).not.toContainText("보고 중인 설치");
-  await signOut(page);
 });
 
 test("COMPARE-A @p0 @read 두 기간이 모두 완전하면 증감·이전 값·팀 증가 기여를, 아니면 비교 불가 사유를 보여 준다", async ({ page }) => {
@@ -98,7 +97,6 @@ test("COMPARE-A @p0 @read 두 기간이 모두 완전하면 증감·이전 값·
   await expect(cost).not.toContainText("0.0%");
   await expect(page.getByText(/일 관측 · \d+월 \d+일까지 확정/)).toBeVisible();
   await expect(table.getByRole("columnheader", { name: "증가 기여" })).toHaveCount(0);
-  await signOut(page);
 });
 
 test("ROLLOUT-A @p0 @write 정책 적용 현황을 설치 보고 기준으로 보여 주고 확인 알림 메일이 실제로 도착한다", async ({ page }) => {
@@ -144,5 +142,4 @@ test("ROLLOUT-A @p0 @write 정책 적용 현황을 설치 보고 기준으로 �
   await dialog.getByRole("button", { name: "닫기", exact: true }).last().click();
   await page.getByRole("button", { name: "새로고침", exact: true }).click();
   await expect(page.getByText("적용 7대 · 미적용 3대 · 확인 불가 1대 · 설치 보고 기준", { exact: true })).toBeVisible();
-  await signOut(page);
 });

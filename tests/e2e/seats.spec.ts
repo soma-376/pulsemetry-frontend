@@ -1,6 +1,7 @@
 import { expect, test, dashboardBase, seedOrganizations } from "./fixtures";
-import { authenticatedRequest, seedPeriod, signIn, signOut } from "./helpers";
+import { authenticatedRequest, seedPeriod, signIn } from "./helpers";
 import type { Page } from "@playwright/test";
+import { PreparationError } from "./harness";
 
 // 백엔드 tools/dev-seed/README.md 의 A 좌석 원장: Claude(Team — 벤더 API 없음) member4 등 관리자 기록. C 는 Cursor Enterprise 연결(자리표시자 자격증명).
 // 커넥터 경로는 모의 벤더 서버(Cursor Enterprise 좌석 API 흉내 — 백엔드 tools/mock-vendor)를 가리키는 서버로만 돌린다 — 실제 벤더를 부르지 않는다.
@@ -9,9 +10,9 @@ const C = seedOrganizations[2];
 
 function mockVendor() {
   const value = process.env.E2E_MOCK_VENDOR_URL;
-  if (!value) throw new Error("E2E 선행 조건 실패: E2E_MOCK_VENDOR_URL에 모의 벤더 서버 주소를 설정하고, enrollment-api 의 벤더 연결 기준 주소(pulsemetry.vendor-connections.base-urls.*)를 그 서버로 두세요.");
+  if (!value) throw new PreparationError("E2E_MOCK_VENDOR_URL에 모의 벤더 서버 주소를 설정하고, enrollment-api 의 벤더 연결 기준 주소(pulsemetry.vendor-connections.base-urls.*)를 그 서버로 두세요.");
   const url = new URL(value);
-  if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) throw new Error("모의 벤더 서버는 로컬 주소여야 합니다.");
+  if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) throw new PreparationError("모의 벤더 서버는 로컬 주소여야 합니다.");
   return value.replace(/\/$/, "");
 }
 type VendorCall = { method: string; path: string; body: { userId?: string; email?: string } | null; authorization: string | null };
@@ -71,7 +72,6 @@ test("SEATS-ADMIN @p0 @write 벤더 API 가 없는 좌석의 회수는 관리자
   await expect(restore.getByRole("status")).toContainText("복원 · 완료");
   await expect.poll(async () => (await seatsOf(page, id)).find(item => item.account === account)).toMatchObject({ state: "assigned", source: "admin_action" });
   await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
-  await signOut(page);
 });
 
 test("SEATS-CONNECTOR @p0 @write 벤더 연결을 다시 만들고 동기화한 뒤 커넥터로 회수하며 모의 벤더가 실제 요청을 받고, 복원은 관리자 조치 확인으로 끝난다", async ({ page }) => {
@@ -133,7 +133,6 @@ test("SEATS-CONNECTOR @p0 @write 벤더 연결을 다시 만들고 동기화한 
   await expect.poll(async () => (await seatsOf(page, id, C.id)).find(seat => seat.account === account)).toMatchObject({ state: "assigned", source: "admin_action" });
   expect(await controls()).toHaveLength(before);
   await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
-  await signOut(page);
 });
 
 test("SEATS-CSV @p0 @write 관리자 기록 제품의 CSV 는 오류가 있으면 파일을 거절하고, 미리보기 뒤 적용한 행만 원장에 남는다", async ({ page }) => {
@@ -166,7 +165,6 @@ test("SEATS-CSV @p0 @write 관리자 기록 제품의 CSV 는 오류가 있으�
   const vendors = (await authenticatedRequest(page, dashboardBase(), `/api/v1/organizations/${A.id}/settings`)).body.vendors.items as { kind: string; seats: { data: { assigned: number } } }[];
   expect(vendors.find(vendor => vendor.kind === "openai_biz")!.seats.data.assigned).toBe(2);
   await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
-  await signOut(page);
 });
 
 test("SEATS-OVERVIEW @p0 @read 개요의 제품별 배정 좌석은 구성원 요약과 같은 좌석 원장이고, 좌석을 기록하지 않은 제품은 사유를 말한다", async ({ page }) => {
@@ -192,7 +190,6 @@ test("SEATS-OVERVIEW @p0 @read 개요의 제품별 배정 좌석은 구성원 �
   const card = page.getByRole("region", { name: "계약·좌석 현황", exact: true });
   if (candidates.availability === "partial") await expect(card).toContainText("회수 후보는 판정한 좌석만");
   else await expect(card).not.toContainText("회수 후보는 판정한 좌석만");
-  await signOut(page);
 });
 
 test("SEATS-BILLING @p0 @read 설정의 종량 지출은 벤더 청구 누계이고 원천·사유를 함께 보이며, 청구 원천이 없는 제품은 금액을 만들지 않는다", async ({ page }) => {
@@ -214,7 +211,6 @@ test("SEATS-BILLING @p0 @read 설정의 종량 지출은 벤더 청구 누계이
   await expect(metered).toContainText("개발 시드(실제 청구 아님)");
   if (cursor.meteredMonthToDate.reason) await expect(metered).toContainText(cursor.meteredMonthToDate.reason === "billing_sync_failing" ? "청구 누계 읽기가 실패하고 있습니다" : "청구 누계를 읽은 지 오래되었습니다");
   await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
-  await signOut(page);
 
   await signIn(page, `owner@seed-${A.seed}.example.test`);
   await page.goto("/settings");
@@ -223,5 +219,4 @@ test("SEATS-BILLING @p0 @read 설정의 종량 지출은 벤더 청구 누계이
   await expect(drawer.getByRole("region", { name: "종량 지출" })).toContainText("이 플랜에는 청구 조회 API가 없습니다 — 환산 비용이나 계약액으로 채우지 않습니다.");
   await expect(page.getByRole("group", { name: "종량 지출", exact: true })).toContainText("이 플랜에는 청구 조회 API가 없습니다");
   await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
-  await signOut(page);
 });

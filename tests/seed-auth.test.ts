@@ -3,12 +3,14 @@ import { test } from "node:test";
 import { resolveSeedAccount } from "../src/lib/server/seed-auth";
 import { POST } from "../src/app/api/dev/seed-login/route";
 
-test("백엔드 A/B/C owner와 admin만 정확한 조직 UUID에 연결한다", () => {
-  const ids = ["1b59ab21-1788-35e0-bfd7-23baa88a35b4", "db1c8c6b-6970-38c6-821a-eb5e61b7a180", "4769355c-a20e-327f-89fc-fef69e94dfb6"];
-  for (const [index, seed] of ["a", "b", "c"].entries()) {
+test("백엔드 A~E owner와 admin만 정확한 조직 UUID에 연결한다", () => {
+  // 조직 ID 는 백엔드 tools/dev-seed/README.md 의 시드 표다(D·E 는 명시할 때만 적재하는 빈 조직).
+  const ids = ["1b59ab21-1788-35e0-bfd7-23baa88a35b4", "db1c8c6b-6970-38c6-821a-eb5e61b7a180", "4769355c-a20e-327f-89fc-fef69e94dfb6",
+    "e77dd38f-4e6c-33ff-84bd-79c8a53ba900", "bd6fe5c2-6fdd-3433-b77e-5d5334b0bb8e"];
+  for (const [index, seed] of ["a", "b", "c", "d", "e"].entries()) {
     for (const local of ["owner", "admin"]) assert.deepEqual(resolveSeedAccount({ email: ` ${local.toUpperCase()}@seed-${seed}.example.test ` }), { email: `${local}@seed-${seed}.example.test`, organizationId: ids[index] });
   }
-  for (const email of ["member2@seed-a.example.test", "admin@codeworks.io", "owner@seed-a.example.test.evil.com", "owner@seed-d.example.test", "invalid"]) assert.equal(resolveSeedAccount({ email }), null);
+  for (const email of ["member2@seed-a.example.test", "member1@seed-e.example.test", "admin@codeworks.io", "owner@seed-a.example.test.evil.com", "owner@seed-f.example.test", "invalid"]) assert.equal(resolveSeedAccount({ email }), null);
 });
 test("시드 인증은 명시적으로 켠 로컬 환경에서만 허용하고 다른 출처 요청을 차단한다", async () => {
   const enabled = process.env.DEV_SEED_AUTH_ENABLED;

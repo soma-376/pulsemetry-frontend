@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test, dashboardBase, enrollmentBase, seedOrganizations } from "./fixtures";
-import { authenticatedRequest, seedPeriod, signIn, signOut } from "./helpers";
+import { authenticatedRequest, seedPeriod, signIn } from "./helpers";
 
 // 시드 A(백엔드 tools/dev-seed/README.md): member5는 디자인 팀의 일반 구성원, member9만 미배정, 팀은 넷, 초대 대기 1·만료 1.
 // 쓰기 검증은 새 팀·새 초대를 만들고, 시드 구성원에게 한 변경은 같은 테스트 안에서 되돌린다.
@@ -179,7 +179,6 @@ test("MEMBERS-W1 @p0 @write 팀·역할 저장이 새로고침 뒤에도 남고,
     await expect(second.drawer).not.toBeVisible();
     await expect(rowOf(other, OWNER)).toContainText("데이터");
     expect(otherErrors, "두 번째 탭의 런타임 오류").toEqual([]);
-    await signOut(other);
     await other.close();
   } finally {
     await restoreMember(page, TARGET, "디자인", "member");
@@ -188,7 +187,6 @@ test("MEMBERS-W1 @p0 @write 팀·역할 저장이 새로고침 뒤에도 남고,
   const after = await roster(page);
   expect(after.filter((member) => member.team.teamId === null).map((member) => member.account)).toEqual([UNASSIGNED]);
   expect(after.find((member) => member.account === OWNER)!.team.teamName).toBe("플랫폼");
-  await signOut(page);
 });
 
 test("MEMBERS-W2 @p0 @write 팀을 만들고 이름을 바꾸고 삭제하면 서버 목록과 새로고침 뒤 화면이 같다", async ({ page }) => {
@@ -265,7 +263,6 @@ test("MEMBERS-W2 @p0 @write 팀을 만들고 이름을 바꾸고 삭제하면 �
     }
   }
   expect((await teams(page)).map((team) => team.teamName).sort()).toEqual([...SEED_TEAMS].sort());
-  await signOut(page);
 });
 
 // 초대 코드가 화면에 보이는 시나리오다. 코드 값을 실패 메시지에 싣지 않고, 끝날 때 화면에서 지운 뒤 만든 초대를 모두 취소한다.
@@ -392,5 +389,4 @@ test("MEMBERS-W3 @p0 @write 초대 코드를 발급·편집·재발급·취소�
   // 시드의 대기 1명·만료 1명만 남는다.
   expect((await invitations(page, "pending")).map((item) => item.email)).toEqual(["member12@seed-a.example.test"]);
   expect((await invitations(page, "expired")).map((item) => item.email)).toEqual(["member13@seed-a.example.test"]);
-  await signOut(page);
 });
