@@ -12,8 +12,10 @@ import { createCommands, ManagementError, managementKey } from "@/lib/api/manage
 import { installationsOptions, NOTIFY_LIMIT, notifyInstallations, type Installation, type PolicyStatus } from "@/lib/api/installations";
 import { failureText, operationOptions, type Operation, type OperationPoll } from "@/lib/api/operations";
 import { int } from "@/lib/format";
+import { EVIDENCE_LABEL, evidenceTime, rolloutEvidenceText, type RolloutEvidence } from "@/lib/policy-rollout";
 
-export type Rollout = { desiredVersion: number; eligibleInstallations: number; appliedInstallations: number; outdatedInstallations: number; unknownInstallations: number };
+export type Rollout = { desiredVersion: number; eligibleInstallations: number; appliedInstallations: number; outdatedInstallations: number; unknownInstallations: number;
+  evidence?: RolloutEvidence };
 const time = (value: string | null) => value ? new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) : "-";
 const TARGET_STATUS = { pending: "발송 대기", awaiting_admin_action: "조치 대기", succeeded: "발송됨", failed: "발송 실패" } as const;
 const OPERATION_STATUS: Record<Operation["status"], string> = {
@@ -74,8 +76,10 @@ export function InstallationsModal({ organizationId, rollout, channel, open, onC
       <SegmentedControl<PolicyStatus> label="적용 상태" value={status} onChange={choose} options={[
         { value: "outdated", label: `미적용 ${int(counts.outdated)}` }, { value: "unknown", label: `확인 불가 ${int(counts.unknown)}` }, { value: "applied", label: `적용 ${int(counts.applied)}` },
       ]} />
+      <p className="text-xs text-text2">{rolloutEvidenceText(rollout.evidence)}</p>
       <p className="text-xs text-text2">
-        {status === "outdated" ? "이전 판을 적용하고 있다고 보고한 설치입니다." : status === "unknown" ? "적용한 판을 보고하지 않은 설치입니다. 적용 완료나 미적용으로 추정하지 않습니다." : "현재 판을 적용했다고 보고한 설치입니다."}
+        {status === "outdated" ? "지금 판이 이전 판인 설치입니다." : status === "unknown" ? "지금 판을 확인할 근거가 없는 설치입니다. 적용 완료나 미적용으로 추정하지 않습니다." : "지금 판이 현재 판인 설치입니다."}
+        {" "}근거가 적용 확인 기록인 설치는 그 판을 적용한 적이 있다는 기록이며, 지금도 그 판으로 수집한다는 최근 보고가 아닙니다.
         {" "}알림은 원격으로 업데이트하지 않습니다. 지금의 데몬은 새 정책을 스스로 받지 않으므로 알림은 사용자에게 다시 설치를 안내합니다.
       </p>
       {notify.error && <ErrorState message={notify.error.message} />}
@@ -91,7 +95,7 @@ export function InstallationsModal({ organizationId, rollout, channel, open, onC
               checked={notifiable.slice(0, NOTIFY_LIMIT).every(row => selected.has(row.installationId))}
               onChange={event => setSelected(event.target.checked ? new Set(notifiable.slice(0, NOTIFY_LIMIT).map(row => row.installationId)) : new Set())} />}
           </th>
-          {["설치", "계정", "팀", "적용 판", "마지막 보고"].map(label => <th key={label} scope="col" className="pb-2 font-medium">{label}</th>)}
+          {["설치", "계정", "팀", "적용 판", "근거", "근거 시각"].map(label => <th key={label} scope="col" className="pb-2 font-medium">{label}</th>)}
         </tr></thead>
         <tbody>{rows.map(row => <tr key={row.installationId} className="border-b border-border">
           <td className="py-2.5">{row.canNotify && <input type="checkbox" aria-label={`${row.account ?? row.installationId} 알림 대상`} disabled={!channel || running}
@@ -100,7 +104,8 @@ export function InstallationsModal({ organizationId, rollout, channel, open, onC
           <td>{row.account ?? "-"}</td>
           <td>{row.team.teamName ?? "-"}</td>
           <td className="tnum">{row.appliedPolicyVersion == null ? "확인 불가" : `v${row.appliedPolicyVersion}`}</td>
-          <td className="tnum">{time(row.lastHeartbeatAt)}</td>
+          <td>{EVIDENCE_LABEL[row.appliedEvidence]}</td>
+          <td className="tnum">{time(evidenceTime(row))}</td>
         </tr>)}</tbody>
       </table></div>}
       {list.hasNextPage && <div className="flex items-center justify-between gap-2 text-xs text-text3">

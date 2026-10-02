@@ -44,7 +44,10 @@ export const settingsSchema = z.object({
     options: z.object({ reclaimIdleDays: z.array(count), aggregateRetentionMonths: z.array(count.nullable()) }),
     // 이 조직의 가장 최근 보존 정리 작업(ADR 0047). 새로고침 뒤에도 마지막 정리의 상태를 다시 조회한다.
     cleanupOperationId: z.string().nullable() }),
-  policyRollout: z.object({ desiredVersion: count, eligibleInstallations: count, appliedInstallations: count, outdatedInstallations: count, unknownInstallations: count }),
+  // evidence: 판정 근거별 설치 수(서버 가산) — 최근 설치 보고 · 보고가 없어 쓴 적용 확인 기록 · 근거 없음.
+  // 가산 전의 서버는 보내지 않는다 — 없으면 근거를 말하지 않는다("설치 보고 기준"처럼 꾸미지 않는다).
+  policyRollout: z.object({ desiredVersion: count, eligibleInstallations: count, appliedInstallations: count, outdatedInstallations: count, unknownInstallations: count,
+    evidence: z.object({ heartbeat: z.number().int().nonnegative(), appliedConfirmation: z.number().int().nonnegative(), none: z.number().int().nonnegative() }).optional() }),
   // 알림 규칙의 저장값·가용성·사유와 두 목록(서버 ADR 0051 — alertLists 는 가산).
   alertRules: z.array(alertRuleSchema),
   alertLists: alertListsSchema.optional(),

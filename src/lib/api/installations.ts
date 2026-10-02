@@ -13,6 +13,10 @@ const installationSchema = z.object({
   /** 마지막 설치 보고를 받은 서버 시각. 보고한 적이 없으면 null. */
   lastHeartbeatAt: z.iso.datetime({ offset: true }).nullable(),
   canNotify: z.boolean(),
+  /** 지금 판의 근거(서버 가산): 최근 설치 보고 · 보고가 없어 쓴 적용 확인 기록 · 근거 없음. */
+  appliedEvidence: z.enum(["heartbeat", "applied_confirmation", "none"]),
+  /** 근거가 적용 확인 기록일 때 그 판을 확인한 시각. 그 밖에는 null. */
+  appliedConfirmedAt: z.iso.datetime({ offset: true }).nullable(),
 });
 export type Installation = z.infer<typeof installationSchema>;
 const pageSchema = z.object({

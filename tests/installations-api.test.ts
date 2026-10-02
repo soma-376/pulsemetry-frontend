@@ -6,7 +6,7 @@ import { createCommands, ManagementError } from "../src/lib/api/management";
 
 const org = "11111111-1111-4111-8111-111111111111";
 const row = { installationId: "22222222-2222-4222-8222-222222222222", memberId: "m-1", account: "dev@example.test", team: { teamId: null, teamName: "미배정" },
-  agentVersion: "0.2.0", appliedPolicyVersion: 1, lastHeartbeatAt: "2026-09-28T15:00:00Z", canNotify: true };
+  agentVersion: "0.2.0", appliedPolicyVersion: 1, lastHeartbeatAt: "2026-09-28T15:00:00Z", canNotify: true, appliedEvidence: "heartbeat" as const, appliedConfirmedAt: null };
 const page = (nextCursor: string | null, snapshotId = "snap-1") => ({ meta: { organizationId: org, snapshotId }, desiredPolicyVersion: 2,
   installations: { items: [row], totalCount: 101, nextCursor } });
 const operation = (status: string, results: { status: string; reason: string | null }[]) => ({ operationId: "op-1", kind: "installation_notification", status,

@@ -131,7 +131,12 @@
     "eligibleInstallations": 3,
     "appliedInstallations": 2,
     "outdatedInstallations": 1,
-    "unknownInstallations": 0
+    "unknownInstallations": 0,
+    "evidence": {
+      "heartbeat": 1,
+      "appliedConfirmation": 2,
+      "none": 0
+    }
   },
   "alertRules": [
     {

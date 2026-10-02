@@ -30,6 +30,7 @@ import { organizationKey } from "@/lib/api/query-keys";
 import { settingsVendorRow } from "@/lib/settings-vendors";
 import { useFilters } from "@/lib/filters";
 import { int, usd } from "@/lib/format";
+import { rolloutEvidenceText } from "@/lib/policy-rollout";
 
 const number = (value: number | null | undefined) => value == null ? "-" : int(value);
 const amount = (value: string | null | undefined) => value == null ? "-" : usd(Number(value));
@@ -120,7 +121,7 @@ function OrganizationSettings({ organizationId }: { organizationId: string }) {
         {!rows.length && <EmptyState message="등록된 제품이 없습니다." />}
       </SettingSection>
         <SettingSection id="collection" title="수집 정책"><div className="rounded-lg border border-border bg-card">
-          <SettingRow first title="수집 정책 버전" note={`적용 ${int(rollout!.appliedInstallations)}대 · 미적용 ${int(rollout!.outdatedInstallations)}대 · 확인 불가 ${int(rollout!.unknownInstallations)}대 · 설치 보고 기준`}>
+          <SettingRow first title="수집 정책 버전" note={`적용 ${int(rollout!.appliedInstallations)}대 · 미적용 ${int(rollout!.outdatedInstallations)}대 · 확인 불가 ${int(rollout!.unknownInstallations)}대 · ${rolloutEvidenceText(rollout!.evidence)}`}>
             <div className="flex items-center gap-2"><span className="tnum text-xs">v{rollout!.desiredVersion}</span><Button size="sm" aria-label="정책 적용 현황 보기" onClick={() => setInstallOpen(true)}>{int(rollout!.appliedInstallations)} / {int(rollout!.eligibleInstallations)}대</Button></div>
           </SettingRow>
           <SettingRow title="프롬프트 원문 수집" note={data.collectionPolicy.collectRawContent ? "프롬프트와 응답 본문을 수집합니다" : "프롬프트와 응답 본문을 수집하지 않습니다"}>

@@ -14,6 +14,8 @@ function seedDate() {
   return new Date(`${value}T00:00:00Z`);
 }
 const day = (offset: number) => new Date(seedDate().getTime() + offset * 86_400_000).toISOString().slice(0, 10);
+/** 화면(ko-KR, 서울)의 날짜 표기 — 기준일에서 offset 일 뒤의 서울 자정. */
+const shownDay = (offset: number) => { const [y, m, d] = day(offset).split("-").map(Number); return `${y}. ${m}. ${d}.`; };
 
 function mailApi() {
   const value = process.env.E2E_MAIL_API_URL;
@@ -99,29 +101,35 @@ test("COMPARE-A @p0 @read 두 기간이 모두 완전하면 증감·이전 값·
   await expect(table.getByRole("columnheader", { name: "증가 기여" })).toHaveCount(0);
 });
 
-test("ROLLOUT-A @p0 @write 정책 적용 현황을 설치 보고 기준으로 보여 주고 확인 알림 메일이 실제로 도착한다", async ({ page }) => {
+// 시드 A: 판 2 — 적용 7 · 미적용 3 · 확인 불가 1(두 번째 설치). 근거는 기본 설치 10대가 기준 시각에 보낸 설치 보고, 두 번째 설치는 보고도 적용 확인도 없다(시드 README "정책 적용"·"설치 보고").
+const A_ROLLOUT = "적용 7대 · 미적용 3대 · 확인 불가 1대 · 근거: 설치 보고 10대 · 근거 없음 1대";
+
+test("ROLLOUT-A @p0 @write 정책 적용 현황을 판정 근거와 함께 보여 주고 확인 알림 메일이 실제로 도착한다", async ({ page }) => {
   await signIn(page, "owner@seed-a.example.test");
   await page.goto("/settings");
-  // 시드 A: 판 2 — 적용 7 · 미적용 3 · 확인 불가 1(두 번째 설치).
-  await expect(page.getByText("적용 7대 · 미적용 3대 · 확인 불가 1대 · 설치 보고 기준", { exact: true })).toBeVisible();
+  await expect(page.getByText(A_ROLLOUT, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "정책 적용 현황 보기", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "수집 정책 적용 현황", exact: true });
   // 지금의 데몬(telemetryctl 기본 브랜치)은 새 정책을 스스로 받지 않는다 — 없는 동작(로그인 뒤 자동 적용)을 안내하지 않는다.
   await expect(dialog).toContainText("다시 설치를 안내합니다");
   await expect(dialog).not.toContainText("로그인한 기기");
   const rows = dialog.getByRole("table", { name: "설치 목록" }).locator("tbody tr");
-  // 기본은 미적용 — 이전 판(v1)을 보고한 설치 셋, 마지막 보고 시각이 있다.
+  // 기본은 미적용 — 이전 판(v1)을 보고한 설치 셋. 근거는 최근 설치 보고이고 그 시각은 기준 시각(기준일 서울 자정)이다.
   await expect(rows).toHaveCount(3);
   for (const row of await rows.all()) {
     await expect(row).toContainText("v1");
+    await expect(row).toContainText("최근 설치 보고");
+    await expect(row).toContainText(shownDay(0));
     await expect(row.getByRole("checkbox")).toBeVisible();
   }
   await dialog.getByRole("button", { name: /^적용 7$/ }).click();
   await expect(rows).toHaveCount(7);
   await expect(rows.getByRole("checkbox")).toHaveCount(0);
+  await expect(rows.filter({ hasText: "최근 설치 보고" })).toHaveCount(7);
   await dialog.getByRole("button", { name: /^확인 불가 1$/ }).click();
   await expect(rows).toHaveCount(1);
   await expect(rows.first()).toContainText("확인 불가");
+  await expect(rows.first()).toContainText("근거 없음");
   await expect(rows.first()).toContainText("member2@seed-a.example.test");
 
   const email = "member2@seed-a.example.test";
@@ -141,5 +149,23 @@ test("ROLLOUT-A @p0 @write 정책 적용 현황을 설치 보고 기준으로 �
   // 알림은 적용이 아니다 — 현황은 그대로다.
   await dialog.getByRole("button", { name: "닫기", exact: true }).last().click();
   await page.getByRole("button", { name: "새로고침", exact: true }).click();
-  await expect(page.getByText("적용 7대 · 미적용 3대 · 확인 불가 1대 · 설치 보고 기준", { exact: true })).toBeVisible();
+  await expect(page.getByText(A_ROLLOUT, { exact: true })).toBeVisible();
+});
+
+test("ROLLOUT-C @p0 @read 설치 보고가 없는 조직은 적용 판정이 적용 확인 기록에 기댄다는 것과 그 시각을 보여 준다", async ({ page }) => {
+  // 시드 C: 구성원 2~7의 설치 6대가 기준일 45일 전(서울 자정)에 등록하며 판 1 적용 확인 기록을 남겼고 설치 보고는 없다(시드 README "C의 설치").
+  await signIn(page, "admin@seed-c.example.test");
+  await page.goto("/settings");
+  await expect(page.getByText("적용 6대 · 미적용 0대 · 확인 불가 0대 · 근거: 적용 확인 기록 6대 — 설치 보고를 받은 설치가 없습니다", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "정책 적용 현황 보기", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "수집 정책 적용 현황", exact: true });
+  await expect(dialog).toContainText("지금도 그 판으로 수집한다는 최근 보고가 아닙니다");
+  const rows = dialog.getByRole("table", { name: "설치 목록" }).locator("tbody tr");
+  await expect(rows).toHaveCount(6);
+  for (const row of await rows.all()) {
+    await expect(row).toContainText("v1");
+    await expect(row).toContainText("적용 확인 기록 · 보고 없음");
+    await expect(row).toContainText(shownDay(-45));
+  }
+  await expect(dialog).not.toContainText("최근 설치 보고");
 });

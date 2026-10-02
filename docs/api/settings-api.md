@@ -115,6 +115,8 @@ type SettingsResponse = {
   policyRollout: {
     desiredVersion: number; eligibleInstallations: number;
     appliedInstallations: number; outdatedInstallations: number; unknownInstallations: number;
+    /** 판정 근거별 설치 수(서버 가산). 합은 eligibleInstallations. 가산 전 서버는 보내지 않는다 */
+    evidence?: { heartbeat: number; appliedConfirmation: number; none: number };
   };
   alertRules: AlertRule[];
   /** 알림 규칙이 기대는 두 목록(서버 가산 — ADR 0051). 저장한 적 없으면 entries [] · version 0 */
@@ -129,6 +131,10 @@ type InstallationsResponse = {
     installationId: string; memberId: string | null; account: string | null;
     team: TeamRef; agentVersion: string | null; appliedPolicyVersion: number | null;
     lastHeartbeatAt: string | null; canNotify: boolean;
+    /** 지금 판의 근거(서버 가산): 마지막 설치 보고 · 보고가 없어 쓴 적용 확인 기록 · 근거 없음 */
+    appliedEvidence: "heartbeat" | "applied_confirmation" | "none";
+    /** 근거가 applied_confirmation 일 때 그 판의 적용 확인 시각. 그 밖에는 null */
+    appliedConfirmedAt: string | null;
   }>;
 };
 type ContractWrite = {
@@ -262,6 +268,8 @@ PUT /api/v1/organizations/{organizationId}/collection-policy(enrollment 서비�
   collectRawContent=false이면 서버가 허용되지 않은 본문을 저장하지 않도록 한다.
 - 정책 저장 성공과 전 설치 적용 완료는 다르다. appliedPolicyVersion이 확인된 설치만 applied로 센다.
 - eligible=applied+outdated+unknown. 정책 ACK가 없으면 unknown이며 적용 완료로 추정하지 않는다.
+- 판정의 근거(`appliedEvidence`·`policyRollout.evidence`)를 구분해 말한다. 적용 확인 기록은 그 판을 적용한 **적이 있다**는 이력이고 최근 보고가 아니다.
+  telemetryctl 기본 브랜치는 설치 보고를 보내지 않으므로 지금 배포된 설치는 대부분 적용 확인 기록이 근거다. "설치 보고 기준"처럼 한 근거로 뭉뚱그리지 않는다.
 - 원문 보존 기간과 집계 보존 기간은 별개다. rawContentRetentionDays는 서버의 기존 원문 정책을 읽기만 한다.
 - 집계 보존 단축(무기한 → 유한 포함)은 정리 작업을 만들고 cleanupOperationId로 돌려준다. 진행은 `GET /operations/{operationId}`를
   `Retry-After` 간격으로 조회한다(대기 → 진행 → 완료, 미완이면 진행 중인 채로 `retention.status=incomplete`, 정해진 횟수 안에 못 끝내면 실패).
