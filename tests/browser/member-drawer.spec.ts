@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { openDashboard } from "./helpers";
 
 test("row opens the standard-width drawer with vendor-specific seats and independent role edits", async ({ page }) => {

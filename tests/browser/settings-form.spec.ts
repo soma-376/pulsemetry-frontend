@@ -1,5 +1,5 @@
 import { openDashboard } from "./helpers";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures";
 
 async function addVendor(page: Page, name: string, fee = "10") {
   await page.getByRole("button", { name: "벤더 추가", exact: true }).click();

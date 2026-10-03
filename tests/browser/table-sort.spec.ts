@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator } from "./fixtures";
 import { openDashboard } from "./helpers";
 import { buildMembers } from "../../src/lib/metrics/members";
 import { buildTeams } from "../../src/lib/metrics/teams";

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { openDashboard } from "./helpers";
 
 test("status header menu supports keyboard selection, search, reset and dismissal", async ({ page }) => {

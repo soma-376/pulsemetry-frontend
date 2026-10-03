@@ -8,7 +8,7 @@ import { settingsVendorDraft, settingsVendorRow } from "../src/lib/settings-vend
 test("settings read every page from one snapshot and preserve unknown totals", async () => {
   const fixture = settingsFixture(), original = global.fetch, paths: URL[] = [];
   global.fetch = async input => {
-    const url = new URL(String(input)); paths.push(url);
+    const url = new URL(String(input), "http://localhost"); paths.push(url);
     return Response.json(paths.length === 1 ? { ...fixture, vendors: { ...fixture.vendors, items: [fixture.vendors.items[0]], nextCursor: "page2" } }
       : { meta: fixture.meta, vendors: { ...fixture.vendors, items: [fixture.vendors.items[1]], nextCursor: null } });
   };

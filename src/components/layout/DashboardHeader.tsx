@@ -17,7 +17,7 @@ export function DashboardHeaderProvider({ children, todayIso }: { children: Reac
   const register = useCallback((value: PageRefresh | null) => setPage(value), []);
   const session = useBackendSession();
   const { autoRefresh } = useFilters();
-  const organizationId = session?.user.organizationId ?? process.env.NEXT_PUBLIC_ORGANIZATION_ID ?? "";
+  const organizationId = session?.user.organizationId ?? "";
   const ingest = useQuery({ ...ingestStatusOptions(organizationId), refetchInterval: autoRefresh ? 300_000 : false });
 
   return <RegisterRefresh.Provider value={register}>

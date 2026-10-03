@@ -18,12 +18,18 @@ http://localhost:3000 에서 확인할 수 있습니다.
 
 ```dotenv
 NEXT_PUBLIC_ENROLLMENT_API_URL=http://localhost:8080
-NEXT_PUBLIC_DASHBOARD_API_URL=http://localhost:8081
 ENROLLMENT_API_URL=http://localhost:8080
+DASHBOARD_API_URL=http://localhost:8081
+BFF_ORIGIN=http://localhost:3000
+BFF_SESSION_KEYS=<openssl rand -hex 32로 생성한 값>
 ```
 
-브라우저용 Enrollment 주소와 Next 서버용 주소는 같은 백엔드를 가리킵니다.
-로컬 시드 로그인에는 `.env.example`의 `DEV_SEED_AUTH_ENABLED`와 `DEV_SEED_AUTH_PASSWORD`도 설정합니다.
+회사 이메일로 소속 회사를 찾고 회사에 설정된 OIDC 제공자(개발은 Cognito)의 로그인 페이지로 이동합니다.
+프론트 앱 설정에는 비밀번호·OIDC client secret을 넣지 않습니다. 업무 API는 BFF를 거치며, 조회할 조직은 로그인 세션에서만 가져옵니다. Storybook과 브라우저 테스트도 명시적인 세션 fixture를 사용합니다.
+서비스 AT/RT는 암호화 HttpOnly 쿠키로 관리하고, 브라우저는 같은 출처의 BFF만 호출합니다.
+**Node.js 프로세스 하나로 운영합니다.** 다중 worker·replica·serverless에서는 갱신 공유를 재설계해야 합니다.
+키 교체·보안·재시작 시 제약은 [BFF 운영 안내](docs/bff-auth.md)를 따릅니다.
+백엔드/Cognito 연결과 정확한 callback 설정은 [OIDC 실행·계약 안내](docs/oidc-login.md)를 따릅니다.
 주소를 바꾼 후 개발 서버는 재시작하고, 배포 빌드는 다시 생성해야 합니다.
 
 
@@ -35,12 +41,15 @@ ENROLLMENT_API_URL=http://localhost:8080
 | 팀 분석 | /teams | 팀 비교, 모델 분석, 사용자 사용량, 팀 상세 드로어 |
 | 구성원 | /members | 명단·검색, 초대, 팀 배정, 좌석 회수 UI |
 | 설정 | /settings | 벤더 계약, 수집·보존 정책, 알림 규칙 UI |
-| 로그인 | /login | 시드 이메일로 실제 백엔드 인증하는 로컬 SSO 시뮬레이션 |
+| 로그인 | /login | 이메일 회사 탐색·복수 회사 선택 후 실제 OIDC 로그인 |
+| 인증 복귀 | /auth/callback | state 검증·단회 코드 교환·관리자/온보딩 확인 |
 | 온보딩 | /onboarding | 수집 정책, 서버 벤더·플랜 카탈로그, 계약과 팀 등록 |
 | 운영·보안 | /ops | 이번 구현 범위에서 제외된 안내 화면 |
 
 로그인·개요·온보딩·설정은 실제 백엔드 API를 사용합니다. 팀 분석·구성원 화면에는
 아직 목 데이터와 로컬 상태가 남아 있습니다. 초대 메일 발송과 벤더 좌석 회수는 연결하지 않았습니다.
+
+실제 렌더링 화면과 소스 코드를 대조한 현재 구현 범위는 [현재 구현 화면 명세](docs/implemented-ui-spec.md)에 정리되어 있습니다.
 
 백엔드 담당자에게는 [화면별 API 구현 요청서](docs/api/README.md)를 전달하면 됩니다.
 공통 날짜·금액·권한·페이지네이션 규칙과 화면별 요청/응답 타입, JSON 예시,
@@ -102,7 +111,7 @@ API 문서 검사는 문서의 TypeScript 타입과 JSON 예시를 비교하고 
 `--config=playwright.seed.config.ts`는 더 이상 필요하지 않습니다.
 
 1. 백엔드의 `tools/dev-seed/README.md`에 따라 PostgreSQL·ClickHouse와 최신 enrollment/dashboard 서버를 실행합니다. 기존 시드 A/B/C를 그대로 사용하며 테스트가 초기화하지 않습니다.
-2. `.env.example`을 참고해 `.env.local`에 실제 서버 주소와 `DEV_SEED_AUTH_ENABLED=true`, 개발용 `DEV_SEED_AUTH_PASSWORD`를 설정합니다. `ENROLLMENT_API_URL`과 `NEXT_PUBLIC_ENROLLMENT_API_URL`은 같은 서버를 가리켜야 합니다. 테스트는 로컬 서버만 허용합니다.
+2. `.env.example`을 참고해 BFF·API 주소를 설정하고 [OIDC 안내](docs/oidc-login.md)에 따라 Cognito 신원을 연결합니다. `E2E_OIDC_ORIGIN`과 계정별 `E2E_OIDC_PASSWORDS_JSON`, 실패 UI 선택자를 테스트 프로세스에 주입합니다. 앱·API는 로컬 주소를 사용하며 IdP만 명시한 HTTPS 주소를 사용합니다.
 3. `E2E_SEED_DATE`에 **DB 시드를 생성한 기준일**을 설정합니다. 예를 들어 2026-09-28 기준 시드라면 `E2E_SEED_DATE=2026-09-28`입니다. 오늘 날짜로 자동 변경하지 않습니다.
 4. Chromium 설치 후 아래 명령을 실행합니다. 프론트엔드 3000번 서버는 자동 실행하며, 이미 실행 중이면 재사용합니다. 환경 변수를 변경했다면 기존 개발 서버를 재시작하세요.
 
@@ -120,9 +129,9 @@ npm run test:e2e
 npm run test:e2e -- --grep @read
 ```
 
-현재 검증 범위:
+테스트가 다루는 범위(작성과 실연동 통과는 별개):
 
-- A/B/C 이메일 로그인, 조직별 조회와 새로고침, 로그아웃, 조직 전환, 401 이후 실제 토큰 갱신.
+- A/B/C OIDC 로그인, 조직별 조회와 새로고침, 로그아웃, 조직 전환, 401 이후 실제 토큰 갱신을 검사합니다. 계정 전환 테스트만 명시한 IdP 도메인 쿠키를 지웁니다. Cognito 실제 E2E 완료 여부는 별도 실행 결과로 확인해야 합니다.
 - 달력에서 시드 기간 선택, A의 관측 인원 8명·환산 비용 $0.525980 검증, 비교 변경, C의 비용 미확정 값을 `-`로 표시.
 - 벤더 생성·멱등 재시도·계약 저장·삭제는 실제 API를 호출하는 **보조 검증**입니다. 브라우저 폼으로 온보딩을 완료하는 테스트는 아닙니다. A에 고유 이름의 벤더를 만들고 `finally`에서 해당 벤더만 삭제하며, 온보딩 상태가 이전과 같은지 확인합니다. 서버의 삭제·감사 이력은 남을 수 있습니다.
 

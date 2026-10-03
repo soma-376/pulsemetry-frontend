@@ -1,5 +1,5 @@
 import { openDashboard } from "./helpers";
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "./fixtures";
 
 async function sampleOverflow(page: Page) {
   return page.evaluate(async () => {

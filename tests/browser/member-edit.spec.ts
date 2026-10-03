@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { openDashboard } from "./helpers";
 
 test("member edits prefill current values, discard cancellation, persist saves and support unassignment", async ({ page }) => {

@@ -1,25 +1,50 @@
-import { expect, test } from "@playwright/test";
+import { expect, authenticatedTest as test } from "./fixtures";
 import { mockOverview, overviewFixture, overviewUrl, corsHeaders, mockOverviewSettings } from "./overview-fixture";
+import { completedOnboarding, fixtureUser, issueFixtureCookie } from "./session-fixture";
 
 test.beforeEach(async ({ page }) => { await mockOverviewSettings(page); });
 
-test("Spring을 직접 조회하고 기간·비교 변경과 수동 새로고침을 반영한다", async ({ page }) => {
+test("개요·계약·수집 상태는 로그인 세션의 조직으로만 조회한다", async ({ page }) => {
+  const organizationId = "22222222-2222-4222-8222-222222222222";
+  await issueFixtureCookie(page, { organizationId });
+  await page.route("**/api/bff/auth/session", route => route.fulfill({ json: { user: { ...fixtureUser, organizationId } } }));
+  await page.route("**/api/v1/organizations/*/onboarding", route => route.fulfill({ json: { ...completedOnboarding, organizationId } }));
+  await mockOverview(page);
+  await page.route("**/api/v1/organizations/*/ingest-status", route => route.fulfill({ json: {
+    organizationId, status: "empty", reason: null, asOf: "2026-09-13T12:00:00Z", lastReceivedAt: null,
+  } }));
+  const requests: URL[] = [];
+  page.on("request", request => {
+    const url = new URL(request.url());
+    if (url.pathname.includes("/api/v1/organizations/")) requests.push(url);
+  });
+  await page.goto("/overview");
+  await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toContainText("$5,000.00");
+  for (const endpoint of ["analytics/overview", "settings", "ingest-status"]) {
+    await expect.poll(() => requests.some(url => url.pathname.endsWith(`/${endpoint}`))).toBe(true);
+  }
+  expect(requests.every(url => url.pathname.includes(`/organizations/${organizationId}/`))).toBe(true);
+});
+
+test("동일 출처 BFF를 조회하고 기간·비교 변경과 수동 새로고침을 반영한다", async ({ page }) => {
   const requests: URL[] = [];
   await mockOverview(page);
   page.on("request", (request) => { if (request.url().includes("/analytics/overview?")) requests.push(new URL(request.url())); });
   await page.goto("/overview");
   await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toContainText("$5,000.00");
-  expect(requests[0].origin).toBe("http://localhost:8081");
+  expect(requests[0].origin).toBe(new URL(page.url()).origin);
+  expect(requests[0].pathname).toContain("/api/bff/dashboard/");
   expect(requests[0].searchParams.get("timeZone")).toBe("Asia/Seoul");
-  expect(requests[0].searchParams.get("startDate")).toBe("2026-09-07");
+  const start = requests[0].searchParams.get("startDate")!, end = requests[0].searchParams.get("endDate")!;
+  const label = (date: string) => date.replaceAll("-", ".");
   await page.getByRole("combobox", { name: "비교", exact: true }).selectOption("none");
   await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).not.toContainText("전주 대비");
   expect(requests.at(-1)!.searchParams.get("compare")).toBe("none");
-  await page.getByRole("button", { name: "2026.09.07 ~ 2026.09.13", exact: true }).click();
+  await page.getByRole("button", { name: `${label(start)} ~ ${label(end)}`, exact: true }).click();
   await page.getByRole("button", { name: "오늘", exact: true }).click();
   await page.getByRole("button", { name: "적용", exact: true }).click();
-  await expect(page.getByRole("button", { name: "2026.09.13 ~ 2026.09.13", exact: true })).toBeVisible();
-  await expect.poll(() => requests.at(-1)!.searchParams.get("startDate")).toBe("2026-09-13");
+  await expect(page.getByRole("button", { name: `${label(end)} ~ ${label(end)}`, exact: true })).toBeVisible();
+  await expect.poll(() => requests.at(-1)!.searchParams.get("startDate")).toBe(end);
   const count = requests.length;
   await page.getByRole("button", { name: "새로고침", exact: true }).click();
   await expect.poll(() => requests.length).toBe(count + 1);
@@ -33,9 +58,9 @@ test("날짜 탐색·모델 선택·팀 정렬이 실제 응답을 사용한다"
   await expect(slider).toBeVisible();
   await slider.focus();
   await slider.press("Home");
-  await expect(slider).toHaveAttribute("aria-valuetext", /2026-09-07/);
+  const firstDate = await slider.getAttribute("aria-valuetext");
   await slider.press("ArrowRight");
-  await expect(slider).toHaveAttribute("aria-valuetext", /2026-09-08/);
+  await expect(slider).not.toHaveAttribute("aria-valuetext", firstDate!);
   const model = page.getByRole("button", { name: /Model Pro/ });
   await model.click();
   await expect(model).toHaveAttribute("aria-pressed", "true");
@@ -64,7 +89,7 @@ test("부분 관측과 알 수 없는 비용을 0으로 만들지 않는다", as
   await expect(page.getByRole("region", { name: "모델 구성", exact: true }).locator("svg")).toHaveCount(0);
 });
 
-for (const status of [401, 403, 503]) {
+for (const status of [403, 503]) {
   test(`HTTP ${status} 오류는 목 데이터로 대체하지 않고 재시도할 수 있다`, async ({ page }) => {
     let calls = 0;
     let fail = true;
@@ -73,7 +98,7 @@ for (const status of [401, 403, 503]) {
       await route.fulfill(fail ? { status, json: { error: { code: "test_error" } }, headers: corsHeaders(page) } : { json: overviewFixture(route.request().url()), headers: corsHeaders(page) });
     });
     await page.goto("/overview");
-    await expect(page.getByRole("main").getByRole("alert")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("main").getByRole("alert").filter({ has: page.getByRole("button", { name: "다시 시도", exact: true }) })).toBeVisible({ timeout: 15_000 });
     expect(calls).toBe(status >= 500 ? 3 : 1);
     await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toHaveCount(0);
     fail = false;
@@ -82,14 +107,16 @@ for (const status of [401, 403, 503]) {
   });
 }
 
-test("권한 상실 시 재조회 이전의 데이터도 숨긴다", async ({ page }) => {
+test("API 401은 기존 데이터를 숨기고 로그인으로 이동한다", async ({ page }) => {
   await mockOverview(page);
   await page.goto("/overview");
   const cost = page.getByRole("region", { name: "토큰 비용", exact: true });
   await expect(cost).toBeVisible();
+  await page.route("**/api/bff/auth/session", route => route.fulfill({ json: { user: null } }));
   await page.route(overviewUrl, (route) => route.fulfill({ status: 401, json: {}, headers: corsHeaders(page) }));
   await page.getByRole("button", { name: "새로고침", exact: true }).click();
-  await expect(page.getByRole("main").getByRole("alert")).toContainText("로그인이 필요합니다");
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByLabel("회사 이메일", { exact: true })).toBeVisible();
   await expect(cost).toHaveCount(0);
 });
 
@@ -100,7 +127,7 @@ test("조회 중 상태와 잘못된 응답을 명확히 표시한다", async ({
   await page.goto("/overview");
   await expect(page.getByText("개요 데이터를 불러오는 중입니다…")).toBeVisible();
   release();
-  await expect(page.getByRole("main").getByRole("alert")).toContainText("데이터 계약과 일치하지 않습니다");
+  await expect(page.getByRole("main").getByRole("alert").filter({ has: page.getByRole("button", { name: "다시 시도", exact: true }) })).toContainText("데이터 계약과 일치하지 않습니다");
 });
 
 for (const state of ["no_data", "never_observed"]) {

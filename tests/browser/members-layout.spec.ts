@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { openDashboard } from "./helpers";
 
 test("pending invitations remain below the cards with resend and revoke actions", async ({ page }) => {

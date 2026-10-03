@@ -1,5 +1,5 @@
 import { openDashboard } from "./helpers";
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator } from "./fixtures";
 
 async function addEmail(dialog: Locator, email: string, key = "Enter") {
   const input = dialog.getByRole("textbox", { name: "초대할 이메일" });

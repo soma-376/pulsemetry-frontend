@@ -9,7 +9,7 @@ export const corsHeaders = (page: Page) => ({ "access-control-allow-origin": new
 export function overviewFixture(url: string) {
   const request = new URL(url);
   const data = structuredClone(example);
-  data.meta.organizationId = request.pathname.split("/")[4];
+  data.meta.organizationId = request.pathname.split("/organizations/")[1].split("/")[0];
   data.meta.startDate = request.searchParams.get("startDate")!;
   data.meta.endDate = request.searchParams.get("endDate")!;
   data.comparison.mode = request.searchParams.get("compare")!;
@@ -47,5 +47,5 @@ export function settingsFixture(organizationId = testOrganizationId) {
   };
 }
 export async function mockOverviewSettings(page: Page) {
-  await page.route(settingsUrl, (route) => route.fulfill({ json: settingsFixture(new URL(route.request().url()).pathname.split("/")[4]), headers: corsHeaders(page) }));
+  await page.route(settingsUrl, (route) => route.fulfill({ json: settingsFixture(new URL(route.request().url()).pathname.split("/organizations/")[1].split("/")[0]), headers: corsHeaders(page) }));
 }

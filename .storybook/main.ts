@@ -9,7 +9,6 @@ const config: StorybookConfig = {
     config.define = {
       ...config.define,
       "process.env.NEXT_PUBLIC_ENROLLMENT_API_URL": JSON.stringify("https://enrollment.storybook.invalid"),
-      "process.env.NEXT_PUBLIC_DASHBOARD_API_URL": JSON.stringify("https://dashboard.storybook.invalid"),
     };
     return config;
   },

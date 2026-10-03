@@ -1,3 +1,4 @@
+import { RouteGuard } from "@/components/auth/RouteGuard";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { FiltersProvider } from "@/lib/filters";
 import { MotionProvider } from "@/components/ui/MotionProvider";
@@ -15,7 +16,7 @@ export default async function DashboardLayout({
   await connection();
   const todayIso = currentDateIso();
   return (
-    <FiltersProvider todayIso={todayIso}>
+    <RouteGuard><FiltersProvider todayIso={todayIso}>
       <MotionProvider>
         <div className="relative flex h-dvh w-dvw items-stretch overflow-hidden bg-bg text-text">
           <Sidebar />
@@ -24,6 +25,6 @@ export default async function DashboardLayout({
           </main>
         </div>
       </MotionProvider>
-    </FiltersProvider>
+    </FiltersProvider></RouteGuard>
   );
 }

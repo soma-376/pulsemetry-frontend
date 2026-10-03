@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { openDashboard } from "./helpers";
 import { buildTeams, type AxisKey } from "../../src/lib/metrics/teams";
 

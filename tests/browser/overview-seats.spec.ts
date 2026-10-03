@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, authenticatedTest as test } from "./fixtures";
 import { mockOverview, settingsUrl, corsHeaders } from "./overview-fixture";
 
 test("기존 지표·그래프·벤더 표 배치와 상세 드로어를 유지한다", async ({ page }) => {
