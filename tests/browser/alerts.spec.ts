@@ -20,7 +20,7 @@ test("알림 규칙은 서버가 켤 수 있다고 할 때만 켜지고, 목록�
     approvedTools: { listId: "approved_tools", version: 0, entries: [] as string[], updatedAt: null as string | null } };
   const calls: { method: string; path: string; body: unknown }[] = [];
   await page.route("**/api/v1/organizations/*/settings", (route) => preflight(page, route) ?? json(page, route, {
-    ...structuredClone(example), meta: { ...example.meta, organizationId: new URL(route.request().url()).pathname.split("/")[4] },
+    ...structuredClone(example), meta: { ...example.meta, organizationId: new URL(route.request().url()).pathname.split("/organizations/")[1].split("/")[0] },
     capabilities: { ...example.capabilities, editAlertRules: true }, alertRules: rules, alertLists: lists }));
   await page.route("**/api/v1/organizations/*/settings/alert-lists/*", (route) => {
     if (preflight(page, route)) return;
@@ -82,7 +82,7 @@ test("개요의 알림 KPI 에서 목록을 열고 확인하면 미확인 수가
     const status = new URL(route.request().url()).searchParams.get("status");
     const items = alerts.filter((alert) => status === "all" || (status === "acknowledged") === state.acked.has(alert.alertId))
       .map((alert) => ({ ...alert, acknowledgement: state.acked.has(alert.alertId) ? { acknowledgedAt: "2026-09-13T11:30:00Z", acknowledgedBy: "admin" } : null }));
-    return json(page, route, { meta: { organizationId: new URL(route.request().url()).pathname.split("/")[4], snapshotId: "token", asOf: "2026-09-13T12:00:00Z" },
+    return json(page, route, { meta: { organizationId: new URL(route.request().url()).pathname.split("/organizations/")[1].split("/")[0], snapshotId: "token", asOf: "2026-09-13T12:00:00Z" },
       evaluation: { availability: "available", reason: null, asOf: "2026-09-13T11:00:00Z", rules: [
         { ruleId: "spend_spike", enabled: true, evaluatedAt: "2026-09-13T11:00:00Z", status: "not_evaluated", reason: "period_incomplete", windowStart: null, windowEnd: null },
         { ruleId: "model_not_allowed", enabled: true, evaluatedAt: "2026-09-13T11:00:00Z", status: "evaluated", reason: null, windowStart: null, windowEnd: null }] },

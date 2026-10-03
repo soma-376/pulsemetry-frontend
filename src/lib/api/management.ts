@@ -50,8 +50,7 @@ export async function apiJson<T>(service: "dashboard" | "enrollment", path: stri
 }
 /** 본문과 함께 응답 헤더(`Location`·`Retry-After`)가 필요한 호출용. 오류 처리는 [apiJson]과 같다. */
 export async function apiResponse<T>(service: "dashboard" | "enrollment", path: string, schema: z.ZodType<T>, init: RequestInit = {}): Promise<{ data: T; headers: Headers }> {
-  const base = service === "dashboard" ? process.env.NEXT_PUBLIC_DASHBOARD_API_URL ?? "http://localhost:8081" : process.env.NEXT_PUBLIC_ENROLLMENT_API_URL ?? "http://localhost:8080";
-  const response = await sessionFetch(`${base.replace(/\/$/, "")}/api/v1${path}`, { ...init, credentials: "omit", cache: "no-store", headers: { ...(init.body ? { "Content-Type": "application/json" } : {}), ...init.headers } });
+  const response = await sessionFetch(`/api/bff/${service}/api/v1${path}`, { ...init, cache: "no-store", headers: { ...(init.body ? { "Content-Type": "application/json" } : {}), ...init.headers } });
   if (!response.ok) {
     const parsed = errorSchema.safeParse(await response.json().catch(() => null));
     throw new ManagementError(parsed.success ? parsed.data.error.code : "unavailable", response.status, retryAfterMs(response.headers.get("Retry-After")),

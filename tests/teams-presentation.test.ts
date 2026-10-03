@@ -168,7 +168,7 @@ const listPage = (items: TeamAnalytics[], total: number, nextCursor: string | nu
 
 async function withFetch<T>(handler: (url: URL) => Response, run: (urls: URL[]) => Promise<T>) {
   const original = global.fetch, urls: URL[] = [];
-  global.fetch = async (input) => { const url = new URL(String(input)); urls.push(url); return handler(url); };
+  global.fetch = async (input) => { const url = new URL(String(input), "http://localhost"); urls.push(url); return handler(url); };
   try { return await run(urls); } finally { global.fetch = original; }
 }
 

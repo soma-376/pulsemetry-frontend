@@ -9,7 +9,7 @@ export const corsHeaders = (page: Page) => ({ "access-control-allow-origin": new
 export function overviewFixture(url: string) {
   const request = new URL(url);
   const data = structuredClone(example);
-  data.meta.organizationId = request.pathname.split("/")[4];
+  data.meta.organizationId = request.pathname.split("/organizations/")[1].split("/")[0];
   data.meta.startDate = request.searchParams.get("startDate")!;
   data.meta.endDate = request.searchParams.get("endDate")!;
   data.comparison.mode = request.searchParams.get("compare")!;
@@ -48,12 +48,12 @@ export function settingsFixture(organizationId = testOrganizationId) {
 }
 export async function mockOverviewSettings(page: Page) {
   await mockIngestStatus(page);
-  await page.route(settingsUrl, (route) => route.fulfill({ json: settingsFixture(new URL(route.request().url()).pathname.split("/")[4]), headers: corsHeaders(page) }));
+  await page.route(settingsUrl, (route) => route.fulfill({ json: settingsFixture(new URL(route.request().url()).pathname.split("/organizations/")[1].split("/")[0]), headers: corsHeaders(page) }));
 }
 
 export const ingestStatusUrl = "**/api/v1/organizations/*/ingest-status";
 /** 대시보드의 공통 헤더가 늘 묻는 수집 현황. 판정할 근거가 없다는 서버 응답(대시보드 명세 "공통 헤더 수집 현황")을 쓴다 — 정상으로 꾸미지 않는다. */
 export async function mockIngestStatus(page: Page) {
-  await page.route(ingestStatusUrl, (route) => route.fulfill({ headers: corsHeaders(page), json: { organizationId: new URL(route.request().url()).pathname.split("/")[4],
+  await page.route(ingestStatusUrl, (route) => route.fulfill({ headers: corsHeaders(page), json: { organizationId: new URL(route.request().url()).pathname.split("/organizations/")[1].split("/")[0],
     status: "unknown", reason: "source_not_available", asOf: "2026-09-14T00:00:00Z", lastReceivedAt: null } }));
 }

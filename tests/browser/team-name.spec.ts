@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { saveOnboardingContract, signIn } from "./helpers";
 import { mockMembers } from "./members-fixture";
 

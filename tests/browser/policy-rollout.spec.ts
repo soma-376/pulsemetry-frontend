@@ -25,14 +25,14 @@ async function mockRollout(page: Page, evidence: { heartbeat: number; appliedCon
   await page.route("**/api/v1/organizations/*/settings", (route) => {
     if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const data = structuredClone(example);
-    data.meta.organizationId = new URL(route.request().url()).pathname.split("/")[4];
+    data.meta.organizationId = new URL(route.request().url()).pathname.split("/organizations/")[1].split("/")[0];
     return json(route, { ...data, policyRollout: { ...data.policyRollout, evidence } });
   });
   await page.route("**/api/v1/organizations/*/installations?*", (route) => {
     if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const url = new URL(route.request().url());
     const items = ROWS[url.searchParams.get("policyStatus") as keyof typeof ROWS];
-    return json(route, { meta: { organizationId: url.pathname.split("/")[4], snapshotId: "snap" }, desiredPolicyVersion: 4,
+    return json(route, { meta: { organizationId: url.pathname.split("/organizations/")[1].split("/")[0], snapshotId: "snap" }, desiredPolicyVersion: 4,
       installations: { items, totalCount: items.length, nextCursor: null } });
   });
 }

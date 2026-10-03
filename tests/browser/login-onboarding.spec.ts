@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { mockSeedAuth, saveOnboardingContract, signIn } from "./helpers";
 
 test("login distinguishes invalid email, unknown organization and SSO failures", async ({ page }) => {
@@ -11,22 +11,9 @@ test("login distinguishes invalid email, unknown organization and SSO failures",
   await email.fill("a@unknown.example");
   await submit.click();
   await expect(page.getByText(/등록된 조직을 찾지 못했습니다/)).toBeVisible();
-  await email.fill("admin@seed-a.example.test");
-  await page.getByText("데모 시나리오", { exact: true }).click();
-  for (const scenario of ["cancelled", "configuration", "denied"]) {
-    await page.getByLabel("회사 로그인 결과").selectOption(scenario);
-    await submit.click();
-    await expect(page.getByRole("alert")).toBeVisible();
-    await expect(page.getByRole("link", { name: "조직 관리자에게 문의" })).toBeVisible();
-    await page.getByRole("button", { name: "다시 시도", exact: true }).click();
-  }
-  await page.getByLabel("회사 로그인 결과").selectOption("network");
-  await submit.click();
-  await expect(page.getByText(/로그인 정보를 확인하지 못했습니다/)).toBeVisible();
-  await page.getByLabel("회사 로그인 결과").selectOption("success");
-  await email.fill("developer@codeworks.io");
-  await submit.click();
-  await expect(page.getByText(/등록된 조직을 찾지 못했습니다/)).toBeVisible();
+  await expect(page.getByText("데모 시나리오", { exact: true })).toHaveCount(0);
+  await page.goto("/auth/callback?error=login_expired");
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("만료");
 });
 
 async function vendorsStep(page: import("@playwright/test").Page) {

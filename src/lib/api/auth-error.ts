@@ -31,7 +31,8 @@ export function rateLimitMessage(waitMs: number) {
  */
 export async function authErrorFrom(response: Response, fallback: string, message?: string): Promise<AuthError> {
   const body = (await response.json().catch(() => null)) as { error?: unknown; message?: unknown } | null;
-  const code = typeof body?.error === "string" ? body.error : "";
+  const error = body?.error;
+  const code = typeof error === "string" ? error : error && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : "";
   const wait = retryAfterMs(response.headers.get("Retry-After"));
   if (response.status === 429) return new AuthError(rateLimitMessage(wait), 429, code || "rate_limited", wait);
   const serverMessage = typeof body?.message === "string" && body.message ? body.message : undefined;

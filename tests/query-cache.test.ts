@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { QueryClient, type QueryKey } from "@tanstack/react-query";
-import { clearBackendSession, seedLogin, sessionFetch, subscribeBackendIdentityChange } from "../src/lib/api/session";
+import { clearBackendSession, exchangeLogin, sessionFetch, subscribeBackendIdentityChange } from "../src/lib/api/session";
 import { organizationKey } from "../src/lib/api/query-keys";
 import { onboardingOptions, vendorsOptions, teamsOptions } from "../src/lib/api/management";
 import { overviewQueryOptions } from "../src/lib/api/overview";
@@ -28,20 +28,17 @@ test("토큰 갱신은 캐시를 유지하고 로그아웃·같은 조직의 계
   const client = new QueryClient();
   let changes = 0;
   const unsubscribe = subscribeBackendIdentityChange(() => { changes++; client.clear(); });
-  let user = "first", token = "initial", expired = false;
-  const tokens = () => ({ access_token: token, refresh_token: "refresh", token_type: "Bearer", expires_in: 300 });
-  context.mock.method(globalThis, "fetch", async (input: string) => {
-    if (input === "/api/dev/seed-login") return Response.json({ tokens: tokens(), user: { memberId: user, organizationId: org, organizationName: "테스트", email: `${user}@example.test`, displayName: user, role: "admin" } });
-    if (input.endsWith("/v1/auth/refresh")) {
-      if (expired) return Response.json({}, { status: 401 });
-      token = "renewed"; return Response.json(tokens());
-    }
-    return token === "initial" || expired ? Response.json({}, { status: 401 }) : Response.json({ ok: true });
+  let user = "first", expired = false;
+  context.mock.method(globalThis, "fetch", async (input: string, init: RequestInit) => {
+    assert.equal(init.credentials, "same-origin");
+    assert.equal(new Headers(init.headers).has("Authorization"), false);
+    if (input.endsWith("/auth/token")) return Response.json({ user: { memberId: user, organizationId: org, organizationName: "테스트", email: `${user}@example.test`, displayName: user, role: "admin" } });
+    return expired ? Response.json({}, { status: 401 }) : Response.json({ ok: true });
   });
   try {
-    await seedLogin("first@example.test");
+    await exchangeLogin("code", "http://localhost/auth/callback", "v".repeat(43), org);
     client.setQueryData(["private"], "first-user-data");
-    assert.equal((await sessionFetch("http://localhost/api/data")).status, 200);
+    assert.equal((await sessionFetch("/api/bff/dashboard/api/v1/data")).status, 200);
     assert.equal(changes, 1);
     assert.equal(client.getQueryData(["private"]), "first-user-data");
     let aborted = false;
@@ -53,15 +50,15 @@ test("토큰 갱신은 캐시를 유지하고 로그아웃·같은 조직의 계
     assert.equal(aborted, true);
     assert.equal(client.getQueryCache().getAll().length, 0);
     user = "second";
-    await seedLogin("second@example.test");
+    await exchangeLogin("code", "http://localhost/auth/callback", "v".repeat(43), org);
     assert.equal(client.getQueryData(["private"]), undefined);
     client.setQueryData(["private"], "second-user-data");
     user = "first";
-    await seedLogin("first@example.test");
+    await exchangeLogin("code", "http://localhost/auth/callback", "v".repeat(43), org);
     assert.equal(client.getQueryData(["private"]), undefined);
     client.setQueryData(["private"], "first-user-data");
     expired = true;
-    await assert.rejects(sessionFetch("http://localhost/api/data"));
+    assert.equal((await sessionFetch("/api/bff/dashboard/api/v1/data")).status, 401);
     assert.equal(client.getQueryCache().getAll().length, 0);
   } finally { unsubscribe(); clearBackendSession(); client.clear(); }
 });

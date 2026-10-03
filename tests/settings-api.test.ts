@@ -10,7 +10,7 @@ test("settings read every page from one snapshot and preserve unknown totals", a
   // 둘째 페이지는 계약을 입력하지 않은 제품이다(시드 A의 Cursor).
   const missing = fixture.vendors.items.find(vendor => vendor.contract === null)!;
   global.fetch = async input => {
-    const url = new URL(String(input)); paths.push(url);
+    const url = new URL(String(input), "http://localhost"); paths.push(url);
     return Response.json(paths.length === 1 ? { ...fixture, vendors: { ...fixture.vendors, items: [fixture.vendors.items[0]], nextCursor: "page2" } }
       : { meta: fixture.meta, vendors: { ...fixture.vendors, items: [missing], nextCursor: null } });
   };

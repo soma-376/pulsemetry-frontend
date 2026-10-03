@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { openDashboard } from "./helpers";
 import { mockMembers } from "./members-fixture";
 
@@ -31,10 +31,10 @@ test("pending invitations remain below the cards with resend and revoke actions"
   // 다시 보내기는 기존 코드를 폐기하는 일이라 먼저 알리고 확인받는다.
   const first = api.invitations.find((item) => item.email === "pending@example.test")!.invitationId;
   await pending.getByRole("button", { name: "pending@example.test 초대 다시 보내기", exact: true }).click();
-  await expect(pending.getByRole("alert")).toContainText("이전 메일의 코드와 링크는 더 이상 쓸 수 없습니다");
+  await expect(pending.getByRole("alert")).toContainText("이전 메일의 설치 코드는 더 이상 쓸 수 없습니다");
   expect(api.commands.some((command) => command.path.endsWith("/reissue"))).toBe(false);
   await pending.getByRole("button", { name: "다시 보내기 확인", exact: true }).click();
-  await expect(pending.getByRole("status")).toContainText("새 초대 코드를 발급했습니다. 이전 코드와 링크는 더 이상 쓸 수 없습니다");
+  await expect(pending.getByRole("status")).toContainText("새 초대 코드를 발급했습니다. 이전 설치 코드는 더 이상 쓸 수 없습니다");
   await expect(pending.getByRole("status")).toContainText("발송 대기열에 넣었습니다");
   await expect(pending.getByLabel("pending@example.test 초대 코드", { exact: true })).toHaveText("FAKE-CODE-0002");
   await expect(pending).not.toContainText(/발송됨|발송 완료|보냈습니다/);

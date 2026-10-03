@@ -3,16 +3,14 @@ import assert from "node:assert/strict";
 import { issueInvitations, reissueInvitation, revokeInvitation, type InvitationResult } from "../src/lib/api/invitations";
 import { createCommands, ManagementError } from "../src/lib/api/management";
 import { ASSIGNMENT_LIMIT, assignTeams, createTeam, deleteTeam, memberChange, renameTeam, saveMember, teamAssignments } from "../src/lib/api/member-commands";
-import { acceptInvitation, SignupError } from "../src/lib/api/signup";
 import { deliveryPending, type Delivery, type Invitation } from "../src/lib/api/invitations";
 import { deliveryView, inviteResults } from "../src/lib/members-view";
-import { signupSchema } from "../src/lib/schemas/auth";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
 const delivery = (status: string, extra: Partial<Delivery> = {}): Delivery =>
   ({ status, reason: null, queuedAt: status === "not_sent" ? null : "2026-09-30T00:00:00Z", lastAttemptAt: null, sentAt: null, failureCode: null, attempts: 0, ...extra });
 const mailOff = delivery("not_sent", { reason: "mail_disabled" });
-const base = `http://localhost:8080/api/v1/organizations/${ORG}`;
+const base = `/api/bff/enrollment/api/v1/organizations/${ORG}`;
 type Call = { url: string; method: string; headers: Headers; body: unknown };
 
 /** 요청을 기록하고 준비한 응답을 차례로 돌려준다. */
@@ -191,40 +189,4 @@ test("delivery states map to wording that only says sent when the server says se
   assert.equal(deliveryPending([invitation("pending", delivery("sent")), invitation("pending", delivery("queued"))]), true);
   assert.equal(deliveryPending([invitation("pending", delivery("sending"))]), true);
   assert.equal(deliveryPending([invitation("expired", delivery("queued"))]), false);
-});
-
-test("accepting an invitation posts the code, email and password once and explains each refusal", async () => {
-  const input = { code: "FAKE-CODE-0001", email: "new@example.test", password: "correct-password-123" };
-  let server = record([() => new Response(null, { status: 201 })]);
-  try {
-    assert.equal(await acceptInvitation(input), undefined);
-    assert.equal(server.calls[0].url, "http://localhost:8080/v1/auth/signup");
-    assert.equal(server.calls[0].method, "POST");
-    assert.deepEqual(server.calls[0].body, input);
-    assert.equal(server.calls[0].headers.has("Authorization"), false);
-  } finally { server.restore(); }
-  const refused = (check: (error: SignupError) => boolean) => (error: unknown) => error instanceof SignupError && check(error);
-  const reply = (status: number, error: string, headers: Record<string, string> = {}) => () => Response.json({ error, message: "사용자 인증 요청을 처리할 수 없습니다." }, { status, headers });
-  server = record([reply(409, "signup_unavailable"), reply(400, "invalid_request"), reply(429, "rate_limited", { "Retry-After": "17" }), reply(503, "auth_unavailable", { "Retry-After": "1" }), () => { throw new TypeError("fetch failed"); }]);
-  try {
-    await assert.rejects(() => acceptInvitation(input), refused((error) => error.status === 409 && error.code === "signup_unavailable" && /가입할 수 없습니다.*다시 요청/.test(error.message)));
-    await assert.rejects(() => acceptInvitation(input), refused((error) => error.status === 400 && /12글자 이상/.test(error.message)));
-    await assert.rejects(() => acceptInvitation(input), refused((error) => error.status === 429 && error.retryAfterSeconds === 17 && /17초 뒤/.test(error.message)));
-    await assert.rejects(() => acceptInvitation(input), refused((error) => error.status === 503 && /계정을 만들지 못했습니다/.test(error.message)));
-    await assert.rejects(() => acceptInvitation(input), refused((error) => error.code === "network" && /연결하지 못했습니다/.test(error.message)));
-  } finally { server.restore(); }
-});
-
-test("the signup form enforces the server's code format and password rules before sending", () => {
-  const valid = { code: " abcd-efgh-jkmn ", email: " New@Example.test ", password: "correct-password-123", confirm: "correct-password-123" };
-  assert.deepEqual(signupSchema.parse(valid), { code: "ABCD-EFGH-JKMN", email: "new@example.test", password: "correct-password-123", confirm: "correct-password-123" });
-  const fails = (patch: Partial<typeof valid>) => !signupSchema.safeParse({ ...valid, ...patch }).success;
-  // 서버 코드 문자 집합에는 I·L·O·U가 없다.
-  for (const code of ["", "ABCD-EFGH", "ABCD-EFGH-JKMI", "ABCD-EFGH-JKML", "ABCD-EFGH-JKMO", "ABCD-EFGH-JKMU", "ABCDEFGHJKMN"]) assert.ok(fails({ code }), code);
-  assert.ok(fails({ email: "not-an-email" }));
-  assert.ok(fails({ password: "elevenchars", confirm: "elevenchars" }), "11글자");
-  assert.ok(!fails({ password: "twelve-chars", confirm: "twelve-chars" }), "12글자");
-  assert.ok(!fails({ password: "가나다라마바사아자차카타", confirm: "가나다라마바사아자차카타" }), "한글 12글자(36바이트)");
-  assert.ok(fails({ password: "가".repeat(25), confirm: "가".repeat(25) }), "75바이트");
-  assert.ok(fails({ confirm: "different-password-123" }));
 });

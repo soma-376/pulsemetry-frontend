@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect, test, dashboardBase, enrollmentBase } from "./fixtures";
-import { authenticatedRequest, paceSignIn, seedPeriod, signIn } from "./helpers";
+import { authenticatedRequest, apiSession, seedPeriod, signIn } from "./helpers";
 import { PreparationError } from "./harness";
 import { currentDateIso } from "../../src/lib/date";
 
@@ -65,11 +65,8 @@ async function prepare(page: Page) {
   if (invitation) {
     const reissued = await request(enrollmentBase(), `${O}/invitations/${invitation.invitationId}/reissue`, "POST", {}, { "Idempotency-Key": key() });
     if (reissued.status !== 200) throw new PreparationError(`member1 초대 재발급 → HTTP ${reissued.status}`);
-    // 가입은 토큰 없는 진입 요청이라 로그인 pacer 를 거친다.
-    await paceSignIn(MEMBER);
-    const signup = await fetch(`${enrollmentBase()}/v1/auth/signup`, { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: reissued.body.code, email: MEMBER, password: "e2e-member1-password" }) });
-    if (signup.status !== 201) throw new PreparationError(`member1 가입 → HTTP ${signup.status}`);
+    // IdP 계정은 테스트 환경에 준비한다. 첫 SSO가 초대 회원을 활성화한다.
+    await apiSession(E.id, MEMBER);
   }
   return { request, listed };
 }

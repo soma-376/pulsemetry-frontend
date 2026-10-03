@@ -28,7 +28,7 @@ const dashboard = (members: Member[], total: number, nextCursor: string | null, 
 test("members read the dashboard, then every page of the roster from the same snapshot", async () => {
   const original = global.fetch, urls: URL[] = [];
   global.fetch = async (input) => {
-    const url = new URL(String(input)); urls.push(url);
+    const url = new URL(String(input), "http://localhost"); urls.push(url);
     if (url.pathname.endsWith("/members/dashboard")) return Response.json(dashboard([member(1), member(2)], 5, "c1"));
     const cursor = url.searchParams.get("cursor");
     return Response.json({ meta: meta(), members: cursor === "c1" ? { items: [member(3), member(4)], totalCount: 5, nextCursor: "c2" } : { items: [member(5)], totalCount: 5, nextCursor: null } });
@@ -58,7 +58,7 @@ test("an expired snapshot restarts once from the first page; mixed snapshots and
   global.fetch = async (input) => {
     calls++;
     if (calls === 2) return Response.json({ error: { code: "snapshot_expired", message: "expired" } }, { status: 409 });
-    if (new URL(String(input)).pathname.endsWith("/members/dashboard")) return Response.json(dashboard([member(1)], calls === 1 ? 2 : 1, calls === 1 ? "c1" : null));
+    if (new URL(String(input), "http://localhost").pathname.endsWith("/members/dashboard")) return Response.json(dashboard([member(1)], calls === 1 ? 2 : 1, calls === 1 ? "c1" : null));
     throw new Error("unexpected request");
   };
   try {
@@ -67,7 +67,7 @@ test("an expired snapshot restarts once from the first page; mixed snapshots and
     assert.equal(view.members.length, 1);
 
     const invalid = (error: unknown) => error instanceof ManagementError && error.code === "invalid_response";
-    global.fetch = async (input) => new URL(String(input)).pathname.endsWith("/members/dashboard") ? Response.json(dashboard([member(1)], 2, "c1"))
+    global.fetch = async (input) => new URL(String(input), "http://localhost").pathname.endsWith("/members/dashboard") ? Response.json(dashboard([member(1)], 2, "c1"))
       : Response.json({ meta: meta("snapshot-2"), members: { items: [member(2)], totalCount: 2, nextCursor: null } });
     await assert.rejects(fetchMembersView(ORG, period), invalid);
     global.fetch = async () => Response.json(dashboard([member(1)], 2, null));
@@ -86,7 +86,7 @@ test("waiting invitations keep the status and member filters on every page", asy
   const invitation = (id: string, status: string) => ({ invitationId: id, email: `${id}@example.test`, role: "member", createdAt: "2026-09-20T00:00:00Z", expiresAt: "2026-09-23T00:00:00Z",
     installationUsedAt: null, signupUsedAt: null, revokedAt: null, status, memberId: `member-${id}`, memberStatus: "invited", team: null, memberVersion: 1, delivery: notSent });
   global.fetch = async (input) => {
-    const url = new URL(String(input)); urls.push(url);
+    const url = new URL(String(input), "http://localhost"); urls.push(url);
     const status = url.searchParams.get("status")!;
     if (status === "pending") return Response.json(url.searchParams.get("cursor") ? { items: [invitation("b", status)], nextCursor: null } : { items: [invitation("a", status)], nextCursor: "a" });
     return Response.json({ items: [invitation("c", status)], nextCursor: null });
@@ -96,7 +96,7 @@ test("waiting invitations keep the status and member filters on every page", asy
     assert.deepEqual(items.map((item) => [item.invitationId, item.status]), [["a", "pending"], ["b", "pending"], ["c", "expired"]]);
     assert.deepEqual(urls.map((url) => [url.searchParams.get("status"), url.searchParams.get("memberStatus"), url.searchParams.get("cursor")]),
       [["pending", "invited", null], ["pending", "invited", "a"], ["expired", "invited", null]]);
-    assert.ok(urls.every((url) => url.port === "8080" && url.pathname.endsWith("/invitations")));
+    assert.ok(urls.every((url) => url.pathname.startsWith("/api/bff/enrollment/") && url.pathname.endsWith("/invitations")));
   } finally { global.fetch = original; }
 });
 

@@ -68,7 +68,7 @@ export async function mockMembers(page: Page, options: { members?: FixtureMember
   };
   const candidateIds = options.candidates === false ? [] : fixtureCandidates(state.members).map((member) => member.memberId);
   const cors = { "access-control-allow-origin": new URL(test.info().project.use.baseURL!).origin, "access-control-allow-headers": "content-type,authorization,idempotency-key,if-match", "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS" };
-  const meta = (url: URL) => ({ organizationId: url.pathname.split("/")[4], startDate: url.searchParams.get("startDate"), endDate: url.searchParams.get("endDate"), snapshotId: "fixture-members" });
+  const meta = (url: URL) => ({ organizationId: url.pathname.split("/organizations/")[1].split("/")[0], startDate: url.searchParams.get("startDate"), endDate: url.searchParams.get("endDate"), snapshotId: "fixture-members" });
   const pageOf = (items: FixtureMember[], url: URL, first: number) => {
     const offset = Number(url.searchParams.get("cursor") ?? 0);
     const limit = url.searchParams.has("cursor") ? Number(url.searchParams.get("limit") ?? 20) : first;
@@ -101,7 +101,7 @@ export async function mockMembers(page: Page, options: { members?: FixtureMember
     const request = route.request(), method = request.method();
     if (method === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const url = new URL(request.url());
-    const path = url.pathname.split("/").slice(5).join("/");
+    const path = url.pathname.split("/organizations/")[1].split("/").slice(1).join("/");
     const body = ["POST", "PATCH"].includes(method) ? request.postDataJSON() : null;
     const headers = request.headers();
     if (method !== "GET") state.commands.push({ method, path, body, idempotencyKey: headers["idempotency-key"] ?? null, ifMatch: headers["if-match"] ?? null });
@@ -136,7 +136,7 @@ export async function mockMembers(page: Page, options: { members?: FixtureMember
       const index = candidates.findIndex((member) => member.memberId === seatsOf[1]);
       const member = state.members.find((item) => item.memberId === seatsOf[1]);
       if (!member) return fail(route, 404, "not_found");
-      return json(route, { meta: { organizationId: url.pathname.split("/")[4], asOf: "2026-09-22T00:00:00Z", snapshotId: "fixture-seats" }, memberId: member.memberId,
+      return json(route, { meta: { organizationId: url.pathname.split("/organizations/")[1].split("/")[0], asOf: "2026-09-22T00:00:00Z", snapshotId: "fixture-seats" }, memberId: member.memberId,
         policy: { idleDays: 14, version: 0 }, seats: index < 0 ? [] : [{ seatAssignmentId: `seat-${index + 1}`, version: 1, vendorId: "vendor-1", vendorName: "Claude", kind: "claude_team",
           contractVersion: 1, tierId: "tier-1", tierLabel: "Standard", vendorTier: null, account: member.account, accountKind: "email", state: "assigned", source: "manual",
           memberLink: "email_match", assignedAt: "2026-08-01T00:00:00Z", releaseEffectiveOn: null, releasedAt: null, ledgerAvailability: "available", ledgerReason: null,
@@ -146,7 +146,7 @@ export async function mockMembers(page: Page, options: { members?: FixtureMember
             : { canReclaim: false, reclaimReason: options.reclaimable ? "control_in_progress" : "management_disabled", reclaimMethod: null }),
           lastControl: state.seatControls.get(`seat-${index + 1}`) ?? null }] });
     }
-    if (method === "GET" && path === "teams") return json(route, { meta: { organizationId: url.pathname.split("/")[4], snapshotId: "fixture-teams" }, teams: { items: state.teams, nextCursor: null } });
+    if (method === "GET" && path === "teams") return json(route, { meta: { organizationId: url.pathname.split("/organizations/")[1].split("/")[0], snapshotId: "fixture-teams" }, teams: { items: state.teams, nextCursor: null } });
 
     if (method === "PATCH" && path.startsWith("members/")) {
       const memberId = path.split("/")[1], version = versionOf(memberId);

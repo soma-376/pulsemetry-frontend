@@ -25,7 +25,7 @@ test("admin-action reclaim stays awaiting until confirmed, then restores through
   await page.route((url) => /\/api\/v1\/organizations\/[^/]+\/(seat-reclaims|operations)(\/|$)/.test(url.pathname), (route) => {
     const request = route.request();
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
-    const path = new URL(request.url()).pathname.split("/").slice(5).join("/");
+    const path = new URL(request.url()).pathname.split("/organizations/")[1].split("/").slice(1).join("/");
     if (request.method() === "GET") return json(route, operations.get(path.split("/")[1]));
     posted.push({ path, body: request.postDataJSON(), key: request.headers()["idempotency-key"] });
     if (path === "seat-reclaims/preview") return json(route, { previewId: "preview-1", expiresAt: "2026-09-22T00:05:00Z", eligibleSeatAssignmentIds: [seat], rejected: [],

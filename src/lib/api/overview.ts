@@ -48,8 +48,7 @@ export { retryAfterMs };
 
 export async function fetchOverview(params: OverviewParams, signal?: AbortSignal): Promise<Overview> {
   const { organizationId, ...filters } = params;
-  const baseUrl = (process.env.NEXT_PUBLIC_DASHBOARD_API_URL ?? "http://localhost:8081").replace(/\/$/, "");
-  const response = await sessionFetch(`${baseUrl}/api/v1/organizations/${encodeURIComponent(organizationId)}/analytics/overview?${new URLSearchParams(filters)}`, { signal, credentials: "omit", cache: "no-store", headers: { Accept: "application/json" } });
+  const response = await sessionFetch(`/api/bff/dashboard/api/v1/organizations/${encodeURIComponent(organizationId)}/analytics/overview?${new URLSearchParams(filters)}`, { signal, cache: "no-store", headers: { Accept: "application/json" } });
   if (!response.ok) {
     const messages: Record<number, string> = { 400: "조회 기간과 비교 조건을 확인해 주세요. 최대 366일까지 조회할 수 있습니다.", 401: "로그인이 필요합니다. 로그인 화면에서 회사 이메일을 입력해 주세요.", 403: "이 조직의 개요를 조회할 권한이 없습니다.", 404: "조회할 조직 또는 개요 API를 찾을 수 없습니다.", 429: "요청이 많습니다. 잠시 후 다시 시도해 주세요." };
     throw new DashboardError(messages[response.status] ?? "개요 서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.", response.status, retryAfterMs(response.headers.get("Retry-After")));

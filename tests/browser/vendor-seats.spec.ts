@@ -28,8 +28,8 @@ async function serveSeats(page: Page) {
     const request = route.request(), method = request.method();
     if (method === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const url = new URL(request.url());
-    const org = url.pathname.split("/")[4];
-    const path = url.pathname.split("/").slice(5).join("/");
+    const org = url.pathname.split("/organizations/")[1].split("/")[0];
+    const path = url.pathname.split("/organizations/")[1].split("/").slice(1).join("/");
     if (method === "GET" && path === "settings") {
       const data = structuredClone(example);
       data.meta.organizationId = org;

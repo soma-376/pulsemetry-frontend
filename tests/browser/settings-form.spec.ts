@@ -1,6 +1,6 @@
-import { openDashboard } from "./helpers";
 import { serveSettings } from "./onboarding-fixture";
-import { expect, test, type Page } from "@playwright/test";
+import { openDashboard } from "./helpers";
+import { expect, test, type Page } from "./fixtures";
 
 /**
  * 설정의 벤더 드로어(서버 등록 제품). 응답은 `serveSettings` 가 백엔드 명세 §12 의 규칙대로 흉내 낸다 — 제품당 등록 하나,

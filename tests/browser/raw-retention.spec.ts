@@ -8,7 +8,7 @@ async function serve(page: Page, rawContentRetentionDays: number | null) {
   await page.route("**/api/v1/organizations/*/settings", (route: Route) => {
     if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const data = structuredClone(example);
-    data.meta.organizationId = new URL(route.request().url()).pathname.split("/")[4];
+    data.meta.organizationId = new URL(route.request().url()).pathname.split("/organizations/")[1].split("/")[0];
     return route.fulfill({ headers: cors, json: { ...data, collectionPolicy: { ...data.collectionPolicy, rawContentRetentionDays } } });
   });
 }

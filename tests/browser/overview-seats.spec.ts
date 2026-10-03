@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, authenticatedTest as test } from "./fixtures";
 import { mockOverview, settingsUrl, corsHeaders } from "./overview-fixture";
 import { mockSession } from "./helpers";
 

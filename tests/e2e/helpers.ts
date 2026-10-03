@@ -1,112 +1,42 @@
+import { paceLogin, ANNOTATION, PreparationError, probeRequests } from "./harness";
 import { expect, test, type Page } from "@playwright/test";
-import { enrollmentBase } from "./fixtures";
-import { ANNOTATION, paceLogin, PreparationError, probeRequests } from "./harness";
-import { SESSION_STORAGE_KEY } from "../../src/lib/api/session-key";
+import { dashboardBase, enrollmentBase } from "./fixtures";
+import { oidcOrigin, oidcPassword } from "./oidc-environment";
 
-const sessionKey = SESSION_STORAGE_KEY;
-
-/** 이 page 의 저장된 세션(앱과 같은 키). 없으면 null. 토큰을 로그에 싣지 않는다. */
-export async function storedSession(page: Page): Promise<{ tokens: { access_token: string; refresh_token: string }; user: { organizationId: string; email: string } } | null> {
-  return JSON.parse(await page.evaluate((key) => sessionStorage.getItem(key), sessionKey) ?? "null");
-}
-/** 이 page 의 저장된 세션을 바꾼다(만료·위조 토큰 시험용). */
-export async function editStoredSession(page: Page, change: { access_token?: string; refresh_token?: string }) {
-  await page.evaluate(({ key, change }) => {
-    const saved = JSON.parse(sessionStorage.getItem(key)!);
-    Object.assign(saved.tokens, change);
-    sessionStorage.setItem(key, JSON.stringify(saved));
-  }, { key: sessionKey, change });
+export async function expectIdentityProvider(page: Page) {
+  const origin = oidcOrigin();
+  await expect(page).toHaveURL(url => url.origin === origin);
 }
 
-/** 로그인 한 번을 pacer 에 맡긴다. 기다린 만큼 테스트 제한 시간을 늘린다 — 대기는 실패가 아니다. */
-export async function paceSignIn(email: string) {
-  const info = test.info();
-  const waited = await paceLogin(email, (ms) => info.setTimeout(info.timeout + ms));
-  if (waited > 0) info.annotations.push({ type: ANNOTATION.pacerWait, description: String(waited) });
+export async function submitIdentityProvider(page: Page, email: string, wrongPassword = false) {
+  // 주소 검증 이후에만 자격 증명을 입력한다. IdP 테마가 다르면 테스트 선택자를 명시한다.
+  await expectIdentityProvider(page);
+  await page.locator(process.env.E2E_OIDC_USERNAME_SELECTOR ?? 'input[name="username"]:visible').fill(email);
+  await page.locator(process.env.E2E_OIDC_PASSWORD_SELECTOR ?? 'input[name="password"]:visible')
+    .fill(wrongPassword ? "intentionally-wrong-for-test" : oidcPassword(email));
+  await page.locator(process.env.E2E_OIDC_SUBMIT_SELECTOR ?? 'button[type="submit"]:visible').click();
 }
 
-/**
- * 테스트마다 자기 세션으로 로그인한다(세션·토큰을 테스트끼리 나누지 않는다). 로그인은 pacer 를 거친다.
- * 기본은 시드 로그인 어댑터를 Node 에서 불러 받은 `{tokens, user}`를 이 page 의 sessionStorage 에 **한 번만** 넣고(표식 키 —
- * 로그아웃 뒤 다시 살아나지 않는다), 로그인 화면이 가는 곳(온보딩 완료 여부)으로 이동한다.
- * `ui: true`는 로그인 화면 자체를 시험하는 테스트만 쓴다. 로그인 실패는 시험 대상이 아니므로 준비 실패로 보고한다.
- */
-export async function signIn(page: Page, email: string, options: { ui?: boolean } = {}) {
+export async function signIn(page: Page, email: string) {
   await paceSignIn(email);
-  if (options.ui) {
-    await page.goto("/login");
-    await expect(page.getByLabel("비밀번호", { exact: true })).toHaveCount(0);
-    await expect(page.getByLabel("조직 ID", { exact: true })).toHaveCount(0);
-    await page.getByLabel("회사 이메일", { exact: true }).fill(email);
-    const response = page.waitForResponse(response => response.url().endsWith("/api/dev/seed-login") && response.request().method() === "POST");
-    await page.getByRole("button", { name: "회사 계정으로 계속", exact: true }).click();
-    const status = (await response).status();
-    if (status !== 200) throw new PreparationError(`${email} 화면 로그인 → 시드 로그인 어댑터 HTTP ${status}`);
-    await expect(page).toHaveURL(/\/(onboarding|overview)$/);
-    return;
-  }
-  await injectSession(page, await seedSession(email, false));
-}
-
-/** 저장할 세션 — 시드 로그인 어댑터와 같은 모양(`{tokens, user}`). user 는 서버의 현재 사용자 조회 응답이다. */
-export type StoredSession = { tokens: { access_token: string; refresh_token: string }; user: { organizationId: string; organizationName: string; email: string; role: string } };
-
-/** 시드 관리자의 세션을 Node 에서 받는다(화면에 넣지 않는다). 로그인 한 번이라 pacer 를 거친다. */
-export async function seedSession(email: string, pace = true): Promise<StoredSession> {
-  if (pace) await paceSignIn(email);
-  const origin = new URL(test.info().project.use.baseURL!).origin;
-  let response: Response;
-  try {
-    response = await fetch(`${origin}/api/dev/seed-login`, { method: "POST", headers: { Origin: origin, "Content-Type": "application/json" }, body: JSON.stringify({ email }), signal: AbortSignal.timeout(20_000) });
-  } catch {
-    throw new PreparationError(`${email} 로그인 요청이 ${origin}/api/dev/seed-login 에 닿지 않았습니다.`);
-  }
-  if (response.status === 429) test.info().annotations.push({ type: ANNOTATION.observed429, description: "POST /api/dev/seed-login" });
-  if (!response.ok) throw new PreparationError(`${email} 로그인 → 시드 로그인 어댑터 HTTP ${response.status}`);
-  return response.json();
-}
-
-/**
- * 시드 관리자가 아닌 계정(구성원·시험이 만든 관리자)의 실제 로그인 — 시드 로그인 어댑터는 시드 관리자만 받는다.
- * 백엔드의 로그인·현재 사용자 조회를 Node 에서 부르고 어댑터와 같은 모양으로 돌려준다. 진입 요청이라 pacer 를 거친다. 가입 UI 는 쓰지 않는다.
- */
-export async function apiSession(organizationId: string, email: string, password: string): Promise<StoredSession> {
-  await paceSignIn(email);
-  const login = await fetch(`${enrollmentBase()}/v1/auth/login`, { method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tenant_id: organizationId, email, password }), signal: AbortSignal.timeout(20_000) });
-  if (login.status === 429) test.info().annotations.push({ type: ANNOTATION.observed429, description: "POST /v1/auth/login" });
-  if (!login.ok) throw new PreparationError(`${email} 로그인 → HTTP ${login.status}`);
-  const tokens = await login.json();
-  const me = await fetch(`${enrollmentBase()}/v1/auth/me`, { headers: { Authorization: `Bearer ${tokens.access_token}` }, signal: AbortSignal.timeout(20_000) });
-  if (!me.ok) throw new PreparationError(`${email} 현재 사용자 조회 → HTTP ${me.status}`);
-  return { tokens, user: await me.json() };
-}
-
-/**
- * [session] 을 이 page 의 sessionStorage 에 **한 번만** 넣고(표식 키 — 로그아웃 뒤 다시 살아나지 않는다) [landing] 으로 간다.
- * landing 을 주지 않으면 로그인 화면이 가는 곳(온보딩을 마친 조직은 개요, 아니면 온보딩)이다. 앱이 조직명을 그릴 때까지 기다린다.
- */
-export async function injectSession(page: Page, session: StoredSession, landing?: string) {
-  const origin = new URL(test.info().project.use.baseURL!).origin;
-  if (!landing) {
-    const onboarding = await fetch(`${enrollmentBase()}/api/v1/organizations/${session.user.organizationId}/onboarding`, { headers: { Authorization: `Bearer ${session.tokens.access_token}` }, signal: AbortSignal.timeout(20_000) });
-    if (!onboarding.ok) throw new PreparationError(`${session.user.email} 온보딩 조회 → HTTP ${onboarding.status}`);
-    landing = (await onboarding.json()).completed ? "/overview" : "/onboarding";
-  }
-  await page.addInitScript(({ key, marker, value, origin }) => {
-    if (location.origin !== origin || sessionStorage.getItem(marker)) return;
-    sessionStorage.setItem(marker, "1");
-    sessionStorage.setItem(key, value);
-  }, { key: sessionKey, marker: `pulsemetry.e2e-session.${crypto.randomUUID()}`, value: JSON.stringify(session), origin });
-  await page.goto(landing);
-  await expect(page).toHaveURL(new RegExp(`${landing}$`));
-  // 앱이 저장된 세션을 읽어 화면에 조직명을 그릴 때까지 기다린다. 그 전에 테스트가 저장된 세션을 바꾸면(만료 시험 등)
-  // 아직 뜨는 화면과 다음 화면이 같은 갱신 토큰을 함께 써서 서버의 재사용 탐지가 세션을 폐기한다.
-  await expect(page.getByText(session.user.organizationName).first()).toBeVisible();
+  let exchanges = 0;
+  const exchanged = (request: import("@playwright/test").Request) => {
+    if (request.url().endsWith("/api/bff/auth/token") && request.method() === "POST") exchanges++;
+  };
+  page.on("request", exchanged);
+  await page.goto("/login");
+  await expect(page.getByLabel("비밀번호", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("조직 ID", { exact: true })).toHaveCount(0);
+  await page.getByLabel("회사 이메일", { exact: true }).fill(email);
+  await page.getByRole("button", { name: "회사 계정으로 계속", exact: true }).click();
+  await submitIdentityProvider(page, email);
+  await expect(page).toHaveURL(/\/(onboarding|overview)$/);
+  expect(exchanges, "StrictMode를 포함하여 코드 교환은 한 번만 실행").toBe(1);
+  page.off("request", exchanged);
 }
 
 export async function signOut(page: Page) {
-  const response = page.waitForResponse(response => response.url().endsWith("/v1/auth/logout") && response.request().method() === "POST");
+  const response = page.waitForResponse(response => response.url().endsWith("/api/bff/auth/logout") && response.request().method() === "POST");
   await page.getByRole("link", { name: "로그아웃", exact: true }).click();
   expect((await response).status()).toBe(204);
   await expect(page).toHaveURL(/\/login$/);
@@ -114,14 +44,16 @@ export async function signOut(page: Page) {
 
 /** 브라우저의 실제 세션으로 API 결과를 보조 검증한다. 토큰은 Node/로그로 반환하지 않는다. */
 export function authenticatedRequest(page: Page, origin: string, path: string, method = "GET", body?: unknown, headers: Record<string, string> = {}) {
-  // 시험의 확인 요청이다 — 앱의 오류 수집(fixtures 의 httpErrors)에서 뺀다.
-  if (!probeRequests.has(page)) probeRequests.set(page, new Set());
-  probeRequests.get(page)!.add(`${method} ${origin}${path}`);
-  return page.evaluate(async ({ origin, path, method, body, headers, key }) => {
-    const session = JSON.parse(sessionStorage.getItem(key)!);
-    const response = await fetch(origin + path, { method, headers: { Authorization: `Bearer ${session.tokens.access_token}`, ...(body ? { "Content-Type": "application/json" } : {}), ...headers }, body: body ? JSON.stringify(body) : undefined });
+  const service = new URL(origin).origin === new URL(dashboardBase()).origin ? "dashboard"
+    : new URL(origin).origin === new URL(enrollmentBase()).origin ? "enrollment" : null;
+  if (!service) throw new Error("알 수 없는 테스트 API origin");
+  const probes = probeRequests.get(page) ?? new Set<string>();
+  probes.add(`${method} ${new URL(`/api/bff/${service}${path}`, test.info().project.use.baseURL!).href}`);
+  probeRequests.set(page, probes);
+  return page.evaluate(async ({ service, path, method, body, headers }) => {
+    const response = await fetch(`/api/bff/${service}${path}`, { method, credentials: "same-origin", headers: { "X-Pulsemetry-Request": "1", ...(body ? { "Content-Type": "application/json" } : {}), ...headers }, body: body ? JSON.stringify(body) : undefined });
     return { status: response.status, body: response.status === 204 ? null : await response.json() };
-  }, { origin, path, method, body, headers, key: sessionKey });
+  }, { service, path, method, body, headers });
 }
 
 export async function selectPeriod(page: Page, start: string, end: string) {
@@ -136,7 +68,7 @@ export async function selectPeriod(page: Page, start: string, end: string) {
       const text = await picker.getByText(/^\d{4}년 \d{1,2}월$/).innerText();
       const [year, month] = text.match(/\d+/g)!.map(Number);
       await picker.getByRole("button", { name: year * 12 + month > targetMonth ? "이전 달" : "다음 달", exact: true }).click();
-      if (step === 119) throw new PreparationError("시드 기준일이 달력 탐색 범위를 벗어났습니다. E2E_SEED_DATE를 확인하세요.");
+      if (step === 119) throw new Error("시드 기준일이 달력 탐색 범위를 벗어났습니다. E2E_SEED_DATE를 확인하세요.");
     }
   }
   await picker.getByRole("button", { name: "적용", exact: true }).click();
@@ -152,3 +84,79 @@ export function seedPeriod() {
   const offset = (days: number) => new Date(date.getTime() + days * 86_400_000).toISOString().slice(0, 10);
   return { start: offset(-28), end: offset(-1) };
 }
+
+/** 로그인 한 번을 pacer 에 맡긴다. 기다린 만큼 테스트 제한 시간을 늘린다 — 대기는 실패가 아니다. */
+export async function paceSignIn(email: string) {
+  const info = test.info();
+  const waited = await paceLogin(email, (ms) => info.setTimeout(info.timeout + ms));
+  if (waited > 0) info.annotations.push({ type: ANNOTATION.pacerWait, description: String(waited) });
+}
+
+
+/** E2E Node 런타임에서만 쿠키를 해독한다. 브라우저 JS에는 토큰을 주입하지 않는다. */
+export type StoredSession = { tokens: { access_token: string; refresh_token: string }; user: { organizationId: string; organizationName: string; email: string; role: string } };
+async function cookieSession(page: Page) {
+  const { createSessionCookie } = await import("../../src/lib/server/session-cookie");
+  const origin = new URL(test.info().project.use.baseURL!).origin;
+  const keys = process.env.BFF_SESSION_KEYS?.split(",").map(key => key.trim());
+  if (!keys?.length) throw new PreparationError("쿠키 검증 E2E에는 검증 서버와 동일한 BFF_SESSION_KEYS가 필요합니다.");
+  const codec = createSessionCookie({ origin, keys });
+  const cookie = (await page.context().cookies(origin)).find(cookie => cookie.name === codec.cookieName);
+  const session = cookie ? codec.read(new Request(origin, { headers: { Cookie: `${cookie.name}=${cookie.value}` } })) : null;
+  return { codec, session, origin };
+}
+export async function storedSession(page: Page): Promise<StoredSession | null> {
+  const { session } = await cookieSession(page);
+  if (!session) return null;
+  const me = await fetch(`${enrollmentBase()}/v1/auth/me`, { headers: { Authorization: `Bearer ${session.accessToken}` } });
+  if (!me.ok) return null;
+  return { tokens: { access_token: session.accessToken, refresh_token: session.refreshToken }, user: await me.json() };
+}
+export async function editStoredSession(page: Page, change: { access_token?: string; refresh_token?: string }) {
+  const { codec, session, origin } = await cookieSession(page);
+  if (!session) throw new PreparationError("변경할 E2E 쿠키 세션이 없습니다.");
+  const value = codec.seal({ ...session, accessToken: change.access_token ?? session.accessToken, refreshToken: change.refresh_token ?? session.refreshToken });
+  await page.context().addCookies([{ name: codec.cookieName, value, url: origin, httpOnly: true, sameSite: "Lax" }]);
+}
+export async function injectSession(page: Page, stored: StoredSession, landing = "/overview") {
+  const { codec, origin } = await cookieSession(page);
+  const value = codec.seal({ id: crypto.randomUUID(), organizationId: stored.user.organizationId,
+    accessToken: stored.tokens.access_token, refreshToken: stored.tokens.refresh_token,
+    accessTokenExpiresAt: Date.now() + 300000, sessionExpiresAt: Date.now() + 86400000 });
+  await page.context().addCookies([{ name: codec.cookieName, value, url: origin, httpOnly: true, sameSite: "Lax" }]);
+  await page.goto(landing);
+}
+/** 실제 IdP 왕복으로 서비스 토큰을 받는다. 테스트가 만든 계정도 IdP에 미리 준비해야 한다. */
+export async function apiSession(organizationId: string, email: string): Promise<StoredSession> {
+  await paceSignIn(email);
+  const { chromium } = await import("@playwright/test");
+  const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE } : {});
+  try {
+    const page = await browser.newPage({ baseURL: String(test.info().project.use.baseURL) });
+    let resolve!: (value: StoredSession) => void, reject!: (error: Error) => void;
+    const result = new Promise<StoredSession>((yes, no) => { resolve = yes; reject = no; });
+    void result.catch(() => undefined);
+    await page.route("**/api/bff/auth/token", async route => {
+      try {
+        const { code, redirect_uri, code_verifier } = route.request().postDataJSON();
+        const response = await fetch(`${enrollmentBase()}/v1/auth/token`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, redirect_uri, code_verifier }) });
+        if (!response.ok) throw new PreparationError(`OIDC 코드 교환 HTTP ${response.status}`);
+        const tokens = await response.json();
+        const me = await fetch(`${enrollmentBase()}/v1/auth/me`, { headers: { Authorization: `Bearer ${tokens.access_token}` } });
+        if (!me.ok) throw new PreparationError(`현재 사용자 조회 HTTP ${me.status}`);
+        const user = await me.json();
+        if (organizationId && user.organizationId !== organizationId) throw new PreparationError("IdP 계정의 조직이 테스트 대상과 다릅니다.");
+        resolve({ tokens, user });
+      } catch (error) { reject(error as Error); }
+      await route.abort();
+    });
+    await page.goto("/login");
+    await page.getByLabel("회사 이메일", { exact: true }).fill(email);
+    await page.getByRole("button", { name: "회사 계정으로 계속", exact: true }).click();
+    await submitIdentityProvider(page, email);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try { return await Promise.race([result, new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new PreparationError("OIDC 코드 교환 시간 초과")), 20000); })]); }
+    finally { clearTimeout(timer); }
+  } finally { await browser.close(); }
+}
+export const seedSession = (email: string) => apiSession("", email);

@@ -112,7 +112,7 @@ export function PendingInviteCard({ organizationId, post, model, loading, error,
 
             {asking === "reissue" && <div role="alert" className="flex w-full flex-wrap items-center gap-2 rounded-md border border-border bg-sub px-3 py-2.5">
               <span className="flex-1 text-[11.5px]">{mailed
-                ? "새 코드를 발급하고 초대 메일을 다시 보냅니다. 이전 메일의 코드와 링크는 더 이상 쓸 수 없습니다."
+                ? "새 코드를 발급하고 초대 메일을 다시 보냅니다. 이전 메일의 설치 코드는 더 이상 쓸 수 없습니다."
                 : "새 코드를 발급합니다. 이전 코드는 더 이상 쓸 수 없습니다."}</span>
               <Button size="sm" disabled={action.isPending} onClick={() => setConfirming(null)}>되돌리기</Button>
               <Button size="sm" variant="primary" loading={running("reissue", invite)} loadingLabel="발급 중…" disabled={action.isPending} onClick={() => run("reissue", invite)}>{again} 확인</Button>
@@ -123,7 +123,7 @@ export function PendingInviteCard({ organizationId, post, model, loading, error,
               <Button size="sm" loading={running("revoke", invite)} loadingLabel="취소 중…" disabled={action.isPending} onClick={() => run("revoke", invite)}>초대 취소 확인</Button>
             </div>}
             {code && fresh && <div role="status" className="flex w-full flex-col gap-2 rounded-md bg-sub px-3 py-2.5 text-[11.5px] text-text2">
-              <span>새 초대 코드를 발급했습니다. 이전 코드와 링크는 더 이상 쓸 수 없습니다 · {formatKst(code.expiresAt)} 만료.{" "}
+              <span>새 초대 코드를 발급했습니다. 이전 설치 코드는 더 이상 쓸 수 없습니다 · {formatKst(code.expiresAt)} 만료.{" "}
                 {fresh.mailed ? "새 코드의 초대 메일을 발송 대기열에 넣었습니다. 발송 결과는 이 목록에 표시됩니다." : "메일을 발송하지 않습니다. 코드는 지금만 볼 수 있으니 대상자에게 직접 전달하세요."}</span>
               <span className="flex flex-wrap items-center gap-2">
                 <InviteCode email={invite.email} code={code.code} />

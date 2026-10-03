@@ -34,7 +34,7 @@ test("the waiting list shows each mail's delivery state and says sent only when 
 
   // 실패한 메일은 다시 보낼 수 있다. 다시 보내기는 새 코드의 새 메일이다.
   await pending.getByRole("button", { name: "failed@example.test 초대 다시 보내기", exact: true }).click();
-  await expect(pending.getByRole("alert")).toContainText("새 코드를 발급하고 초대 메일을 다시 보냅니다. 이전 메일의 코드와 링크는 더 이상 쓸 수 없습니다.");
+  await expect(pending.getByRole("alert")).toContainText("새 코드를 발급하고 초대 메일을 다시 보냅니다. 이전 메일의 설치 코드는 더 이상 쓸 수 없습니다.");
   await pending.getByRole("button", { name: "다시 보내기 확인", exact: true }).click();
   await expect(state("failed@example.test")).toHaveText("메일 발송 대기");
   await expect(pending.getByRole("status")).toContainText("새 코드의 초대 메일을 발송 대기열에 넣었습니다");

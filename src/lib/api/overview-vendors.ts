@@ -47,8 +47,7 @@ async function vendorCandidates(organizationId: string, signal?: AbortSignal): P
 }
 const MAX_CANDIDATE_PAGES = 20;
 async function get(organizationId: string, path: string, signal?: AbortSignal) {
-  const base = (process.env.NEXT_PUBLIC_DASHBOARD_API_URL ?? "http://localhost:8081").replace(/\/$/, "");
-  const response = await sessionFetch(`${base}/api/v1/organizations/${encodeURIComponent(organizationId)}${path}`, { signal, credentials: "omit", cache: "no-store" });
+  const response = await sessionFetch(`/api/bff/dashboard/api/v1/organizations/${encodeURIComponent(organizationId)}${path}`, { signal, cache: "no-store" });
   if (!response.ok) throw new DashboardError("계약 정보를 불러오지 못했습니다.", response.status, retryAfterMs(response.headers.get("Retry-After")));
   return response.json();
 }

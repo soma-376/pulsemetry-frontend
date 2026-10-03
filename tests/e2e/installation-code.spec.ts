@@ -1,4 +1,4 @@
-import { allowHttpErrors, expect, test, dashboardBase, enrollmentBase, seedOrganizations } from "./fixtures";
+import { expect, test, dashboardBase, enrollmentBase, seedOrganizations } from "./fixtures";
 import { authenticatedRequest, paceSignIn, seedPeriod, signIn } from "./helpers";
 import { PreparationError } from "./harness";
 
@@ -28,13 +28,9 @@ async function bodyOf(mail: Mail): Promise<string> {
 }
 type Listed = { invitationId: string; memberId: string; createdAt: string; signupUsedAt: string | null; installationUsedAt: string | null; delivery: { status: string } };
 
-test("INSTALL-CODE-A @p1 @write 활성 구성원에게 설치 코드를 내면 설치 경로만 담은 메일이 도착하고, 그 코드로는 가입할 수 없으며, 새로고침 뒤에도 발급·발송 상태가 남는다", async ({ page, context }) => {
-  allowHttpErrors(
-    { status: 409, path: /^\/v1\/auth\/signup$/, method: "POST", reason: "설치 전용 코드로는 가입할 수 없다(409)를 시험한다" },
-  );
+test("INSTALL-CODE-A @p1 @write 활성 구성원에게 설치 코드를 내면 설치 경로만 담은 메일이 도착하고, 그 코드로는 가입할 수 없으며, 새로고침 뒤에도 발급·발송 상태가 남는다", async ({ page }) => {
   test.setTimeout(120_000);
   const { start, end } = seedPeriod();
-  const base = new URL(test.info().project.use.baseURL!).origin;
   await signIn(page, `owner@seed-${org.seed}.example.test`);
   const roster = await authenticatedRequest(page, dashboardBase(), `${O}/members?startDate=${start}&endDate=${end}&timeZone=Asia/Seoul&limit=100`);
   const target = (roster.body.members.items as { memberId: string; account: string; role: string; status: string }[])
@@ -89,18 +85,9 @@ test("INSTALL-CODE-A @p1 @write 활성 구성원에게 설치 코드를 내면 �
   await expect(panel.getByRole("status", { name: `${target.account} 설치 코드 발급 결과`, exact: true })).toHaveCount(0);
   await expect(panel.getByRole("button", { name: `${target.account} 설치 코드 발급`, exact: true })).toHaveText("새 설치 코드 발급");
 
-  // 가입 화면에 코드를 넣어도 서버가 거절한다. 가입은 토큰 없는 진입 요청이라 로그인 pacer 를 거친다.
+  // 폐기한 비밀번호 가입 API는 설치 코드 여부와 무관하게 410이다.
   await paceSignIn(target.account);
-  const accept = await context.newPage();
-  await accept.goto(`${base}/invite#code=${issuedCode}`);
-  await expect(accept.getByLabel("초대 코드", { exact: true })).not.toHaveValue("");
-  await accept.getByLabel("회사 이메일", { exact: true }).fill(target.account);
-  await accept.getByLabel("비밀번호", { exact: true }).fill("e2e-password-123");
-  await accept.getByLabel("비밀번호 확인", { exact: true }).fill("e2e-password-123");
-  const refused = accept.waitForResponse((response) => response.request().method() === "POST" && response.url() === `${enrollmentBase()}/v1/auth/signup`);
-  await accept.getByRole("button", { name: "계정 만들기", exact: true }).click();
-  expect((await refused).status()).toBe(409);
-  await expect(accept.getByRole("main").getByRole("alert")).toContainText("이 초대 코드로는 가입할 수 없습니다");
-  // 코드가 보이는 화면을 실패 기록에 남기지 않는다.
-  await accept.close();
+  const refused = await fetch(`${enrollmentBase()}/v1/auth/signup`, { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code: issuedCode, email: target.account, password: "retired-password-flow" }) });
+  expect(refused.status).toBe(410);
 });

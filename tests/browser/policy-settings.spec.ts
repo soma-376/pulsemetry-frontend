@@ -21,7 +21,7 @@ async function mockPolicy(page: Page) {
   await page.route("**/api/v1/organizations/*/settings", (route) => {
     if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const data = structuredClone(example);
-    data.meta.organizationId = new URL(route.request().url()).pathname.split("/")[4];
+    data.meta.organizationId = new URL(route.request().url()).pathname.split("/organizations/")[1].split("/")[0];
     return json(route, { ...data, collectionPolicy: state.policy });
   });
   await page.route("**/api/v1/organizations/*/operations/*", (route) => {

@@ -13,7 +13,7 @@ export function teamsFixture(url: URL) {
   const data = structuredClone(example);
   const startDate = url.searchParams.get("startDate")!, endDate = url.searchParams.get("endDate")!, compare = url.searchParams.get("compare") ?? "prev_week";
   const dayCount = (Date.parse(endDate) - Date.parse(startDate)) / DAY + 1;
-  Object.assign(data.meta, { organizationId: url.pathname.split("/")[4], startDate, endDate, dayCount, snapshotId: "fixture-teams-snapshot" });
+  Object.assign(data.meta, { organizationId: url.pathname.split("/organizations/")[1].split("/")[0], startDate, endDate, dayCount, snapshotId: "fixture-teams-snapshot" });
   for (const team of [...data.teams.items, data.unassigned]) {
     // 예시의 7일을 반복하되 누적 세션은 기간 끝에서 팀 세션 수가 되게 비례로 늘린다(0으로 채우지 않는다).
     team.trend = Array.from({ length: dayCount }, (_, index) => ({
@@ -57,7 +57,7 @@ export async function mockTeams(page: Page, options: { users?: Record<string, Us
     const request = route.request();
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const url = new URL(request.url());
-    const path = url.pathname.split("/").slice(5);
+    const path = url.pathname.split("/organizations/")[1].split("/").slice(1);
     const data = teamsFixture(url);
     options.modify?.(data);
     const [, , teamId, tail] = path;

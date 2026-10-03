@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { mockSeedAuth, openDashboard, signIn } from "./helpers";
-import { SESSION_STORAGE_KEY } from "../../src/lib/api/session-key";
+
 
 /** 인증 요청 제한(429) 안내 — 서버(enrollment ADR 0052)는 `Retry-After`를 CORS 로 노출한다. 목 응답도 같은 헤더를 준다. */
 const cors = (page: Page) => ({
@@ -11,12 +11,12 @@ const cors = (page: Page) => ({
 });
 const limited = (page: Page, seconds: number) => ({ status: 429, headers: { ...cors(page), "Retry-After": String(seconds) },
   json: { error: "rate_limited", message: "사용자 인증 요청을 처리할 수 없습니다." } });
-const session = (page: Page) => page.evaluate((key) => sessionStorage.getItem(key), SESSION_STORAGE_KEY);
+const session = async (page: Page) => (await page.context().cookies()).find(cookie => cookie.name === "pulsemetry-session") ?? null;
 
 test("로그인 429는 인증 실패가 아니라 대기 안내이고, 그동안 버튼을 잠갔다가 같은 이메일로 다시 로그인한다", async ({ page }) => {
   await mockSeedAuth(page);
   let attempts = 0;
-  await page.route("**/api/dev/seed-login", async (route) => {
+  await page.route("**/api/bff/auth/organizations", async (route) => {
     attempts++;
     if (attempts === 1) return route.fulfill({ status: 429, headers: { "Retry-After": "2" }, json: { error: "rate_limited", message: "로그인 요청이 많아 잠시 제한되었습니다." } });
     return route.fallback();
@@ -41,10 +41,10 @@ test("로그인 429는 인증 실패가 아니라 대기 안내이고, 그동안
 
 async function limitLogoutOnce(page: Page) {
   const calls = { count: 0 };
-  await page.route("**/v1/auth/logout", async (route: Route) => {
+  await page.route("**/api/bff/auth/logout", async (route: Route) => {
     if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors(page) });
     calls.count++;
-    return calls.count === 1 ? route.fulfill(limited(page, 2)) : route.fulfill({ status: 204, headers: cors(page) });
+    return calls.count === 1 ? route.fulfill(limited(page, 2)) : route.fallback();
   });
   return calls;
 }
@@ -84,26 +84,17 @@ test("사이드바의 로그아웃 429도 같은 안내와 잠금이다", async 
   expect(calls.count).toBe(2);
 });
 
-test("갱신 429는 세션 만료가 아니다 — 세션을 지우지 않고 서버가 준 시간 뒤 한 번만 다시 갱신해 조회를 복구한다", async ({ page }) => {
+test("세션 확인 429는 로그아웃하지 않고 재시도할 수 있다", async ({ page }) => {
   await page.goto("/login");
   await signIn(page);
-  await expect(page).toHaveURL(/\/onboarding$/);
-  const refresh: string[] = [];
-  await page.route("**/v1/auth/refresh", async (route) => {
-    if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors(page) });
-    refresh.push(route.request().postDataJSON().refresh_token);
-    if (refresh.length === 1) return route.fulfill(limited(page, 1));
-    return route.fulfill({ headers: cors(page), json: { access_token: "renewed-access", refresh_token: "renewed-refresh", token_type: "Bearer", expires_in: 300 } });
-  });
-  // 저장된 AT 는 만료된 것으로 본다 — 새 AT 로만 응답한다.
-  await page.route("**/api/v1/organizations/*/onboarding", (route) =>
-    route.request().method() !== "OPTIONS" && route.request().headers().authorization !== "Bearer renewed-access"
-      ? route.fulfill({ status: 401, headers: cors(page), json: { error: { code: "unauthenticated", message: "x" } } })
-      : route.fallback());
+  const before = await session(page);
+  let calls = 0;
+  await page.route("**/api/bff/auth/session", route => ++calls === 1
+    ? route.fulfill(limited(page, 1)) : route.fallback());
   await page.reload();
-  // 온보딩 조회가 새 AT 로 성공해야 수집 단계가 그려진다.
-  await expect(page.getByRole("radio", { name: /^수집하지 않음/ })).toBeVisible({ timeout: 10_000 });
-  expect(refresh).toEqual(["ui-fixture-refresh", "ui-fixture-refresh"]);
-  await expect(page.getByText(/세션이 만료/)).toHaveCount(0);
-  expect(JSON.parse((await session(page))!).tokens.refresh_token).toBe("renewed-refresh");
+  await expect(page.getByRole("alert").filter({ hasText: "요청이 많아" })).toBeVisible();
+  expect(await session(page)).toEqual(before);
+  await page.getByRole("button", { name: "다시 시도", exact: true }).click();
+  await expect(page.getByRole("radio", { name: /^수집하지 않음/ })).toBeVisible();
+  expect(calls).toBe(2);
 });

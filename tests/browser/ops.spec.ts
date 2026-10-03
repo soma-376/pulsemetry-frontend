@@ -19,7 +19,7 @@ async function serve(page: Page, options: { configured: boolean }) {
     const status = url.searchParams.get("status");
     const items = options.configured ? [security].filter((alert) => status === "all" || (status === "acknowledged") === state.acked.has(alert.alertId))
       .map((alert) => ({ ...alert, acknowledgement: state.acked.has(alert.alertId) ? { acknowledgedAt: "2026-09-13T11:30:00Z", acknowledgedBy: "admin" } : null })) : [];
-    return route.fulfill({ headers: cors(page), json: { meta: { organizationId: url.pathname.split("/")[4], snapshotId: "token", asOf: "2026-09-13T12:00:00Z" },
+    return route.fulfill({ headers: cors(page), json: { meta: { organizationId: url.pathname.split("/organizations/")[1].split("/")[0], snapshotId: "token", asOf: "2026-09-13T12:00:00Z" },
       evaluation: options.configured ? { availability: "available", reason: null, asOf: "2026-09-13T11:00:00Z", rules: [
         { ruleId: "spend_spike", enabled: true, evaluatedAt: "2026-09-13T11:00:00Z", status: "evaluated", reason: null, windowStart: null, windowEnd: null },
         { ruleId: "model_not_allowed", enabled: true, evaluatedAt: "2026-09-13T11:00:00Z", status: "evaluated", reason: null, windowStart: null, windowEnd: null },

@@ -15,10 +15,10 @@ const operation = (status: string, results: { status: string; reason: string | n
 
 test("설치 목록은 적용 상태로 거르고 다음 페이지를 같은 snapshot으로 읽는다", async () => {
   const original = global.fetch, urls: URL[] = [];
-  global.fetch = async input => { urls.push(new URL(String(input))); return Response.json(urls.length === 1 ? page("c1") : page(null)); };
+  global.fetch = async input => { urls.push(new URL(String(input), "http://localhost")); return Response.json(urls.length === 1 ? page("c1") : page(null)); };
   try {
     const first = await fetchInstallations(org, "unknown", null);
-    assert.equal(urls[0].pathname, `/api/v1/organizations/${org}/installations`);
+    assert.equal(urls[0].pathname, `/api/bff/dashboard/api/v1/organizations/${org}/installations`);
     assert.deepEqual(Object.fromEntries(urls[0].searchParams), { policyStatus: "unknown", limit: "100" });
     const options = installationsOptions(org, "unknown");
     const next = options.getNextPageParam!(first, [first], null, [null]);

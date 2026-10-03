@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, authenticatedTest as test } from "./fixtures";
 import { mockOverview, overviewFixture, overviewUrl, corsHeaders, mockOverviewSettings } from "./overview-fixture";
 import { mockSession } from "./helpers";
 
@@ -16,14 +16,15 @@ function defaultPeriod() {
   return { start: day(-6), second: day(-5), end: today, label: `${dots(day(-6))} ~ ${dots(today)}`, todayLabel: `${dots(today)} ~ ${dots(today)}` };
 }
 
-test("Spring을 직접 조회하고 기간·비교 변경과 수동 새로고침을 반영한다", async ({ page }) => {
+test("BFF를 통해 조회하고 기간·비교 변경과 수동 새로고침을 반영한다", async ({ page }) => {
   const period = defaultPeriod();
   const requests: URL[] = [];
   await mockOverview(page);
   page.on("request", (request) => { if (request.url().includes("/analytics/overview?")) requests.push(new URL(request.url())); });
   await page.goto("/overview");
   await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toContainText("$5,000.00");
-  expect(requests[0].origin).toBe(process.env.MOCK_DASHBOARD_API_URL ?? "http://localhost:8081");
+  expect(requests[0].origin).toBe(new URL(page.url()).origin);
+  expect(requests[0].pathname).toMatch(/^\/api\/bff\/dashboard\//);
   expect(requests[0].searchParams.get("timeZone")).toBe("Asia/Seoul");
   expect(requests[0].searchParams.get("startDate")).toBe(period.start);
   expect(requests[0].searchParams.get("endDate")).toBe(period.end);
@@ -91,27 +92,22 @@ test("부분 관측과 알 수 없는 비용을 0으로 만들지 않는다", as
   await expect(page.getByRole("region", { name: "모델 구성", exact: true }).locator("svg")).toHaveCount(0);
 });
 
-/** 갱신 토큰도 거절되는 서버 — 세션이 끝난 상황이다. */
-async function rejectRefresh(page: import("@playwright/test").Page) {
-  const calls = { count: 0 };
-  await page.route("**/v1/auth/refresh", (route) => {
-    const headers = { ...corsHeaders(page), "access-control-allow-headers": "content-type" };
-    if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers });
-    calls.count++;
-    return route.fulfill({ status: 401, json: { error: "invalid_credentials", message: "사용자 인증 요청을 처리할 수 없습니다." }, headers });
-  });
-  return calls;
+/** BFF가 갱신 실패를 확인한 이후 브라우저에 반환하는 401을 흉내 낸다. */
+async function rejectSession(page: import("@playwright/test").Page) {
+  await page.route("**/api/bff/auth/session", route => route.fulfill({ status: 401, json: { error: { code: "unauthenticated" } } }));
 }
 
-test("HTTP 401 에서 세션 갱신도 거절되면 세션을 지우고 대시보드 공통 로그인 안내를 보인다", async ({ page }) => {
+test("업무 API 401 뒤 로그인으로 이동하고 조직 데이터를 숨긴다", async ({ page }) => {
   let calls = 0;
-  await page.route(overviewUrl, async (route) => { calls++; await route.fulfill({ status: 401, json: { error: { code: "unauthenticated" } }, headers: corsHeaders(page) }); });
-  const refresh = await rejectRefresh(page);
+  await page.route(overviewUrl, async route => {
+    calls++; await rejectSession(page);
+    await route.fulfill({ status: 401, json: { error: { code: "unauthenticated" } } });
+  });
   await page.goto("/overview");
-  await expect(page.getByRole("heading", { name: "로그인이 필요합니다", exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByLabel("회사 이메일", { exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toHaveCount(0);
   await expect(page.getByLabel("로그인한 계정")).toHaveCount(0);
-  expect(refresh.count).toBe(1);
   expect(calls).toBe(1);
 });
 
@@ -124,7 +120,7 @@ for (const status of [403, 503]) {
       await route.fulfill(fail ? { status, json: { error: { code: "test_error" } }, headers: corsHeaders(page) } : { json: overviewFixture(route.request().url()), headers: corsHeaders(page) });
     });
     await page.goto("/overview");
-    await expect(page.getByRole("main").getByRole("alert")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("main").getByRole("alert").filter({ has: page.getByRole("button", { name: "다시 시도", exact: true }) })).toBeVisible({ timeout: 15_000 });
     expect(calls).toBe(status >= 500 ? 3 : 1);
     await expect(page.getByRole("region", { name: "토큰 비용", exact: true })).toHaveCount(0);
     fail = false;
@@ -133,7 +129,7 @@ for (const status of [403, 503]) {
   });
 }
 
-test("권한 상실 시 재조회 이전의 데이터도 숨긴다", async ({ page }) => {
+test("API 403은 기존 데이터를 숨기고 권한 오류를 표시한다", async ({ page }) => {
   await mockOverview(page);
   await page.goto("/overview");
   const cost = page.getByRole("region", { name: "토큰 비용", exact: true });
@@ -150,9 +146,10 @@ test("세션이 끝나면 재조회 이전의 데이터도 숨기고 공통 로�
   const cost = page.getByRole("region", { name: "토큰 비용", exact: true });
   await expect(cost).toBeVisible();
   await page.route(overviewUrl, (route) => route.fulfill({ status: 401, json: {}, headers: corsHeaders(page) }));
-  await rejectRefresh(page);
+  await rejectSession(page);
   await page.getByRole("button", { name: "새로고침", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "로그인이 필요합니다", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByLabel("회사 이메일", { exact: true })).toBeVisible();
   await expect(cost).toHaveCount(0);
 });
 
@@ -163,7 +160,7 @@ test("조회 중 상태와 잘못된 응답을 명확히 표시한다", async ({
   await page.goto("/overview");
   await expect(page.getByText("개요 데이터를 불러오는 중입니다…")).toBeVisible();
   release();
-  await expect(page.getByRole("main").getByRole("alert")).toContainText("데이터 계약과 일치하지 않습니다");
+  await expect(page.getByRole("main").getByRole("alert").filter({ has: page.getByRole("button", { name: "다시 시도", exact: true }) })).toContainText("데이터 계약과 일치하지 않습니다");
 });
 
 for (const state of ["no_data", "never_observed"]) {

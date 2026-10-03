@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
-import { allowHttpErrors, expect, test, enrollmentBase, seedOrganizations } from "./fixtures";
-import { authenticatedRequest, signIn } from "./helpers";
+import { expect, test, enrollmentBase, seedOrganizations } from "./fixtures";
+import { authenticatedRequest, paceSignIn, signIn } from "./helpers";
 import { PreparationError } from "./harness";
 
 // 초대 → 서버의 발송 작업 → SMTP → 메일 수신 컨테이너까지의 실제 경로를 본다.
@@ -36,9 +36,6 @@ async function waiting(page: Page, email: string) {
 }
 
 test("INVITE-MAIL-01 @p0 @write 초대 메일이 실제로 도착하고, 발송 상태가 목록에 반영되고, 다시 보내면 옛 코드는 쓸 수 없다", async ({ page, context }) => {
-  allowHttpErrors(
-    { status: 409, path: /^\/v1\/auth\/signup$/, method: "POST", reason: "재발급으로 폐기된 코드의 가입 거절을 시험한다" },
-  );
   const email = `e2e-mail-${Date.now().toString(36)}@example.test`;
   const base = new URL(test.info().project.use.baseURL!).origin;
   await signIn(page, "owner@seed-a.example.test");
@@ -71,8 +68,9 @@ test("INVITE-MAIL-01 @p0 @write 초대 메일이 실제로 도착하고, 발송 
     const firstCode = codeIn(firstText);
     expect(firstCode === issuedCode, "메일의 코드는 발급 결과의 코드다").toBe(true);
     expect(firstText.includes(org.name), "조직 이름").toBe(true);
-    // 수락 링크는 코드를 fragment로 싣고, 설치 명령은 서버의 부트스트랩 주소다.
-    expect(firstText.includes(`${base}/invite#code=${firstCode}`), "수락 링크").toBe(true);
+    // SSO 링크에는 코드를 싣지 않고, 코드는 설치 명령에만 사용한다.
+    expect(firstText.includes(`${base}/login`), "SSO 로그인 링크").toBe(true);
+    expect(firstText.includes("#code="), "로그인 링크에 설치 코드를 싣지 않는다").toBe(false);
     expect(firstText.includes(`${base}/invite?code=`), "코드를 쿼리에 싣지 않는다").toBe(false);
     expect(firstText.includes(`curl -fsSL '${enrollmentBase()}/unix?code=${firstCode}' | sh`), "설치 명령").toBe(true);
     expect(firstMail.Subject.includes(firstCode), "제목에는 코드가 없다").toBe(false);
@@ -83,7 +81,7 @@ test("INVITE-MAIL-01 @p0 @write 초대 메일이 실제로 도착하고, 발송 
 
     // 다시 보내기 — 먼저 옛 링크가 무효가 됨을 알리고, 확인하면 새 코드의 두 번째 메일이 도착한다.
     await pending.getByRole("button", { name: `${email} 초대 다시 보내기`, exact: true }).click();
-    await expect(pending.getByRole("alert")).toContainText("새 코드를 발급하고 초대 메일을 다시 보냅니다. 이전 메일의 코드와 링크는 더 이상 쓸 수 없습니다.");
+    await expect(pending.getByRole("alert")).toContainText("새 코드를 발급하고 초대 메일을 다시 보냅니다. 이전 메일의 설치 코드는 더 이상 쓸 수 없습니다.");
     expect(await mailsTo(email)).toHaveLength(1);
     await pending.getByRole("button", { name: "다시 보내기 확인", exact: true }).click();
     await expect(pending.getByRole("status")).toContainText("새 코드의 초대 메일을 발송 대기열에 넣었습니다");
@@ -93,22 +91,16 @@ test("INVITE-MAIL-01 @p0 @write 초대 메일이 실제로 도착하고, 발송 
     await expect(state).toContainText("메일 발송됨", { timeout: 20_000 });
     expect(await waiting(page, email)).toHaveLength(1);
 
-    // 첫 메일의 링크를 연다 — 코드가 채워지고 주소에서는 지워지지만, 폐기된 코드라 서버가 가입을 거절한다.
+    // 폐기된 코드는 설치 API에서 거절한다. 브라우저의 이전 링크는 SSO 안내만 표시한다.
+    await paceSignIn(email);
+    const refused = await fetch(`${enrollmentBase()}/v1/enroll`, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: firstCode, hostname: "e2e-revoked-invite", platform: "macos", architecture: "arm64", client_version: "0.1.0" }) });
+    expect(refused.status).toBe(409);
     const accept = await context.newPage();
     await accept.goto(`${base}/invite#code=${firstCode}`);
-    const code = accept.getByLabel("초대 코드", { exact: true });
-    await expect(code).not.toHaveValue("");
-    expect((await code.inputValue()) === firstCode, "링크의 코드가 채워진다").toBe(true);
     await expect(accept).toHaveURL(`${base}/invite`);
-    await accept.getByLabel("회사 이메일", { exact: true }).fill(email);
-    await accept.getByLabel("비밀번호", { exact: true }).fill("e2e-password-123");
-    await accept.getByLabel("비밀번호 확인", { exact: true }).fill("e2e-password-123");
-    const refused = accept.waitForResponse((response) => response.request().method() === "POST" && response.url() === `${enrollmentBase()}/v1/auth/signup`);
-    await accept.getByRole("button", { name: "계정 만들기", exact: true }).click();
-    expect((await refused).status()).toBe(409);
-    await expect(accept.getByRole("main").getByRole("alert")).toContainText("이 초대 코드로는 가입할 수 없습니다");
-    await expect(accept.getByRole("status")).toHaveCount(0);
-    // 코드가 보이는 화면을 실패 기록에 남기지 않는다.
+    await expect(accept.getByLabel("비밀번호", { exact: true })).toHaveCount(0);
+    await expect(accept.getByRole("link", { name: "회사 계정으로 로그인", exact: true })).toHaveAttribute("href", "/login");
     await accept.close();
   } finally {
     await page.reload();

@@ -1,3 +1,4 @@
+import { oidcOrigin } from "./oidc-environment";
 import { test as base, expect, type Response as PlaywrightResponse } from "@playwright/test";
 import { ANNOTATION, PreparationError, probeRequests } from "./harness";
 
@@ -25,7 +26,8 @@ export function allowHttpErrors(...rules: AllowedHttpError[]) {
 }
 
 // 서버·인증 설정·시드의 선행 확인은 globalSetup(global-setup.ts)이 실행 전에 한 번 한다 — worker 마다 다시 로그인하지 않는다.
-export const test = base.extend<{ browserErrors: void; rateLimitObserver: void; httpErrors: void }>({
+export const test = base.extend<{ oidcReady: void; browserErrors: void; rateLimitObserver: void; httpErrors: void }>({
+  oidcReady: [async ({}, use) => { oidcOrigin(); await use(); }, { auto: true }],
   // 브라우저가 받은 429 를 테스트 주석으로 남긴다. reporter 가 기능 실패와 따로 세고, 429 를 시험하는 테스트는 ANNOTATION.intended429 를 단다.
   rateLimitObserver: [async ({ context }, use, testInfo) => {
     const listener = (response: PlaywrightResponse) => {
@@ -45,7 +47,8 @@ export const test = base.extend<{ browserErrors: void; rateLimitObserver: void; 
       if (status < 400 || status === 429) return;
       const url = new URL(response.url());
       if (!origins.has(url.origin) && !(url.origin === app && url.pathname.startsWith("/api/"))) return;
-      seen.push({ method: response.request().method(), path: url.pathname + url.search, status, url: url.origin + url.pathname + url.search });
+      const path = url.pathname.replace(/^\/api\/bff\/(?:dashboard|enrollment)(\/api\/v1\/)/, "$1");
+      seen.push({ method: response.request().method(), path: path + url.search, status, url: url.origin + url.pathname + url.search });
     };
     context.on("response", listener);
     await use();
