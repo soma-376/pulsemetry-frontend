@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { openDashboard } from "./helpers";
 
 test("team rows open details across the row while trend checkboxes stay independent", async ({ page }) => {

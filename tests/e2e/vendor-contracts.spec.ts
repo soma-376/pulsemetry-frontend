@@ -1,27 +1,33 @@
-import { expect, test, dashboardBase } from "./fixtures";
-import { authenticatedRequest, signOut } from "./helpers";
+import { expect, test, dashboardBase, enrollmentBase, seedOrganizations } from "./fixtures";
+import { authenticatedRequest, signIn } from "./helpers";
+import { PreparationError } from "./harness";
 import { currentDateIso } from "../../src/lib/date";
 
 test("VENDOR-API @write 실제 서버: 등록·멱등 재시도와 설정 드로어 정정·이름 변경·계약 비우기·삭제", async ({ page }) => {
-  const dashboard = dashboardBase();
-  await page.goto("/login");
-  await page.getByLabel("회사 이메일", { exact: true }).fill("owner@seed-a.example.test");
-  const onboarding = page.waitForResponse(r => r.url().endsWith("/onboarding") && r.request().method() === "GET");
-  await page.getByRole("button", { name: "회사 계정으로 계속", exact: true }).click();
-  const stateResponse = await onboarding;
-  expect(stateResponse.status()).toBe(200);
-  const initial = await stateResponse.json();
-  await expect(page).toHaveURL(/\/(onboarding|overview)$/);
-  const enrollment = new URL(stateResponse.url()).origin;
-  const orgPath = `/api/v1/organizations/${initial.organizationId}`;
+  const dashboard = dashboardBase(), enrollment = enrollmentBase();
+  await signIn(page, "owner@seed-a.example.test");
+  const orgPath = `/api/v1/organizations/${seedOrganizations[0].id}`;
   const request = (origin: string, path: string, method = "GET", body?: unknown, headers: Record<string, string> = {}) => authenticatedRequest(page, origin, path, method, body, headers);
+  const state = await request(enrollment, `${orgPath}/onboarding`);
+  expect(state.status).toBe(200);
+  const initial = state.body;
   const catalog = await request(dashboard, "/api/v1/vendor-catalog?limit=100");
   expect(catalog.status).toBe(200);
   expect(catalog.body.items.some((v: { provider: string }) => v.provider === "anthropic")).toBe(true);
   const registered = await request(dashboard, `${orgPath}/vendors?limit=100`);
   expect(registered.status).toBe(200);
-  const product = catalog.body.items.find((v: { id: string }) => !registered.body.vendors.items.some((item: { kind: string }) => item.kind === v.id));
-  test.skip(!product, "모든 제품이 등록되어 있어 기존 시드를 보존하기 위해 쓰기 테스트를 건너뜁니다.");
+  type Registered = { vendorId: string; kind: string; displayName: string; version: number };
+  const items = registered.body.vendors.items as Registered[];
+  let product = catalog.body.items.find((v: { id: string }) => !items.some((item) => item.kind === v.id));
+  if (!product) {
+    // 자원 준비: 등록 가능한 제품이 없으면 이전 실행이 남긴 E2E 벤더를 보관해 그 제품 자리를 비운다(보관한 등록은 같은 제품의 새 등록을 막지 않는다).
+    // 시드가 등록한 제품은 건드리지 않는다. 비울 것이 없으면 건너뛰지 않고 준비 실패로 끝낸다.
+    const leftover = items.find((item) => item.displayName.startsWith("E2E-"));
+    if (!leftover) throw new PreparationError("시드 A 에 등록 가능한 제품이 없고 비울 수 있는 E2E 벤더도 없습니다 — 시드를 초기화하세요.");
+    const archived = await request(enrollment, `${orgPath}/vendors/${leftover.vendorId}`, "DELETE", undefined, { "If-Match": `"vendor-${leftover.version}"` });
+    if (archived.status !== 204) throw new PreparationError(`이전 실행의 E2E 벤더를 보관하지 못했습니다 — HTTP ${archived.status}`);
+    product = catalog.body.items.find((v: { id: string }) => v.id === leftover.kind);
+  }
   const plans = await request(dashboard, `/api/v1/vendor-catalog/${product.id}/plans`);
   expect(plans.status).toBe(200);
   const body = { kind: product.id, displayName: `E2E-${crypto.randomUUID()}` };
@@ -101,6 +107,5 @@ test("VENDOR-API @write 실제 서버: 등록·멱등 재시도와 설정 드로
     }
     const after = await request(enrollment, `${orgPath}/onboarding`);
     expect(after.body).toEqual(initial);
-    await signOut(page);
   }
 });

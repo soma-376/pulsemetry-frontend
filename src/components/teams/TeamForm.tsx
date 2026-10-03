@@ -1,5 +1,5 @@
 "use client";
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/Button";
@@ -9,26 +9,26 @@ import {
   TEAM_NAME_HINT,
   type TeamForm as TeamFormValues,
 } from "@/lib/schemas/team";
-import { saveTeam, type Team } from "@/lib/organization";
-import { useOrganization } from "@/lib/organization-store";
+
+/** 팀 이름 입력. 저장은 호출한 화면의 서버 명령이 하고, 실패하면 입력을 그대로 둔다. */
 export function TeamForm({
   team,
   onDone,
   onCancel,
-  persistDraft = false,
   onSave,
   draftName,
   onDraftChange,
+  recovery,
 }: {
-  team: Team | null;
+  team: { teamName: string } | null;
   onDone: (name: string) => void;
   onCancel?: () => void;
-  persistDraft?: boolean;
   draftName?: string;
   onDraftChange?: (name: string) => void;
-  onSave?: (name: string) => Promise<void>;
+  onSave: (name: string) => Promise<void>;
+  /** 저장 실패 뒤의 복구 동작 (예: 최신 내용 불러오기) */
+  recovery?: ReactNode;
 }) {
-  const { state, update } = useOrganization();
   const fieldId = useId();
   const {
     register,
@@ -38,9 +38,7 @@ export function TeamForm({
     formState: { errors, isSubmitting },
   } = useForm<TeamFormValues>({
     resolver: zodResolver(teamFormSchema),
-    defaultValues: {
-      name: team?.name ?? draftName ?? (persistDraft ? state.onboardingDraft.teamName : ""),
-    },
+    defaultValues: { name: team?.teamName ?? draftName ?? "" },
   });
   return (
     <form
@@ -48,27 +46,8 @@ export function TeamForm({
       className="flex flex-col gap-4"
       onSubmit={handleSubmit(async (values) => {
         try {
-          if (onSave) {
-            await onSave(values.name);
-            onDraftChange?.("");
-            reset({ name: "" });
-            onDone(values.name);
-            return;
-          }
-          const next = saveTeam(
-            state,
-            values,
-            team?.id ?? `team-${crypto.randomUUID()}`,
-            !!team,
-          );
-          update(() =>
-            persistDraft
-              ? {
-                  ...next,
-                  onboardingDraft: { ...next.onboardingDraft, teamName: "" },
-                }
-              : next,
-          );
+          await onSave(values.name);
+          onDraftChange?.("");
           reset({ name: "" });
           onDone(values.name);
         } catch (error) {
@@ -94,17 +73,7 @@ export function TeamForm({
       <Input
         id={fieldId}
         {...register("name", {
-          onChange: (event) => {
-            onDraftChange?.(event.target.value);
-            if (persistDraft)
-              update((previous) => ({
-                ...previous,
-                onboardingDraft: {
-                  ...previous.onboardingDraft,
-                  teamName: event.target.value,
-                },
-              }));
-          },
+          onChange: (event) => onDraftChange?.(event.target.value),
         })}
         className="h-10"
         maxLength={40}
@@ -118,9 +87,10 @@ export function TeamForm({
       >
         {errors.name?.message ?? TEAM_NAME_HINT}
       </p>
+      {recovery}
       <div className="flex justify-end gap-2">
-        {onCancel && <Button onClick={onCancel}>취소</Button>}
-        <Button type="submit" variant="primary" disabled={isSubmitting}>
+        {onCancel && <Button onClick={onCancel} disabled={isSubmitting}>취소</Button>}
+        <Button type="submit" variant="primary" loading={isSubmitting} loadingLabel="저장 중…">
           {team ? "변경 저장" : "팀 생성"}
         </Button>
       </div>

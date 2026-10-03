@@ -7,16 +7,18 @@ import { settingsVendorDraft, settingsVendorRow } from "../src/lib/settings-vend
 
 test("settings read every page from one snapshot and preserve unknown totals", async () => {
   const fixture = settingsFixture(), original = global.fetch, paths: URL[] = [];
+  // 둘째 페이지는 계약을 입력하지 않은 제품이다(시드 A의 Cursor).
+  const missing = fixture.vendors.items.find(vendor => vendor.contract === null)!;
   global.fetch = async input => {
-    const url = new URL(String(input)); paths.push(url);
+    const url = new URL(String(input), "http://localhost"); paths.push(url);
     return Response.json(paths.length === 1 ? { ...fixture, vendors: { ...fixture.vendors, items: [fixture.vendors.items[0]], nextCursor: "page2" } }
-      : { meta: fixture.meta, vendors: { ...fixture.vendors, items: [fixture.vendors.items[1]], nextCursor: null } });
+      : { meta: fixture.meta, vendors: { ...fixture.vendors, items: [missing], nextCursor: null } });
   };
   try {
     const result = await fetchSettings(fixture.meta.organizationId);
     assert.equal(result.vendors.items.length, 2);
     assert.equal(paths[1].searchParams.get("snapshotId"), fixture.meta.snapshotId);
-    assert.equal(result.summary.monthlySeatFeeUsd, "360");
+    assert.equal(result.summary.monthlySeatFeeUsd, "760");
     assert.equal(settingsVendorRow(result.vendors.items[1]).spendText, "-");
     assert.equal(settingsVendorDraft(result.vendors.items[0]).tiers?.[0].fee, fixture.vendors.items[0].contract!.tiers[0].monthlyFeePerSeatUsd);
   } finally { global.fetch = original; }

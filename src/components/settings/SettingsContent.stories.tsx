@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, waitFor, within } from "storybook/test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FiltersProvider } from "@/lib/filters";
-import { clearBackendSession, seedLogin } from "@/lib/api/session";
+import { clearBackendSession, exchangeLogin } from "@/lib/api/session";
 import { COMPANY_A } from "@/mocks/company-a";
 import { settingsHandlers, type SettingsScenario } from "../../../.storybook/fixtures/settings";
 import { DashboardHeaderProvider } from "@/components/layout/DashboardHeader";
@@ -20,7 +20,7 @@ const meta = {
   decorators: [(Story, context) => <Providers key={context.id}><Story /></Providers>],
   async beforeEach({ msw, parameters }) {
     msw.use(...settingsHandlers((parameters.scenario ?? "default") as SettingsScenario));
-    await seedLogin(COMPANY_A.members.find(member => member.role === "admin")!.email);
+    await exchangeLogin("storybook-code", "http://localhost/auth/callback", "v".repeat(43), COMPANY_A.organization.organizationId);
     return () => clearBackendSession();
   },
 } satisfies Meta<typeof SettingsContent>;

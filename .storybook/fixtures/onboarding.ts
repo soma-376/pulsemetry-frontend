@@ -11,7 +11,6 @@ const products = SEED_CATALOG.items;
 const plans = SEED_CATALOG.plans;
 const admin = COMPANY_A.members.find(member => member.role === "admin")!;
 const session: BackendSession = {
-  tokens: { access_token: "storybook-only", refresh_token: "storybook-only", token_type: "Bearer", expires_in: 3600 },
   user: { memberId: admin.memberId, organizationId: org, organizationName: COMPANY_A.organization.name, email: admin.email, displayName: admin.displayName, role: "admin" },
 };
 const failure = (code: string, status: number) => HttpResponse.json({ error: { code, message: code } }, { status });
@@ -37,8 +36,9 @@ export function onboardingHandlers(scenario: OnboardingScenario) {
   };
   const meta = { organizationId: org, snapshotId: "storybook" };
   return [
-    http.post("*/api/dev/seed-login", () => HttpResponse.json(session)),
-    http.post("*/v1/auth/logout", () => new HttpResponse(null, { status: 204 })),
+    http.post("*/api/bff/auth/token", () => HttpResponse.json(session)),
+    http.get("*/api/bff/auth/session", () => HttpResponse.json(session)),
+    http.post("*/api/bff/auth/logout", () => new HttpResponse(null, { status: 204 })),
     http.get(`${api}/onboarding`, async () => {
       if (scenario === "loading") await delay("infinite");
       if (loadFailures-- > 0) return failure("unavailable", 503);
@@ -49,7 +49,8 @@ export function onboardingHandlers(scenario: OnboardingScenario) {
       const body = await request.json() as { expectedVersion: number; collectRawContent: boolean };
       if (body.expectedVersion !== state.policy.version) return failure("version_conflict", 409);
       state.policy = { confirmed: true, confirmedAt: timestamp, version: state.policy.version + 1, collectRawContent: body.collectRawContent };
-      return HttpResponse.json({ ...state.policy, application: "future_enrollments", existingInstallationsUpdated: false });
+      return HttpResponse.json({ ...state.policy, application: "future_enrollments", existingInstallationsUpdated: false,
+        reclaimIdleDays: null, aggregateRetentionMonths: null, settingsVersion: 0, settingsUpdatedAt: null, cleanupOperationId: null });
     }),
     http.get("*/api/v1/vendor-catalog", () => HttpResponse.json({ catalogVersion: SEED_CATALOG.catalogVersion, items: products, totalCount: products.length, nextCursor: null })),
     http.get("*/api/v1/vendor-catalog/:kind/plans", ({ params }) => {

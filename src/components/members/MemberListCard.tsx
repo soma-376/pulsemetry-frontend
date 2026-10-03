@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MEMBER_STATUS_LABELS, memberDisplayStatus, MemberStatusBadges } from "./MemberStatusBadges";
+import { MemberStatusBadges } from "./MemberStatusBadges";
 import { Button } from "@/components/ui/Button";
 import { Widget } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { SortHeader } from "@/components/ui/SortHeader";
 import { FilterMenu } from "@/components/ui/FilterMenu";
 import { nextSort, sortRows, type SortState } from "@/lib/sort";
-import type { MembersModel } from "@/lib/metrics/members";
+import { MEMBER_STATUS_LABELS, type MemberRow, type MembersModel } from "@/lib/members-view";
 
 const COLS =
   "grid grid-cols-[minmax(160px,1.5fr)_minmax(72px,0.85fr)_minmax(72px,0.95fr)_minmax(80px,0.85fr)_100px_140px_24px] items-center gap-4";
@@ -29,7 +29,7 @@ const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   ...Object.entries(MEMBER_STATUS_LABELS).map(([value, label]) => ({ value: value as StatusFilter, label })),
 ];
 
-export function MemberListCard({ model, onOpen }: { model: MembersModel; onOpen: (member: MembersModel["memberRows"][number]) => void }) {
+export function MemberListCard({ model, onOpen, onExport }: { model: MembersModel; onOpen: (member: MemberRow) => void; onExport: () => void }) {
   const [query, setQuery] = useState("");
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
@@ -72,15 +72,16 @@ export function MemberListCard({ model, onOpen }: { model: MembersModel; onOpen:
 
   const matched = model.memberRows.filter(
     (m) =>
-      (status === "all" || memberDisplayStatus(m.seatStatus) === status) &&
+      (status === "all" || m.activity === status) &&
       (!keyword ||
       m.account.toLowerCase().includes(keyword) ||
+      m.displayName.toLowerCase().includes(keyword) ||
       m.team.toLowerCase().includes(keyword)),
   );
   // 검색 중에는 결과를 전부 보여줍니다 — 찾는 사람이 잘려 있으면 검색이 무의미합니다
   const ordered = sortRows(matched, (member) => {
     if (sort.key === "cost") return member.costValue;
-    if (sort.key === "activity") return member.idleDays === null ? null : -member.idleDays;
+    if (sort.key === "activity") return member.lastUsedTime;
     return member[sort.key];
   }, sort.direction, (member) => member.account);
   const rows = keyword ? ordered : ordered.slice(0, limit);
@@ -106,7 +107,7 @@ export function MemberListCard({ model, onOpen }: { model: MembersModel; onOpen:
             event.preventDefault();
             applySearch(event.currentTarget.value);
           }}
-          placeholder="이메일 · 팀 검색"
+          placeholder="이메일 · 이름 · 팀 검색"
           aria-label="구성원 검색"
           className="w-[220px] max-w-full @max-[620px]:w-full"
         />
@@ -134,7 +135,7 @@ export function MemberListCard({ model, onOpen }: { model: MembersModel; onOpen:
       </div>
 
       {rows.map((m) => (
-        <button key={m.account} type="button" onClick={() => onOpen(m)} aria-label={`${m.account} 구성원 상세`} aria-haspopup="dialog"
+        <button key={m.memberId} type="button" onClick={() => onOpen(m)} aria-label={`${m.account} 구성원 상세`} aria-haspopup="dialog"
           className={`${COLS} w-full cursor-pointer border-b border-border px-0.5 py-3 text-left transition-colors hover:bg-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue`}>
           <span className="overflow-hidden text-[12.5px] text-ellipsis whitespace-nowrap">
             {m.account}
@@ -145,7 +146,7 @@ export function MemberListCard({ model, onOpen }: { model: MembersModel; onOpen:
           <span className="text-[12px] text-text2">{m.roleLabel}</span>
           <span className="tnum text-right text-[12px]">{m.costText}</span>
           <span className="tnum text-right text-[12px] whitespace-nowrap text-text3">{m.lastSeen}</span>
-          <MemberStatusBadges status={m.seatStatus} className="pl-3" />
+          <MemberStatusBadges status={m.activity} className="pl-3" />
           <span aria-hidden="true" className="text-right text-lg text-text3">›</span>
         </button>
       ))}
@@ -169,7 +170,7 @@ export function MemberListCard({ model, onOpen }: { model: MembersModel; onOpen:
           개인별 비용은 좌석 정합·오남용 확인 목적으로만 표시되며 순위를 매기지
           않습니다 · 전체 명단은 내보내기로 확인하세요
         </span>
-        <Button>전체 명단 CSV</Button>
+        <Button onClick={onExport} disabled={model.memberRows.length === 0}>전체 명단 CSV</Button>
       </div>
       </div>
     </Widget>

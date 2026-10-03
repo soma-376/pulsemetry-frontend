@@ -12,6 +12,6 @@ export function AuthFrame({ title, children }: { title: string; children: ReactN
       <h1 className="text-lg font-semibold">{title}</h1>
       {children}
     </main>
-    <p className="w-full max-w-[440px] text-xs leading-5 text-text3">시드 테스트 환경 · 외부 SSO 연결과 메일 발송은 수행하지 않습니다.</p>
+    <p className="w-full max-w-[440px] text-xs leading-5 text-text3">회사 계정 인증은 조직의 로그인 제공자가 처리합니다.</p>
   </>;
 }
