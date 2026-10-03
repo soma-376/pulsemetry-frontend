@@ -1,5 +1,6 @@
 import { expect, test } from "./fixtures";
 import { openDashboard, signIn } from "./helpers";
+import { serveSettings } from "./onboarding-fixture";
 
 test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(new Date("2026-09-22T00:00:00Z"));
@@ -45,9 +46,12 @@ test("onboarding retains typed date drafts and rejects impossible dates", async 
 });
 
 test("calendar works within the settings drawer, saves dates and clears them", async ({ page }) => {
+  serveSettings(page);
   await openDashboard(page, "/settings");
   await page.getByRole("button", { name: "벤더 추가", exact: true }).click();
   const drawer = page.getByRole("dialog").filter({ has: page.getByLabel("표시 이름", { exact: true }) });
+  await drawer.getByLabel("제품", { exact: true }).selectOption("claude_team");
+  await drawer.getByLabel("플랜", { exact: true }).selectOption("team");
   await drawer.getByLabel("표시 이름", { exact: true }).fill("Calendar contract");
   await drawer.getByLabel("좌석 수", { exact: true }).fill("2");
   await drawer.getByLabel("월 단가", { exact: true }).fill("0");

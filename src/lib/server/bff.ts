@@ -10,9 +10,9 @@ type Entry = { sessionId: string; task: Promise<Session>; expiresAt: number; inv
 export type BffConfig = { origin: string; enrollmentUrl: string; dashboardUrl: string; keys: string[];
   refreshGraceMs?: number; maxRefreshEntries?: number; timeoutMs?: number };
 class BffError extends Error {
-  constructor(public status: number, public code: string) { super(code); }
+  constructor(public status: number, public code: string, public retryAfter?: string | null) { super(code); }
 }
-const fail = (status: number, code: string): never => { throw new BffError(status, code); };
+const fail = (status: number, code: string, retryAfter?: string | null): never => { throw new BffError(status, code, retryAfter); };
 
 export function createBff(config: BffConfig, fetcher: typeof fetch = fetch, now = Date.now) {
   const origin = new URL(config.origin).origin;
@@ -46,7 +46,7 @@ export function createBff(config: BffConfig, fetcher: typeof fetch = fetch, now 
     } catch { return fail(503, "unavailable"); }
   }
   async function json<T>(r: Response, schema: z.ZodType<T>) {
-    if (!r.ok) fail([400, 401, 403, 429].includes(r.status) ? r.status : 502, r.status === 429 ? "rate_limited" : r.status >= 500 ? "unavailable" : "unauthenticated");
+    if (!r.ok) fail([400, 401, 403, 429].includes(r.status) ? r.status : 502, r.status === 429 ? "rate_limited" : r.status >= 500 ? "unavailable" : "unauthenticated", r.headers.get("Retry-After"));
     try { return schema.parse(await r.json()); } catch { return fail(502, "invalid_response"); }
   }
   function tokenSession(tokens: z.infer<typeof tokensSchema>, previous: Pick<Session, "id" | "organizationId" | "sessionExpiresAt">, issuedAt: number): Session {
@@ -56,7 +56,7 @@ export function createBff(config: BffConfig, fetcher: typeof fetch = fetch, now 
   const post = (body: unknown): RequestInit => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   async function revoke(session: Session) {
     const r = await upstream("enrollment", "/v1/auth/logout", post({ refresh_token: session.refreshToken }));
-    if (!r.ok && r.status !== 401) fail(503, "unavailable");
+    if (!r.ok && r.status !== 401) fail(r.status === 429 ? 429 : 503, r.status === 429 ? "rate_limited" : "unavailable", r.headers.get("Retry-After"));
   }
   function invalidate(id: string) {
     for (const [key, entry] of refreshes) if (entry.sessionId === id) { entry.invalidated = true; refreshes.delete(key); }
@@ -103,28 +103,27 @@ export function createBff(config: BffConfig, fetcher: typeof fetch = fetch, now 
     if (result.status >= 300 && result.status < 400) fail(502, "invalid_response");
     return { result, session: active, renewed: active !== session };
   }
-  async function requestJson(request: Request, allowEmpty = false) {
-    const isJson = request.headers.get("content-type")?.startsWith("application/json");
-    if (!allowEmpty && !isJson) fail(415, "invalid_request");
-    // 프록시 전달 전에도 본문 크기를 제한한다.
+  async function requestBytes(request: Request): Promise<ArrayBuffer | undefined> {
     const reader = request.body?.getReader();
-    if (!reader) {
-      if (allowEmpty) return undefined;
-      fail(400, "invalid_request");
-    }
+    if (!reader) return undefined;
     const chunks: Uint8Array[] = []; let size = 0;
     while (true) {
-      const { value, done } = await reader!.read(); if (done) break;
+      const { value, done } = await reader.read();
+      if (done) break;
       size += value.byteLength;
-      if (size > 1024 * 1024) { await reader!.cancel(); fail(413, "invalid_request"); }
+      if (size > 1024 * 1024) { await reader.cancel(); fail(413, "invalid_request"); }
       chunks.push(value);
     }
-    // Next.js는 본문 없는 DELETE에도 빈 스트림을 넘기므로 실제 바이트 수로 구분한다.
-    if (allowEmpty && size === 0) return undefined;
-    if (!isJson) fail(415, "invalid_request");
-    try { return JSON.parse(Buffer.concat(chunks).toString()); } catch { return fail(400, "invalid_request"); }
+    return size ? new Uint8Array(Buffer.concat(chunks)).buffer : undefined;
+  }
+  async function requestJson(request: Request) {
+    if (!request.headers.get("content-type")?.startsWith("application/json")) fail(415, "invalid_request");
+    const bytes = await requestBytes(request);
+    if (!bytes) fail(400, "invalid_request");
+    try { return JSON.parse(Buffer.from(bytes!).toString()); } catch { return fail(400, "invalid_request"); }
   }
   async function handle(request: Request): Promise<Response> {
+    let renewedSession: Session | null = null;
     try {
       checkRequest(request);
       const url = new URL(request.url), route = url.pathname.replace(/^\/api\/bff\//, "");
@@ -155,6 +154,7 @@ export function createBff(config: BffConfig, fetcher: typeof fetch = fetch, now 
       if (route === "auth/session" && request.method === "GET") {
         if (!session) return response({ user: null });
         const auth = await authorized(session, "enrollment", "/v1/auth/me");
+        if (auth.renewed) renewedSession = auth.session;
         const user = await json(auth.result, authUserSchema);
         if (user.organizationId !== session.organizationId || user.role !== "admin") fail(403, "forbidden");
         const result = response({ user });
@@ -171,19 +171,23 @@ export function createBff(config: BffConfig, fetcher: typeof fetch = fetch, now 
       if (service === "dashboard" && request.method !== "GET") fail(405, "method_not_allowed");
       const headers = new Headers({ Accept: "application/json" });
       for (const name of ["idempotency-key", "if-match"]) { const v = request.headers.get(name); if (v) headers.set(name, v); }
-      let body: string | undefined;
-      const parsedBody = await requestJson(request, true);
-      if (parsedBody !== undefined) { body = JSON.stringify(parsedBody); headers.set("Content-Type", "application/json"); }
+      // 업무 DTO의 숫자 정밀도·원문·검증 오류를 보존한다. 인증 DTO만 BFF에서 파싱한다.
+      const contentType = request.headers.get("content-type");
+      if (contentType) headers.set("Content-Type", contentType);
+      const body = await requestBytes(request);
       const auth = await authorized(session!, service, path + url.search, { method: request.method, headers, body });
       const result = new Response(auth.result.body, { status: auth.result.status,
         headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
-      for (const name of ["retry-after", "etag"]) { const v = auth.result.headers.get(name); if (v) result.headers.set(name, v); }
+      for (const name of ["retry-after", "etag", "location"]) { const v = auth.result.headers.get(name); if (v) result.headers.set(name, v); }
       return auth.renewed ? write(result, auth.session) : result;
     } catch (error) {
       const status = error instanceof BffError ? error.status : error instanceof z.ZodError ? 400 : error instanceof SessionCookieError ? 502 : 503;
       const code = error instanceof BffError ? error.code : error instanceof z.ZodError ? "invalid_request" : error instanceof SessionCookieError ? "session_too_large" : "unavailable";
       // 늦은 실패 응답으로 새 로그인 쿠키를 지우지 않는다. 세션 폐기는 backend가 판정한다.
-      return response({ error: { code, message: status >= 500 ? "서버에 연결하지 못했습니다. 다시 시도해 주세요." : "인증 또는 요청을 확인해 주세요." } }, status);
+      const result = response({ error: { code, message: status >= 500 ? "서버에 연결하지 못했습니다. 다시 시도해 주세요." : "인증 또는 요청을 확인해 주세요." } }, status);
+      if (error instanceof BffError && error.retryAfter) result.headers.set("Retry-After", error.retryAfter);
+      // RT 회전 성공 후 권한 거부·일시 조회 실패가 와도 새 RT를 잃지 않는다.
+      return renewedSession && status !== 401 ? write(result, renewedSession) : result;
     }
   }
   return { handle };

@@ -1,11 +1,17 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mockOnboarding } from "./onboarding-fixture";
-import { issueFixtureCookie } from "./session-fixture";
-import { overviewFixture, overviewUrl } from "./overview-fixture";
+import { issueFixtureCookie, mockAuthenticatedRoutes } from "./session-fixture";
+import { mockIngestStatus, overviewFixture, overviewUrl } from "./overview-fixture";
+import { mockTeams } from "./teams-fixture";
 
 /** UI fixture 테스트 전용. 실제 Spring 인증 검증은 tests/e2e/seed-login.spec.ts에서 수행한다. */
+/** 목 세션: 로그인 화면을 거치지 않는 대시보드 목 테스트가 쓴다. 테스트 키로 암호화한 HttpOnly 쿠키와 BFF 응답을 준비한다. */
+export async function mockSession(page: Page) { await mockAuthenticatedRoutes(page); }
+
 export async function mockSeedAuth(page: Page) {
+  await mockIngestStatus(page);
   await mockOnboarding(page);
+  await mockTeams(page);
   const cors = { "access-control-allow-origin": new URL(test.info().project.use.baseURL!).origin, "access-control-allow-headers": "content-type,authorization", "access-control-allow-methods": "GET,POST,OPTIONS" };
   await page.route("**/api/bff/auth/organizations", route => route.request().method() === "OPTIONS"
     ? route.fulfill({ status: 204, headers: cors })

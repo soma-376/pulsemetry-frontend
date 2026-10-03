@@ -1,7 +1,9 @@
 # 화면별 API 구현 요청서
 
-상태: **프론트 화면을 기준으로 작성한 v1 제안**. 구현 완료된 서버 API 목록이 아니다.
-기존 백엔드의 인증·라우팅·오류 규약이 있으면 우선 적용하고 DTO와 의미를 함께 조정한다.
+상태: **프론트 화면을 기준으로 작성한 v1 제안**에서 출발했다. 지금은 아래 API가 백엔드에 구현돼 있고,
+**실제 계약(경로·필드·오류)은 백엔드 명세가 기준이다** — 조회는 `pulsemetry-backend/docs/dashboard-server-spec.md`,
+관리 명령은 `pulsemetry-backend/docs/enrollment-server-spec.md` §12·§13. 이 문서들과 다르면 백엔드 명세를 따르고 이 문서를 고친다.
+응답 예시 JSON은 백엔드가 키 구조 대조에 쓰는 사본의 원본이다 — 백엔드가 더한 필드는 가산 키로 따로 선언한다.
 
 범위는 개요, 팀 분석, 구성원, 설정이다. **운영·보안 페이지의 조회/조작 API는 제외**한다.
 설정 화면에 있는 수집 정책과 알림 규칙은 포함한다.
@@ -24,36 +26,51 @@
 
 브라우저는 동일 출처 `/api/bff/dashboard` 또는 `/api/bff/enrollment`를 통해 아래 backend 경로를 호출한다. 토큰은 BFF만 전달한다.
 
-모든 아래 경로의 앞에는 `/api/v1/organizations/{organizationId}`가 붙는다.
+모든 아래 경로의 앞에는 `/api/v1/organizations/{organizationId}`가 붙는다. 서버 열: D = dashboard-api(조회), E = enrollment-api(관리 명령).
 
 | 용도 | Method / path | 호출 시점 |
 | --- | --- | --- |
-| 개요 | GET /analytics/overview | 진입·기간/비교 변경 |
-| 팀 분석 | GET /analytics/teams | 진입·기간/비교/정렬·팀 목록 페이지 변경 |
-| 팀 드로어 | GET /analytics/teams/{teamId} | 목록에 없는 팀 상세 필요 시 |
-| 팀 사용자 | GET /analytics/teams/{teamId}/users | 선택 팀 변경·더보기 |
-| 조직 팀 선택지 | GET /teams | 배정/초대·팀 검색 |
-| 구성원 첫 화면 | GET /members/dashboard | 진입·기간 변경 |
-| 구성원 목록 | GET /members | 검색·더보기 |
-| 미배정 목록 | GET /members/unassigned | 더보기 |
-| 회수 후보 | GET /seat-reclaim-candidates | 더보기·기준 변경 후 |
-| 팀 배정 | POST /member-team-assignments | 적용 |
-| 초대 | POST /invitations/batch | 초대 전송 |
-| 좌석 회수 미리보기 | POST /seat-reclaims/preview | 회수 확인창 열기 |
-| 좌석 회수 | POST /seat-reclaims | 회수 확정 |
-| 회수 복원 | POST /seat-reclaims/{operationId}/restore | 되돌리기 |
-| 비동기 작업 상태 | GET /operations/{operationId} | 실행 중인 회수/복원/알림/삭제 확인 |
-| 설정 첫 화면 | GET /settings | 진입·저장 후 재조회 |
-| 벤더 목록 | GET /vendors | 목록 더보기 |
-| 벤더 상세 | GET /vendors/{vendorId} | 목록에 없는 벤더 편집 |
-| 수동 벤더 추가 | POST /vendors | 추가 저장 |
-| 벤더 계약 저장 | PUT /vendors/{vendorId}/contract | 계약 저장 |
-| 감지 벤더 계약 해제 | DELETE /vendors/{vendorId}/contract | 계약 삭제 확인 |
-| 수동 벤더 제거 | DELETE /vendors/{vendorId} | 벤더 삭제 확인 |
-| 수집 정책 변경 | PATCH /settings/collection-policy | 확인/선택 적용 |
-| 알림 규칙 변경 | PATCH /settings/alert-rules/{ruleId} | 토글 |
-| 미적용 설치 | GET /installations?policyStatus=outdated | 설치 현황 모달·더보기 |
-| 업데이트 안내 | POST /installation-update-notifications | 안내 전송 |
+| 개요 | D GET /analytics/overview | 진입·기간/비교 변경 |
+| 수집 상태 | D GET /ingest-status | 공통 헤더 |
+| 팀 분석 | D GET /analytics/teams | 진입·기간/비교/정렬·팀 목록 페이지 변경 |
+| 팀 드로어 | D GET /analytics/teams/{teamId} | 목록에 없는 팀 상세 필요 시 |
+| 팀 사용자 | D GET /analytics/teams/{teamId}/users | 선택 팀 변경·더보기 |
+| 조직 팀 선택지 | D GET /teams | 배정/초대·팀 검색 |
+| 팀 생성·이름 변경·삭제 | E POST /teams · PATCH·DELETE /teams/{teamId} | 팀 관리 |
+| 구성원 첫 화면 | D GET /members/dashboard | 진입·기간 변경 |
+| 구성원 목록 | D GET /members | 검색·더보기 |
+| 미배정 목록 | D GET /members/unassigned | 더보기 |
+| 구성원 팀·역할 | E PATCH /members/{memberId} | 저장 |
+| 팀 배정 | E POST /member-team-assignments | 적용 |
+| 초대 | E POST /invitations/batch · GET /invitations · POST /invitations/{invitationId}/revoke·/reissue | 초대 전송·대기 목록 |
+| 설치 코드 | E POST /members/{memberId}/installation-invitations · GET /invitations?status=pending&memberStatus=active | 활성 구성원의 설치 전용 코드(서버 ADR 0055)·쓰지 않은 설치 코드의 발송 상태 |
+| 회수 후보 | D GET /seat-reclaim-candidates | 더보기·기준 변경 후 |
+| 구성원 좌석 | D GET /members/{memberId}/seats | 구성원 상세 |
+| 좌석 회수 미리보기 | E POST /seat-reclaims/preview | 회수 확인창 열기 |
+| 좌석 회수 | E POST /seat-reclaims | 회수 확정 |
+| 회수 복원 | E POST /seat-reclaims/{operationId}/restore | 되돌리기 |
+| 관리자 조치 확인·취소 | E POST /operations/{operationId}/targets/{targetId}/confirm·/cancel | 벤더 콘솔에서 조치한 뒤 |
+| 비동기 작업 상태 | D GET /operations/{operationId} | 실행 중인 회수/복원/동기화/안내/정리 확인 |
+| 설정 첫 화면 | D GET /settings | 진입·저장 후 재조회 |
+| 벤더 목록 | D GET /vendors | 목록 더보기 |
+| 벤더 상세 | D GET /vendors/{vendorId} | 목록에 없는 벤더 편집 |
+| 제품 좌석 | D GET /vendors/{vendorId}/seats | 설정 드로어 |
+| 좌석 기록 | E POST /vendors/{vendorId}/seats · PATCH …/seats/{seatId} · POST …/seats/{seatId}/release · POST …/seats/import | 수동 기록·CSV |
+| 벤더 연결 | E PUT·DELETE /vendors/{vendorId}/connection · POST …/connection/verify · POST …/connection/sync | 연결·확인·지금 동기화 |
+| 수동 벤더 추가 | E POST /vendors | 추가 저장 |
+| 벤더 이름 변경 | E PATCH /vendors/{vendorId} | 이름 저장 |
+| 벤더 계약 저장 | E PUT /vendors/{vendorId}/contract | 계약 저장 |
+| 감지 벤더 계약 해제 | E DELETE /vendors/{vendorId}/contract | 계약 삭제 확인 |
+| 수동 벤더 제거 | E DELETE /vendors/{vendorId} | 벤더 삭제 확인 |
+| 수집 정책 변경 | E PUT /collection-policy | 확인/선택 적용(회수 기준·집계 보존 포함) |
+| 온보딩 | E GET /onboarding · POST /onboarding/complete | 온보딩 진입·완료 |
+| 알림 규칙 변경 | E PATCH /settings/alert-rules/{ruleId} | 토글 |
+| 알림 목록 저장 | E PUT /settings/alert-lists/{listId} | 모델 허용·승인 도구 목록 저장 |
+| 알림 목록·확인 | D GET /alerts · GET /alerts/{alertId} · E POST /alerts/{alertId}/acknowledge | 개요 알림 보기·확인 |
+| 미적용 설치 | D GET /installations?policyStatus=outdated | 설치 현황 모달·더보기 |
+| 업데이트 안내 | E POST /installation-update-notifications | 안내 전송 |
+
+조직 경로 밖: 도입 문의 `POST /v1/inquiries`(E, 로그인 없음), 벤더 카탈로그 `GET /api/v1/vendor-catalog`(D).
 
 `operations`는 비동기 명령 결과를 읽는 공통 리소스다. 제외한 운영·보안 화면의 API가 아니다.
 처음부터 카드마다 엔드포인트를 만들지 않는다. 각 화면 첫 조회가 필요한 요약과 목록 첫 페이지를 묶어 주고,
@@ -106,17 +123,20 @@ type TeamRef = { teamId: string | null; teamName: string };
 type Role = "admin" | "lead" | "member" | "viewer";
 type OperationResponse = {
   operationId: string;
-  kind: "seat_reclaim" | "seat_restore" | "installation_notification" | "retention_cleanup";
-  status: "pending" | "running" | "succeeded" | "partially_failed" | "failed";
+  kind: "seat_reclaim" | "seat_restore" | "seat_sync" | "installation_notification" | "retention_cleanup";
+  status: "pending" | "running" | "awaiting_admin_action" | "succeeded" | "partially_failed" | "failed";
   createdAt: string;
   completedAt: string | null;
   results: {
     targetId: string;
-    status: "pending" | "succeeded" | "failed";
+    status: "pending" | "awaiting_admin_action" | "succeeded" | "failed";
     reason: string | null;
+    action: string | null; // 관리자 조치 코드(예: release_in_vendor_console)
   }[];
   canRestore: boolean;
   restoreUntil: string | null;
+  // 보존 정리 작업의 가장 최근 삭제 실행(백엔드 가산) — 그 밖의 작업은 null
+  retention: { status: string; requestedBefore: string; deletedBefore: string | null; startedAt: string; finishedAt: string | null } | null;
 };
 type TeamDirectoryResponse = {
   meta: CurrentMeta;

@@ -8,7 +8,9 @@ import { useFilters } from "@/lib/filters";
 import type { CompareKey } from "@/types/domain";
 
 /** 공통 대시보드 헤더에서 한 번 렌더링하는 기간·조회 도구. */
-export function FilterToolbar({ todayIso, onRefresh, refreshing = false, csvDisabled = false }: { todayIso?: string; onRefresh?: () => void; refreshing?: boolean; csvDisabled?: boolean }) {
+export function FilterToolbar({ todayIso, onRefresh, refreshing = false, csv }: { todayIso?: string; onRefresh?: () => void; refreshing?: boolean;
+  /** 화면이 등록한 CSV 내보내기. 사유가 있으면 끈다. */
+  csv?: { disabledReason: string | null; exporting: boolean; onExport: () => void } }) {
   const {
     compare,
     setCompare,
@@ -70,7 +72,8 @@ export function FilterToolbar({ todayIso, onRefresh, refreshing = false, csvDisa
         </span>
       </Button>
 
-      <Button disabled={csvDisabled} title={csvDisabled ? "개요 CSV 내보내기는 아직 지원하지 않습니다" : undefined}>CSV</Button>
+      <Button disabled={!csv || !!csv.disabledReason} title={csv?.disabledReason ?? "이 화면의 조건으로 CSV를 내려받습니다"} loading={csv?.exporting} loadingLabel="CSV 만드는 중…"
+        onClick={() => csv?.onExport()}>CSV</Button>
 
       <ThemeToggle />
     </div>

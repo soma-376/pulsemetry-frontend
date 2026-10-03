@@ -301,3 +301,34 @@ test("upstream 401은 한 번만 갱신하고 재시도하며 작업 타임아�
   stall = false;
   assert.equal((await bff.handle(request(api, saved))).status, 200);
 });
+
+// 서버 갱신 요청은 브라우저 목으로 관찰할 수 없으므로 실제 BFF 경계를 검사한다.
+test("인증 경로의 429와 Retry-After를 보존하고 쿠키를 삭제하지 않는다", async () => {
+  const f = fixture(), saved = cookie(await f.login());
+  f.advance(300000);
+  const bff = createBff(config, async (input, init) => String(input).endsWith("/v1/auth/refresh") || String(input).endsWith("/v1/auth/logout")
+    ? Response.json({ error: "rate_limited" }, { status: 429, headers: { "Retry-After": "7" } }) : f.fetcher(input, init), f.clock);
+  for (const requestValue of [request("/auth/session", saved), request("/auth/logout", saved, {})]) {
+    const result = await bff.handle(requestValue);
+    assert.equal(result.status, 429);
+    assert.equal(result.headers.get("Retry-After"), "7");
+    assert.equal(result.headers.has("Set-Cookie"), false);
+  }
+});
+
+test("세션 갱신 후 역할 거부와 일시적인 me 실패도 회전한 RT를 보존한다", async () => {
+  for (const status of [403, 503]) {
+    const f = fixture(), saved = cookie(await f.login());
+    f.advance(300000);
+    const bff = createBff(config, async (input, init) => String(input).endsWith("/v1/auth/me")
+      ? status === 403 ? Response.json({ ...user, role: "member" }) : Response.json({}, { status })
+      : f.fetcher(input, init), f.clock);
+    const result = await bff.handle(request("/auth/session", saved));
+    assert.equal(result.status, status === 503 ? 502 : status);
+    assert.ok(result.headers.has("set-cookie"));
+    const { createSessionCookie } = await import("../src/lib/server/session-cookie");
+    const session = createSessionCookie(config, f.clock).read(request("/auth/session", cookie(result)));
+    assert.equal(session?.refreshToken, "new-secret-rt");
+    assert.equal(f.counts().refreshCount, 1);
+  }
+});

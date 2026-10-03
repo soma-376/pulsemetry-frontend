@@ -1,5 +1,8 @@
 import { expect, test } from "./fixtures";
 import { openDashboard } from "./helpers";
+import { mockMembers } from "./members-fixture";
+
+test.beforeEach(async ({ page }) => { await mockMembers(page); });
 
 test("status header menu supports keyboard selection, search, reset and dismissal", async ({ page }) => {
   await openDashboard(page, "/members");

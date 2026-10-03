@@ -1,5 +1,6 @@
-import { test as base, expect } from "@playwright/test";
 import { oidcOrigin } from "./oidc-environment";
+import { test as base, expect, type Response as PlaywrightResponse } from "@playwright/test";
+import { ANNOTATION, PreparationError, probeRequests } from "./harness";
 
 export const seedOrganizations = [
   { seed: "a", id: "1b59ab21-1788-35e0-bfd7-23baa88a35b4", name: "시드 A · 정상 사용" },
@@ -9,32 +10,57 @@ export const seedOrganizations = [
 
 function localBase(value: string) {
   const url = new URL(value);
-  if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) || url.username || url.password) throw new Error("시드 E2E는 로컬 백엔드 주소를 사용해야 합니다.");
+  if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) || url.username || url.password) throw new PreparationError("시드 E2E는 로컬 백엔드 주소를 사용해야 합니다.");
   return value.replace(/\/$/, "");
 }
 export const enrollmentBase = () => localBase(process.env.NEXT_PUBLIC_ENROLLMENT_API_URL ?? "http://localhost:8080");
-export const dashboardBase = () => localBase(process.env.DASHBOARD_API_URL ?? "http://localhost:8081");
+export const dashboardBase = () => localBase(process.env.NEXT_PUBLIC_DASHBOARD_API_URL ?? "http://localhost:8081");
 
-/** 서버가 없거나 구버전일 때 목 응답으로 대체하지 않고 선행 조건 실패로 표시한다. */
-async function checkBackend() {
-  oidcOrigin();
-  const request = async (url: string, init: RequestInit = {}) => {
-    let response: Response;
-    try { response = await fetch(url, { ...init, signal: AbortSignal.timeout(10_000) }); }
-    catch { throw new Error(`E2E 선행 조건 실패: ${new URL(url).origin}에 연결하지 못했습니다. 백엔드 서버와 .env.local의 포트를 확인하세요.`); }
-    if (!response.ok) throw new Error(`E2E 선행 조건 실패: ${new URL(url).pathname} → HTTP ${response.status}. 최신 서버·인증 설정·시드 적재를 확인하세요.`);
-    return response;
-  };
-  const response = await request(`${enrollmentBase()}/v1/auth/organizations`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: "owner@seed-a.example.test" }) });
-  if (!(await response.json()).organizations.some((org: { organizationId: string }) => org.organizationId === seedOrganizations[0].id))
-    throw new Error("A 시드의 OIDC 식별자와 서버 회사 설정을 확인하세요. 테스트는 시드를 초기화하지 않습니다.");
+/** 시험이 기대하는 HTTP 오류 하나 — 상태, 경로(정규식), 메서드(생략하면 모두), 이유. */
+export type AllowedHttpError = { status: number; path: RegExp; method?: string; reason: string };
+/** 이 시험에서 앱이 받을 것을 기대하는 HTTP 오류를 밝힌다. 밝히지 않은 4xx·5xx 는 시험을 실패시킨다(429 는 reporter 가 따로 센다). */
+export function allowHttpErrors(...rules: AllowedHttpError[]) {
+  for (const rule of rules) {
+    test.info().annotations.push({ type: ANNOTATION.allowedHttpError, description: JSON.stringify({ status: rule.status, path: rule.path.source, method: rule.method ?? null, reason: rule.reason }) });
+  }
 }
 
-export const test = base.extend<{ browserErrors: void; authPacing: void }, { backendReady: void }>({
-  // Playwright requires destructuring even when a fixture has no dependencies.
-  backendReady: [async ({}, use) => { await checkBackend(); await use(); }, { scope: "worker", auto: true }],
-  // 실제 IP 30회/분 제한을 끄거나 DB에서 지우지 않는다. 인증 왕복이 여러 요청을 쓰므로 간격을 둔다.
-  authPacing: [async ({}, use) => { await use(); await new Promise(resolve => setTimeout(resolve, 20_000)); }, { auto: true }],
+// 서버·인증 설정·시드의 선행 확인은 globalSetup(global-setup.ts)이 실행 전에 한 번 한다 — worker 마다 다시 로그인하지 않는다.
+export const test = base.extend<{ oidcReady: void; browserErrors: void; rateLimitObserver: void; httpErrors: void }>({
+  oidcReady: [async ({}, use) => { oidcOrigin(); await use(); }, { auto: true }],
+  // 브라우저가 받은 429 를 테스트 주석으로 남긴다. reporter 가 기능 실패와 따로 세고, 429 를 시험하는 테스트는 ANNOTATION.intended429 를 단다.
+  rateLimitObserver: [async ({ context }, use, testInfo) => {
+    const listener = (response: PlaywrightResponse) => {
+      if (response.status() === 429) testInfo.annotations.push({ type: ANNOTATION.observed429, description: `${response.request().method()} ${new URL(response.url()).pathname}` });
+    };
+    context.on("response", listener);
+    await use();
+    context.off("response", listener);
+  }, { auto: true }],
+  // 앱(브라우저)이 백엔드 두 서버와 프론트의 /api/ 에서 받은 4xx·5xx 를 모은다. 시험이 allowHttpErrors 로 밝힌 것과 시험 코드의 확인 요청은 뺀다.
+  httpErrors: [async ({ context, page }, use, testInfo) => {
+    const origins = new Set([new URL(enrollmentBase()).origin, new URL(dashboardBase()).origin]);
+    const app = new URL(testInfo.project.use.baseURL!).origin;
+    const seen: { method: string; path: string; status: number; url: string }[] = [];
+    const listener = (response: PlaywrightResponse) => {
+      const status = response.status();
+      if (status < 400 || status === 429) return;
+      const url = new URL(response.url());
+      if (!origins.has(url.origin) && !(url.origin === app && url.pathname.startsWith("/api/"))) return;
+      const path = url.pathname.replace(/^\/api\/bff\/(?:dashboard|enrollment)(\/api\/v1\/)/, "$1");
+      seen.push({ method: response.request().method(), path: path + url.search, status, url: url.origin + url.pathname + url.search });
+    };
+    context.on("response", listener);
+    await use();
+    context.off("response", listener);
+    const probes = probeRequests.get(page) ?? new Set<string>();
+    const allowed = testInfo.annotations.filter((a) => a.type === ANNOTATION.allowedHttpError)
+      .map((a) => JSON.parse(a.description!) as { status: number; path: string; method: string | null });
+    const unexpected = seen.filter((error) => !probes.has(`${error.method} ${error.url}`) &&
+      !allowed.some((rule) => rule.status === error.status && new RegExp(rule.path).test(error.path) && (!rule.method || rule.method === error.method)))
+      .map(({ method, path, status }) => `${status} ${method} ${path}`);
+    expect(unexpected, "앱이 받은 기대하지 않은 HTTP 오류 — 기대한다면 allowHttpErrors 로 이유와 함께 밝힌다").toEqual([]);
+  }, { auto: true }],
   browserErrors: [async ({ page }, use) => {
     const errors: string[] = [];
     page.on("pageerror", error => errors.push(error.message));

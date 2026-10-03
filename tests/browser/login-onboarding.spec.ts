@@ -41,7 +41,10 @@ test("server catalog, optional contract, persisted onboarding and completed logi
   await expect(page.getByRole("region", { name: "등록한 벤더" })).toContainText("서버 전용 제품");
   await page.reload();
   await expect(page.getByRole("heading", { name: "현재 팀 · 1개" })).toBeVisible();
-  await expect(page.getByRole("textbox", { name: "초대할 이메일" })).toBeDisabled();
+  // 온보딩의 초대 폼은 구성원 화면과 같은 명령에 연결돼 있다. 초대하지 않고 건너뛸 수 있다.
+  await expect(page.getByRole("textbox", { name: "초대할 이메일" })).toBeEnabled();
+  // 온보딩의 역할 설명도 구성원 화면과 같은 문장이다(서버 인가 — 구성원은 대시보드에 접근하지 않는다).
+  await expect(page.getByText("구성원은 웹 대시보드에 접근하지 않습니다. CLI를 설치해 자기 사용량을 수집하는 대상입니다", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "이전", exact: true }).click();
   await expect(page.getByRole("region", { name: "등록한 벤더" })).toContainText("서버 전용 제품");
   await page.getByRole("button", { name: "다음", exact: true }).click();
@@ -102,7 +105,8 @@ test("team create/delete uses server IDs and versions; invite API is not called"
   await page.getByRole("button", { name: "서버 팀 팀 제거", exact: true }).click();
   expect((await request).headers()["if-match"]).toBe('"team-7"');
   await expect(page.getByRole("list", { name: "온보딩 팀 목록" })).not.toContainText("서버 팀");
-  await expect(page.getByRole("button", { name: "초대 메일 발송", exact: true })).toBeDisabled();
+  // 초대할 사람을 넣기 전에는 발급 버튼이 잠겨 있다. 누르지 않으면 초대 API를 부르지 않는다.
+  await expect(page.getByRole("button", { name: "초대 코드 발급", exact: true })).toBeDisabled();
   expect(invitations).toEqual([]);
 });
 

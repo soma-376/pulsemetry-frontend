@@ -1,5 +1,7 @@
 "use client";
 import { useSyncExternalStore } from "react";
+import { AuthError, authErrorFrom } from "./auth-error";
+export { AuthError };
 import { authUserSchema, type AuthUser } from "../auth-user";
 
 export type BackendSession = { user: AuthUser };
@@ -65,8 +67,8 @@ export async function restoreBackendSession(force = false) {
     const response = await fetch("/api/bff/auth/session", { headers: bffHeaders(), credentials: "same-origin", cache: "no-store" });
     if (epoch !== generation) return;
     if (response.status === 401) { save(null); return; }
-    if (!response.ok) throw new AuthError(response.status === 403 ? "이 회사에 접근할 권한이 없습니다. 조직 관리자에게 문의해 주세요."
-      : response.status === 429 ? "인증 요청이 많습니다. 잠시 후 다시 시도해 주세요." : "세션을 확인하지 못했습니다. 다시 시도해 주세요.", response.status);
+    if (!response.ok) throw await authErrorFrom(response, response.status === 403 ? "이 회사에 접근할 권한이 없습니다. 조직 관리자에게 문의해 주세요."
+      : response.status === 429 ? "인증 요청이 많습니다. 잠시 후 다시 시도해 주세요." : "세션을 확인하지 못했습니다. 다시 시도해 주세요.");
     const body = await response.json();
     if (epoch !== generation) return;
     const user = authUserSchema.nullable().parse(body.user);
@@ -86,9 +88,6 @@ export function getSessionState() { return sessionState; }
 export function useSessionState() { return useSyncExternalStore(subscribe, getSessionState, () => initialState); }
 /** 세션 확인은 공통 화면 가드가 소유한다. 각 소비자가 별도로 /me를 호출하지 않는다. */
 export function useBackendSession() { return useSyncExternalStore(subscribe, () => current, () => null); }
-export class AuthError extends Error {
-  constructor(message: string, public status: number) { super(message); }
-}
 // OIDC 페이지 이동만 브라우저가 공개 enrollment 주소를 사용한다.
 export const enrollmentUrl = () => (process.env.NEXT_PUBLIC_ENROLLMENT_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
 export async function exchangeLogin(code: string, redirectUri: string, verifier: string, organizationId: string) {
@@ -97,8 +96,8 @@ export async function exchangeLogin(code: string, redirectUri: string, verifier:
   const response = await fetch("/api/bff/auth/token", { method: "POST", credentials: "same-origin",
     headers: bffHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ code, redirect_uri: redirectUri, code_verifier: verifier, organizationId }), cache: "no-store" });
-  if (!response.ok) throw new AuthError(response.status === 403 ? "이 회사의 관리자 접근 권한이 없습니다. 조직 관리자에게 문의해 주세요."
-    : response.status >= 500 ? "인증 서버에 연결하지 못했습니다. 다시 로그인해 주세요." : "로그인 요청이 만료되었거나 이미 사용되었습니다. 다시 로그인해 주세요.", response.status);
+  if (!response.ok) throw await authErrorFrom(response, response.status === 403 ? "이 회사의 관리자 접근 권한이 없습니다. 조직 관리자에게 문의해 주세요."
+    : response.status >= 500 ? "인증 서버에 연결하지 못했습니다. 다시 로그인해 주세요." : "로그인 요청이 만료되었거나 이미 사용되었습니다. 다시 로그인해 주세요.");
   const user = authUserSchema.parse((await response.json()).user);
   if (generation !== epoch) throw new DOMException("로그인이 취소되었습니다.", "AbortError");
   save({ user });
@@ -115,6 +114,9 @@ export async function sessionFetch(url: string, init: RequestInit = {}) {
 }
 export async function backendLogout() {
   const response = await fetch("/api/bff/auth/logout", { method: "POST", credentials: "same-origin", headers: bffHeaders(), cache: "no-store" });
-  if (!response.ok) throw new AuthError("로그아웃에 실패했습니다. 다시 시도해 주세요.", response.status);
+  if (!response.ok) throw await authErrorFrom(response, "로그아웃에 실패했습니다. 다시 시도해 주세요.");
   clearBackendSession();
 }
+
+/** 화면 배지는 BFF가 검증하여 반환한 사용자 역할만 사용한다. */
+export const sessionRole = (session: BackendSession) => session.user.role;

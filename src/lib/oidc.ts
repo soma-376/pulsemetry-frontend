@@ -1,5 +1,6 @@
 "use client";
 import { z } from "zod";
+import { authErrorFrom } from "./api/auth-error";
 import { clearBackendSession, enrollmentUrl, exchangeLogin, bffHeaders } from "./api/session";
 
 const organizationsSchema = z.object({ organizations: z.array(z.object({ organizationId: z.uuid(), organizationName: z.string() })) });
@@ -13,9 +14,7 @@ let callbackTask: { attempt: object; task: ReturnType<typeof finishCallback> } |
 export async function discoverOrganizations(email: string): Promise<LoginOrganization[]> {
   const response = await fetch("/api/bff/auth/organizations", { method: "POST",
     headers: bffHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ email }), cache: "no-store", credentials: "same-origin" });
-  if (!response.ok) throw new Error(response.status === 429
-    ? "로그인 조회가 너무 많습니다. 잠시 후 다시 시도해 주세요."
-    : "로그인 정보를 확인하지 못했습니다. 이메일과 서버 연결을 확인해 주세요.");
+  if (!response.ok) throw await authErrorFrom(response, "로그인 정보를 확인하지 못했습니다. 이메일과 서버 연결을 확인해 주세요.");
   return organizationsSchema.parse(await response.json()).organizations;
 }
 

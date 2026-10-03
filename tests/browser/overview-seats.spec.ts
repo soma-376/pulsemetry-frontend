@@ -1,7 +1,9 @@
 import { expect, authenticatedTest as test } from "./fixtures";
 import { mockOverview, settingsUrl, corsHeaders } from "./overview-fixture";
+import { mockSession } from "./helpers";
 
 test("기존 지표·그래프·벤더 표 배치와 상세 드로어를 유지한다", async ({ page }) => {
+  await mockSession(page);
   await mockOverview(page);
   await page.goto("/overview");
   for (const name of ["사용 관측 인원", "토큰 비용", "월 좌석 계약액", "세션", "보안 경보 및 알림", "사용 환산액 추이", "모델 구성", "계약·좌석 현황", "팀별 요약"]) await expect(page.getByRole("region", { name, exact: true })).toBeVisible();
@@ -9,8 +11,8 @@ test("기존 지표·그래프·벤더 표 배치와 상세 드로어를 유지�
   await expect(people).toContainText("100");
   const row = page.getByRole("table", { name: "계약·좌석 현황" }).getByRole("row").filter({ hasText: "Claude" });
   await expect(row).toContainText("100석");
-  // 조직 사용자 수나 계약 좌석으로 벤더 관측 인원·회수 후보를 추측하지 않는다.
-  await expect(row.getByRole("cell").nth(2)).toHaveText("-");
+  // 벤더 관측 인원은 서버의 제품별 사용(productUsage의 claude_team)이다. 조직 사용자 수(100)나 계약 좌석(100석)으로 추측하지 않는다. 회수 후보는 원천이 없다.
+  await expect(row.getByRole("cell").nth(2)).toHaveText("77명");
   await expect(row.getByRole("cell").nth(3)).toHaveText("-");
   await expect(page.getByRole("region", { name: "월 좌석 계약액" })).toContainText("$4,800.00");
   await page.getByRole("button", { name: "Claude 벤더 상세" }).click();
@@ -29,6 +31,7 @@ test("기존 지표·그래프·벤더 표 배치와 상세 드로어를 유지�
 });
 
 test("계약 조회만 실패하면 기존 표에서 재시도하고 다른 카드는 유지한다", async ({ page }) => {
+  await mockSession(page);
   await mockOverview(page);
   await page.route(settingsUrl, (route) => route.fulfill({ status: 403, json: {}, headers: corsHeaders(page) }));
   await page.goto("/overview");
@@ -37,3 +40,15 @@ test("계약 조회만 실패하면 기존 표에서 재시도하고 다른 카�
   await expect(page.getByRole("region", { name: "토큰 비용" })).toContainText("$5,000.00");
   await expect(page.getByRole("button", { name: "계약 다시 조회" })).toBeVisible();
 });
+
+test("설정 전 조직(설정 조회 404)은 조회 실패가 아니라 정책 저장 전이라고 말하고 다시 조회를 두지 않는다", async ({ page }) => {
+  await mockSession(page);
+  await mockOverview(page);
+  await page.route(settingsUrl, (route) => route.fulfill({ status: 404, json: { error: { code: "not_found", message: "fixture", fieldErrors: [] } }, headers: corsHeaders(page) }));
+  await page.goto("/overview");
+  const card = page.getByRole("region", { name: "계약·좌석 현황" });
+  await expect(card).toContainText("수집 정책을 저장하기 전이라 계약 정보가 없습니다.");
+  await expect(card).not.toContainText("불러오지 못했습니다");
+  await expect(page.getByRole("button", { name: "계약 다시 조회" })).toHaveCount(0);
+});
+

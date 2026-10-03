@@ -33,6 +33,8 @@ export function StatCard({
 
   return (
     <div
+      role="group"
+      aria-label={label}
       className={[
         "flex min-w-0 flex-col rounded-lg border border-border bg-card",
         big ? "gap-1.5 px-4 py-3.5" : "gap-1 px-3.5 py-3",

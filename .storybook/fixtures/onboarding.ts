@@ -49,7 +49,8 @@ export function onboardingHandlers(scenario: OnboardingScenario) {
       const body = await request.json() as { expectedVersion: number; collectRawContent: boolean };
       if (body.expectedVersion !== state.policy.version) return failure("version_conflict", 409);
       state.policy = { confirmed: true, confirmedAt: timestamp, version: state.policy.version + 1, collectRawContent: body.collectRawContent };
-      return HttpResponse.json({ ...state.policy, application: "future_enrollments", existingInstallationsUpdated: false });
+      return HttpResponse.json({ ...state.policy, application: "future_enrollments", existingInstallationsUpdated: false,
+        reclaimIdleDays: null, aggregateRetentionMonths: null, settingsVersion: 0, settingsUpdatedAt: null, cleanupOperationId: null });
     }),
     http.get("*/api/v1/vendor-catalog", () => HttpResponse.json({ catalogVersion: SEED_CATALOG.catalogVersion, items: products, totalCount: products.length, nextCursor: null })),
     http.get("*/api/v1/vendor-catalog/:kind/plans", ({ params }) => {
