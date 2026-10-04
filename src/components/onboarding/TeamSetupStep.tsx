@@ -37,7 +37,7 @@ export function TeamSetupStep({ organizationId, onBusy, draft, onDraftChange }: 
       <h3 className="mb-2 text-sm font-semibold">구성원 초대</h3>
       <p className="mb-5 text-xs leading-5 text-text2">초대는 건너뛸 수 있습니다. 초대한 사람과 메일 발송 상태는 온보딩 뒤 구성원 화면의 초대 대기에서 확인합니다.</p>
       {/* 구성원 화면과 같은 명령이다. 서버가 발급을 확정한 결과만 보여 준다. */}
-      <InviteForm inline teams={teams.data} onInvite={async (entries) => {
+      <InviteForm organizationId={organizationId} inline teams={teams.data} onInvite={async (entries) => {
         onBusy(true);
         try {
           const results = await issueInvitations(post, organizationId, entries);

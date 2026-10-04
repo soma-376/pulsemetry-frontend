@@ -171,7 +171,7 @@ function OrganizationMembers({ organizationId, currentMemberId, initialInvite }:
     </PageContainer>
 
     {/* 딥링크로 열린 창도 초대 권한이 확인된 뒤에만 연다. 닫으면 주소의 ?invite 를 지워 새로고침에서 다시 열리지 않게 한다. */}
-    <InviteModal open={inviteOpen && !!capabilities?.invite} onClose={() => { setInviteOpen(false); if (initialInvite) { const url = new URL(window.location.href); url.searchParams.delete("invite"); window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`); } }}
+    <InviteModal organizationId={organizationId} open={inviteOpen && !!capabilities?.invite} onClose={() => { setInviteOpen(false); if (initialInvite) { const url = new URL(window.location.href); url.searchParams.delete("invite"); window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`); } }}
       subtitle="초대 코드를 발급합니다 · 벤더 좌석은 별도로 배정합니다"
       teams={teams.data} onInvite={invite} />
     {model && <MemberDetailDrawer organizationId={organizationId} post={post} subject={subjectOf(model, selected)} teams={teams.data ?? []}

@@ -33,8 +33,8 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
 
 export function editTarget(subject: MemberSubject): MemberEditTarget {
   return subject.kind === "member"
-    ? { memberId: subject.row.memberId, account: subject.row.account, teamId: subject.row.teamId, role: subject.row.role, version: subject.row.version, invited: false }
-    : { memberId: subject.row.memberId, account: subject.row.email, teamId: subject.row.teamId, role: subject.row.role, version: subject.row.memberVersion, invited: true };
+    ? { memberId: subject.row.memberId, account: subject.row.account, teamId: subject.row.teamId, role: subject.row.role, version: subject.row.version, plannedVendorIds: subject.row.plannedVendorIds, invited: false }
+    : { memberId: subject.row.memberId, account: subject.row.email, teamId: subject.row.teamId, role: subject.row.role, version: subject.row.memberVersion, plannedVendorIds: subject.row.plannedVendorIds, invited: true };
 }
 
 /** 서버가 준 구성원 한 명의 값과 팀·역할 편집. 좌석 배정 상태는 사용 관측 상태와 따로 보여 준다. */

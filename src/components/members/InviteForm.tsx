@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
+import { PlannedVendorPicker, PlannedVendorQueryState, usePlannedVendors } from "./PlannedVendorPicker";
 import { InviteCode } from "./InviteCode";
 import type { InvitationRequest, InvitationResult } from "@/lib/api/invitations";
 import type { ServerTeam } from "@/lib/api/management";
@@ -35,6 +36,7 @@ import { useOrganization } from "@/lib/organization-store";
  * 코드는 발급 직후에만 볼 수 있어, 창을 닫으면 화면에서 지웁니다.
  */
 export function InviteForm({
+  organizationId,
   open = false,
   onClose,
   subtitle,
@@ -42,6 +44,7 @@ export function InviteForm({
   onInvite,
   inline = false,
 }: {
+  organizationId: string;
   open?: boolean;
   inline?: boolean;
   onClose?: () => void;
@@ -52,6 +55,7 @@ export function InviteForm({
   onInvite: (entries: InvitationRequest[]) => Promise<InvitationResult[]>;
 }) {
   const { state: organization, update } = useOrganization();
+  const vendors = usePlannedVendors(organizationId, open || inline);
   const formId = useId();
   const emailHintId = `${formId}-email-hint`;
   const {
@@ -82,7 +86,7 @@ export function InviteForm({
     control,
     name: "invitees",
   });
-  const [team, role] = useWatch({ control, name: ["team", "role"] });
+  const [team, role, plannedVendorIds] = useWatch({ control, name: ["team", "role", "plannedVendorIds"] });
   const [sent, setSent] = useState<InviteResults | null>(null);
 
   useEffect(() => {
@@ -146,6 +150,7 @@ export function InviteForm({
           email: invitee.email,
           teamId: (invitee.team ?? values.team) || null,
           role: invitee.role ?? values.role,
+          ...((invitee.plannedVendorIds ?? values.plannedVendorIds)?.length ? { plannedVendorIds: invitee.plannedVendorIds ?? values.plannedVendorIds } : {}),
         })),
       );
       setSent(inviteResults(results));
@@ -158,7 +163,7 @@ export function InviteForm({
       });
       return;
     }
-    reset({ draft: "", team: values.team, role: values.role, invitees: [] });
+    reset({ draft: "", team: values.team, role: values.role, plannedVendorIds: values.plannedVendorIds, invitees: [] });
   };
 
   const submitButton = (
@@ -182,6 +187,7 @@ export function InviteForm({
       noValidate
       className="flex flex-col gap-4"
     >
+      <fieldset disabled={isSubmitting} className="flex min-w-0 flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <span className="text-[12px] font-medium">이메일</span>
         <div
@@ -260,6 +266,12 @@ export function InviteForm({
         </div>
         <span className="pretty text-[11px] text-text3">{ROLE_HINT[role]}</span>
 
+        <PlannedVendorQueryState query={vendors} />
+        {vendors.data && !vendors.isError && <Controller control={control} name="plannedVendorIds" render={({ field }) =>
+          <PlannedVendorPicker options={vendors.data.vendors.items} value={field.value ?? []} onChange={field.onChange} />
+        } />}
+        <p className="text-[11px] text-text3">여러 제품을 선택할 수 있습니다. 실제 벤더 좌석은 별도로 배정합니다.</p>
+
         {multi && (
           <div className="mt-1 flex flex-col gap-1.5 border-t border-border pt-2">
             {invitees.map(({ id, email }, index) => (
@@ -312,12 +324,20 @@ export function InviteForm({
                 >
                   ×
                 </button>
+                {vendors.data && !vendors.isError && <Controller control={control} name={`invitees.${index}.plannedVendorIds`} render={({ field }) =>
+                  <div className="w-full pb-2">
+                    <PlannedVendorPicker label={`${email} 사용 예정 제품`} options={vendors.data.vendors.items}
+                      value={field.value ?? plannedVendorIds ?? []} onChange={field.onChange} />
+                    {field.value != null && <button type="button" className="mt-1 text-[11px] text-text3 underline" onClick={() => field.onChange(null)}>기본 선택 사용</button>}
+                  </div>
+                } />}
               </div>
             ))}
           </div>
         )}
       </div>
 
+      </fieldset>
       {errors.root && (
         <p role="alert" className="text-xs text-red">
           {errors.root.message}

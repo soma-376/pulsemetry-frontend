@@ -74,6 +74,7 @@ export function memberRow(member: Member, candidates: ReadonlySet<string>) {
     status: member.status,
     stateLabel: MEMBER_STATE_LABEL[member.status] ?? member.status,
     version: member.version,
+    plannedVendorIds: member.plannedVendorIds,
     seatStateLabel: SEAT_STATE_LABEL[member.seatState] ?? member.seatState,
     costValue,
     costText: moneyText(costValue),
@@ -130,6 +131,7 @@ function inviteRow(invitation: Invitation, now: number) {
     invitationId: invitation.invitationId,
     memberId: invitation.memberId,
     memberVersion: invitation.memberVersion,
+    plannedVendorIds: invitation.plannedVendorIds,
     email: invitation.email,
     expired,
     teamId: invitation.team?.teamId ?? null,
@@ -230,6 +232,7 @@ const REJECTED_REASON: Record<string, string> = {
   invalid_email: "이메일 형식을 확인하세요",
   duplicate_email: "같은 이메일이 두 번 들어 있습니다",
   role_not_assignable: "지정할 수 없는 역할입니다",
+  vendor_not_found: "선택한 제품을 찾을 수 없습니다. 제품 목록을 확인하세요",
   team_not_found: "선택한 팀을 찾을 수 없습니다",
   ambiguous_email: "같은 이메일의 계정이 여럿입니다",
 };

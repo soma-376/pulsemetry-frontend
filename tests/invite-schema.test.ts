@@ -44,3 +44,13 @@ test("roles are validated while null overrides and explicit unassigned teams are
     assert.equal(inviteSubmissionSchema.safeParse({ ...emptyForm, invitees: [{ ...recipient, role }] }).success, false, role);
   }
 });
+
+
+test("사용 예정 제품은 기본 선택과 개인별 빈 선택을 구분하고 중복·형식·개수를 검증한다", () => {
+  const form = { ...emptyForm, plannedVendorIds: ["claude", "cursor"], invitees: [{ ...recipient, plannedVendorIds: [] }] };
+  assert.deepEqual(inviteSubmissionSchema.parse(form), form);
+  assert.equal(inviteFormSchema.safeParse({ ...form, plannedVendorIds: ["claude", "claude"] }).success, false);
+  assert.equal(inviteFormSchema.safeParse({ ...form, plannedVendorIds: ["bad,id"] }).success, false);
+  assert.equal(inviteFormSchema.safeParse({ ...form, plannedVendorIds: Array.from({ length: 101 }, (_, i) => `vendor-${i}`) }).success, false);
+  assert.equal(inviteFormSchema.safeParse({ ...form, invitees: [{ ...recipient, plannedVendorIds: null }] }).success, true);
+});

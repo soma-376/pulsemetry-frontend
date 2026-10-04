@@ -18,6 +18,7 @@ export const invitationSchema = z.object({
   memberId: z.string(), memberStatus: z.string(),
   team: z.object({ teamId: z.string(), teamName: z.string() }).nullable(),
   memberVersion: z.number(),
+  plannedVendorIds: z.array(z.string()).optional(),
   delivery: deliverySchema,
 });
 export type Invitation = z.infer<typeof invitationSchema>;
@@ -85,7 +86,7 @@ export const waitingInvitationsOptions = (organizationId: string) => queryOption
 type Post = ReturnType<typeof createCommands>;
 /** 서버가 한 요청에서 받는 초대의 최대 인원. */
 export const INVITATION_LIMIT = 100;
-export type InvitationRequest = { email: string; teamId: string | null; role: string };
+export type InvitationRequest = { email: string; teamId: string | null; role: string; plannedVendorIds?: string[] };
 export const invitationResultSchema = z.object({
   email: z.string(), invitationId: z.string().nullable(),
   status: z.enum(["issued", "already_member", "already_invited", "rejected"]),

@@ -23,7 +23,7 @@ export function fixtureMembers(count = 45) {
       role: n <= 2 ? "admin" : "member", status: "active", version: 1000 + n,
       periodUsage: kind === "active" ? usage((n * 7) % 50 + n / 100, n) : null,
       lastUsedAt: kind === "unobserved" ? null : `2026-09-${pad((n % 20) + 1)}T0${n % 10}:00:00Z`,
-      observation: "partial", seatState: "unknown",
+      observation: "partial", seatState: "unknown", plannedVendorIds: [] as string[],
     };
   }).sort((a, b) => Number(b.periodUsage?.equivalentCostUsd ?? -1) - Number(a.periodUsage?.equivalentCostUsd ?? -1) || a.memberId.localeCompare(b.memberId));
 }
@@ -33,7 +33,7 @@ export type FixtureDelivery = { status: string; reason: string | null; queuedAt:
 export const notSent = (reason: "mail_disabled" | "not_queued"): FixtureDelivery => ({ status: "not_sent", reason, queuedAt: null, lastAttemptAt: null, sentAt: null, failureCode: null, attempts: 0 });
 export const queued = (): FixtureDelivery => ({ status: "queued", reason: null, queuedAt: new Date().toISOString(), lastAttemptAt: null, sentAt: null, failureCode: null, attempts: 0 });
 export type FixtureInvitation = { invitationId: string; email: string; role: string; createdAt: string; expiresAt: string; installationUsedAt: string | null; signupUsedAt: string | null;
-  revokedAt: string | null; status: string; memberId: string; memberStatus: string; team: { teamId: string; teamName: string } | null; memberVersion: number; delivery: FixtureDelivery };
+  revokedAt: string | null; status: string; memberId: string; memberStatus: string; team: { teamId: string; teamName: string } | null; memberVersion: number; plannedVendorIds?: string[]; delivery: FixtureDelivery };
 export const fixtureInvitations: FixtureInvitation[] = [
   { invitationId: "invite-1", email: "waiting@codeworks.io", role: "member", createdAt: "2026-09-20T00:00:00Z", expiresAt: "2026-09-24T00:00:00Z", installationUsedAt: null, signupUsedAt: null, revokedAt: null,
     status: "pending", memberId: "member-waiting", memberStatus: "invited", team: { teamId: "team-platform", teamName: "플랫폼" }, memberVersion: 1,
@@ -81,19 +81,21 @@ export async function mockMembers(page: Page, options: { members?: FixtureMember
   const teamRef = (teamId: string | null) => state.teams.find((team) => team.teamId === teamId) ?? null;
   const waiting = (memberId: string) => state.invitations.find((item) => item.memberId === memberId && item.status !== "revoked");
   /** 팀을 옮기고 version을 올린다. 명단의 구성원과 초대 대기자 모두 같은 규칙이다. */
-  const move = (memberId: string, teamId: string | null | undefined, role: string | undefined) => {
+  const move = (memberId: string, teamId: string | null | undefined, role: string | undefined, plannedVendorIds?: string[]) => {
     const team = teamId === undefined ? undefined : teamRef(teamId);
     const member = state.members.find((item) => item.memberId === memberId), invitation = waiting(memberId);
     if (member) {
       if (team !== undefined) member.team = team ? { teamId: team.teamId, teamName: team.teamName } : { teamId: null, teamName: "미배정" };
       if (role) member.role = role;
+      if (plannedVendorIds) member.plannedVendorIds = plannedVendorIds;
       member.version += 1;
-      return { memberId, team: member.team.teamId ? member.team : null, role: member.role, status: "active", version: member.version };
+      return { memberId, team: member.team.teamId ? member.team : null, role: member.role, status: "active", version: member.version, plannedVendorIds: member.plannedVendorIds };
     }
     if (team !== undefined) invitation!.team = team ? { teamId: team.teamId, teamName: team.teamName } : null;
     if (role) invitation!.role = role;
+    if (plannedVendorIds) invitation!.plannedVendorIds = plannedVendorIds;
     invitation!.memberVersion += 1;
-    return { memberId, team: invitation!.team, role: invitation!.role, status: "invited", version: invitation!.memberVersion };
+    return { memberId, team: invitation!.team, role: invitation!.role, status: "invited", version: invitation!.memberVersion, plannedVendorIds: invitation!.plannedVendorIds };
   };
   const versionOf = (memberId: string) => state.members.find((item) => item.memberId === memberId)?.version ?? waiting(memberId)?.memberVersion;
 
@@ -152,10 +154,10 @@ export async function mockMembers(page: Page, options: { members?: FixtureMember
       const memberId = path.split("/")[1], version = versionOf(memberId);
       if (version === undefined) return fail(route, 404, "not_found", "memberId");
       if (body.expectedVersion !== version) return fail(route, 409, "version_conflict");
-      if (!("teamId" in body) && !("role" in body)) return fail(route, 400, "invalid_request");
+      if (!("teamId" in body) && !("role" in body) && !("plannedVendorIds" in body)) return fail(route, 400, "invalid_request");
       if (body.teamId && !teamRef(body.teamId)) return fail(route, 404, "not_found", "teamId");
       if ("role" in body && !["admin", "member"].includes(body.role)) return fail(route, 422, "role_not_assignable", "role");
-      return json(route, move(memberId, "teamId" in body ? body.teamId : undefined, body.role));
+      return json(route, move(memberId, "teamId" in body ? body.teamId : undefined, body.role, body.plannedVendorIds));
     }
     if (method === "POST" && path === "member-team-assignments") {
       const items = body.assignments as { memberId: string; teamId: string | null; expectedVersion: number }[];
@@ -176,7 +178,7 @@ export async function mockMembers(page: Page, options: { members?: FixtureMember
       return { invitation, code: `FAKE-CODE-${String(sequence).padStart(4, "0")}` };
     };
     if (method === "POST" && path === "invitations/batch") {
-      const results = (body.invitations as { email: string; teamId: string | null; role: string }[]).map((item) => {
+      const results = (body.invitations as { email: string; teamId: string | null; role: string; plannedVendorIds?: string[] }[]).map((item) => {
         const email = item.email.toLowerCase(), team = teamRef(item.teamId);
         const skipped = (status: string, reason: string | null = null) => ({ email, invitationId: null, status, reason, expiresAt: null, code: null, delivery: null });
         if (item.teamId && !team) return skipped("rejected", "team_not_found");
@@ -184,6 +186,7 @@ export async function mockMembers(page: Page, options: { members?: FixtureMember
         if (state.members.some((member) => member.account === email)) return skipped("already_member");
         if (state.invitations.some((invitation) => invitation.email === email)) return skipped("already_invited");
         const { invitation, code } = issue(email, item.role, team ? { teamId: team.teamId, teamName: team.teamName } : null, `member-invited-${state.sequence + 1}`, 1);
+        invitation.plannedVendorIds = item.plannedVendorIds ?? [];
         return { email, invitationId: invitation.invitationId, status: "issued", reason: null, expiresAt: invitation.expiresAt, code, delivery: invitation.delivery };
       });
       return json(route, { results });

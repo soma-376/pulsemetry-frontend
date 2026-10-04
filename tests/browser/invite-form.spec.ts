@@ -1,4 +1,5 @@
 import { mockMembers, type MembersFixture } from "./members-fixture";
+import { serveSettings } from "./onboarding-fixture";
 import { openDashboard } from "./helpers";
 import { expect, test, type Locator } from "./fixtures";
 
@@ -13,6 +14,7 @@ const issue = (dialog: Locator, count: number) => dialog.getByRole("button", { n
 
 let api: MembersFixture;
 test.beforeEach(async ({ page }) => {
+  serveSettings(page);
   api = await mockMembers(page);
   await openDashboard(page, "/members");
   await page.getByRole("button", { name: "구성원 초대", exact: true }).click();

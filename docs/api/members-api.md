@@ -221,3 +221,11 @@ capabilities.reclaimSeats·restoreSeats는 관리 기능이 켜진 서버면 tru
 - 미수집 값은 null, 실제 무사용은 0. 관리 목록은 사용량 수집 여부와 무관하게 동작한다.
 
 응답 예시: [members-response.example.json](members-response.example.json).
+
+## 초대·구성원 사용 예정 제품
+
+초대 폼과 온보딩은 조직의 등록 제품을 선택 사항으로 복수 지정한다. 일괄 기본 선택을 개인별로 바꿀 수 있으며 개인별 빈 배열은 미선택, null·생략은 기본 선택 상속이다.
+최종 선택을 각 초대 항목의 `plannedVendorIds?: string[]`로 보낸다. 빈 선택은 생략할 수 있다. 이 값은 벤더 계정 생성이나 실제 좌석 배정을 뜻하지 않는다.
+초대 목록·구성원 조회의 `plannedVendorIds`를 구성원 상세에서 복원한다. `PATCH /members/{memberId}`는 변경된 제품 목록과 `expectedVersion`을 보내며 빈 배열은 전체 해제다.
+제품은 `settings`의 등록 벤더 목록에서 읽는다. 로딩·조회 실패·등록 제품 없음은 구분한다. 등록 해제된 기존 선택은 유지·제거할 수 있고 새로 선택할 수 없다.
+백엔드 enrollment V30·dashboard cache V6 마이그레이션과 API 변경을 먼저 배포한다. 프론트의 선택은 실제 좌석 집계에 사용하지 않는다.

@@ -16,6 +16,7 @@ const messages: Record<string, string> = {
   team_name_conflict: "같은 이름의 팀이 있습니다.", invalid_plan: "선택한 제품의 플랜을 다시 확인하세요.",
   invalid_vendor: "등록 가능한 제품을 다시 선택하세요.", invalid_contract_period: "계약 날짜를 확인하세요. 시작일은 오늘부터 가능합니다.",
   forbidden: "관리자 권한이 필요합니다.", unauthenticated: "다시 로그인해 주세요.",
+  vendor_not_found: "선택한 제품을 찾을 수 없습니다. 제품 목록을 확인하세요.",
   not_found: "요청한 정보를 찾을 수 없습니다.", unavailable: "서버에 연결하지 못했습니다. 잠시 후 다시 시도하세요.",
   catalog_changed: "카탈로그가 갱신되었습니다. 제품과 플랜을 다시 조회해 주세요.",
   role_not_assignable: "지정할 수 없는 역할입니다.", owner_role_immutable: "소유자의 역할은 바꿀 수 없습니다.",
@@ -40,7 +41,7 @@ const messages: Record<string, string> = {
 };
 export class ManagementError extends Error {
   constructor(public code: string, public status: number, public retryAfter = 0, public fields: { field: string; code: string }[] = [], public details: unknown = undefined) {
-    const labels: Record<string, string> = { kind: "제품", displayName: "표시 이름", "contract.planId": "플랜", "contract.effectiveFrom": "계약 기간", "contract.effectiveTo": "계약 종료일", "contract.tiers": "좌석 구성", "contract.termNote": "계약 메모", teamName: "팀 이름", teamId: "팀", role: "역할", memberId: "구성원", assignments: "배정 목록", installationIds: "설치 목록", expectedPolicyVersion: "정책 판", entries: "목록 항목(줄마다 하나, 끝의 * 만 허용, 200자·200개 이하)" };
+    const labels: Record<string, string> = { kind: "제품", displayName: "표시 이름", "contract.planId": "플랜", "contract.effectiveFrom": "계약 기간", "contract.effectiveTo": "계약 종료일", "contract.tiers": "좌석 구성", "contract.termNote": "계약 메모", teamName: "팀 이름", teamId: "팀", plannedVendorIds: "사용 예정 제품", role: "역할", memberId: "구성원", assignments: "배정 목록", installationIds: "설치 목록", expectedPolicyVersion: "정책 판", entries: "목록 항목(줄마다 하나, 끝의 * 만 허용, 200자·200개 이하)" };
     const fieldMessage = fields.map(field => labels[field.field]).filter(Boolean).join(", ");
     super((messages[code] ?? "요청을 처리하지 못했습니다. 입력값과 연결 상태를 확인해 주세요.") + (fieldMessage ? ` 확인할 항목: ${fieldMessage}` : ""));
   }

@@ -13,6 +13,7 @@ const teamRefSchema = z.object({ teamId: z.string().nullable(), teamName: z.stri
 export const memberSchema = z.object({
   memberId: z.string(), account: z.string(), displayName: z.string(), team: teamRefSchema,
   role: z.string(), status: z.string(), version: z.number(),
+  plannedVendorIds: z.array(z.string()).optional(),
   periodUsage: usageSchema.nullable(), lastUsedAt: z.iso.datetime({ offset: true }).nullable(),
   observation: z.string(), seatState: z.string(),
 });

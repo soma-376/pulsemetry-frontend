@@ -6,21 +6,23 @@ type Post = ReturnType<typeof createCommands>;
 export const memberSavedSchema = z.object({
   memberId: z.string(), team: z.object({ teamId: z.string(), teamName: z.string() }).nullable(),
   role: z.string(), status: z.string(), version: z.number(),
+  plannedVendorIds: z.array(z.string()).optional(),
 });
 export type MemberSaved = z.infer<typeof memberSavedSchema>;
 /** 편집기가 값을 채운 시점의 구성원. version은 그때 조회가 준 값이다. */
-export type MemberBaseline = { memberId: string; teamId: string | null; role: string; version: number };
-export type MemberChange = { expectedVersion: number; teamId?: string | null; role?: string };
+export type MemberBaseline = { memberId: string; teamId: string | null; role: string; version: number; plannedVendorIds?: string[] };
+export type MemberChange = { expectedVersion: number; teamId?: string | null; role?: string; plannedVendorIds?: string[] };
 
 /**
  * 바꾼 필드만 담는다. 바뀐 것이 없으면 null.
  * 구성원 목록은 owner도 admin으로 보여 주므로, 바꾸지 않은 역할을 보내면 owner의 팀 변경이 거절된다.
  */
-export function memberChange(baseline: MemberBaseline, next: { teamId: string | null; role: string }): MemberChange | null {
+export function memberChange(baseline: MemberBaseline, next: { teamId: string | null; role: string; plannedVendorIds?: string[] }): MemberChange | null {
   const change: MemberChange = { expectedVersion: baseline.version };
   if (next.teamId !== baseline.teamId) change.teamId = next.teamId;
   if (next.role !== baseline.role) change.role = next.role;
-  return "teamId" in change || "role" in change ? change : null;
+  if (next.plannedVendorIds && JSON.stringify([...next.plannedVendorIds].sort()) !== JSON.stringify([...(baseline.plannedVendorIds ?? [])].sort())) change.plannedVendorIds = next.plannedVendorIds;
+  return "teamId" in change || "role" in change || "plannedVendorIds" in change ? change : null;
 }
 
 export const saveMember = (organizationId: string, memberId: string, change: MemberChange) =>

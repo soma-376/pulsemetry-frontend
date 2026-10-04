@@ -190,3 +190,12 @@ test("delivery states map to wording that only says sent when the server says se
   assert.equal(deliveryPending([invitation("pending", delivery("sending"))]), true);
   assert.equal(deliveryPending([invitation("expired", delivery("queued"))]), false);
 });
+
+
+test("제품 선택의 순서 변경은 무시하고 해제는 빈 배열로 보낸다", () => {
+  const baseline = { memberId: "m1", teamId: null, role: "admin", version: 17, plannedVendorIds: ["claude", "cursor"] };
+  assert.equal(memberChange(baseline, { teamId: null, role: "admin", plannedVendorIds: ["cursor", "claude"] }), null);
+  assert.deepEqual(memberChange(baseline, { teamId: null, role: "admin", plannedVendorIds: [] }), { expectedVersion: 17, plannedVendorIds: [] });
+  assert.deepEqual(memberChange(baseline, { teamId: null, role: "admin", plannedVendorIds: ["claude"] }), { expectedVersion: 17, plannedVendorIds: ["claude"] });
+  assert.equal(memberChange(baseline, { teamId: null, role: "admin" }), null);
+});

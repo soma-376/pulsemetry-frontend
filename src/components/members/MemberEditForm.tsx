@@ -1,8 +1,9 @@
 "use client";
 
 import { useId, useState, type ReactNode } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { PlannedVendorPicker, PlannedVendorQueryState, usePlannedVendors } from "./PlannedVendorPicker";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Select } from "@/components/ui/Select";
@@ -13,7 +14,7 @@ import { ASSIGNABLE_ROLES, ROLE_HINT, ROLE_LABEL } from "@/lib/members-view";
 
 /** 편집 대상. 구성원과 초대 대기자 모두 서버의 memberId와 version으로 가리킨다. */
 export type MemberEditTarget = MemberBaseline & { account: string; invited: boolean };
-type Values = { team: string; role: string };
+type Values = { team: string; role: string; plannedVendorIds: string[] };
 
 type Props = {
   organizationId: string;
@@ -28,7 +29,7 @@ type Props = {
   children: (slots: { fields: ReactNode; actions: ReactNode }) => ReactNode;
 };
 
-const valuesOf = (target: MemberEditTarget | null): Values => ({ team: target?.teamId ?? "", role: target?.role ?? "member" });
+const valuesOf = (target: MemberEditTarget | null): Values => ({ team: target?.teamId ?? "", role: target?.role ?? "member", plannedVendorIds: target?.plannedVendorIds ?? [] });
 
 /**
  * 구성원의 팀·역할 편집. 폼 하나가 입력과 드로어 하단 버튼을 함께 가진다.
@@ -36,6 +37,7 @@ const valuesOf = (target: MemberEditTarget | null): Values => ({ team: target?.t
  */
 export function MemberEditForm({ organizationId, target, teams, self, editable, onSaved, onReload, children }: Props) {
   const id = useId();
+  const vendors = usePlannedVendors(organizationId, !!target);
   const client = useQueryClient();
   // 열어 둔 사이 목록이 다시 조회돼도 입력과 기준 version을 바꾸지 않는다.
   const [baseline, setBaseline] = useState(target);
@@ -45,14 +47,14 @@ export function MemberEditForm({ organizationId, target, teams, self, editable, 
     retry: false,
     mutationFn: async (values: Values) => {
       // 잠긴 역할 입력은 값을 내지 않으므로 기준 값을 쓴다.
-      const change = baseline && memberChange(baseline, { teamId: values.team || null, role: self ? baseline.role : values.role ?? baseline.role });
+      const change = baseline && memberChange(baseline, { teamId: values.team || null, role: self ? baseline.role : values.role ?? baseline.role, plannedVendorIds: values.plannedVendorIds });
       if (!baseline || !change) throw new Error("변경한 내용이 없습니다.");
       return saveMember(organizationId, baseline.memberId, change);
     },
-    onSuccess: async () => {
+    onSuccess: async (_, values) => {
       // 목록을 새로 읽은 뒤에 끝낸다 — 바로 다시 열어도 새 version으로 시작한다.
       await client.invalidateQueries({ queryKey: organizationKey(organizationId) });
-      if (baseline) onSaved(`${baseline.account}의 ${baseline.invited ? "초대 " : ""}팀·역할을 변경했습니다.`);
+      if (baseline) onSaved(`${baseline.account}의 ${baseline.invited ? "초대 " : ""}${memberChange(baseline, { teamId: values.team || null, role: baseline.role, plannedVendorIds: values.plannedVendorIds })?.plannedVendorIds ? "설정" : "팀·역할"}을 변경했습니다.`);
     },
     onError: (error) => {
       // 없어진 팀이나 구성원이면 선택지를 새로 읽는다.
@@ -89,6 +91,11 @@ export function MemberEditForm({ organizationId, target, teams, self, editable, 
         {ROLE_HINT[role] && <p id={`${id}-role-access`} className="pretty text-[11px] text-text3">{ROLE_HINT[role]}</p>}
         {self && <p id={`${id}-role-hint`} className="text-[11px] text-text3">자기 역할은 바꿀 수 없습니다.</p>}
       </div>
+      <PlannedVendorQueryState query={vendors} />
+      {vendors.data && !vendors.isError && <Controller control={control} name="plannedVendorIds" render={({ field }) =>
+        <PlannedVendorPicker options={vendors.data.vendors.items} value={field.value} onChange={value => { field.onChange(value); save.reset(); }} />
+      } />}
+      <p className="text-[11px] text-text3">사용 예정 제품이며 실제 벤더 좌석은 별도로 배정합니다.</p>
     </fieldset>
     {baseline?.invited && <p className="text-xs leading-5 text-text3">초대를 수락하면 변경한 팀과 역할이 적용됩니다.</p>}
     {!editable && <p className="text-xs leading-5 text-text3">관리 기능이 꺼져 있어 팀과 역할을 변경할 수 없습니다.</p>}

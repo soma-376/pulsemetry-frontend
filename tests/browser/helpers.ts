@@ -59,5 +59,5 @@ export async function openDashboard(page: Page, route: string) {
   await page.getByRole("button", { name: "다음", exact: true }).click();
   await page.getByRole("button", { name: "건너뛰고 시작", exact: true }).click();
   await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
-  if (route !== "/overview") await page.locator(`nav a[href="${route}"]`).click();
+  if (route !== "/overview") await page.locator(`nav a[href="${route}"], nav a[href^="${route}?"]`).click();
 }
