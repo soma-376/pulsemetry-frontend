@@ -3,7 +3,7 @@ import { dashboardBase, expect, test, seedOrganizations } from "./fixtures";
 import { authenticatedRequest, signIn } from "./helpers";
 import { PreparationError } from "./harness";
 
-// 운영 · 보안 — 보안 범주 알림(서버 ADR 0051 — model_not_allowed·tool_unapproved)의 목록·상세·확인. 기대값은 같은 조건의 알림 API 와 서버 명세(평가 전제 사유)에서 쓴다.
+// 운영 · 보안 — 보안 범주 알림(미등록 제품 사용 및 과거 알림 이력)의 목록·상세·확인. 기대값은 같은 조건의 알림 API 와 서버 명세(평가 전제 사유)에서 쓴다.
 const [A, B] = seedOrganizations;
 type AlertsBody = { evaluation: { availability: string; reason: string | null; rules: { ruleId: string; enabled: boolean; evaluatedAt: string | null }[] };
   alerts: { totalCount: number; items: { alertId: string; ruleId: string; category: string; subject: string | null }[] } };
@@ -14,11 +14,11 @@ test("OPS-A @p1 @write 운영 · 보안은 보안 범주 알림을 목록·상�
   const alerts = async (status: string) => (await authenticatedRequest(page, dashboardBase(), `/api/v1/organizations/${A.id}/alerts?status=${status}&category=security&limit=100`)).body as AlertsBody;
   // 선행 조건: 켜진 보안 규칙을 서버의 주기 평가(로컬 1분)가 한 번은 평가했다.
   await expect.poll(async () => {
-    const rules = (await alerts("unacknowledged")).evaluation.rules.filter((rule) => rule.enabled && ["model_not_allowed", "tool_unapproved"].includes(rule.ruleId));
-    return rules.length > 0 && rules.every((rule) => rule.evaluatedAt !== null);
+    const rules = (await alerts("unacknowledged")).evaluation.rules.filter((rule) => rule.enabled && rule.ruleId === "product_not_registered");
+    return rules.every((rule) => rule.evaluatedAt !== null);
   }, { timeout: 120_000, intervals: [2_000] }).toBe(true);
   const before = await alerts("unacknowledged");
-  if (!before.alerts.totalCount) throw new PreparationError("시드 A 에 미확인 보안 알림이 없습니다 — 시드를 초기화하세요.");
+  if (!before.alerts.totalCount) throw new PreparationError("미확인 보안 알림이 있는 격리 테스트 데이터가 필요합니다. 새 시드 A에서는 미등록 제품 알림이 기본 꺼짐이며 모든 관측 제품이 등록되어 있습니다.");
   expect(before.alerts.items.every((item) => item.category === "security")).toBe(true);
 
   await page.goto("/ops");

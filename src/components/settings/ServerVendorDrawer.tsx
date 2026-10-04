@@ -19,9 +19,6 @@ import { catalogOptions, plansOptions } from "@/lib/api/vendor-catalog";
 import { apiJson, createCommands, ManagementError, orgPath } from "@/lib/api/management";
 import { fetchSettingsVendor, settingsVendorResponseSchema, type SettingsVendor } from "@/lib/api/settings";
 import { organizationKey } from "@/lib/api/query-keys";
-import { seatReasonText } from "@/lib/api/seats";
-import { VendorSeatSource } from "./VendorSeatSource";
-import { VendorSeats } from "./VendorSeats";
 
 export function ServerVendorDrawer({ organizationId, initial, registeredKinds, editable, open, onClose, onAfterClose, onSaved, onAccessDenied }: {
   organizationId: string; initial: SettingsVendor | null; registeredKinds: string[]; editable: boolean;
@@ -128,18 +125,6 @@ export function ServerVendorDrawer({ organizationId, initial, registeredKinds, e
           <div className="flex justify-between text-xs"><span className="text-text3">배정 좌석(좌석 원장)</span>
             <span>{!current.seats?.data ? "-" : `${int(current.seats.data.assigned)}석${current.seats.data.contracted === null ? "" : ` / 계약 ${int(current.seats.data.contracted)}석`}`}</span></div>
         </section>}
-        {current?.meteredMonthToDate && <section aria-label="종량 지출" className="flex flex-col gap-1 rounded-md border border-border p-3 text-xs">
-          <span className="font-semibold">종량 지출(벤더 청구 누계)</span>
-          {current.meteredMonthToDate.data ? <>
-            <div className="flex justify-between"><span className="text-text3">{current.meteredMonthToDate.data.startDate} ~ {current.meteredMonthToDate.data.endDate}</span>
-              <strong className="tnum">{current.meteredMonthToDate.data.actualBilledUsd === null ? "-" : usd(Number(current.meteredMonthToDate.data.actualBilledUsd))}</strong></div>
-            <p className="text-text3">{current.meteredMonthToDate.data.billingKind === "usage_spend" ? "이번 청구 주기의 사용 지출" : "이번 달 사용 비용"} · 확정 전 값
-              {current.meteredMonthToDate.data.source === "seed" ? " · 개발 시드(실제 청구 아님)" : ""}{current.meteredMonthToDate.reason ? ` · ${seatReasonText(current.meteredMonthToDate.reason)}` : ""}</p>
-          </> : <p className="text-text3">{seatReasonText(current.meteredMonthToDate.reason)} — 환산 비용이나 계약액으로 채우지 않습니다.</p>}
-        </section>}
-        {current && <VendorSeatSource organizationId={organizationId} vendor={current} editable={editable} />}
-        {current?.seatSource && <VendorSeats organizationId={organizationId} vendorId={current.vendorId} vendorName={current.displayName}
-          manual={current.seatSource.authority === "manual"} tiers={current.contract?.tiers.map((tier) => ({ tierId: tier.tierId, label: tier.label })) ?? []} editable={editable} />}
       </>}
     </div>
   </DetailDrawer>;

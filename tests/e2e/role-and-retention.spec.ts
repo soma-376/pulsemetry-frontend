@@ -1,10 +1,8 @@
-import { dashboardBase, expect, test, seedOrganizations } from "./fixtures";
-import { authenticatedRequest, signIn } from "./helpers";
+import { expect, test } from "./fixtures";
+import { signIn } from "./helpers";
 
-// 역할 설명과 원문 보존 칸을 실제 서버·시드로 본다. 기대값은 백엔드 명세에서 쓴다 —
-// 대시보드 §1(조직 조회는 owner·admin 만, 구성원은 403), ADR 0046(rawContentRetentionDays 는 null — 원본 아카이브 수명의 원천이 없다).
+// 역할 설명을 실제 서버·시드로 본다. 기대값은 대시보드 명세 §1(조직 조회는 owner·admin만, 구성원은 403)에서 쓴다.
 // 쓰기는 없다(초대·역할 변경을 저장하지 않는다).
-const A = seedOrganizations[0];
 const MEMBER_HINT = "구성원은 웹 대시보드에 접근하지 않습니다. CLI를 설치해 자기 사용량을 수집하는 대상입니다";
 const ADMIN_HINT = "관리자는 웹 대시보드를 보고 계약·수집 정책·팀·구성원을 변경합니다";
 
@@ -24,14 +22,4 @@ test("ROLE-TEXT @p1 @read 초대와 역할 편집의 역할 설명이 서버 인
   const drawer = page.getByRole("dialog", { name: "구성원 상세", exact: true });
   await expect(drawer.getByLabel("역할", { exact: true })).toHaveValue("member");
   await expect(drawer).toContainText(MEMBER_HINT);
-});
-
-test("RAW-RETENTION @p1 @read 원문 보존 칸은 서버의 null 을 집계 보존이나 고정값으로 채우지 않고 왜 없는지 말한다", async ({ page }) => {
-  await signIn(page, "owner@seed-a.example.test");
-  const settings = await authenticatedRequest(page, dashboardBase(), `/api/v1/organizations/${A.id}/settings`);
-  expect(settings.status).toBe(200);
-  expect(settings.body.collectionPolicy.rawContentRetentionDays).toBeNull();
-  await page.goto("/settings");
-  await expect(page.getByLabel("원문 보존 기간", { exact: true })).toHaveText("-");
-  await expect(page.getByText("원본 아카이브의 보관 기간은 인프라 저장소 규칙을 따르며 이 서비스가 조회하지 않습니다 · 집계 보존과 별개입니다", { exact: true })).toBeVisible();
 });

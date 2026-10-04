@@ -1,10 +1,10 @@
-import type { Locator, Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { expect, test, dashboardBase, enrollmentBase } from "./fixtures";
 import { authenticatedRequest, apiSession, seedPeriod, signIn } from "./helpers";
 import { PreparationError } from "./harness";
 import { currentDateIso } from "../../src/lib/date";
 
-// 커넥터별 실서버 묶음 — 연결 → 동기화 → 원장 → 회수(벤더 요청 1회) → 복원(관리자 조치 확인) → 청구 표시, 오류 주입 하나씩.
+// 커넥터별 실서버 묶음 — 연결 → 동기화 → 원장 → 회수(벤더 요청 1회) → 복원(관리자 조치 확인) → 청구 조회, 오류 주입 하나씩.
 // 벤더는 모의 서버(백엔드 tools/mock-vendor — 근거 문서의 공식 예시를 흉내)다. 실제 벤더를 부르지 않는다.
 // fresh 조직 E(백엔드 tools/dev-seed 시나리오 E)에 계약을 등록하고 연결한다 — 시드 A·B·C 의 연결·원장·청구를 바꾸지 않는다.
 // 기대값은 모의 서버 README 의 데이터(근거 문서의 예시)와 서버 명세(enrollment §12 벤더 연결·좌석 회수, dashboard 종량 지출)에서 쓴다.
@@ -83,17 +83,23 @@ const seatsOf = async (page: Page, id: string) =>
 const ledger = async (page: Page, vendorId: string) =>
   (await authenticatedRequest(page, dashboardBase(), `${O}/vendors/${vendorId}/seats?limit=200`)).body.seats.items as { account: string; state: string; source: string; memberLink: string | null }[];
 
-async function openSource(page: Page, displayName: string) {
-  await page.goto("/settings");
-  await page.getByRole("button", { name: `${displayName} 계약 설정 열기`, exact: true }).click();
-  const drawer = page.getByRole("dialog", { name: `${displayName} 계약 설정`, exact: true });
-  return { drawer, source: drawer.getByRole("region", { name: "좌석 원천" }) };
+// 드로어의 연결 편집 UI는 제거됐다. 커넥터 전제는 API로 준비하고 구성원 회수·복원 UI는 계속 검증한다.
+async function connect(page: Page, vendor: Vendor, credential: string) {
+  const result = await authenticatedRequest(page, enrollmentBase(), O + "/vendors/" + vendor.vendorId + "/connection", "PUT",
+    { expectedVersion: vendor.seatSource?.connection?.version ?? 0, settings: {}, credential });
+  expect(result.status).toBe(200);
+  expect(JSON.stringify(result.body)).not.toContain(credential);
 }
-async function connect(source: Locator, credential: string, replace = false) {
-  await source.getByRole("button", { name: replace ? "자격증명 교체" : "연결 추가", exact: true }).click();
-  await source.getByLabel("관리자 자격증명(저장 후 다시 보이지 않습니다)").fill(credential);
-  await source.getByRole("button", { name: "연결 저장", exact: true }).click();
-  await expect(source).toContainText("설정됨");
+async function verify(page: Page, vendor: Vendor, status: string) {
+  const result = await authenticatedRequest(page, enrollmentBase(), O + "/vendors/" + vendor.vendorId + "/connection/verify", "POST");
+  expect(result.status).toBe(200);
+  expect(result.body.seatSource.connection.check.status).toBe(status);
+}
+async function sync(page: Page, vendor: Vendor) {
+  const result = await authenticatedRequest(page, enrollmentBase(), O + "/vendors/" + vendor.vendorId + "/connection/sync", "POST", {}, { "Idempotency-Key": key() });
+  expect(result.status).toBe(202);
+  await expect.poll(async () => (await authenticatedRequest(page, dashboardBase(), O + "/operations/" + result.body.operationId)).body.status,
+    { timeout: 30_000 }).toBe("succeeded");
 }
 
 /** 회수(벤더 제어) → 새로고침 → 복원(관리자 조치 확인). 벤더를 바꾸는 호출은 회수의 [controlPath] 하나뿐이어야 한다. */
@@ -107,6 +113,7 @@ async function reclaimAndRestore(page: Page, vendorName: string, controlPath: (c
     await list.getByRole("textbox", { name: "구성원 검색" }).fill(MEMBER);
     await list.getByRole("button", { name: `${MEMBER} 구성원 상세`, exact: true }).click();
     const drawer = page.getByRole("dialog", { name: "구성원 상세", exact: true });
+    await drawer.getByRole("button", { name: "벤더 좌석", exact: true }).click();
     await expect(drawer.getByRole("list", { name: "벤더별 좌석 상세" })).toBeVisible();
     return drawer;
   };
@@ -142,30 +149,20 @@ test("CONNECTOR-CLAUDE-E @p0 @write Claude Enterprise — 잘못된 자격증명
   test.setTimeout(240_000);
   const { listed } = await prepare(page);
   const vendor = async () => (await listed()).find((item) => item.kind === VENDORS.claude.kind)!;
-  let { drawer, source } = await openSource(page, VENDORS.claude.displayName);
-  await expect(source).toContainText("관리자 기록(연결 전 임시)");
-  // 구현한 기능에 복원이 없다(벤더 API 근거는 있으나 구현하지 않음).
-  await expect(source).toContainText("구현한 기능 좌석 조회·해지·청구 조회");
+  expect((await vendor()).seatSource?.connection).toBeNull();
 
   // 오류 주입 — 모의 서버가 받지 않는 자격증명(401). 연결 확인과 저장 직후의 주기 동기화가 둘 다 거절로 끝난다.
   const wrong = `not-a-vendor-key-${Date.now()}`;
-  await connect(source, wrong);
-  await source.getByRole("button", { name: "연결 확인", exact: true }).click();
-  await expect(source).toContainText("자격증명 거절");
+  await connect(page, await vendor(), wrong);
+  await verify(page, await vendor(), "invalid_credentials");
   await expect.poll(async () => (await vendor()).seatSource?.connection?.sync, { timeout: 30_000 }).toMatchObject({ status: "failing", lastError: "invalid_credentials" });
   expect((await vendorCalls()).filter((call) => call.xApiKey === wrong).length).toBeGreaterThan(0);
   expect(await page.content()).not.toContain(wrong);
 
   const credential = `fake-vendor-credential-e2e-claude-${Date.now()}`;
-  await page.reload();
-  ({ drawer, source } = await openSource(page, VENDORS.claude.displayName));
-  await expect(source).toContainText("실패 중 · 벤더가 자격증명을 거절함");
-  await connect(source, credential, true);
-  await source.getByRole("button", { name: "연결 확인", exact: true }).click();
-  await expect(source).toContainText("확인됨");
-  await source.getByRole("button", { name: "지금 동기화", exact: true }).click();
-  await expect(source.getByRole("status")).toContainText("완료", { timeout: 30_000 });
-  expect(await page.content()).not.toContain(credential);
+  await connect(page, await vendor(), credential);
+  await verify(page, await vendor(), "verified");
+  await sync(page, await vendor());
   // 문서의 인증: x-api-key 와 anthropic-version. 구성원·초대 목록은 ID 페이지, 비용 보고서는 두 쪽을 끝까지 읽는다.
   const calls = (await vendorCalls()).filter((call) => call.xApiKey === credential);
   expect(calls.every((call) => call.anthropicVersion === "2023-06-01")).toBe(true);
@@ -185,14 +182,6 @@ test("CONNECTOR-CLAUDE-E @p0 @write Claude Enterprise — 잘못된 자격증명
   const metered = (await vendor()).meteredMonthToDate;
   expect(metered.data).toMatchObject({ billingKind: "usage_cost", source: "connector", finalized: false, equivalentCostUsd: null, startDate: `${currentDateIso().slice(0, 7)}-01` });
   expect(Number(metered.data!.actualBilledUsd)).toBe(430);
-  await page.reload();
-  ({ drawer } = await openSource(page, VENDORS.claude.displayName));
-  const total = drawer.getByRole("region", { name: "종량 지출" });
-  await expect(total).toContainText("$430.00");
-  await expect(total).toContainText("이번 달 사용 비용 · 확정 전 값");
-  await expect(total).not.toContainText("개발 시드");
-  await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
-
   await reclaimAndRestore(page, VENDORS.claude.displayName, (call) => call.method === "DELETE");
   expect((await vendorCalls()).filter((call) => call.method === "DELETE").map((call) => call.path)).toEqual(["/v1/organizations/users/user_seed_e_member1"]);
 });
@@ -203,17 +192,12 @@ test("CONNECTOR-CURSOR-E @p0 @write Cursor Enterprise — 한도 초과(429)는 
   const vendor = async () => (await listed()).find((item) => item.kind === VENDORS.cursor.kind)!;
   // 오류 주입 — 저장 직후의 주기 동기화가 구성원 목록에서 429 를 받는다(이 스택은 시도 1회라 다시 시도하지 않는다).
   expect((await vendorPost("/__fault", { path: "/teams/members", status: 429, times: 1, retryAfter: 60 })).status).toBe(200);
-  let { drawer, source } = await openSource(page, VENDORS.cursor.displayName);
   const credential = `fake-vendor-credential-e2e-cursor-${Date.now()}`;
-  await connect(source, credential);
+  await connect(page, await vendor(), credential);
   await expect.poll(async () => (await vendor()).seatSource?.connection?.sync, { timeout: 30_000 }).toMatchObject({ status: "failing", lastError: "rate_limited" });
   // 실패는 원장을 바꾸지 않는다 — 아직 좌석이 없다.
   expect(await ledger(page, (await vendor()).vendorId)).toHaveLength(0);
-  await page.reload();
-  ({ drawer, source } = await openSource(page, VENDORS.cursor.displayName));
-  await expect(source).toContainText("실패 중 · 벤더 호출 한도 초과");
-  await source.getByRole("button", { name: "지금 동기화", exact: true }).click();
-  await expect(source.getByRole("status")).toContainText("완료", { timeout: 30_000 });
+  await sync(page, await vendor());
   // 문서의 인증: Basic, API 키가 사용자 이름이고 비밀번호는 비운다. 지출은 페이지로 읽는다.
   const basic = `Basic ${Buffer.from(`${credential}:`).toString("base64")}`;
   const calls = (await vendorCalls()).filter((call) => call.path.startsWith("/teams/"));
@@ -229,13 +213,6 @@ test("CONNECTOR-CURSOR-E @p0 @write Cursor Enterprise — 한도 초과(429)는 
   const metered = (await vendor()).meteredMonthToDate;
   expect(metered.data).toMatchObject({ billingKind: "usage_spend", source: "connector", finalized: false, equivalentCostUsd: null, startDate: `${new Date().toISOString().slice(0, 7)}-01` });
   expect(Number(metered.data!.actualBilledUsd)).toBe(35);
-  await page.reload();
-  ({ drawer } = await openSource(page, VENDORS.cursor.displayName));
-  const total = drawer.getByRole("region", { name: "종량 지출" });
-  await expect(total).toContainText("$35.00");
-  await expect(total).toContainText("이번 청구 주기의 사용 지출 · 확정 전 값");
-  await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
-
   await reclaimAndRestore(page, VENDORS.cursor.displayName, (call) => call.method === "POST" && call.path === "/teams/remove-member");
   expect((await vendorCalls()).filter((call) => call.path === "/teams/remove-member").map((call) => call.body)).toEqual([{ userId: "user_seed_e_member1" }]);
 });

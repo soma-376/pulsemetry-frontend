@@ -22,21 +22,15 @@ export function settingsFixture(): Settings {
     // 시드 A의 적용 현황(판 2: 적용 7 · 미적용 3 · 미확인 1).
     policyRollout: { desiredVersion: COMPANY_A.policyRollout.desiredVersion, eligibleInstallations: COMPANY_A.policyRollout.eligible,
       appliedInstallations: COMPANY_A.policyRollout.applied, outdatedInstallations: COMPANY_A.policyRollout.outdated, unknownInstallations: COMPANY_A.policyRollout.unknown },
-    // 시드 A: 급증·비허용 모델·미승인 도구를 켰다. 한도 초과는 근거가 없어 켤 수 없다(서버 ADR 0051).
+    // 신규 제품 규칙은 자동으로 켜지지 않는다. 한도 초과는 근거가 없어 켤 수 없다.
     alertRules: [
       { ruleId: "spend_spike", version: 1, enabled: true, availability: "available", reason: null, threshold: { value: 0.4, unit: "ratio" },
         evaluationWindow: "last_complete_7_calendar_days", comparisonWindow: "preceding_7_calendar_days" },
       { ruleId: "quota_exceeded", version: 0, enabled: false, availability: "unavailable", reason: "source_not_available", threshold: { value: 5, unit: "users" },
         evaluationWindow: "rolling_24_hours", comparisonWindow: null },
-      { ruleId: "model_not_allowed", version: 1, enabled: true, availability: "available", reason: null, threshold: { value: 1, unit: "events" },
-        evaluationWindow: "rolling_24_hours", comparisonWindow: null },
-      { ruleId: "tool_unapproved", version: 1, enabled: true, availability: "available", reason: null, threshold: { value: 1, unit: "events" },
+      { ruleId: "product_not_registered", version: 0, enabled: false, availability: "available", reason: null, threshold: { value: 1, unit: "events" },
         evaluationWindow: "rolling_24_hours", comparisonWindow: null },
     ],
-    alertLists: {
-      allowedModels: { listId: "allowed_models", version: 1, entries: COMPANY_A.alertLists.allowed_models, updatedAt: "2026-09-20T15:00:00Z" },
-      approvedTools: { listId: "approved_tools", version: 1, entries: COMPANY_A.alertLists.approved_tools, updatedAt: "2026-09-20T15:00:00Z" },
-    },
   };
   return syncSettingsSummary(data);
 }

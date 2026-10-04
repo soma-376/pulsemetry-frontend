@@ -1,4 +1,4 @@
-import { allowHttpErrors, expect, test, dashboardBase, seedOrganizations } from "./fixtures";
+import { expect, test, dashboardBase, enrollmentBase, seedOrganizations } from "./fixtures";
 import { authenticatedRequest, seedPeriod, signIn } from "./helpers";
 import type { Page } from "@playwright/test";
 
@@ -21,6 +21,7 @@ async function openMember(page: Page, email: string) {
   await list.getByRole("textbox", { name: "구성원 검색" }).fill(email);
   await list.getByRole("button", { name: `${email} 구성원 상세`, exact: true }).click();
   const drawer = page.getByRole("dialog", { name: "구성원 상세", exact: true });
+  await drawer.getByRole("button", { name: "벤더 좌석", exact: true }).click();
   await expect(drawer.getByRole("list", { name: "벤더별 좌석 상세" })).toBeVisible();
   return drawer;
 }
@@ -59,42 +60,38 @@ test("SEATS-ADMIN @p0 @write 벤더 API 가 없는 좌석의 회수는 관리자
   await restore.getByRole("button", { name: "배정 완료 확인" }).click();
   await expect(restore.getByRole("status")).toContainText("복원 · 완료");
   await expect.poll(async () => (await seatsOf(page, id)).find(item => item.account === account)).toMatchObject({ state: "assigned", source: "admin_action" });
-  await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
 });
 
-test("SEATS-CSV @p0 @write 관리자 기록 제품의 CSV 는 오류가 있으면 파일을 거절하고, 미리보기 뒤 적용한 행만 원장에 남는다", async ({ page }) => {
-  allowHttpErrors(
-    { status: 400, path: /\/seats\/import$/, method: "POST", reason: "허용하지 않는 열의 CSV 거절(400 invalid_csv)을 시험한다" },
-  );
+test("SEATS-CSV @p0 @write 관리자 기록 제품의 CSV API는 잘못된 열을 거절하고 미리보기 뒤 적용한 행만 남긴다", async ({ page }) => {
   const account = "e2e-csv@seed-a.example.test";
-  await signIn(page, `owner@seed-${A.seed}.example.test`);
-  await page.goto("/settings");
-  await page.getByRole("button", { name: "ChatGPT / Codex (OpenAI) 계약 설정 열기" }).click();
-  const drawer = page.getByRole("dialog", { name: "ChatGPT / Codex (OpenAI) 계약 설정" });
-  const seats = drawer.getByRole("region", { name: "좌석", exact: true });
-  await expect(seats.getByRole("list", { name: "ChatGPT / Codex (OpenAI) 좌석 목록" })).toContainText("member3@seed-a.example.test");
-  // 이메일 외의 개인 정보 열은 받지 않는다 — 파일 전체를 거절한다.
-  await seats.getByLabel("좌석 CSV").fill(`account,name\n${account},E2E`);
-  await seats.getByRole("button", { name: "미리보기" }).click();
-  await expect(seats).toContainText("CSV 파일 형식을 확인하세요");
-
-  await seats.getByLabel("좌석 CSV").fill(`account,status\n${account},assigned`);
-  await seats.getByRole("button", { name: "미리보기" }).click();
-  const result = seats.getByRole("region", { name: "가져오기 결과" });
-  await expect(result).toContainText(/새 배정|다시 배정/);
-  await seats.getByRole("button", { name: "적용" }).click();
-  await expect(result).toContainText("적용했습니다");
-  await expect(seats.getByRole("list", { name: "ChatGPT / Codex (OpenAI) 좌석 목록" })).toContainText(account);
-
-  // 시드를 원래대로 — 같은 파일 경로로 해제를 기록한다(파일에 없는 좌석은 그대로).
-  await seats.getByLabel("좌석 CSV").fill(`account,status\n${account},released`);
-  await seats.getByRole("button", { name: "미리보기" }).click();
-  await expect(result).toContainText("해제");
-  await seats.getByRole("button", { name: "적용" }).click();
-  await expect(result).toContainText("적용했습니다");
-  const vendors = (await authenticatedRequest(page, dashboardBase(), `/api/v1/organizations/${A.id}/settings`)).body.vendors.items as { kind: string; seats: { data: { assigned: number } } }[];
-  expect(vendors.find(vendor => vendor.kind === "openai_biz")!.seats.data.assigned).toBe(2);
-  await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
+  await signIn(page, "owner@seed-" + A.seed + ".example.test");
+  const vendors = (await authenticatedRequest(page, dashboardBase(), "/api/v1/organizations/" + A.id + "/settings")).body.vendors.items as { kind: string; vendorId: string }[];
+  const vendor = vendors.find(item => item.kind === "openai_biz")!;
+  const path = "/api/v1/organizations/" + A.id + "/vendors/" + vendor.vendorId + "/seats";
+  const importCsv = (mode: string, csv: string) => authenticatedRequest(page, enrollmentBase(), path + "/import", "POST", { mode, csv }, { "Idempotency-Key": crypto.randomUUID() });
+  const bad = await importCsv("preview", "account,name\n" + account + ",E2E");
+  expect(bad.status).toBe(400);
+  expect(bad.body.error.code).toBe("invalid_csv");
+  let applied = false;
+  try {
+    const csv = "account,status\n" + account + ",assigned";
+    const preview = await importCsv("preview", csv);
+    expect(preview.status).toBe(200);
+    expect(preview.body.import.applied).toBe(false);
+    expect(preview.body.import.rows[0].action).toMatch(/create|reassign/);
+    const result = await importCsv("apply", csv);
+    expect(result.status).toBe(200);
+    applied = result.body.import.applied;
+    expect(applied).toBe(true);
+    const seats = (await authenticatedRequest(page, dashboardBase(), path + "?limit=100")).body.seats.items as { account: string; state: string }[];
+    expect(seats.find(seat => seat.account === account)?.state).toBe("assigned");
+  } finally {
+    if (applied) {
+      const released = await importCsv("apply", "account,status\n" + account + ",released");
+      expect(released.status).toBe(200);
+      expect(released.body.import.applied).toBe(true);
+    }
+  }
 });
 
 test("SEATS-OVERVIEW @p0 @read 개요의 제품별 배정 좌석은 구성원 요약과 같은 좌석 원장이고, 좌석을 기록하지 않은 제품은 사유를 말한다", async ({ page }) => {
@@ -122,7 +119,7 @@ test("SEATS-OVERVIEW @p0 @read 개요의 제품별 배정 좌석은 구성원 �
   else await expect(card).not.toContainText("회수 후보는 판정한 좌석만");
 });
 
-test("SEATS-BILLING @p0 @read 설정의 종량 지출은 벤더 청구 누계이고 원천·사유를 함께 보이며, 청구 원천이 없는 제품은 금액을 만들지 않는다", async ({ page }) => {
+test("SEATS-BILLING @p0 @read 설정 요약의 종량 지출은 벤더 청구 누계이며, 청구 원천이 없는 제품은 금액을 만들지 않는다", async ({ page }) => {
   // 시드 C: Cursor Enterprise 연결의 청구 누계 $137.42(원천 seed — 실제 청구가 아님, 계약액 $120 과 다름). 시드 A 는 청구 API 가 있는 플랜이 없다.
   const C = seedOrganizations[2];
   await signIn(page, `owner@seed-${C.seed}.example.test`);
@@ -133,20 +130,7 @@ test("SEATS-BILLING @p0 @read 설정의 종량 지출은 벤더 청구 누계이
   expect(Number(cursor.meteredMonthToDate.data.actualBilledUsd)).toBe(137.42);
   const total = page.getByRole("group", { name: "종량 지출", exact: true });
   await expect(total).toContainText(settings.summary.meteredMonthToDate.data?.actualBilledUsd != null ? "$137.42" : "-");
-  await page.getByRole("button", { name: "Cursor 계약 설정 열기" }).click();
-  let drawer = page.getByRole("dialog", { name: "Cursor 계약 설정" });
-  const metered = drawer.getByRole("region", { name: "종량 지출" });
-  await expect(metered).toContainText("$137.42");
-  await expect(metered).toContainText("이번 청구 주기의 사용 지출");
-  await expect(metered).toContainText("개발 시드(실제 청구 아님)");
-  if (cursor.meteredMonthToDate.reason) await expect(metered).toContainText(cursor.meteredMonthToDate.reason === "billing_sync_failing" ? "청구 누계 읽기가 실패하고 있습니다" : "청구 누계를 읽은 지 오래되었습니다");
-  await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
-
   await signIn(page, `owner@seed-${A.seed}.example.test`);
   await page.goto("/settings");
-  await page.getByRole("button", { name: "Claude (Anthropic) 계약 설정 열기" }).click();
-  drawer = page.getByRole("dialog", { name: "Claude (Anthropic) 계약 설정" });
-  await expect(drawer.getByRole("region", { name: "종량 지출" })).toContainText("이 플랜에는 청구 조회 API가 없습니다 — 환산 비용이나 계약액으로 채우지 않습니다.");
   await expect(page.getByRole("group", { name: "종량 지출", exact: true })).toContainText("이 플랜에는 청구 조회 API가 없습니다");
-  await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
 });

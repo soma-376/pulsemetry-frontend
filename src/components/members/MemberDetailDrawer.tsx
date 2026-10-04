@@ -1,5 +1,6 @@
 "use client";
 
+import { useId, useState, type ReactNode } from "react";
 import { DetailDrawer } from "@/components/ui/DetailDrawer";
 import { InstallationCodePanel } from "./InstallationCodePanel";
 import { MemberEditForm, type MemberEditTarget } from "./MemberEditForm";
@@ -16,8 +17,6 @@ type Props = {
   post: ReturnType<typeof createCommands>;
   subject: MemberSubject | null;
   open: boolean;
-  /** 조회 기간 (YYYY-MM-DD) */
-  period: { startDate: string; endDate: string };
   teams: ServerTeam[];
   /** 로그인한 사용자의 memberId */
   currentMemberId: string;
@@ -28,8 +27,26 @@ type Props = {
   onReload: () => Promise<MemberEditTarget>;
 };
 
-const Field = ({ label, children }: { label: string; children: React.ReactNode }) =>
+const Field = ({ label, children }: { label: string; children: ReactNode }) =>
   <div><dt className="mb-1 text-[11px] text-text3">{label}</dt><dd className="tnum break-words">{children}</dd></div>;
+
+/** 처음 펼칠 때 조회하고, 접었다 펼쳐도 방금 발급한 코드와 진행 중인 작업을 유지한다. */
+function DetailSection({ title, children }: { title: string; children: ReactNode }) {
+  const id = useId();
+  const [state, setState] = useState<"initial" | "expanded" | "collapsed">("initial");
+  const expanded = state === "expanded";
+  return <section aria-label={title} className="border-t border-border pt-4">
+    <h3>
+      <button type="button" aria-label={title} aria-expanded={expanded} aria-controls={id}
+        onClick={() => setState(expanded ? "collapsed" : "expanded")}
+        className="flex min-h-9 w-full cursor-pointer items-center justify-between gap-3 rounded-sm text-left text-[13px] font-semibold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue">
+        <span>{title}</span>
+        <span aria-hidden="true" className="text-[11px] font-normal text-text3">{expanded ? "접기" : "펼치기"}</span>
+      </button>
+    </h3>
+    <div id={id} hidden={!expanded} className="pt-3">{state !== "initial" && children}</div>
+  </section>;
+}
 
 export function editTarget(subject: MemberSubject): MemberEditTarget {
   return subject.kind === "member"
@@ -38,7 +55,7 @@ export function editTarget(subject: MemberSubject): MemberEditTarget {
 }
 
 /** 서버가 준 구성원 한 명의 값과 팀·역할 편집. 좌석 배정 상태는 사용 관측 상태와 따로 보여 준다. */
-export function MemberDetailDrawer({ organizationId, post, subject, open, period, teams, currentMemberId, editable, onClose, onAfterClose, onSaved, onReload }: Props) {
+export function MemberDetailDrawer({ organizationId, post, subject, open, teams, currentMemberId, editable, onClose, onAfterClose, onSaved, onReload }: Props) {
   const target = subject ? editTarget(subject) : null;
   const member = subject?.kind === "member" ? subject.row : null;
   const invite = subject?.kind === "invite" ? subject.row : null;
@@ -57,26 +74,13 @@ export function MemberDetailDrawer({ organizationId, post, subject, open, period
           </dl>
           {fields}
         </section>
-        {member?.status === "active" && editable && <InstallationCodePanel organizationId={organizationId} post={post}
-          memberId={member.memberId} account={member.account} version={member.version} />}
-        {member && <>
-          <section aria-label="기간 사용">
-            <h3 className="mb-3 text-[13px] font-semibold">기간 사용</h3>
-            <p className="mb-3 text-[11px] leading-5 text-text3">{period.startDate.replaceAll("-", ".")} ~ {period.endDate.replaceAll("-", ".")}</p>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-              <Field label="사용 환산액">{member.costText}</Field>
-              <Field label="세션">{member.sessionText}</Field>
-              <div className="col-span-2"><Field label="마지막 사용">{member.lastSeen}</Field></div>
-            </dl>
-          </section>
-          <section aria-label="벤더 좌석">
-            <h3 className="mb-3 text-[13px] font-semibold">벤더 좌석</h3>
-            <dl className="mb-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-              <Field label="배정 상태">{member.seatStateLabel}</Field>
-            </dl>
-            {open && <MemberSeatDetails organizationId={organizationId} memberId={member.memberId} editable={editable} />}
-          </section>
-        </>}
+        {member?.status === "active" && editable && <DetailSection title="설치 코드">
+          <InstallationCodePanel organizationId={organizationId} post={post}
+            memberId={member.memberId} account={member.account} version={member.version} />
+        </DetailSection>}
+        {member && <DetailSection title="벤더 좌석">
+          {open && <MemberSeatDetails organizationId={organizationId} memberId={member.memberId} editable={editable} />}
+        </DetailSection>}
       </div>}
     </DetailDrawer>}
   </MemberEditForm>;

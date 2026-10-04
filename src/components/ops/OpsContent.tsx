@@ -12,7 +12,7 @@ import { useBackendSession } from "@/lib/api/session";
 import { alertsCsv, downloadCsv } from "@/lib/csv-export";
 
 /**
- * 운영 · 보안 — 보안 범주 알림(비허용 모델 호출·미승인 도구 사용, 서버 ADR 0051)의 목록·상세·확인.
+ * 운영 · 보안 — 보안 범주 알림(미등록 제품 사용과 과거 알림 이력, 허브 ADR 0008)의 목록·상세·확인.
  * 세션 조회와 감사 로그는 이 화면의 범위가 아니다(감사 로그 저장소가 정해지지 않았다).
  */
 export function OpsContent() {

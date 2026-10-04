@@ -9,7 +9,11 @@ async function openMember(page: Page, account: string) {
   const members = page.getByRole("region", { name: "구성원 목록", exact: true });
   await members.getByRole("textbox", { name: "구성원 검색" }).fill(account);
   await members.getByRole("button", { name: `${account} 구성원 상세`, exact: true }).click();
-  return page.getByRole("dialog", { name: "구성원 상세", exact: true }).getByRole("region", { name: "설치 코드", exact: true });
+  const drawer = page.getByRole("dialog", { name: "구성원 상세", exact: true });
+  const expand = drawer.getByRole("button", { name: "설치 코드", exact: true });
+  await expect(expand).toHaveAttribute("aria-expanded", "false");
+  await expand.click();
+  return drawer.getByRole("region", { name: "설치 코드", exact: true });
 }
 
 test("활성 구성원 상세에서 설치 코드를 발급하면 코드와 메일 발송 상태를 따로 보이고, 발송 결과를 다시 읽으며, 다시 내면 이전 코드를 폐기했다고 말한다", async ({ page }) => {
@@ -17,7 +21,6 @@ test("활성 구성원 상세에서 설치 코드를 발급하면 코드와 메�
   await openDashboard(page, "/members");
   const target = api.members[0];
   const panel = await openMember(page, target.account);
-  await expect(panel).toContainText("가입에는 쓸 수 없고 설치에 한 번 씁니다");
   const waiting = panel.getByRole("status", { name: `${target.account} 쓰지 않은 설치 코드`, exact: true });
   await expect(waiting).toHaveText("쓰지 않은 설치 코드가 없습니다.");
   const start = panel.getByRole("button", { name: `${target.account} 설치 코드 발급`, exact: true });
@@ -32,6 +35,13 @@ test("활성 구성원 상세에서 설치 코드를 발급하면 코드와 메�
   await panel.getByRole("button", { name: "발급 확인", exact: true }).click();
   const result = panel.getByRole("status", { name: `${target.account} 설치 코드 발급 결과`, exact: true });
   await expect(result.getByLabel(`${target.account} 설치 코드`, { exact: true })).toHaveText("FAKE-INST-0001");
+  // 접었다 펼쳐도 한 번만 보여 주는 코드가 사라지거나 다시 발급되지 않는다.
+  const expand = panel.getByRole("button", { name: "설치 코드", exact: true });
+  await expand.click();
+  await expect(result).toBeHidden();
+  await expand.click();
+  await expect(result.getByLabel(`${target.account} 설치 코드`, { exact: true })).toHaveText("FAKE-INST-0001");
+  expect(issued(api)).toHaveLength(1);
   // 발송 상태는 서버의 초대 목록 값이다 — 발급 결과와 따로 보인다.
   const delivery = waiting.getByLabel(`${target.account} 설치 코드 메일 발송 상태`, { exact: true });
   await expect(delivery).toHaveText("메일 발송 대기");

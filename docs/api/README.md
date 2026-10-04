@@ -65,7 +65,6 @@
 | 수집 정책 변경 | E PUT /collection-policy | 확인/선택 적용(회수 기준·집계 보존 포함) |
 | 온보딩 | E GET /onboarding · POST /onboarding/complete | 온보딩 진입·완료 |
 | 알림 규칙 변경 | E PATCH /settings/alert-rules/{ruleId} | 토글 |
-| 알림 목록 저장 | E PUT /settings/alert-lists/{listId} | 모델 허용·승인 도구 목록 저장 |
 | 알림 목록·확인 | D GET /alerts · GET /alerts/{alertId} · E POST /alerts/{alertId}/acknowledge | 개요 알림 보기·확인 |
 | 미적용 설치 | D GET /installations?policyStatus=outdated | 설치 현황 모달·더보기 |
 | 업데이트 안내 | E POST /installation-update-notifications | 안내 전송 |

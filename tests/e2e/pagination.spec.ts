@@ -69,23 +69,28 @@ test("PAGE-TEAMS-A @p1 @read (팀 분석 조회 limit 2) 팀 분석은 같은 sn
   expect(new Set(pages.filter((query) => query.has("cursor")).map((query) => query.get("snapshotId"))).size).toBe(1);
 });
 
-test("PAGE-SEATS-A @p1 @read (제품 좌석 조회 limit 2) 설정의 좌석 목록은 더 보기로 서버 cursor 를 이어 전부를 보이고 끝나면 더 보기가 없다", async ({ page }) => {
-  await signIn(page, `owner@seed-${A.seed}.example.test`);
-  const vendors = (await authenticatedRequest(page, dashboardBase(), `${O}/settings`)).body.vendors.items as { vendorId: string; kind: string; displayName: string }[];
-  const claude = vendors.find((vendor) => vendor.kind === "claude_team")!;
-  const seats = (await authenticatedRequest(page, dashboardBase(), `${O}/vendors/${claude.vendorId}/seats?limit=200`)).body.seats.items as { account: string }[];
-  expect(seats.length).toBeGreaterThan(2);
-  await shrinkLimit(page, /\/vendors\/[^/]+\/seats$/, 2);
-  await page.goto("/settings");
-  await page.getByRole("button", { name: `${claude.displayName} 계약 설정 열기`, exact: true }).click();
-  const drawer = page.getByRole("dialog", { name: `${claude.displayName} 계약 설정`, exact: true });
-  const list = drawer.getByRole("list", { name: `${claude.displayName} 좌석 목록` });
-  await expect(list.getByRole("listitem")).toHaveCount(2);
-  const more = drawer.getByRole("button", { name: "더 보기", exact: true });
-  for (let shown = 2; shown < seats.length; shown = Math.min(shown + 2, seats.length)) {
-    await more.click();
-    await expect(list.getByRole("listitem")).toHaveCount(Math.min(shown + 2, seats.length));
-  }
-  await expect(more).toHaveCount(0);
-  for (const seat of seats) await expect(list).toContainText(seat.account);
+test("PAGE-SEATS-A @p1 @read 제품 좌석 API는 같은 snapshot의 cursor를 이어 중복 없이 모든 좌석을 반환한다", async ({ page }) => {
+  await signIn(page, "owner@seed-" + A.seed + ".example.test");
+  const vendors = (await authenticatedRequest(page, dashboardBase(), O + "/settings")).body.vendors.items as { vendorId: string; kind: string }[];
+  const claude = vendors.find(vendor => vendor.kind === "claude_team")!;
+  const path = O + "/vendors/" + claude.vendorId + "/seats";
+  const all = (await authenticatedRequest(page, dashboardBase(), path + "?limit=200")).body.seats.items as { seatAssignmentId: string }[];
+  expect(all.length).toBeGreaterThan(2);
+  const ids: string[] = [];
+  let cursor: string | null = null;
+  let snapshot: string | undefined;
+  do {
+    const query = new URLSearchParams({ limit: "2" });
+    if (cursor && snapshot) { query.set("cursor", cursor); query.set("snapshotId", snapshot); }
+    const response = await authenticatedRequest(page, dashboardBase(), path + "?" + query);
+    expect(response.status).toBe(200);
+    const body = response.body;
+    if (snapshot) expect(body.meta.snapshotId).toBe(snapshot);
+    snapshot = body.meta.snapshotId;
+    ids.push(...body.seats.items.map((seat: { seatAssignmentId: string }) => seat.seatAssignmentId));
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.length).toBeLessThanOrEqual(all.length);
+    cursor = body.seats.nextCursor;
+  } while (cursor);
+  expect(ids.sort()).toEqual(all.map(seat => seat.seatAssignmentId).sort());
 });

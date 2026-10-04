@@ -44,9 +44,7 @@ export function InstallationCodePanel({ organizationId, post, memberId, account,
   const latest = codes.data?.at(-1) ?? null;
   // 방금 낸 코드의 발송 상태는 목록의 값이 있으면 그것, 아직 다시 읽기 전이면 발급 응답의 값이다.
   const delivery = latest ? deliveryView(latest.delivery) : issued ? deliveryView(issued.delivery) : null;
-  return <section aria-label="설치 코드">
-    <h3 className="mb-3 text-[13px] font-semibold">설치 코드</h3>
-    <p className="mb-3 text-[11px] leading-5 text-text3">새 PC 등에 CLI를 다시 설치할 때 쓰는 코드입니다. 가입에는 쓸 수 없고 설치에 한 번 씁니다.</p>
+  return <div>
     <div role="status" aria-label={`${account} 쓰지 않은 설치 코드`} className="mb-3 text-xs">
       {codes.isPending ? <span className="text-text3">설치 코드를 확인하는 중입니다…</span>
         : latest && delivery ? <span className="flex flex-wrap gap-x-2">
@@ -72,5 +70,5 @@ export function InstallationCodePanel({ organizationId, post, memberId, account,
       <InviteCode email={account} code={issued.code} label="설치 코드" />
     </div>}
     {issue.error && <ErrorState variant="panel" className="mt-3" message={issue.error.message} />}
-  </section>;
+  </div>;
 }

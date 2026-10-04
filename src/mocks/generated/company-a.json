@@ -493,30 +493,11 @@
       "version": 1
     },
     {
-      "ruleId": "model_not_allowed",
-      "enabled": true,
-      "version": 1
-    },
-    {
-      "ruleId": "tool_unapproved",
-      "enabled": true,
-      "version": 1
+      "ruleId": "product_not_registered",
+      "enabled": false,
+      "version": 0
     }
   ],
-  "alertLists": {
-    "allowed_models": [
-      "claude-haiku-*",
-      "claude-sonnet-*",
-      "gpt-5",
-      "gpt-5-mini"
-    ],
-    "approved_tools": [
-      "Bash",
-      "Edit",
-      "Read",
-      "Write"
-    ]
-  },
   "legacyContracts": [
     {
       "contractId": "fdc28479-2035-36bf-ae5a-1767ada67c0a",

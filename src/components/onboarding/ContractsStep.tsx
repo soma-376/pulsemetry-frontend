@@ -49,7 +49,10 @@ export function ContractsStep({ organizationId, draft, onChange, onBusy }: { org
   const busy = save.isPending || remove.isPending;
   const errors = [catalog.error, plans.error, vendors.error, save.error, remove.error].filter(Boolean);
   return <div className="flex flex-col gap-6">
-    <p className="text-sm leading-6 text-text2">사용 중인 개발 도구를 하나 이상 등록하세요. 플랜·좌석 수·단가는 나중에 입력할 수 있습니다.</p>
+    <div className="flex flex-col gap-2">
+      <p className="text-sm leading-6 text-text2">조직에서 계약한 벤더의 제품을 하나 이상 등록하세요. 플랜·좌석 수·단가는 나중에 입력할 수 있습니다.</p>
+      <p className="text-xs leading-5 text-text3">등록한 제품이 사용 알림의 기준이 됩니다. 온보딩 후 설정에서 미등록 제품 사용 알림을 켤 수 있습니다.</p>
+    </div>
     {errors.length > 0 && <div role="alert" className="text-xs text-red">{errors.map((error, index) => <p key={index}>{error!.message}</p>)}<Button size="sm" onClick={() => { void catalog.refetch(); if (draft.kind) void plans.refetch(); void vendors.refetch(); }} disabled={busy}>다시 조회</Button></div>}
     {vendors.isPending && <p role="status" className="text-xs text-text3">등록한 벤더를 불러오는 중입니다…</p>}
     {!!vendors.data?.some(v => v.source === "manual") && <section aria-label="등록한 벤더" className="rounded-lg border border-border bg-sub px-4">

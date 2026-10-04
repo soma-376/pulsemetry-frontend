@@ -176,7 +176,7 @@ function OrganizationMembers({ organizationId, currentMemberId, initialInvite }:
       teams={teams.data} onInvite={invite} />
     {model && <MemberDetailDrawer organizationId={organizationId} post={post} subject={subjectOf(model, selected)} teams={teams.data ?? []}
       currentMemberId={currentMemberId} editable={model.capabilities.assignTeam}
-      open={drawerOpen} period={model.period} onClose={() => setDrawerOpen(false)} onAfterClose={() => setSelected(null)}
+      open={drawerOpen} onClose={() => setDrawerOpen(false)} onAfterClose={() => setSelected(null)}
       onSaved={(message) => { showToast(message); setDrawerOpen(false); }} onReload={reloadSubject} />}
     <Toast toast={toast} onDismiss={dismissToast} />
   </>;

@@ -75,7 +75,7 @@ type CollectionPolicy = {
   cleanupOperationId: string | null; // 이 조직의 가장 최근 보존 정리 작업
 };
 type AlertRule = {
-  ruleId: "spend_spike" | "quota_exceeded" | "model_not_allowed" | "tool_unapproved";
+  ruleId: "spend_spike" | "quota_exceeded" | "product_not_registered";
   version: number;
   enabled: boolean;
   availability: Availability;
@@ -84,7 +84,6 @@ type AlertRule = {
   evaluationWindow: string;
   comparisonWindow: string | null;
 };
-type AlertList = { listId: "allowed_models" | "approved_tools"; version: number; entries: string[]; updatedAt: string | null };
 type SettingsResponse = {
   meta: CurrentMeta;
   ingest: OverviewResponse["ingest"];
@@ -119,8 +118,6 @@ type SettingsResponse = {
     evidence?: { heartbeat: number; appliedConfirmation: number; none: number };
   };
   alertRules: AlertRule[];
-  /** 알림 규칙이 기대는 두 목록(서버 가산 — ADR 0051). 저장한 적 없으면 entries [] · version 0 */
-  alertLists?: { allowedModels: AlertList; approvedTools: AlertList };
 };
 type VendorsResponse = { meta: CurrentMeta; vendors: Page<Vendor> };
 type VendorResponse = { meta: CurrentMeta; vendor: Vendor };
@@ -165,7 +162,6 @@ type PolicySaved = {
   cleanupOperationId: string | null;
 };
 type AlertRulePatchRequest = { expectedVersion: number; enabled: boolean };
-type AlertListPutRequest = { expectedVersion: number; entries: string[] };
 type NotifyInstallationsRequest = { installationIds: string[]; expectedPolicyVersion: number };
 ```
 
@@ -270,7 +266,7 @@ PUT /api/v1/organizations/{organizationId}/collection-policy(enrollment 서비�
 - eligible=applied+outdated+unknown. 정책 ACK가 없으면 unknown이며 적용 완료로 추정하지 않는다.
 - 판정의 근거(`appliedEvidence`·`policyRollout.evidence`)를 구분해 말한다. 적용 확인 기록은 그 판을 적용한 **적이 있다**는 이력이고 최근 보고가 아니다.
   telemetryctl 기본 브랜치는 설치 보고를 보내지 않으므로 지금 배포된 설치는 대부분 적용 확인 기록이 근거다. "설치 보고 기준"처럼 한 근거로 뭉뚱그리지 않는다.
-- 원문 보존 기간과 집계 보존 기간은 별개다. rawContentRetentionDays는 서버의 기존 원문 정책을 읽기만 한다.
+- 원문 보존 기간과 집계 보존 기간은 별개다. rawContentRetentionDays는 조회 원천이 없어 서버가 null을 반환하며, 설정 화면에는 표시하지 않는다.
 - 집계 보존 단축(무기한 → 유한 포함)은 정리 작업을 만들고 cleanupOperationId로 돌려준다. 진행은 `GET /operations/{operationId}`를
   `Retry-After` 간격으로 조회한다(대기 → 진행 → 완료, 미완이면 진행 중인 채로 `retention.status=incomplete`, 정해진 횟수 안에 못 끝내면 실패).
   완료는 논리 삭제 완료다. 새로고침 뒤에는 설정의 `collectionPolicy.cleanupOperationId`(가장 최근 정리 작업)로 다시 조회한다.
@@ -282,17 +278,21 @@ PUT /api/v1/organizations/{organizationId}/collection-policy(enrollment 서비�
 
 ## 알림과 미적용 설치
 
-PATCH /settings/alert-rules/{ruleId}, AlertRulePatchRequest → 200 AlertRule (enrollment-api, 서버 ADR 0051).
-PUT /settings/alert-lists/{listId}(`allowed_models`·`approved_tools`), AlertListPutRequest → 200 `{ list: AlertList; alertRules: AlertRule[] }` — 전체 교체.
-v1은 토글과 두 목록만 수정한다. UI의 고정 임계값은 서버 값으로 대체한다. 임계값 편집 UI는 없다.
+PATCH /settings/alert-rules/{ruleId}, AlertRulePatchRequest → 200 AlertRule (enrollment-api, 허브 ADR 0008).
+수정하는 값은 규칙의 켜짐뿐이며 임계값은 서버에서 제공한다. 신규 미등록 제품 규칙은 기본 꺼짐(version 0)이다.
 spend_spike는 직전 완전한 KST 7일 대 이전 7일 비용 증가율 0.4,
-quota_exceeded는 최근 24시간 차단된 고유 사용자 5명,
-model_not_allowed/tool_unapproved는 최근 24시간 해당 이벤트 1회가 **초기 제안 기준**이다.
-켤 수 없는 규칙은 unavailable과 reason을 반환하고 화면은 토글을 비활성화한 채 사유를 보여 준다 —
-`completeness_not_available`(설치의 수집 구간 보고 없음), `source_not_available`(한도 초과 — 검증된 관측 없음),
-`allowed_models_not_configured`·`approved_tools_not_configured`(목록이 비었음). 켜진 규칙은 언제나 끌 수 있다.
-켤 수 없는 규칙을 켜면 422 `alert_rule_unavailable`, 켜진 규칙이 기대는 목록을 비우면 422 `alert_list_in_use`, 판이 다르면 409다.
-목록은 줄마다 하나(앞뒤 공백·빈 줄·중복은 화면이 정리), 대소문자를 구분하는 정확 일치이고 끝의 `*` 하나는 접두사 일치다.
+quota_exceeded는 최근 24시간 차단된 고유 사용자 5명(검증된 관측 원천 미지원),
+product_not_registered는 최근 24시간 미등록 제품의 대표 사용량 이벤트 1회가 기준이다.
+
+등록 기준은 이 조직이 보관 처리하지 않은 managed_vendors.kind다. 계약 상세가 비었거나 만료되어도 등록된 제품이다.
+관측 product를 카탈로그의 명시적인 제품 매핑과 비교한다. 모델 이름·모델 공급자·도구 이름으로 판정하지 않고,
+미분류·매핑 불가 제품은 알림 대상으로 보지 않는다. 이 알림은 개인 결제나 무단 사용을 뜻하지 않는다.
+등록 제품이 하나도 없으면 unavailable / registered_products_not_configured이며 켤 수 없다.
+다른 사유는 completeness_not_available(수집 구간 보고 없음), source_not_available(한도 초과 관측 원천 없음)이다.
+켜진 규칙은 가용성이 사라져도 끌 수 있다. 켤 수 없는 규칙을 켜면 422 alert_rule_unavailable, 판이 다르면 409다.
+
+현재 설정 응답은 위 세 규칙만 반환한다. 모델 허용·승인 도구 목록과 편집 API는 폐기하고 alertLists도 반환하지 않는다.
+과거 모델·도구 규칙과 목록의 DB 기록, 알림 및 확인 이력은 보존한다. 기존 열린 모델·도구 알림은 마이그레이션에서 닫는다.
 평가와 알림 확인은 개요 명세의 "수집 상태와 알림"이다. 알림 발송(메일 등) 채널은 없다.
 
 GET /installations의 outdated는 적용 버전이 알려져 있고 desiredVersion보다 낮은 설치다.

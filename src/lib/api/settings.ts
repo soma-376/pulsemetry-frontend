@@ -4,7 +4,7 @@ import { z } from "zod";
 import { apiJson, managementKey, ManagementError, orgPath, readOptions } from "./management";
 import { overviewSchema } from "./overview";
 import { seatSourceSchema } from "./seats";
-import { alertListsSchema, alertRuleSchema } from "./alerts";
+import { alertRuleSchema } from "./alerts";
 
 const money = z.string().regex(/^\d+(?:\.\d+)?$/);
 const count = z.number().int().nonnegative();
@@ -50,9 +50,8 @@ export const settingsSchema = z.object({
   // 가산 전의 서버는 보내지 않는다 — 없으면 근거를 말하지 않는다("설치 보고 기준"처럼 꾸미지 않는다).
   policyRollout: z.object({ desiredVersion: count, eligibleInstallations: count, appliedInstallations: count, outdatedInstallations: count, unknownInstallations: count,
     evidence: z.object({ heartbeat: z.number().int().nonnegative(), appliedConfirmation: z.number().int().nonnegative(), none: z.number().int().nonnegative() }).optional() }),
-  // 알림 규칙의 저장값·가용성·사유와 두 목록(서버 ADR 0051 — alertLists 는 가산).
+  // 등록 제품 기준 알림 규칙의 저장값·가용성·사유(허브 ADR 0008).
   alertRules: z.array(alertRuleSchema),
-  alertLists: alertListsSchema.optional(),
 });
 export type Settings = z.infer<typeof settingsSchema>;
 export async function fetchSettings(org: string, signal?: AbortSignal): Promise<Settings> {

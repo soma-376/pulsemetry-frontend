@@ -42,7 +42,9 @@ test("INSTALL-CODE-A @p1 @write 활성 구성원에게 설치 코드를 내면 �
     const members = page.getByRole("region", { name: "구성원 목록", exact: true });
     await members.getByRole("textbox", { name: "구성원 검색" }).fill(target.account);
     await members.getByRole("button", { name: `${target.account} 구성원 상세`, exact: true }).click();
-    return page.getByRole("dialog", { name: "구성원 상세", exact: true }).getByRole("region", { name: "설치 코드", exact: true });
+    const drawer = page.getByRole("dialog", { name: "구성원 상세", exact: true });
+    await drawer.getByRole("button", { name: "설치 코드", exact: true }).click();
+    return drawer.getByRole("region", { name: "설치 코드", exact: true });
   };
   await page.goto("/members");
   let panel = await openDetail();

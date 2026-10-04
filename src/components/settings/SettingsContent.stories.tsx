@@ -32,7 +32,7 @@ export const Loading: Story = {
   name: "최초 조회·설정 본문 전체 로딩", parameters: { scenario: "loading" },
   async play({ canvas }) {
     await canvas.findByText("설정을 불러오는 중입니다…");
-    await expect(canvas.queryByRole("region", { name: "벤더 연동" })).not.toBeInTheDocument();
+    await expect(canvas.queryByRole("region", { name: "계약 벤더" })).not.toBeInTheDocument();
     await expect(canvas.queryByRole("region", { name: "수집 정책" })).not.toBeInTheDocument();
     await expect(canvas.queryByRole("region", { name: "알림 규칙" })).not.toBeInTheDocument();
     await expect(canvas.queryByText("유효 계약 기준 월 합계")).not.toBeInTheDocument();
@@ -42,7 +42,7 @@ export const LoadingThenLoaded: Story = {
   name: "최초 조회 완료·실제 빈 값 표시", parameters: { scenario: "slow-response" },
   async play({ canvas }) {
     await canvas.findByText("설정을 불러오는 중입니다…");
-    await canvas.findByRole("region", { name: "벤더 연동" }, { timeout: 10000 });
+    await canvas.findByRole("region", { name: "계약 벤더" }, { timeout: 10000 });
     await expect(canvas.queryByText("설정을 불러오는 중입니다…")).not.toBeInTheDocument();
     await expect(canvas.getByRole("region", { name: "수집 정책" })).toBeVisible();
     await expect(canvas.getByRole("region", { name: "알림 규칙" })).toBeVisible();
@@ -52,7 +52,7 @@ export const LoadingThenLoaded: Story = {
 export const Refreshing: Story = {
   name: "새로고침·기존 화면 유지", parameters: { scenario: "refreshing" },
   async play({ canvas, userEvent }) {
-    const vendors = await canvas.findByRole("region", { name: "벤더 연동" });
+    const vendors = await canvas.findByRole("region", { name: "계약 벤더" });
     const policy = canvas.getByRole("region", { name: "수집 정책" });
     await userEvent.click(canvas.getByRole("button", { name: "새로고침" }));
     const refreshing = await canvas.findByRole("button", { name: "조회 중…" });
@@ -96,7 +96,7 @@ export const LoadError: Story = {
   async play({ canvas }) {
     await canvas.findByRole("alert", {}, { timeout: 10000 });
     await expect(canvas.queryByText("설정을 불러오는 중입니다…")).not.toBeInTheDocument();
-    await expect(canvas.queryByRole("region", { name: "벤더 연동" })).not.toBeInTheDocument();
+    await expect(canvas.queryByRole("region", { name: "계약 벤더" })).not.toBeInTheDocument();
     await expect(canvas.getByRole("button", { name: "다시 조회" })).toBeEnabled();
   },
 };

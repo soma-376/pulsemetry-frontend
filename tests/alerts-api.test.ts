@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import example from "../docs/api/overview-response.example.json";
-import { alertReasonText, alertsResponseSchema, alertSummary, parseEntries } from "../src/lib/api/alerts";
+import { alertReasonText, alertsResponseSchema, alertSummary } from "../src/lib/api/alerts";
 import { overviewSchema } from "../src/lib/api/overview";
 import { settingsSchema } from "../src/lib/api/settings";
 import settingsExample from "../docs/api/settings-response.example.json";
@@ -29,17 +29,22 @@ test("알림 목록 응답을 읽고 요약은 서버 값만 쓴다", () => {
   assert.throws(() => alertsResponseSchema.parse({ ...page, alerts: { ...page.alerts, items: [item({ category: "other" })] } }));
 });
 
-test("목록 입력은 줄마다 하나 — 공백·빈 줄·중복을 뺀다", () => {
-  assert.deepEqual(parseEntries(" claude-sonnet-*\n\ngpt-5 \nclaude-sonnet-*\n"), ["claude-sonnet-*", "gpt-5"]);
-  assert.deepEqual(parseEntries("\n  \n"), []);
+test("미등록 제품 알림은 서버의 제품명을 표시하고 제품명을 모르면 ID를 쓴다", () => {
+  const product = { ...item({}), ruleId: "product_not_registered", subject: "openai_biz", summary: { productId: "openai_biz", productName: "ChatGPT / Codex (OpenAI)" } };
+  const parsed = alertsResponseSchema.parse({ meta: { organizationId: "o", snapshotId: "s", asOf: "2026-10-04T00:00:00Z" },
+    evaluation: { availability: "available", reason: null, asOf: "2026-10-04T00:00:00Z", rules: [] },
+    alerts: { items: [product], totalCount: 1, nextCursor: null } }).alerts.items[0];
+  assert.equal(alertSummary(parsed), "제품 ChatGPT / Codex (OpenAI) · 3건 · 구성원 2명");
+  assert.equal(alertSummary({ ...parsed, summary: {} }), "제품 openai_biz · 3건 · 구성원 2명");
+  assert.equal(alertReasonText("registered_products_not_configured"), "계약 벤더의 제품을 먼저 등록하세요");
 });
 
-test("설정은 규칙의 판·가용성·사유와 가산 목록을 읽는다", () => {
+test("설정은 현재 규칙의 판·가용성·사유를 읽는다", () => {
   const data = settingsSchema.parse(settingsExample);
   assert.deepEqual(data.alertRules.map((rule) => [rule.ruleId, rule.availability, rule.reason]), [
     ["spend_spike", "unavailable", "evaluation_not_configured"], ["quota_exceeded", "unavailable", "evaluation_not_configured"],
-    ["model_not_allowed", "unavailable", "evaluation_not_configured"], ["tool_unapproved", "unavailable", "evaluation_not_configured"]]);
-  assert.equal(data.alertLists, undefined);
+    ["product_not_registered", "available", null]]);
+  assert.equal("alertLists" in data, false);
 });
 
 test("개요 알림 KPI — 평가 전이면 서버 사유, 평가 뒤면 미확인 수·분류·평가 시각", () => {

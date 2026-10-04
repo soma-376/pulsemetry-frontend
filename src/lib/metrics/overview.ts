@@ -137,7 +137,7 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
       label: "보안 경보 및 알림",
       value: int(ORG.alerts),
       unit: "건",
-      def: "미확인 알림 · 보안: 비허용 모델 사용, 권한 자동승인 급증, 미승인 도구 연결 · 비용: 팀 비용 +40% 이상, 좌석 한도 차단 발생, 팀 미배분 비용 10% 초과",
+      def: "현재 미확인 알림 · 보안: 계약 벤더로 등록하지 않은 제품의 사용 · 비용: 비용 급증, 한도 초과. 규칙별 평가 가능 여부는 서버의 근거에 따르며 과거 알림 이력도 포함합니다.",
       caption: "현재 미확인 · 보안 2 · 비용 3",
       delta: ORG.alertsDelta,
       up: true,

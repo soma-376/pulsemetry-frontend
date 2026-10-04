@@ -53,6 +53,7 @@ test("admin-action reclaim stays awaiting until confirmed, then restores through
   await openDashboard(page, "/members");
   await page.getByRole("region", { name: "좌석 회수 후보", exact: true }).getByRole("button", { name: `${candidate.account} 좌석 상세`, exact: true }).click();
   const drawer = page.getByRole("dialog", { name: "구성원 상세", exact: true });
+  await drawer.getByRole("button", { name: "벤더 좌석", exact: true }).click();
   await drawer.getByRole("button", { name: `Claude ${candidate.account} 좌석 회수` }).click();
 
   const modal = page.getByRole("dialog", { name: "좌석 회수 확인", exact: true });

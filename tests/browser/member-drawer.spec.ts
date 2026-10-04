@@ -24,9 +24,10 @@ test("row opens the standard-width drawer with the server values of that member"
   await expect(drawer.getByRole("region", { name: "팀 및 역할" })).toContainText(target.displayName);
   await expect(drawer.getByRole("region", { name: "팀 및 역할" })).toContainText(target.team.teamName);
   await expect(drawer.getByRole("region", { name: "팀 및 역할" })).toContainText("구성원");
-  await expect(drawer.getByRole("region", { name: "기간 사용" })).toContainText(`$${Number(target.periodUsage!.equivalentCostUsd).toFixed(2)}`);
-  // 좌석 배정 상태는 사용 관측 상태와 따로 표시한다. 서버가 모르면 모른다고 보여 준다.
-  await expect(drawer.getByRole("region", { name: "벤더 좌석" })).toContainText("확인 불가");
+  await expect(drawer.getByRole("region", { name: "기간 사용" })).toHaveCount(0);
+  await expect(drawer.getByRole("button", { name: "설치 코드", exact: true })).toHaveAttribute("aria-expanded", "false");
+  await expect(drawer.getByRole("button", { name: "벤더 좌석", exact: true })).toHaveAttribute("aria-expanded", "false");
+  await expect(drawer.getByRole("list", { name: "벤더별 좌석 상세" })).toHaveCount(0);
   await expect(drawer).not.toContainText("데모");
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await panel.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
@@ -46,6 +47,10 @@ test("candidate entry opens the drawer of the member the server named", async ({
   await expect(drawer).toContainText(candidate.account);
   await expect(drawer.getByText("회수 후보", { exact: true }).first()).toBeVisible();
   // 좌석은 서버의 구성원 좌석이다 — 회수 후보여도 회수할 수 있는지는 서버가 말한다.
+  const expand = drawer.getByRole("button", { name: "벤더 좌석", exact: true });
+  await expand.focus();
+  await expand.press("Enter");
+  await expect(expand).toHaveAttribute("aria-expanded", "true");
   const seats = drawer.getByRole("list", { name: "벤더별 좌석 상세" });
   await expect(seats).toContainText("Claude");
   await expect(seats).toContainText("회수할 수 없음 — 관리 기능이 꺼진 서버입니다");
@@ -68,6 +73,6 @@ test("without a seat ledger no member is a reclaim candidate and unobserved memb
   await row.click();
   const drawer = page.getByRole("dialog", { name: "구성원 상세", exact: true });
   await expect(drawer.getByText("신호 대기", { exact: true })).toBeVisible();
-  await expect(drawer.getByRole("region", { name: "기간 사용" })).not.toContainText("$0");
+  await expect(drawer.getByRole("region", { name: "기간 사용" })).toHaveCount(0);
   await expect(drawer.getByRole("button", { name: /좌석 회수$/ })).toHaveCount(0);
 });

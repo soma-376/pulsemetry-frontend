@@ -103,7 +103,7 @@
     "collectRawContent": false,
     "reclaimIdleDays": 14,
     "aggregateRetentionMonths": 24,
-    "rawContentRetentionDays": 30,
+    "rawContentRetentionDays": null,
     "effectiveAt": "2026-09-19T00:00:00Z",
     "updatedBy": "member-001",
     "settingsVersion": 2,
@@ -166,24 +166,11 @@
       "comparisonWindow": null
     },
     {
-      "ruleId": "model_not_allowed",
-      "version": 1,
+      "ruleId": "product_not_registered",
+      "version": 0,
       "enabled": false,
-      "availability": "unavailable",
-      "reason": "evaluation_not_configured",
-      "threshold": {
-        "value": 1,
-        "unit": "events"
-      },
-      "evaluationWindow": "rolling_24_hours",
-      "comparisonWindow": null
-    },
-    {
-      "ruleId": "tool_unapproved",
-      "version": 1,
-      "enabled": false,
-      "availability": "unavailable",
-      "reason": "evaluation_not_configured",
+      "availability": "available",
+      "reason": null,
       "threshold": {
         "value": 1,
         "unit": "events"

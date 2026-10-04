@@ -33,9 +33,6 @@ import { int, usd } from "@/lib/format";
 import { rolloutEvidenceText } from "@/lib/policy-rollout";
 import { downloadCsv, settingsCsv } from "@/lib/csv-export";
 
-/** 원문 보존 일수가 없을 때의 설명 — 집계 보존과 다른 원천이다(백엔드 ADR 0046). */
-const RAW_RETENTION_UNKNOWN = "원본 아카이브의 보관 기간은 인프라 저장소 규칙을 따르며 이 서비스가 조회하지 않습니다 · 집계 보존과 별개입니다";
-
 const number = (value: number | null | undefined) => value == null ? "-" : int(value);
 const amount = (value: string | null | undefined) => value == null ? "-" : usd(Number(value));
 
@@ -129,7 +126,7 @@ function OrganizationSettings({ organizationId, initialVendorId }: { organizatio
       {vendorQuery.error && <ErrorState message={vendorQuery.error.message} retryLabel="상세 다시 조회" retrying={vendorQuery.isFetching} onRetry={() => void vendorQuery.refetch({ cancelRefetch: false })} />}
       {!data && !forbidden && query.isPending && <LoadingState message="설정을 불러오는 중입니다…" className="min-h-[480px]" />}
       {data && <>
-      <SettingSection id="vendors" title="벤더 연동">
+      <SettingSection id="vendors" title="계약 벤더">
         <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-2">{cards.map(card => <StatCard key={card.label} {...card} size="sm" />)}</div>
         {contractNotice && <p className="text-xs text-text3">{contractNotice}</p>}
         <VendorTable rows={rows} loadingVendorId={openingVendorId} addDisabled={!data.capabilities.editContracts || catalog.isError || catalog.isPending || openingVendorId !== null || catalog.data?.items.every(product => data.vendors.items.some(vendor => vendor.kind === product.id))} onOpen={openVendor} onAdd={() => { setEditor({ vendorId: null }); setOpen(true); }} />
@@ -160,10 +157,6 @@ function OrganizationSettings({ organizationId, initialVendorId }: { organizatio
               {data.collectionPolicy.options.aggregateRetentionMonths.map(months => <option key={months ?? "none"} value={months ?? ""}>{retentionLabel(months)}</option>)}
             </Select>
           </SettingRow>
-          {/* 원문 보존은 집계 보존과 별개다. 값이 없으면 고정값이나 집계 보존으로 채우지 않고 왜 없는지 말한다. */}
-          <SettingRow title="원문 보존" note={data.collectionPolicy.rawContentRetentionDays == null ? RAW_RETENTION_UNKNOWN : "수집한 프롬프트·응답 원문을 보관하는 기간 · 집계 보존과 별개입니다"}>
-            <span aria-label="원문 보존 기간" className="tnum text-xs text-text2">{data.collectionPolicy.rawContentRetentionDays == null ? "-" : `${int(data.collectionPolicy.rawContentRetentionDays)}일`}</span>
-          </SettingRow>
           {cleanupId && <SettingRow title="보존 정리" note="가장 최근에 집계 보존을 줄인 저장의 정리 작업 · 보존 작업이 실행할 때 진행됩니다">
             <span role="status" aria-label="보존 정리 상태" className="max-w-[320px] text-right text-xs" style={{ color: cleanup.data && cleanupView(cleanup.data.operation).tone === "failed" ? "var(--red)" : "var(--text2)" }}>
               {cleanup.data ? cleanupView(cleanup.data.operation).text : cleanup.isError ? "정리 상태를 불러오지 못했습니다" : "정리 상태를 불러오는 중입니다…"}
@@ -172,7 +165,7 @@ function OrganizationSettings({ organizationId, initialVendorId }: { organizatio
           {settingsSave.error && !retentionChoice && <div className="border-t border-border px-4 py-3"><ErrorState variant="inline" message={settingsSave.error.message} /></div>}
           <SettingRow title="마지막 수집" note="최근 신호 수신 시각"><span className="tnum text-xs">{data.ingest.lastReceivedAt ? new Date(data.ingest.lastReceivedAt).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) : "-"}</span></SettingRow>
         </div></SettingSection>
-        <AlertRulesSection organizationId={organizationId} rules={data.alertRules} lists={data.alertLists} editable={data.capabilities.editAlertRules} onSaved={showToast} />
+        <AlertRulesSection organizationId={organizationId} rules={data.alertRules} editable={data.capabilities.editAlertRules} onSaved={showToast} />
       </>}
     </PageContainer>
     {data && editor && (!editor.vendorId || vendorQuery.data) && <ServerVendorDrawer key={editor.vendorId ?? "new"} organizationId={organizationId} initial={editor.vendorId ? vendorQuery.data! : null} registeredKinds={data.vendors.items.map(vendor => vendor.kind)} editable={data.capabilities.editContracts} open={open} onClose={closeVendor} onAfterClose={() => setEditor(null)} onSaved={showToast} onAccessDenied={setAccessError} />}

@@ -8,7 +8,7 @@ const pages = [
   { path: "/overview", api: "analytics/overview?*", region: "토큰 비용" },
   { path: "/teams", api: "analytics/teams?*", region: "팀별 사용량 비교" },
   { path: "/members", api: "members/dashboard?*", region: "구성원 목록" },
-  { path: "/settings", api: "settings", region: "벤더 연동" },
+  { path: "/settings", api: "settings", region: "계약 벤더" },
   { path: "/ops", api: "alerts?*", region: "보안 알림" },
 ];
 

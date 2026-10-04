@@ -4,7 +4,7 @@ import { apiJson, managementKey, ManagementError, orgPath, readOptions } from ".
 import { organizationKey } from "./query-keys";
 
 /**
- * 알림 규칙·목록·알림(서버 ADR 0051). 규칙 켜기·목록 교체·확인은 enrollment-api, 알림 목록은 dashboard-api 다.
+ * 알림 규칙·알림(허브 ADR 0008). 규칙 켜기·확인은 enrollment-api, 알림 목록은 dashboard-api 다.
  * 규칙을 켤 수 있는지(가용성·사유)와 미확인 수는 서버가 정한다 — 화면은 세지 않는다.
  */
 const version = z.number().int().nonnegative();
@@ -13,22 +13,11 @@ export const alertRuleSchema = z.object({
   threshold: z.object({ value: z.number(), unit: z.string() }), evaluationWindow: z.string(), comparisonWindow: z.string().nullable(),
 });
 export type AlertRule = z.infer<typeof alertRuleSchema>;
-export const alertListSchema = z.object({ listId: z.enum(["allowed_models", "approved_tools"]), version, entries: z.array(z.string()), updatedAt: z.string().nullable() });
-export type AlertList = z.infer<typeof alertListSchema>;
-export const alertListsSchema = z.object({ allowedModels: alertListSchema, approvedTools: alertListSchema });
 
 /** 규칙을 켜거나 끈다(`PATCH O/settings/alert-rules/{ruleId}`). 근거가 없는 규칙을 켜면 422 `alert_rule_unavailable`. */
 export const saveAlertRule = (org: string, ruleId: string, expectedVersion: number, enabled: boolean) =>
   apiJson("enrollment", orgPath(org, `/settings/alert-rules/${encodeURIComponent(ruleId)}`), alertRuleSchema,
     { method: "PATCH", body: JSON.stringify({ expectedVersion, enabled }) });
-
-/** 목록을 통째로 바꾼다(`PUT O/settings/alert-lists/{listId}`). 응답의 규칙 상태로 토글의 가용성을 바꾼다. */
-export const saveAlertList = (org: string, listId: AlertList["listId"], expectedVersion: number, entries: string[]) =>
-  apiJson("enrollment", orgPath(org, `/settings/alert-lists/${listId}`), z.object({ list: alertListSchema, alertRules: z.array(alertRuleSchema) }),
-    { method: "PUT", body: JSON.stringify({ expectedVersion, entries }) });
-
-/** 줄마다 하나 — 앞뒤 공백을 지우고 빈 줄·중복을 뺀다. 형식 검사는 서버가 한다. */
-export const parseEntries = (text: string) => [...new Set(text.split("\n").map((line) => line.trim()).filter(Boolean))];
 
 const alertSchema = z.object({
   alertId: z.string(), version: z.number().int().min(1), ruleId: z.string(), category: z.enum(["security", "cost"]), status: z.enum(["open", "closed"]),
@@ -52,8 +41,8 @@ export const alertsResponseSchema = z.object({
 export type AlertsPage = z.infer<typeof alertsResponseSchema>;
 export type AlertStatus = "unacknowledged" | "acknowledged" | "all";
 export type AlertCategory = "security" | "cost";
-/** 규칙의 범주(서버 ADR 0051) — 보안은 모델·도구, 비용은 급증·한도. */
-export const RULE_CATEGORY: Record<string, AlertCategory> = { model_not_allowed: "security", tool_unapproved: "security", spend_spike: "cost", quota_exceeded: "cost" };
+/** 현재 규칙과 과거 이력의 범주. */
+export const RULE_CATEGORY: Record<string, AlertCategory> = { product_not_registered: "security", model_not_allowed: "security", tool_unapproved: "security", spend_spike: "cost", quota_exceeded: "cost" };
 
 /** 알림 목록 한 페이지(`GET O/alerts`). 범주를 주면 서버가 그 범주만 준다. */
 export async function fetchAlerts(org: string, status: AlertStatus, category: AlertCategory | undefined, page: { cursor: string; snapshotId: string } | null, signal?: AbortSignal) {
@@ -87,6 +76,7 @@ export const alertQueryKeys = (org: string) => [managementKey(org, "alerts"), [.
 export const ALERT_RULE_TEXT: Record<string, { title: string; note: string }> = {
   spend_spike: { title: "비용 급증 알림", note: "직전 완전한 7일 비용이 그 앞 7일보다 크게 늘었을 때" },
   quota_exceeded: { title: "한도 초과 알림", note: "좌석 한도에 걸려 요청이 차단될 때" },
+  product_not_registered: { title: "미등록 제품 사용 알림", note: "계약 벤더로 등록하지 않은 제품의 사용이 관측될 때" },
   model_not_allowed: { title: "비허용 모델 호출 알림", note: "허용 목록에 없는 모델이 호출될 때" },
   tool_unapproved: { title: "미승인 도구 연결 알림", note: "승인 목록에 없는 도구가 쓰일 때" },
 };
@@ -95,6 +85,7 @@ export const ALERT_RULE_TEXT: Record<string, { title: string; note: string }> = 
 const REASONS: Record<string, string> = {
   completeness_not_available: "설치의 수집 구간 보고가 아직 없어 기간이 완전한지 판단할 수 없습니다",
   source_not_available: "한도 초과를 가리키는 검증된 관측이 없어 켤 수 없습니다",
+  registered_products_not_configured: "계약 벤더의 제품을 먼저 등록하세요",
   allowed_models_not_configured: "모델 허용 목록을 먼저 입력하세요",
   approved_tools_not_configured: "승인 도구 목록을 먼저 입력하세요",
   evaluation_not_configured: "켜진 알림 규칙이 없습니다",
@@ -115,6 +106,10 @@ export function alertSummary(alert: Alert): string {
   if (alert.ruleId === "spend_spike") {
     const ratio = typeof s.increaseRatio === "number" ? `+${Math.round(s.increaseRatio * 100)}%` : "-";
     return `${s.currentStartDate ?? "-"}~${s.currentEndDate ?? "-"} ${usdText(s.currentCostUsd)} · 앞 7일 ${usdText(s.previousCostUsd)} · ${ratio}`;
+  }
+  if (alert.ruleId === "product_not_registered") {
+    const product = typeof s.productName === "string" ? s.productName : alert.subject ?? "-";
+    return `제품 ${product} · ${alert.eventCount ?? "-"}건 · 구성원 ${alert.memberCount ?? "-"}명`;
   }
   const what = alert.ruleId === "model_not_allowed" ? "모델" : "도구";
   return `${what} ${alert.subject ?? "-"} · ${alert.eventCount ?? "-"}건 · 구성원 ${alert.memberCount ?? "-"}명`;
