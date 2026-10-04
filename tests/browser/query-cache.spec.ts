@@ -11,11 +11,11 @@ test("페이지 왕복은 개요 캐시를 재사용하고 재로그인 시에�
   const initialRequests = requests;
   expect(initialRequests).toBeGreaterThan(0);
   await page.getByRole("link", { name: "설정", exact: true }).click();
-  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page).toHaveURL(/\/settings(?:\?.*)?$/);
   await page.getByRole("link", { name: "개요", exact: true }).click();
   await expect(page.getByRole("region", { name: "사용 관측 인원", exact: true })).toBeVisible();
   expect(requests).toBe(initialRequests);
-  await page.getByRole("link", { name: "로그아웃", exact: true }).click();
+  await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
   const fresh = page.waitForResponse(overviewUrl);
   await signIn(page);

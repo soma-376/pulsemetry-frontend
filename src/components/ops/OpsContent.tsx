@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useIsFetching, useQueryClient } from "@tanstack/react-query";
 import { AlertsPanel } from "@/components/alerts/AlertsPanel";
-import { useDashboardPageExport } from "@/components/layout/DashboardHeader";
+import { useDashboardPageExport, useDashboardPageRefresh } from "@/components/layout/DashboardHeader";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Toast, useToast } from "@/components/ui/Toast";
-import { fetchAlerts, type Alert, type AlertsPage, type AlertStatus } from "@/lib/api/alerts";
+import { alertsOptions, fetchAlerts, type Alert, type AlertsPage, type AlertStatus } from "@/lib/api/alerts";
 import { ManagementError } from "@/lib/api/management";
 import { useBackendSession } from "@/lib/api/session";
 import { alertsCsv, downloadCsv } from "@/lib/csv-export";
@@ -24,6 +25,13 @@ export function OpsContent() {
 function OrganizationOps({ organizationId, organizationName }: { organizationId: string; organizationName: string }) {
   const [status, setStatus] = useState<AlertStatus>("unacknowledged");
   const { toast, showToast, dismissToast } = useToast();
+  const client = useQueryClient();
+  // AlertsPanel이 조회하는 현재 필터의 캐시를 그대로 사용한다.
+  const queryKey = alertsOptions(organizationId, status, "security").queryKey;
+  const fetching = useIsFetching({ queryKey, exact: true });
+  useDashboardPageRefresh(() => {
+    void client.refetchQueries({ queryKey, exact: true, type: "active" }, { cancelRefetch: false });
+  }, fetching > 0);
   // 화면의 상태 필터와 같은 조건의 보안 알림 전부 — 같은 snapshot 으로 끝까지 읽고, 만료되면 처음부터 한 번 다시 읽는다.
   const exportAlerts = async () => {
     for (let attempt = 0; ; attempt++) {

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createElement } from "react";
+import { renderInRouter } from "./support/render-in-router";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ACTIVITY } from "../src/mocks/activity";
 import { MODEL_META } from "../src/mocks/overview";
@@ -52,15 +53,16 @@ test("single model shows name and usage, without a 100 percent donut or selectio
 test("single managed vendor uses a contract card and preserves seat types when period has no data", () => {
   const model = singleInventory();
   assert.equal(model.vendorOverview.rows.length, 1);
-  const html = renderToStaticMarkup(createElement(VendorSeatsCard, { model: model.vendorOverview }));
+  const html = renderInRouter(createElement(VendorSeatsCard, { model: model.vendorOverview }));
   assert.doesNotMatch(html, /<table/);
+  assert.ok(html.includes(`/settings?vendor=${encodeURIComponent(model.vendorOverview.rows[0].id)}`));
   assert.match(html, /148석/);
   assert.match(html, /표준 · 125석/);
   assert.match(html, /프리미엄 · 23석/);
   const empty = buildOverview("none", { start: "2027-01-01", end: "2027-01-02" }, [SEED_TEAMS[0]], vendors, 14, observedSource);
   assert.equal(empty.vendorOverview.rows.length, 1);
   assert.equal(empty.vendorOverview.rows[0].purchased, 148);
-  assert.match(renderToStaticMarkup(createElement(VendorSeatsCard, { model: empty.vendorOverview })), /미관측/);
+  assert.match(renderInRouter(createElement(VendorSeatsCard, { model: empty.vendorOverview })), /미관측/);
 });
 
 test("managed vendor presentation does not switch when the period loses a product", () => {
@@ -69,7 +71,7 @@ test("managed vendor presentation does not switch when the period loses a produc
   const empty = buildOverview("none", { start: "2027-01-01", end: "2027-01-02" }, [SEED_TEAMS[0]], vendors, 14, mixed);
   assert.equal(earlier.vendorOverview.rows.length, 2);
   assert.deepEqual(empty.vendorOverview.rows.map((row) => row.id), earlier.vendorOverview.rows.map((row) => row.id));
-  assert.match(renderToStaticMarkup(createElement(VendorSeatsCard, { model: earlier.vendorOverview })), /<table/);
+  assert.match(renderInRouter(createElement(VendorSeatsCard, { model: earlier.vendorOverview })), /<table/);
 });
 
 test("single team is hidden only without unmapped history; new teams stay visible at zero usage", () => {

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderInRouter } from "./support/render-in-router";
 import { settingsFixture, syncSettingsSummary } from "../.storybook/fixtures/settings";
 import { settingsVendorSchema } from "../src/lib/api/settings";
 import { overviewSettingsSchema } from "../src/lib/api/overview-vendors";
@@ -32,7 +32,7 @@ test("A Copilot 만료 계약은 마지막 금액과 좌석을 보존하고 유�
   assert.equal(detail.status, "계약 만료");
   assert.equal(detail.monthly, 95);
   assert.equal(model.kpis.find(v => v.label === "월 좌석 계약액")!.value, "$760.00");
-  const html = renderToStaticMarkup(createElement(VendorSeatsCard, { model: { ...model.vendorOverview, rows: [detail] } }));
+  const html = renderInRouter(createElement(VendorSeatsCard, { model: { ...model.vendorOverview, rows: [detail] } }));
   assert.match(html, /계약 만료/);
   assert.match(html, /마지막 계약 금액/);
   assert.match(html, /마지막 계약 좌석/);

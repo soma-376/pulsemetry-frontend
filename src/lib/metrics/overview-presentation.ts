@@ -81,7 +81,8 @@ export function presentOverview(data: Overview, settings?: OverviewSettings) {
   const noDeltaReason = comparisonReason(data);
   const compareLabel = data.comparison.mode === "none" ? "" : data.comparison.mode === "prev_week" ? "전주 대비" : "이전 기간 대비";
   const models = data.modelMix.availability === "unavailable" ? [] : groupModels(data.modelMix.models);
-  const fullModelCosts = data.modelMix.availability === "available" && models.every((model) => model.equivalentCostUsd !== null);
+  // partial은 토큰 수만 미확정인 경우도 포함한다. 환산가치 비중은 모델별 금액의 완전성으로 판단한다.
+  const fullModelCosts = models.length > 0 && models.every((model) => model.equivalentCostUsd !== null);
   const totalModelCost = fullModelCosts ? models.reduce((sum, model) => sum + Number(model.equivalentCostUsd), 0) : 0;
   const shares = models.map((model) => totalModelCost > 0 ? Number(model.equivalentCostUsd) / totalModelCost * 100 : null);
   const topName = models[0]?.displayName ?? "관측 없음";

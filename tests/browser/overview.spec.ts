@@ -7,13 +7,14 @@ test.beforeEach(async ({ page }) => { await mockSession(page); await mockOvervie
 
 /**
  * 기본 기간은 서버가 렌더링할 때의 서울 날짜로 정해진다(`src/app/(dashboard)/layout.tsx` 의 `todayIso`) — 브라우저 시계를 고정해도 바뀌지 않는다.
- * 같은 기계에서 도는 서버이므로 지금 시각의 서울 날짜에서 기대값을 낸다: 오늘을 포함한 최근 7일.
+ * 같은 기계에서 도는 서버이므로 지금 시각의 서울 날짜에서 기대값을 낸다: 이번 주 월요일부터 오늘.
  */
 function defaultPeriod() {
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   const day = (offset: number) => new Date(Date.parse(`${today}T00:00:00Z`) + offset * 86_400_000).toISOString().slice(0, 10);
   const dots = (value: string) => value.replaceAll("-", ".");
-  return { start: day(-6), second: day(-5), end: today, label: `${dots(day(-6))} ~ ${dots(today)}`, todayLabel: `${dots(today)} ~ ${dots(today)}` };
+  const offset = (new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7;
+  return { start: day(-offset), second: day(Math.min(0, 1 - offset)), end: today, label: `${dots(day(-offset))} ~ ${dots(today)}`, todayLabel: `${dots(today)} ~ ${dots(today)}` };
 }
 
 test("BFF를 통해 조회하고 기간·비교 변경과 수동 새로고침을 반영한다", async ({ page }) => {

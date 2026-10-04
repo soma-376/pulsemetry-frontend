@@ -74,13 +74,13 @@ for (const completed of [false, true]) {
     const authorization = page.waitForRequest(r => r.url().includes("/v1/auth/oidc/authorize?"));
     await submit(page);
     expect(new URL((await authorization).url()).searchParams.get("login_hint")).toBe("admin@seed-a.example.test");
-    await expect(page).toHaveURL(completed ? /\/overview$/ : /\/onboarding$/);
+    await expect(page).toHaveURL(completed ? /\/overview(?:\?.*)?$/ : /\/onboarding$/);
     if (completed) await expect(page.locator('nav a[href="/overview"]')).toBeVisible();
     else await expect(page.getByRole("radio", { name: /^수집하지 않음/ })).toBeVisible();
     const visits: string[] = [];
     page.on("framenavigated", frame => { if (frame === page.mainFrame()) visits.push(new URL(frame.url()).pathname); });
     await page.goBack();
-    await expect(page).toHaveURL(completed ? /\/overview$/ : /\/onboarding$/);
+    await expect(page).toHaveURL(completed ? /\/overview(?:\?.*)?$/ : /\/onboarding$/);
     expect(visits).toContain("/login");
     await expect(page.getByRole("button", { name: "회사 계정으로 계속", exact: true })).toHaveCount(0);
   });

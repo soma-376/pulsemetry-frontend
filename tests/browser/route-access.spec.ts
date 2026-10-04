@@ -49,13 +49,13 @@ test("로그인 상태 확인 중에는 폼을 숨기고 완료 사용자는 ove
   await expect(page.getByRole("status")).toContainText("로그인 상태를 확인");
   await expect(loginForm(page)).toHaveCount(0);
   release();
-  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
   await expect(dashboard(page)).toBeVisible();
   await page.reload();
   await expect(dashboard(page)).toBeVisible();
   for (const path of ["/onboarding", "/"]) {
     await page.goto(path);
-    await expect(page).toHaveURL(/\/overview$/);
+    await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
     await expect(dashboard(page)).toBeVisible();
   }
 });
@@ -98,7 +98,7 @@ for (const status of [403, 429, 503]) {
       await expect(page.getByRole("alert").first()).toBeVisible();
       if (status === 403) await expect(page.getByRole("alert").first()).toContainText("권한");
       await expect(dashboard(page)).toHaveCount(0);
-      await expect(page).toHaveURL(/\/overview$/);
+      await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
       expect((await context.cookies()).find(c => c.name === "pulsemetry-session")!.value).toBe(before);
       state.status = 200; state.onboardingStatus = 200;
       await page.getByRole("button", { name: "다시 시도", exact: true }).click();
@@ -116,7 +116,7 @@ test("네트워크 오류는 로그아웃하지 않고 재시도 후 화면을 �
   await page.unroute("**/api/bff/auth/session");
   await page.route("**/api/bff/auth/session", route => route.fulfill({ json: { user: fixtureUser } }));
   await page.getByRole("button", { name: "다시 시도", exact: true }).click();
-  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
 });
 
 test("클라이언트 이동과 포커스 복귀에 재확인하며 동시 확인 요청을 공유한다", async ({ page, context }) => {
@@ -125,7 +125,7 @@ test("클라이언트 이동과 포커스 복귀에 재확인하며 동시 확�
   await expect(dashboard(page)).toBeVisible();
   const initial = state.requests;
   await page.locator('nav a[href="/settings"]').click();
-  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page).toHaveURL(/\/settings(?:\?.*)?$/);
   await expect(dashboard(page)).toBeVisible();
   expect(state.requests).toBe(initial + 1);
   let release!: () => void;
@@ -187,7 +187,7 @@ test("뒤로가기 캐시에서 복원된 login은 현재 쿠키 세션을 다�
   await expect(loginForm(page)).toBeVisible();
   state.anonymous = false;
   await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
-  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
   await expect(dashboard(page)).toBeVisible();
 });
 

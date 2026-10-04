@@ -30,14 +30,14 @@ export async function signIn(page: Page, email: string) {
   await page.getByLabel("회사 이메일", { exact: true }).fill(email);
   await page.getByRole("button", { name: "회사 계정으로 계속", exact: true }).click();
   await submitIdentityProvider(page, email);
-  await expect(page).toHaveURL(/\/(onboarding|overview)$/);
+  await expect(page).toHaveURL(/\/(onboarding|overview)(?:\?.*)?$/);
   expect(exchanges, "StrictMode를 포함하여 코드 교환은 한 번만 실행").toBe(1);
   page.off("request", exchanged);
 }
 
 export async function signOut(page: Page) {
   const response = page.waitForResponse(response => response.url().endsWith("/api/bff/auth/logout") && response.request().method() === "POST");
-  await page.getByRole("link", { name: "로그아웃", exact: true }).click();
+  await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   expect((await response).status()).toBe(204);
   await expect(page).toHaveURL(/\/login$/);
 }

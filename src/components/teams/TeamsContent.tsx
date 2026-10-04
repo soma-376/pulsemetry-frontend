@@ -15,7 +15,7 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { ManagementError } from "@/lib/api/management";
 import { useBackendSession } from "@/lib/api/session";
 import { fetchTeams, fetchTeamUsers, teamDetailOptions, teamsKey, teamsOptions, UNASSIGNED, type TeamsPeriod, type TeamsView, type TeamUser } from "@/lib/api/teams";
-import { useFilters } from "@/lib/filters";
+import { useFilters, useDashboardHref } from "@/lib/filters";
 import { presentTeams, teamDetail, type AxisKey } from "@/lib/metrics/teams-presentation";
 import { downloadCsv, teamsCsv } from "@/lib/csv-export";
 
@@ -34,6 +34,7 @@ export function TeamsContent({ initialTeamId }: { initialTeamId?: string }) {
 const denied = (error: Error | null) => error instanceof ManagementError && [401, 403].includes(error.status);
 
 function OrganizationTeams({ organizationId, initialTeamId }: { organizationId: string; initialTeamId?: string }) {
+  const dashboardHref = useDashboardHref();
   const client = useQueryClient();
   const { compare, dates, autoRefresh } = useFilters();
   const period: TeamsPeriod = { startDate: dates.start, endDate: dates.end ?? dates.start, compare };
@@ -122,7 +123,7 @@ function OrganizationTeams({ organizationId, initialTeamId }: { organizationId: 
               </span>
             </div>
             {model.neverObserved && (
-              <ButtonLink href="/overview" variant="primary" className="h-8 self-start px-[13px]">
+              <ButtonLink href={dashboardHref("/overview")} variant="primary" className="h-8 self-start px-[13px]">
                 개요에서 설치 시작
               </ButtonLink>
             )}

@@ -31,10 +31,10 @@ test("AUTH-SHELL-LOGOUT-BACK @p0 @read 로그인하면 세션의 조직·계정�
   await expect(account).toContainText("owner@seed-a.example.test");
   await expect(account).toContainText("관리자");
   await nav(page).getByRole("link", { name: "팀 분석" }).click();
-  await expect(page).toHaveURL(/\/teams$/);
+  await expect(page).toHaveURL(/\/teams(?:\?.*)?$/);
   // 로그아웃 자체를 시험한다 — 서버가 세션을 폐기하고(204) 저장된 세션이 지워진다.
   const logout = page.waitForResponse((response) => response.url().endsWith("/api/bff/auth/logout") && response.request().method() === "POST");
-  await nav(page).getByRole("link", { name: "로그아웃", exact: true }).click();
+  await nav(page).getByRole("button", { name: "로그아웃", exact: true }).click();
   expect((await logout).status()).toBe(204);
   await expect(page).toHaveURL(/\/login$/);
   expect(await storedSession(page)).toBeNull();

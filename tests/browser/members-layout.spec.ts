@@ -34,8 +34,12 @@ test("pending invitations remain below the cards with resend and revoke actions"
   await expect(pending.getByRole("alert")).toContainText("이전 메일의 설치 코드는 더 이상 쓸 수 없습니다");
   expect(api.commands.some((command) => command.path.endsWith("/reissue"))).toBe(false);
   await pending.getByRole("button", { name: "다시 보내기 확인", exact: true }).click();
-  await expect(pending.getByRole("status")).toContainText("새 초대 코드를 발급했습니다. 이전 설치 코드는 더 이상 쓸 수 없습니다");
-  await expect(pending.getByRole("status")).toContainText("발송 대기열에 넣었습니다");
+  const resendToast = page.getByRole("status").filter({ hasText: "pending@example.test의 새 초대 메일을 발송 대기열에 넣었습니다." });
+  await expect(resendToast).toBeVisible();
+  await expect(pending).not.toContainText("발송 대기열에 넣었습니다");
+  await expect(pending).toContainText("이전 설치 코드는 더 이상 쓸 수 없습니다");
+  await resendToast.getByRole("button", { name: "알림 닫기" }).click();
+  await expect(resendToast).not.toBeVisible();
   await expect(pending.getByLabel("pending@example.test 초대 코드", { exact: true })).toHaveText("FAKE-CODE-0002");
   await expect(pending).not.toContainText(/발송됨|발송 완료|보냈습니다/);
   const reissue = api.commands.find((command) => command.path.endsWith("/reissue"))!;

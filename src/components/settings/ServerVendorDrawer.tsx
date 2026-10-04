@@ -126,7 +126,7 @@ export function ServerVendorDrawer({ organizationId, initial, registeredKinds, e
           <span className="text-xs font-semibold">신호에서 측정</span>
           {[{ label: "활성 사용자 (7일)", value: current.activeUsers7d }, { label: "30일 누적 사용자", value: current.activeUsers30d }].map(fact => <div key={fact.label} className="flex justify-between text-xs"><span className="text-text3">{fact.label}</span><span>{fact.value == null ? "-" : `${int(fact.value)}명`}</span></div>)}
           <div className="flex justify-between text-xs"><span className="text-text3">배정 좌석(좌석 원장)</span>
-            <span>{!current.seats?.data ? seatReasonText(current.seats?.reason) : `${int(current.seats.data.assigned)}석${current.seats.data.contracted === null ? "" : ` / 계약 ${int(current.seats.data.contracted)}석`}`}</span></div>
+            <span>{!current.seats?.data ? "-" : `${int(current.seats.data.assigned)}석${current.seats.data.contracted === null ? "" : ` / 계약 ${int(current.seats.data.contracted)}석`}`}</span></div>
         </section>}
         {current?.meteredMonthToDate && <section aria-label="종량 지출" className="flex flex-col gap-1 rounded-md border border-border p-3 text-xs">
           <span className="font-semibold">종량 지출(벤더 청구 누계)</span>

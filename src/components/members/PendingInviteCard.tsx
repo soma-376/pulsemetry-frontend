@@ -24,7 +24,7 @@ type Action = { kind: "reissue" | "revoke"; invite: InviteRow };
  * 코드 발급과 메일 발송은 다른 사실입니다. 발송 상태는 서버가 준 값으로만 보여 주고,
  * 다시 보내기는 기존 코드를 폐기하고 새 코드를 발급하는 일이라 먼저 확인합니다.
  */
-export function PendingInviteCard({ organizationId, post, model, loading, error, retrying, onRetry, editable, onEdit, onRevoked }: {
+export function PendingInviteCard({ organizationId, post, model, loading, error, retrying, onRetry, editable, onEdit, onCompleted }: {
   organizationId: string;
   post: ReturnType<typeof createCommands>;
   model: MembersModel;
@@ -35,7 +35,7 @@ export function PendingInviteCard({ organizationId, post, model, loading, error,
   /** 초대를 바꿀 수 있는가 */
   editable: boolean;
   onEdit: (invite: InviteRow) => void;
-  onRevoked: (message: string) => void;
+  onCompleted: (message: string) => void;
 }) {
   const client = useQueryClient();
   const rows = model.inviteRows;
@@ -56,7 +56,11 @@ export function PendingInviteCard({ organizationId, post, model, loading, error,
         return next;
       });
       await refresh();
-      if (!result) onRevoked(`${invite.email}의 초대를 취소했습니다.`);
+      onCompleted(result
+        ? deliveryView(result.delivery).mailed
+          ? `${invite.email}의 새 초대 메일을 발송 대기열에 넣었습니다.`
+          : `${invite.email}의 새 초대 코드를 발급했습니다.`
+        : `${invite.email}의 초대를 취소했습니다.`);
     },
     // 이미 쓰였거나 취소된 초대면 목록이 낡은 것이다.
     onError: (failure) => { if (failure instanceof ManagementError && [404, 409].includes(failure.status)) void refresh(); },
@@ -122,9 +126,9 @@ export function PendingInviteCard({ organizationId, post, model, loading, error,
               <Button size="sm" disabled={action.isPending} onClick={() => setConfirming(null)}>되돌리기</Button>
               <Button size="sm" loading={running("revoke", invite)} loadingLabel="취소 중…" disabled={action.isPending} onClick={() => run("revoke", invite)}>초대 취소 확인</Button>
             </div>}
-            {code && fresh && <div role="status" className="flex w-full flex-col gap-2 rounded-md bg-sub px-3 py-2.5 text-[11.5px] text-text2">
-              <span>새 초대 코드를 발급했습니다. 이전 설치 코드는 더 이상 쓸 수 없습니다 · {formatKst(code.expiresAt)} 만료.{" "}
-                {fresh.mailed ? "새 코드의 초대 메일을 발송 대기열에 넣었습니다. 발송 결과는 이 목록에 표시됩니다." : "메일을 발송하지 않습니다. 코드는 지금만 볼 수 있으니 대상자에게 직접 전달하세요."}</span>
+            {code && fresh && <div className="flex w-full flex-col gap-2 rounded-md bg-sub px-3 py-2.5 text-[11.5px] text-text2">
+              <span>이전 설치 코드는 더 이상 쓸 수 없습니다 · {formatKst(code.expiresAt)} 만료.{" "}
+                {fresh.mailed ? "코드는 지금만 볼 수 있습니다. 메일 발송 결과는 이 목록에서 확인하세요." : "메일을 발송하지 않습니다. 코드는 지금만 볼 수 있으니 대상자에게 직접 전달하세요."}</span>
               <span className="flex flex-wrap items-center gap-2">
                 <InviteCode email={invite.email} code={code.code} />
                 <Button size="sm" variant="ghost" aria-label={`${invite.email} 초대 코드 숨기기`}

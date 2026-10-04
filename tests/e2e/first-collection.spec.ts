@@ -40,7 +40,7 @@ test("FIRST-COLLECTION-D @p0 @write 빈 조직이 온보딩을 마치면 빈 개
   await page.getByRole("button", { name: "팀 생성", exact: true }).click();
   await expect(page.getByRole("list", { name: "온보딩 팀 목록" })).toContainText("D 개발팀");
   await page.getByRole("button", { name: "완료", exact: true }).click();
-  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
 
   // 빈 개요 — 초대가 주 행동이고, 지어낸 설치 명령·MDM·이미 끝낸 계약 입력을 내세우지 않는다.
   const main = page.getByRole("main");
@@ -52,7 +52,7 @@ test("FIRST-COLLECTION-D @p0 @write 빈 조직이 온보딩을 마치면 빈 개
 
   // 초대 딥링크 — 구성원 화면의 초대 창이 바로 열린다.
   await main.getByRole("link", { name: "구성원 초대", exact: true }).click();
-  await expect(page).toHaveURL(/\/members\?invite=1$/);
+  await expect(page).toHaveURL(/\/members\?invite=1(?:&.*)?$/);
   const dialog = page.getByRole("dialog", { name: "구성원 초대", exact: true });
   const email = `e2e-first-${Date.now().toString(36)}@example.test`;
   const input = dialog.getByRole("textbox", { name: "초대할 이메일" });
@@ -61,7 +61,7 @@ test("FIRST-COLLECTION-D @p0 @write 빈 조직이 온보딩을 마치면 빈 개
   await dialog.getByRole("button", { name: "1명 초대 코드 발급", exact: true }).click();
   await expect(dialog.getByRole("status")).toContainText("초대 코드 1건을 발급했습니다");
   await dialog.getByRole("button", { name: "완료", exact: true }).click();
-  await expect(page).toHaveURL(/\/members$/);
+  await expect(page).toHaveURL(/\/members(?:\?.*)?$/);
 
   // 초대 메일에 그 구성원의 설치 명령이 온다(코드 값은 실패 메시지에 싣지 않는다).
   await expect.poll(async () => (await mailsTo(email)).length, { timeout: 30_000, message: "초대 메일 도착" }).toBe(1);
@@ -72,5 +72,5 @@ test("FIRST-COLLECTION-D @p0 @write 빈 조직이 온보딩을 마치면 빈 개
 
   // 다시 로그인하면 온보딩이 아니라 개요다(온보딩 완료가 서버에 남았다).
   await signIn(page, "owner@seed-d.example.test");
-  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
 });

@@ -194,7 +194,7 @@ test("MEMBERS-W1 @p0 @write 팀·역할 저장이 새로고침 뒤에도 남고,
 
 test("MEMBERS-W2 @p0 @write 팀을 만들고 이름을 바꾸고 삭제하면 서버 목록과 새로고침 뒤 화면이 같다", async ({ page }) => {
   allowHttpErrors(
-    { status: 409, path: /\/teams$/, method: "POST", reason: "같은 이름의 팀 만들기 거절(409 team_name_conflict)을 시험한다" },
+    { status: 409, path: /\/teams(?:\?.*)?$/, method: "POST", reason: "같은 이름의 팀 만들기 거절(409 team_name_conflict)을 시험한다" },
   );
   await openMembers(page, OWNER);
   const name = `E2E 팀 ${unique()}`, renamed = `${name} 2`;
@@ -351,7 +351,8 @@ test("MEMBERS-W3 @p0 @write 초대 코드를 발급·편집·재발급·취소�
     await expect(pending.getByRole("alert")).toContainText("이전 메일의 설치 코드는 더 이상 쓸 수 없습니다");
     expect((await invitations(page, "pending")).find((item) => item.email === email)!.invitationId).toBe(first.invitationId);
     await pending.getByRole("button", { name: "다시 보내기 확인", exact: true }).click();
-    await expect(pending.getByRole("status")).toContainText("새 초대 코드를 발급했습니다. 이전 설치 코드는 더 이상 쓸 수 없습니다");
+    await expect(toast(page, `${email}의 새 초대 메일을 발송 대기열에 넣었습니다.`)).toBeVisible();
+    await expect(pending).toContainText("이전 설치 코드는 더 이상 쓸 수 없습니다");
     const secondCode = await readCode(pending);
     expect(secondCode !== firstCode, "재발급한 코드는 이전 코드와 다르다").toBe(true);
     const reissued = (await invitations(page, "pending")).filter((item) => item.email === email);

@@ -35,7 +35,7 @@ export async function signIn(page: Page) {
   await mockSeedAuth(page);
   await page.getByLabel("회사 이메일", { exact: true }).fill("admin@seed-a.example.test");
   await page.getByRole("button", { name: "회사 계정으로 계속", exact: true }).click();
-  await expect(page).toHaveURL(/\/(onboarding|overview)$/);
+  await expect(page).toHaveURL(/\/(onboarding|overview)(?:\?.*)?$/);
 }
 
 export async function saveOnboardingContract(page: Page, name = "Test contract") {
@@ -58,6 +58,6 @@ export async function openDashboard(page: Page, route: string) {
   await saveOnboardingContract(page);
   await page.getByRole("button", { name: "다음", exact: true }).click();
   await page.getByRole("button", { name: "건너뛰고 시작", exact: true }).click();
-  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
   if (route !== "/overview") await page.locator(`nav a[href="${route}"]`).click();
 }

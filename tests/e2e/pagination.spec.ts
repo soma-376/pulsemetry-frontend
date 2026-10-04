@@ -59,7 +59,7 @@ test("PAGE-TEAMS-A @p1 @read (팀 분석 조회 limit 2) 팀 분석은 같은 sn
   const { start, end } = seedPeriod();
   const teams = (await authenticatedRequest(page, dashboardBase(), `${O}/analytics/teams?startDate=${start}&endDate=${end}&timeZone=Asia/Seoul&limit=50`)).body.teams;
   expect(teams.nextCursor).toBeNull();
-  const sent = await shrinkLimit(page, /\/analytics\/teams$/, 2);
+  const sent = await shrinkLimit(page, /\/analytics\/teams(?:\?.*)?$/, 2);
   await page.goto("/teams");
   await selectPeriod(page, start, end);
   const axis = page.getByRole("region", { name: "팀별 사용량 비교", exact: true });

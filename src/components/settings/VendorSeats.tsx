@@ -58,10 +58,10 @@ export function VendorSeats({ organizationId, vendorId, vendorName, manual, tier
       <span className="font-semibold">좌석</span>
       <span className="text-text3">{first ? `${int(first.seats.totalCount)}석 기록` : ""}</span>
     </div>
-    {first && first.ledgerAvailability !== "available" && <p className="text-orange-ink">{seatReasonText(first.ledgerReason)}</p>}
+    {first && first.ledgerAvailability !== "available" && first.ledgerReason !== "seat_source_not_recorded" && <p className="text-orange-ink">{seatReasonText(first.ledgerReason)}</p>}
     {!first && query.isPending && <LoadingState variant="inline" message="좌석을 불러오는 중입니다…" />}
     {query.error && <ErrorState variant="inline" message={query.error.message} retrying={query.isFetching} onRetry={() => void query.refetch()} />}
-    {first && !seats.length && <p className="text-text3">기록된 좌석이 없습니다. 구매 수량은 좌석이 아닙니다 — 누가 좌석을 갖고 있는지를 기록하세요.</p>}
+    {first && !seats.length && <p className="text-text3">기록된 좌석이 없습니다.</p>}
     {seats.length > 0 && <ul aria-label={`${vendorName} 좌석 목록`} className="flex flex-col divide-y divide-border">
       {seats.map((seat) => <li key={seat.seatAssignmentId} className="flex flex-wrap items-center gap-2 py-2">
         <div className="flex min-w-0 flex-1 basis-48 flex-col">

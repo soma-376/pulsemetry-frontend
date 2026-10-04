@@ -137,7 +137,6 @@ function OrganizationMembers({ organizationId, currentMemberId, initialInvite }:
           <span className="text-[12px] text-text3">전체 구성원 · 팀·역할 및 벤더 좌석 관리</span>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-3">
-          {data && query.isFetching && <LoadingState variant="inline" message="구성원을 새로고침하는 중입니다…" />}
           <TeamManagement />
           <Button variant="primary" className="px-3.5" disabled={!capabilities?.invite} onClick={() => setInviteOpen(true)}>구성원 초대</Button>
         </div>
@@ -156,7 +155,7 @@ function OrganizationMembers({ organizationId, currentMemberId, initialInvite }:
 
         <PendingInviteCard organizationId={organizationId} post={post} model={model} loading={invitations.isPending}
           error={denied(invitations.error) ? null : invitations.error} retrying={invitations.isFetching} onRetry={() => void invitations.refetch({ cancelRefetch: false })}
-          editable={model.capabilities.invite} onEdit={(row) => openDetail("invite", row.memberId)} onRevoked={showToast} />
+          editable={model.capabilities.invite} onEdit={(row) => openDetail("invite", row.memberId)} onCompleted={showToast} />
 
         <SeatReclaimCard organizationId={organizationId} model={model} onReview={(memberId) => openDetail("member", memberId)} />
 
@@ -172,7 +171,7 @@ function OrganizationMembers({ organizationId, currentMemberId, initialInvite }:
     </PageContainer>
 
     {/* 딥링크로 열린 창도 초대 권한이 확인된 뒤에만 연다. 닫으면 주소의 ?invite 를 지워 새로고침에서 다시 열리지 않게 한다. */}
-    <InviteModal open={inviteOpen && !!capabilities?.invite} onClose={() => { setInviteOpen(false); if (initialInvite) window.history.replaceState(null, "", "/members"); }}
+    <InviteModal open={inviteOpen && !!capabilities?.invite} onClose={() => { setInviteOpen(false); if (initialInvite) { const url = new URL(window.location.href); url.searchParams.delete("invite"); window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`); } }}
       subtitle="초대 코드를 발급합니다 · 벤더 좌석은 별도로 배정합니다"
       teams={teams.data} onInvite={invite} />
     {model && <MemberDetailDrawer organizationId={organizationId} post={post} subject={subjectOf(model, selected)} teams={teams.data ?? []}

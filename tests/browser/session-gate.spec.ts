@@ -27,8 +27,8 @@ test("로그아웃 후 뒤로 가도 보호 화면을 다시 표시하지 않는
   await page.goto("/overview");
   await expect(page.getByLabel("로그인한 계정")).toContainText("admin@seed-a.example.test");
   await page.getByRole("navigation", { name: "주 내비게이션" }).getByRole("link", { name: "운영 · 보안" }).click();
-  await expect(page).toHaveURL(/\/ops$/);
-  await page.getByRole("link", { name: "로그아웃", exact: true }).click();
+  await expect(page).toHaveURL(/\/ops(?:\?.*)?$/);
+  await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
   await page.goBack();
   await expect(page).toHaveURL(/\/login$/);

@@ -1,3 +1,7 @@
+"use client";
+
+import { useDashboardHref } from "@/lib/filters";
+
 import { ButtonLink } from "@/components/ui/Button";
 
 /**
@@ -12,6 +16,7 @@ export function IngestDownBanner({
   title: string;
   detail: string;
 }) {
+  const dashboardHref = useDashboardHref();
   return (
     <div
       role="status"
@@ -21,7 +26,7 @@ export function IngestDownBanner({
         <span className="text-[12.5px] font-semibold text-red">{title}</span>
         <span className="pretty text-[11.5px] text-text2">{detail}</span>
       </div>
-      <ButtonLink href="/settings#collection" variant="primary" className="px-3">
+      <ButtonLink href={dashboardHref("/settings#collection")} variant="primary" className="px-3">
         수집 상태 확인
       </ButtonLink>
     </div>

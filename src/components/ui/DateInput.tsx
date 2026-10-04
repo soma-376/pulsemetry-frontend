@@ -10,7 +10,7 @@ import { dateInputError, dateInputText, dateInputValue } from "@/lib/date-input"
 
 const WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"];
 
-export function DateInput({ label, value, min, onChange }: { label: string; value: string; min?: string; onChange: (value: string) => void }) {
+export function DateInput({ label, value, min, onChange, showHint = true }: { label: string; value: string; min?: string; onChange: (value: string) => void; showHint?: boolean }) {
   const today = currentDateIso();
   const initialDate = fromIso(min && min > today ? min : today);
   const minDate = min ? fromIso(min) : null;
@@ -132,7 +132,7 @@ export function DateInput({ label, value, min, onChange }: { label: string; valu
       if (open && event.key === "Escape") { event.preventDefault(); event.stopPropagation(); close(); }
     }}>
       <Input ref={input} id={id} type="text" inputMode="numeric" autoComplete="off" placeholder="YYYY.MM.DD" value={dateInputText(value)}
-        onChange={changeText} onBlur={() => setTouched(true)} aria-invalid={!!error} aria-describedby={`${id}-hint`}
+        onChange={changeText} onBlur={() => setTouched(true)} aria-invalid={!!error} aria-describedby={error || showHint ? `${id}-hint` : undefined}
         className="tnum w-full pr-[68px]" />
       <div className="absolute inset-y-0 right-1 flex items-center gap-0.5">
         {value && <button type="button" onClick={clear} aria-label={`${label} 지우기`} className="flex size-6 cursor-pointer items-center justify-center rounded text-base text-text3 hover:bg-hover hover:text-text">×</button>}
@@ -173,6 +173,6 @@ export function DateInput({ label, value, min, onChange }: { label: string; valu
         </div>
       </div>
     </div>
-    <p id={`${id}-hint`} aria-live="polite" className={`text-[11px] ${error ? "text-red" : "text-text3"}`}>{error ?? "직접 입력하거나 달력에서 선택하세요 · 미정이면 비워두세요"}</p>
+    {(error || showHint) && <p id={`${id}-hint`} aria-live="polite" className={`text-[11px] ${error ? "text-red" : "text-text3"}`}>{error ?? "직접 입력하거나 달력에서 선택하세요 · 미정이면 비워두세요"}</p>}
   </div>;
 }

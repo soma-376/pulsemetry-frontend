@@ -80,7 +80,7 @@ test("실제 화면 가드는 만료 AT를 BFF에서 갱신하고 폐기 RT는 �
   expect(status).toBe(200);
   expired = true;
   await page.goto("/login");
-  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
   await expect(page.locator('nav a[href="/overview"]')).toBeVisible();
   expect(refreshes).toBe(1);
   revoked = true;

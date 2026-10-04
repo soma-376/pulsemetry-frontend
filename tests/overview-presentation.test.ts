@@ -50,6 +50,18 @@ test("미관측 날짜를 원래 차트에서 연결하지 않고 단일 모델�
   assert.equal(model.mix.rows[0].shareText, "100.0%");
   assert.equal(nullableLinePath([1, null, 3, 0], { max: 4 }), "M0,75 M66.67,25 L100,100");
 });
+test("토큰 수가 미확정인 partial 응답도 모델별 비용이 모두 있으면 비용 비중을 표시한다", () => {
+  const data = overviewSchema.parse(example);
+  data.modelMix.availability = "partial";
+  data.modelMix.reason = "source_not_available";
+  data.modelMix.models = data.modelMix.models.slice(0, 2).map((model, index) => ({
+    ...model, equivalentCostUsd: index === 0 ? "75" : "25", totalTokens: null, effectiveCostPerMillionTokensUsd: null,
+  }));
+  const model = presentOverview(data);
+  assert.deepEqual(model.mix.slices.map((slice) => slice.share), [75, 25]);
+  assert.deepEqual(model.mix.rows.map((row) => row.shareText), ["75.0%", "25.0%"]);
+  assert.ok(model.mix.rows.every((row) => row.perMText === "-"));
+});
 test("비용이 누락된 모델은 목록에 유지하고 도넛 비중을 만들지 않는다", () => {
   const data = overviewSchema.parse(example);
   data.modelMix.models = data.modelMix.models.slice(0, 2);

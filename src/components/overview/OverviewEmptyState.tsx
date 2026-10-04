@@ -1,7 +1,7 @@
 "use client";
 
 import { ButtonLink } from "@/components/ui/Button";
-import { useFilters } from "@/lib/filters";
+import { useFilters, useDashboardHref } from "@/lib/filters";
 import { FIRST_COLLECTION_STEPS, INVITE_DEEP_LINK, waitingText } from "@/lib/first-collection";
 
 /**
@@ -11,6 +11,7 @@ import { FIRST_COLLECTION_STEPS, INVITE_DEEP_LINK, waitingText } from "@/lib/fir
  * 주 행동은 구성원 초대입니다. 설치 명령은 초대 메일이 구성원마다 담아 보내므로 이 화면에서 복사할 명령을 보이지 않습니다.
  */
 export function OverviewEmptyState() {
+  const dashboardHref = useDashboardHref();
   const { autoRefresh } = useFilters();
   return (
     <div className="flex max-w-[760px] flex-col gap-5 rounded-lg border border-border bg-card p-[22px]">
@@ -56,7 +57,7 @@ export function OverviewEmptyState() {
           style={autoRefresh ? { animation: "spin .8s linear infinite" } : undefined}
         />
         <span className="pretty min-w-0 flex-1 text-[12px] text-text2">{waitingText(autoRefresh)}</span>
-        <ButtonLink href={INVITE_DEEP_LINK} variant="primary" className="h-8 px-[13px]">
+        <ButtonLink href={dashboardHref(INVITE_DEEP_LINK)} variant="primary" className="h-8 px-[13px]">
           구성원 초대
         </ButtonLink>
       </div>

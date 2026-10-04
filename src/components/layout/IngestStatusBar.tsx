@@ -3,7 +3,7 @@
 import type { UseQueryResult } from "@tanstack/react-query";
 import { INGEST_STATES, ingestDetails, type IngestStatus } from "@/lib/api/ingest-status";
 import { ManagementError } from "@/lib/api/management";
-import { LoadingState, LoadingSpinner } from "@/components/ui/LoadingState";
+import { LoadingState } from "@/components/ui/LoadingState";
 import { ErrorState } from "@/components/ui/ErrorState";
 
 export function IngestStatusBar({ query, enabled }: { query: UseQueryResult<IngestStatus, Error>; enabled: boolean }) {
@@ -24,7 +24,6 @@ export function IngestStatusBar({ query, enabled }: { query: UseQueryResult<Inge
             <strong className="font-medium" style={{ color: INGEST_STATES[data.status].color }}>{INGEST_STATES[data.status].label}</strong>
             {detail && <span> · {detail}</span>}
           </span>
-          {query.isFetching && <span role="status" aria-label="수집 상태 갱신 중" className="ml-auto"><LoadingSpinner className="size-3" /></span>}
         </> : null}
   </div>;
 }

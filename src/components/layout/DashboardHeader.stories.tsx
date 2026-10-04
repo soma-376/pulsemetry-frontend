@@ -79,7 +79,10 @@ export const Refreshing: Story = {
   async play({ canvas, userEvent }) {
     await canvas.findByText("수집 상태 확인 불가");
     await userEvent.click(canvas.getByRole("button", { name: "새로고침" }));
-    await canvas.findByLabelText("수집 상태 갱신 중");
+    const refreshing = await canvas.findByRole("button", { name: "조회 중…" });
+    await expect(refreshing).toBeDisabled();
+    await expect(refreshing).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.queryByLabelText("수집 상태 갱신 중")).not.toBeInTheDocument();
     await expect(canvas.getByText("수집 상태 확인 불가")).toBeVisible();
   },
 };

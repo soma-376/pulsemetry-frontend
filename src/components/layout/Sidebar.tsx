@@ -1,5 +1,7 @@
 "use client";
 
+import { useDashboardHref } from "@/lib/filters";
+
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -20,14 +22,29 @@ const NAV: { href: string; label: string; icon: IconName }[] = [
 const ROLE_LABEL = { owner: "소유자", admin: "관리자", member: "구성원" } as const;
 
 export function Sidebar() {
+  const dashboardHref = useDashboardHref();
   const { update } = useOrganization();
   const hydrated = useHydrated();
   const pathname = usePathname();
   const session = useBackendSession();
   const router = useRouter();
   const [logoutError, setLogoutError] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
   const logoutLimit = useRateLimit();
   const [collapsed, setCollapsed] = useState(false);
+
+  const logout = <button type="button" disabled={loggingOut || logoutLimit.waiting} aria-disabled={logoutLimit.waiting || undefined}
+    aria-label={logoutLimit.waiting ? `로그아웃 · ${logoutLimit.seconds}초 뒤` : "로그아웃"}
+    title="로그아웃" onClick={async () => {
+      if (loggingOut || logoutLimit.waiting) return;
+      setLoggingOut(true);
+      setLogoutError("");
+      try { await backendLogout(); update(previous => ({ ...previous, session: null })); router.replace("/login"); }
+      catch (cause) { setLogoutError(logoutLimit.capture(cause) ? "" : cause instanceof Error ? cause.message : "로그아웃에 실패했습니다."); }
+      finally { setLoggingOut(false); }
+    }} className="shrink-0 cursor-pointer whitespace-nowrap rounded-md px-1.5 py-1 text-[11px] text-text3 hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+    {collapsed ? <span aria-hidden="true">↪</span> : loggingOut ? "로그아웃 중…" : logoutLimit.waiting ? `로그아웃 · ${logoutLimit.seconds}초 뒤` : "로그아웃"}
+  </button>;
 
   return (
     <nav
@@ -61,7 +78,7 @@ export function Sidebar() {
           return (
             <Link
               key={n.href}
-              href={n.href}
+              href={dashboardHref(n.href)}
               title={n.label}
               aria-current={current ? "page" : undefined}
               className="flex h-[34px] items-center gap-2.5 rounded-md px-2.5 text-[13px] no-underline hover:bg-hover hover:no-underline"
@@ -93,15 +110,15 @@ export function Sidebar() {
               <div className="overflow-hidden text-[12px] text-ellipsis whitespace-nowrap text-text3">
                 {session.user.email}
               </div>
-              <div className="mt-1">
+              <div className="mt-1 flex items-center gap-2">
                 <span className="rounded border border-border bg-sub px-1.5 py-px text-[11px] font-medium text-text2">
                   {ROLE_LABEL[sessionRole(session)]}
                 </span>
+                {logout}
               </div>
             </div>
           )}
-          {/* 요청 제한(429)이면 세션을 유지한 채 서버가 준 시간 동안 다시 보내지 않는다. */}
-          <Link href="/login" aria-disabled={logoutLimit.waiting || undefined} onClick={async (event) => { event.preventDefault(); if (logoutLimit.waiting) return; try { await backendLogout(); update((previous) => ({ ...previous, session: null })); router.replace("/login"); } catch (cause) { setLogoutError(logoutLimit.capture(cause) ? "" : cause instanceof Error ? cause.message : "로그아웃에 실패했습니다."); } }} className="rounded-md px-2 py-1 text-xs text-text3 hover:bg-hover aria-disabled:cursor-not-allowed aria-disabled:opacity-60">{logoutLimit.waiting ? `로그아웃 · ${logoutLimit.seconds}초 뒤` : "로그아웃"}</Link>
+          {collapsed && <div className="flex justify-center">{logout}</div>}
           {(logoutLimit.message || logoutError) && <p role="alert" className="text-xs text-red">{logoutLimit.message || logoutError}</p>}
         </>}
         {hydrated && !session && <Link href="/login" className="rounded-md px-2 py-1 text-xs text-text2 hover:bg-hover">로그인</Link>}

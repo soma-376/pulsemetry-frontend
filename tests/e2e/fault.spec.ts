@@ -20,7 +20,7 @@ test("FAULT-OVERVIEW-503 @p1 @fault (개요 조회를 503 으로 바꿈) 일시 
   await signIn(page, `owner@seed-${A.seed}.example.test`);
   let failing = true;
   const attempts = new Map<string, number>();
-  await page.route(dashboard(/\/analytics\/overview$/), async (route) => {
+  await page.route(dashboard(/\/analytics\/overview(?:\?.*)?$/), async (route) => {
     if (route.request().method() !== "GET" || !failing) return route.continue();
     attempts.set(route.request().url(), (attempts.get(route.request().url()) ?? 0) + 1);
     return error(route, page, 503, "unavailable", { "Retry-After": "1" });
@@ -50,7 +50,7 @@ test("FAULT-TEAMS-409 @p1 @fault (팀 분석의 다음 쪽 조회를 409 snapsho
   const teams = (await authenticatedRequest(page, dashboardBase(), `${O}/analytics/teams?startDate=${start}&endDate=${end}&timeZone=Asia/Seoul&limit=50`)).body.teams.items as { teamName: string }[];
   const sent: string[] = [];
   let injected = false;
-  await page.route(dashboard(/\/analytics\/teams$/), async (route) => {
+  await page.route(dashboard(/\/analytics\/teams(?:\?.*)?$/), async (route) => {
     const url = new URL(route.request().url());
     if (route.request().method() !== "GET" || url.searchParams.get("startDate") !== start) return route.continue();
     url.searchParams.set("limit", "2");

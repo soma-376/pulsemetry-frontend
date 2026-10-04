@@ -20,7 +20,7 @@ export function ContractForm({ row, isNew, draft, onChange, catalog, existingCon
   const kind = isNew ? draft.kind ?? (catalog ? "" : "copilot") : row.kind;
   const serverVendor = catalog?.vendors.find(v => v.id === kind);
   const kinds = catalog ? catalog.vendors.map(v => ({ v: v.id, label: v.displayName })) : ADD_KINDS;
-  const plans = catalog ? catalog.plans.map(p => ({ v: p.id, label: p.displayName, bill: p.billing, note: p.separateUsageBilling ? "좌석 요금 외 사용량 요금은 별도입니다" : "계약서의 좌석 수와 단가를 입력하세요" })) : getVendorPlans(kind, row.family);
+  const plans = catalog ? catalog.plans.map(p => ({ v: p.id, label: p.displayName, bill: p.billing })) : getVendorPlans(kind, row.family);
   const allowsTiers = catalog ? serverVendor?.allowsSeatTiers === true : allowsSeatTiers(kind);
   const plan = draft.plan !== undefined ? draft.plan : row.plan;
   const planDef = plans.find((p) => p.v === plan) ?? null;
@@ -67,7 +67,7 @@ export function ContractForm({ row, isNew, draft, onChange, catalog, existingCon
                 ))}
               </Select>
             </label>
-            <DateInput label="계약 종료일" value={term} min={minimumContractEnd(currentDateIso(), term, existingContract)} onChange={(value) => onChange({ term: value })} />
+            <DateInput label="계약 종료일" value={term} min={minimumContractEnd(currentDateIso(), term, existingContract)} onChange={(value) => onChange({ term: value })} showHint={false} />
           </div>
 
           <label className="flex flex-col gap-1 text-[11.5px] text-text2">
@@ -75,15 +75,6 @@ export function ContractForm({ row, isNew, draft, onChange, catalog, existingCon
             <Input value={name} onChange={(event) => onChange({ name: event.target.value })} placeholder={kindLabel} maxLength={100} aria-label="표시 이름" />
           </label>
 
-          <span
-            className="pretty text-[11px]"
-            style={{ color: planDef ? "var(--text2)" : "var(--orange-ink)" }}
-          >
-            {planDef ? planDef.note : "신호로는 알 수 없는 계약 정보입니다 · 계약서를 보고 고르세요"}
-          </span>
-          <span className="text-[11px] text-text3">
-            {catalog ? existingContract ? `계약 시작일 ${existingContract.effectiveFrom} · 정정 시 시작일은 유지됩니다` : "계약 시작일은 등록일입니다 · 플랜과 계약 정보는 나중에 입력할 수 있습니다" : <>다음 계약 검토일 {row.contract.nextReview ?? "미정"} · 종료 60일 전 알림</>}
-          </span>
         </section>
 
         {isSeat && (

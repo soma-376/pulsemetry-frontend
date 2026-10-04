@@ -37,7 +37,8 @@ test("the waiting list shows each mail's delivery state and says sent only when 
   await expect(pending.getByRole("alert")).toContainText("새 코드를 발급하고 초대 메일을 다시 보냅니다. 이전 메일의 설치 코드는 더 이상 쓸 수 없습니다.");
   await pending.getByRole("button", { name: "다시 보내기 확인", exact: true }).click();
   await expect(state("failed@example.test")).toHaveText("메일 발송 대기");
-  await expect(pending.getByRole("status")).toContainText("새 코드의 초대 메일을 발송 대기열에 넣었습니다");
+  await expect(page.getByRole("status").filter({ hasText: "failed@example.test의 새 초대 메일을 발송 대기열에 넣었습니다." })).toBeVisible();
+  await expect(pending).not.toContainText("발송 대기열에 넣었습니다");
   expect(api.commands.filter((command) => command.path.endsWith("/reissue")).map((command) => command.path)).toEqual(["invitations/i-failed/reissue"]);
   expect(api.invitations.find((item) => item.invitationId === "i-failed")!.status).toBe("revoked");
 });
@@ -52,7 +53,8 @@ test("a server that does not send mail keeps the code-copy guidance and never sa
   await pending.getByRole("button", { name: "off@example.test 초대 코드 재발급", exact: true }).click();
   await expect(pending.getByRole("alert")).toContainText("새 코드를 발급합니다. 이전 코드는 더 이상 쓸 수 없습니다.");
   await pending.getByRole("button", { name: "코드 재발급 확인", exact: true }).click();
-  await expect(pending.getByRole("status")).toContainText("메일을 발송하지 않습니다. 코드는 지금만 볼 수 있으니 대상자에게 직접 전달하세요.");
+  await expect(page.getByRole("status").filter({ hasText: "off@example.test의 새 초대 코드를 발급했습니다." })).toBeVisible();
+  await expect(pending).toContainText("메일을 발송하지 않습니다. 코드는 지금만 볼 수 있으니 대상자에게 직접 전달하세요.");
   await expect(pending.getByLabel("off@example.test 초대 코드", { exact: true })).toHaveText("FAKE-CODE-0001");
 
   await page.getByRole("button", { name: "구성원 초대", exact: true }).click();
@@ -113,5 +115,5 @@ test("the onboarding team step issues invitations through the same command", asy
   expect(batch[0].idempotencyKey).toMatch(/^[A-Za-z0-9_-]{8,128}$/);
   // 초대는 온보딩 완료의 조건이 아니다. 그대로 끝낼 수 있다.
   await page.getByRole("button", { name: "완료", exact: true }).click();
-  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
 });

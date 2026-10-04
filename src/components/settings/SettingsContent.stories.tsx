@@ -55,11 +55,13 @@ export const Refreshing: Story = {
     const vendors = await canvas.findByRole("region", { name: "벤더 연동" });
     const policy = canvas.getByRole("region", { name: "수집 정책" });
     await userEvent.click(canvas.getByRole("button", { name: "새로고침" }));
-    await canvas.findByText("설정을 새로고침하는 중입니다…");
+    const refreshing = await canvas.findByRole("button", { name: "조회 중…" });
     await expect(vendors).toBeVisible(); await expect(policy).toBeVisible();
     await expect(canvas.getByText("연동 벤더 3")).toBeVisible();
     await expect(canvas.queryByText("설정을 불러오는 중입니다…")).not.toBeInTheDocument();
-    await expect(canvas.getByRole("button", { name: "조회 중…" })).toBeDisabled();
+    await expect(refreshing).toBeDisabled();
+    await expect(refreshing).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.queryByText("설정을 새로고침하는 중입니다…")).not.toBeInTheDocument();
   },
 };
 export const VendorLoading: Story = {

@@ -49,10 +49,10 @@ test("server catalog, optional contract, persisted onboarding and completed logi
   await expect(page.getByRole("region", { name: "등록한 벤더" })).toContainText("서버 전용 제품");
   await page.getByRole("button", { name: "다음", exact: true }).click();
   await page.getByRole("button", { name: "건너뛰고 시작", exact: true }).click();
-  await expect(page).toHaveURL(/\/overview$/);
-  await page.getByRole("link", { name: "로그아웃", exact: true }).click();
+  await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
+  await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await signIn(page);
-  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
   expect(errors).toEqual([]);
 });
 

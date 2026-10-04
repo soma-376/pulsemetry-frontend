@@ -24,7 +24,7 @@ for (const organization of organizations) {
     await refreshed;
     await expect(page.getByRole("navigation")).toContainText(organization.name);
     const logout = page.waitForResponse((response) => response.url().endsWith("/api/bff/auth/logout"));
-    await page.getByRole("link", { name: "로그아웃", exact: true }).click();
+    await page.getByRole("button", { name: "로그아웃", exact: true }).click();
     expect((await logout).status()).toBe(204);
     await expect(page).toHaveURL(/\/login$/);
     expect(await page.evaluate(() => sessionStorage.getItem("pulsemetry.seed-session.v1"))).toBeNull();
@@ -46,7 +46,7 @@ test("SEED-AUTH-SWITCH @p0 @read A 로그아웃 후 B의 데이터와 조직명�
   await page.goto("/overview");
   await expect(page.getByRole("navigation")).toContainText(organizations[0].name);
   await expect(page.getByRole("region", { name: "사용 관측 인원", exact: true })).toBeVisible();
-  await page.getByRole("link", { name: "로그아웃", exact: true }).click();
+  await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
   // Pulsemetry 로그아웃은 IdP 세션을 유지한다. 테스트의 계정 전환을 위해서만 IdP 쿠키를 지운다.
   const idpHost = new URL(oidcOrigin()).hostname;
@@ -57,7 +57,7 @@ test("SEED-AUTH-SWITCH @p0 @read A 로그아웃 후 B의 데이터와 조직명�
   await expect(page.getByRole("navigation")).not.toContainText(organizations[0].name);
   await expect(page.getByText("아직 수집된 신호가 없습니다")).toBeVisible();
   await expect(page.getByRole("status", { name: "아직 수집된 데이터가 없습니다", exact: true })).toBeVisible();
-  await page.getByRole("link", { name: "로그아웃", exact: true }).click();
+  await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
 });
 

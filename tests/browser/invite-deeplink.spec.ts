@@ -12,7 +12,7 @@ test("초대 딥링크는 구성원 화면의 초대 창을 바로 열고, 닫�
   await expect(dialog.getByRole("textbox", { name: "초대할 이메일" })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
-  await expect(page).toHaveURL(/\/members$/);
+  await expect(page).toHaveURL(/\/members(?:\?.*)?$/);
   await page.reload();
   await expect(page.getByRole("region", { name: "구성원 목록", exact: true })).toBeVisible();
   await expect(dialog).toHaveCount(0);

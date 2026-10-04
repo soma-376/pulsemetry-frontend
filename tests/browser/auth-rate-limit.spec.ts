@@ -75,11 +75,11 @@ test("온보딩의 로그아웃 429는 세션을 유지하고 남은 시간 동�
 test("사이드바의 로그아웃 429도 같은 안내와 잠금이다", async ({ page }) => {
   await openDashboard(page, "/overview");
   const calls = await limitLogoutOnce(page);
-  await page.getByRole("link", { name: "로그아웃", exact: true }).click();
+  await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await expect(page.getByRole("navigation").getByRole("alert")).toHaveText("요청이 많아 잠시 제한되었습니다. 2초 뒤에 다시 시도해 주세요.");
-  await expect(page.getByRole("link", { name: /^로그아웃 · \d+초 뒤$/ })).toHaveAttribute("aria-disabled", "true");
+  await expect(page.getByRole("button", { name: /^로그아웃 · \d+초 뒤$/ })).toHaveAttribute("aria-disabled", "true");
   expect(await session(page)).not.toBeNull();
-  await page.getByRole("link", { name: "로그아웃", exact: true }).click({ timeout: 5_000 });
+  await page.getByRole("button", { name: "로그아웃", exact: true }).click({ timeout: 5_000 });
   await expect(page).toHaveURL(/\/login$/);
   expect(calls.count).toBe(2);
 });
