@@ -22,7 +22,7 @@ export async function submitInquiry(input: { company: string; email: string }, s
   const base = (process.env.NEXT_PUBLIC_ENROLLMENT_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
   let response: Response;
   try {
-    response = await fetch(`${base}/v1/inquiries`, {
+    response = await fetch(`${base}/api/v1/inquiries`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ company: input.company, email: input.email }),
       credentials: "omit", cache: "no-store", signal,
     });

@@ -93,7 +93,7 @@ test("INVITE-MAIL-01 @p0 @write 초대 메일이 실제로 도착하고, 발송 
 
     // 폐기된 코드는 설치 API에서 거절한다. 브라우저의 이전 링크는 SSO 안내만 표시한다.
     await paceSignIn(email);
-    const refused = await fetch(`${enrollmentBase()}/v1/enroll`, { method: "POST", headers: { "Content-Type": "application/json" },
+    const refused = await fetch(`${enrollmentBase()}/api/v1/enroll`, { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code: firstCode, hostname: "e2e-revoked-invite", platform: "macos", architecture: "arm64", client_version: "0.1.0" }) });
     expect(refused.status).toBe(409);
     const accept = await context.newPage();

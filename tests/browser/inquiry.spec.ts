@@ -7,7 +7,7 @@ type Reply = { status: number; json?: unknown; headers?: Record<string, string>;
 async function mockInquiries(page: Page, replies: Reply[]) {
   const cors = { "access-control-allow-origin": new URL(test.info().project.use.baseURL!).origin, "access-control-allow-headers": "content-type", "access-control-allow-methods": "POST,OPTIONS", "access-control-expose-headers": "Retry-After" };
   const state = { requests: [] as { body: unknown; authorization: string | undefined }[], release: () => {}, hold: false };
-  await page.route("**/v1/inquiries", async (route) => {
+  await page.route("**/api/v1/inquiries", async (route) => {
     const request = route.request();
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     state.requests.push({ body: request.postDataJSON(), authorization: request.headers().authorization });

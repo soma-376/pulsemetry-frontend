@@ -24,7 +24,7 @@ export async function createLogin(organizationId: string, redirectUri: string, l
   const state = base64url(crypto.getRandomValues(new Uint8Array(32)));
   const challenge = base64url(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))));
   const pending = pendingSchema.parse({ organizationId, redirectUri, verifier, state, createdAt: now });
-  const url = new URL(`${enrollmentUrl()}/v1/auth/oidc/authorize`);
+  const url = new URL(`${enrollmentUrl()}/api/v1/auth/oidc/authorize`);
   url.search = new URLSearchParams({ tenant_id: organizationId, redirect_uri: redirectUri, state,
     code_challenge: challenge, code_challenge_method: "S256" }).toString();
   if (loginHint) url.searchParams.set("login_hint", loginHint.trim().toLowerCase());

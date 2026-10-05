@@ -17,7 +17,7 @@ export async function mockSeedAuth(page: Page) {
     ? route.fulfill({ status: 204, headers: cors })
     : route.fulfill({ headers: cors, json: { organizations: route.request().postDataJSON().email === "admin@seed-a.example.test"
       ? [{ organizationId: "11111111-1111-4111-8111-111111111111", organizationName: "코드웍스" }] : [] } }));
-  await page.route("**/v1/auth/oidc/authorize?*", route => {
+  await page.route("**/api/v1/auth/oidc/authorize?*", route => {
     const params = new URL(route.request().url()).searchParams;
     const callback = new URL(params.get("redirect_uri")!);
     callback.search = new URLSearchParams({ code: "uac_" + "a".repeat(43), state: params.get("state")! }).toString();

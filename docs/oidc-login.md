@@ -39,7 +39,7 @@ npm run dev
 
 | 설정 주체 | 주소 |
 | --- | --- |
-| Cognito 개발 app client의 callback URL | `http://localhost:8080/v1/auth/oidc/callback/cognito` |
+| Cognito 개발 app client의 callback URL | `http://localhost:8080/api/v1/auth/oidc/callback/cognito` |
 | 백엔드 `user-auth.allowed-redirect-uris` | `http://localhost:3000/auth/callback`, 목 브라우저 테스트용 `http://localhost:3107/auth/callback` |
 | 백엔드 `user-auth.allowed-origins` | `http://localhost:3000`, `http://localhost:3107` |
 | 백엔드 `oidc.failure-redirect-uri` | `http://localhost:3000/auth/callback` (임시 세션 유실 시 고정 복귀 주소) |
@@ -50,7 +50,7 @@ npm run dev
 
 ### `/login`: 회사 탐색
 
-`POST /api/bff/auth/organizations` → BFF의 `POST /v1/auth/organizations`
+`POST /api/bff/auth/organizations` → BFF의 `POST /api/v1/auth/organizations`
 
 ```json
 { "email": "owner@seed-a.example.test" }
@@ -66,7 +66,7 @@ npm run dev
 
 서버는 trim·소문자 정규화한 전체 이메일로 `invited`·`active` 회원·활성 조직·설정된 IdP를 찾는다. sub가 NULL이어도 조회한다. 0개는 빈 배열, 1개는 바로 이동, 복수는 사용자 선택이다. 이것만으로 세션/토큰/회원이 생성되지 않는다. authorize는 입력 이메일의 등록 여부를 다시 확인하고 대상 회원을 서버 세션에 고정한다. 최초 callback은 IdP의 검증 이메일이 대상 회원과 일치할 때만 sub를 저장하고 invited→active로 전환한다. 기존 연결은 동일 sub만 허용한다. 입력 오류400, 제한429, 장애503이며 no-store다. 공개 탐색이므로 회사 소속 노출 가능성이 있다. IP 제한만으로 완전히 방지할 수 없어 운영 모니터링이 필요하다.
 
-`GET /v1/auth/oidc/authorize`로 **페이지 이동**한다(fetch가 아니다).
+`GET /api/v1/auth/oidc/authorize`로 **페이지 이동**한다(fetch가 아니다).
 
 ```text
 tenant_id=<선택한 organizationId>
@@ -93,7 +93,7 @@ IdP 이동은 `window.location.assign()`으로 이력을 남긴다. callback 처
 
 state·10분 TTL·복귀 주소·중복 파라미터를 검증한 후에만 교환한다. 임시 정보는 성공/실패 모두 지우고 URL의 code/state도 제거한다. React StrictMode의 중복 실행은 같은 Promise를 공유한다. 새로고침/재진입/실패 시 자동 재교환하지 않고 새 로그인을 요구한다.
 
-브라우저는 `POST /api/bff/auth/token`에 아래 필드와 선택한 `organizationId`를 보낸다. BFF가 `POST /v1/auth/token`으로 교환한다(60초·일회용 코드). 아래 토큰 응답은 BFF만 받으며 브라우저에는 `{ user }`와 암호화 HttpOnly 쿠키를 반환한다.
+브라우저는 `POST /api/bff/auth/token`에 아래 필드와 선택한 `organizationId`를 보낸다. BFF가 `POST /api/v1/auth/token`으로 교환한다(60초·일회용 코드). 아래 토큰 응답은 BFF만 받으며 브라우저에는 `{ user }`와 암호화 HttpOnly 쿠키를 반환한다.
 
 ```json
 { "code": "uac_<43자>", "redirect_uri": "http://localhost:3000/auth/callback", "code_verifier": "<보관한 verifier>" }
@@ -103,7 +103,7 @@ state·10분 TTL·복귀 주소·중복 파라미터를 검증한 후에만 교�
 { "access_token": "<Pulsemetry AT>", "refresh_token": "<Pulsemetry RT>", "token_type": "Bearer", "expires_in": 300 }
 ```
 
-BFF가 `GET /v1/auth/me`, `Authorization: Bearer <AT>`로 확인한다. 새로고침 시 브라우저는 `GET /api/bff/auth/session`으로 사용자 정보만 복원한다.
+BFF가 `GET /api/v1/auth/me`, `Authorization: Bearer <AT>`로 확인한다. 새로고침 시 브라우저는 `GET /api/bff/auth/session`으로 사용자 정보만 복원한다.
 
 ```json
 { "memberId": "<UUID>", "organizationId": "<선택한 회사 UUID>", "organizationName": "회사", "email": "owner@example.test", "displayName": "관리자", "role": "admin" }
@@ -129,7 +129,7 @@ BFF는 만료 직전 또는 upstream 401에서 갱신하고 동일 RT의 진행 
 동일 출처 요청은 `X-Pulsemetry-Request: 1`을 사용하며 변경 요청은 Origin도 일치해야 한다.
 단일 프로세스·서버 전용 키·운영 제약은 [BFF 운영 안내](bff-auth.md)를 따른다.
 
-브라우저는 `POST /api/bff/auth/logout`을 호출한다. BFF가 backend `/v1/auth/logout`으로 세션을 폐기하고 쿠키와 갱신 캐시를 제거한다.
+브라우저는 `POST /api/bff/auth/logout`을 호출한다. BFF가 backend `/api/v1/auth/logout`으로 세션을 폐기하고 쿠키와 갱신 캐시를 제거한다.
 IdP SSO 쿠키는 유지되므로 같은 브라우저의 재로그인은 비밀번호 입력을 생략할 수 있다.
 `/api/dev/seed-login`은 삭제했으며 구 서버 비밀번호 API는 410이다.
 
