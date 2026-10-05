@@ -17,9 +17,9 @@ export default defineConfig({
   webServer: {
     // Build with fixture configuration instead of reusing the real API dev server.
     command: "npm run build && npm run start -- --port 3107",
-    url: "http://localhost:3107/overview",
+    url: "http://localhost:3107/login",
     reuseExistingServer: false,
     timeout: 120000,
-    env: { NEXT_PUBLIC_ORGANIZATION_ID: "11111111-1111-4111-8111-111111111111", NEXT_PUBLIC_DASHBOARD_API_URL: "http://localhost:8081", NEXT_PUBLIC_ENROLLMENT_API_URL: "http://localhost:8080", ENROLLMENT_API_URL: "http://localhost:8080" },
+    env: { BFF_ORIGIN: "http://localhost:3107", BFF_SESSION_KEYS: "abababababababababababababababababababababababababababababababab", DASHBOARD_API_URL: "http://localhost:3110", NEXT_PUBLIC_ENROLLMENT_API_URL: "http://localhost:3110", ENROLLMENT_API_URL: "http://localhost:3110" },
   },
 });

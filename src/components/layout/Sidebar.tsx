@@ -1,11 +1,14 @@
 "use client";
 
+import { useDashboardHref } from "@/lib/filters";
+
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useOrganization } from "@/lib/organization-store";
-import { backendLogout, useBackendSession } from "@/lib/api/session";
-import { AUTH_SEED } from "@/mocks/auth";
+import { backendLogout, sessionRole, useBackendSession } from "@/lib/api/session";
+import { useHydrated } from "@/lib/use-hydrated";
+import { useRateLimit } from "@/lib/use-rate-limit";
 import { Icon, type IconName } from "@/components/ui/Icon";
 
 const NAV: { href: string; label: string; icon: IconName }[] = [
@@ -16,13 +19,32 @@ const NAV: { href: string; label: string; icon: IconName }[] = [
   { href: "/settings", label: "설정", icon: "settings" },
 ];
 
+const ROLE_LABEL = { owner: "소유자", admin: "관리자", member: "구성원" } as const;
+
 export function Sidebar() {
-  const { state, update } = useOrganization();
+  const dashboardHref = useDashboardHref();
+  const { update } = useOrganization();
+  const hydrated = useHydrated();
   const pathname = usePathname();
   const session = useBackendSession();
   const router = useRouter();
   const [logoutError, setLogoutError] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
+  const logoutLimit = useRateLimit();
   const [collapsed, setCollapsed] = useState(false);
+
+  const logout = <button type="button" disabled={loggingOut || logoutLimit.waiting} aria-disabled={logoutLimit.waiting || undefined}
+    aria-label={logoutLimit.waiting ? `로그아웃 · ${logoutLimit.seconds}초 뒤` : "로그아웃"}
+    title="로그아웃" onClick={async () => {
+      if (loggingOut || logoutLimit.waiting) return;
+      setLoggingOut(true);
+      setLogoutError("");
+      try { await backendLogout(); update(previous => ({ ...previous, session: null })); router.replace("/login"); }
+      catch (cause) { setLogoutError(logoutLimit.capture(cause) ? "" : cause instanceof Error ? cause.message : "로그아웃에 실패했습니다."); }
+      finally { setLoggingOut(false); }
+    }} className="shrink-0 cursor-pointer whitespace-nowrap rounded-md px-1.5 py-1 text-[11px] text-text3 hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+    {collapsed ? <span aria-hidden="true">↪</span> : loggingOut ? "로그아웃 중…" : logoutLimit.waiting ? `로그아웃 · ${logoutLimit.seconds}초 뒤` : "로그아웃"}
+  </button>;
 
   return (
     <nav
@@ -56,7 +78,7 @@ export function Sidebar() {
           return (
             <Link
               key={n.href}
-              href={n.href}
+              href={dashboardHref(n.href)}
               title={n.label}
               aria-current={current ? "page" : undefined}
               className="flex h-[34px] items-center gap-2.5 rounded-md px-2.5 text-[13px] no-underline hover:bg-hover hover:no-underline"
@@ -80,21 +102,26 @@ export function Sidebar() {
       <div className="flex-1" />
 
       <div className="flex shrink-0 flex-col gap-2.5 border-t border-border pt-3">
-        {!collapsed && (
-          <div className="flex flex-col gap-0.5 px-2">
-            <div className="text-[13px] font-semibold">{session?.user.organizationName ?? AUTH_SEED.organizationName}</div>
-            <div className="overflow-hidden text-[12px] text-ellipsis whitespace-nowrap text-text3">
-              {session?.user.email ?? state.session?.email}
+        {/* 계정 표시는 세션에서만 온다. 세션이 없으면 조직·역할·로그아웃 대신 로그인 링크다(서버 렌더·첫 hydration 에는 그리지 않는다). */}
+        {hydrated && session && <>
+          {!collapsed && (
+            <div className="flex flex-col gap-0.5 px-2" aria-label="로그인한 계정">
+              <div className="text-[13px] font-semibold">{session.user.organizationName}</div>
+              <div className="overflow-hidden text-[12px] text-ellipsis whitespace-nowrap text-text3">
+                {session.user.email}
+              </div>
+              <div className="mt-1 flex items-center gap-2">
+                <span className="rounded border border-border bg-sub px-1.5 py-px text-[11px] font-medium text-text2">
+                  {ROLE_LABEL[sessionRole(session)]}
+                </span>
+                {logout}
+              </div>
             </div>
-            <div className="mt-1">
-              <span className="rounded border border-border bg-sub px-1.5 py-px text-[11px] font-medium text-text2">
-                관리자
-              </span>
-            </div>
-          </div>
-        )}
-        <Link href="/login" onClick={async (event) => { event.preventDefault(); try { await backendLogout(); update((previous) => ({ ...previous, session: null })); router.replace("/login"); } catch (cause) { setLogoutError(cause instanceof Error ? cause.message : "로그아웃에 실패했습니다."); } }} className="rounded-md px-2 py-1 text-xs text-text3 hover:bg-hover">로그아웃</Link>
-        {logoutError && <p role="alert" className="text-xs text-red">{logoutError}</p>}
+          )}
+          {collapsed && <div className="flex justify-center">{logout}</div>}
+          {(logoutLimit.message || logoutError) && <p role="alert" className="text-xs text-red">{logoutLimit.message || logoutError}</p>}
+        </>}
+        {hydrated && !session && <Link href="/login" className="rounded-md px-2 py-1 text-xs text-text2 hover:bg-hover">로그인</Link>}
       </div>
     </nav>
   );

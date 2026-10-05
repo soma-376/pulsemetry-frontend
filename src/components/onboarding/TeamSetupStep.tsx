@@ -6,6 +6,7 @@ import { z } from "zod";
 import { TeamForm } from "@/components/teams/TeamForm";
 import { InviteForm } from "@/components/members/InviteForm";
 import { Button } from "@/components/ui/Button";
+import { issueInvitations } from "@/lib/api/invitations";
 import { organizationKey } from "@/lib/api/query-keys";
 import { apiJson, createCommands, readOptions, orgPath, teamSchema, teamsOptions, type ServerTeam } from "@/lib/api/management";
 
@@ -33,9 +34,17 @@ export function TeamSetupStep({ organizationId, onBusy, draft, onDraftChange }: 
       <p role="status" className="mt-2 text-xs text-text2">{notice}</p>
     </section>
     <section aria-label="구성원 초대" className="rounded-lg border border-border bg-card p-5">
-      <h3 className="mb-2 text-sm font-semibold">초대 메일 발송</h3>
-      <p className="mb-5 text-xs leading-5 text-text2">초대 기능은 연동 준비 중입니다. 이 단계는 건너뛸 수 있습니다.</p>
-      <fieldset disabled><InviteForm inline seatStatus="" onInvite={() => {}} /></fieldset>
+      <h3 className="mb-2 text-sm font-semibold">구성원 초대</h3>
+      <p className="mb-5 text-xs leading-5 text-text2">초대는 건너뛸 수 있습니다. 초대한 사람과 메일 발송 상태는 온보딩 뒤 구성원 화면의 초대 대기에서 확인합니다.</p>
+      {/* 구성원 화면과 같은 명령이다. 서버가 발급을 확정한 결과만 보여 준다. */}
+      <InviteForm organizationId={organizationId} inline teams={teams.data} onInvite={async (entries) => {
+        onBusy(true);
+        try {
+          const results = await issueInvitations(post, organizationId, entries);
+          await refresh();
+          return results;
+        } finally { onBusy(false); }
+      }} />
     </section>
   </div>;
 }

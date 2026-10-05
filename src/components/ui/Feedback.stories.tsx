@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, fn } from "storybook/test";
 import { LoadingState } from "./LoadingState";
+import { Button } from "./Button";
 import { ErrorState } from "./ErrorState";
 import { EmptyState } from "./EmptyState";
 
@@ -18,8 +19,8 @@ export const PageLoading: Story = {
   render: () => <LoadingState message="설정을 불러오는 중입니다…" className="min-h-[480px]" />,
 };
 export const Refreshing: Story = {
-  name: "기존 화면 위 작은 진행 표시",
-  render: () => <LoadingState variant="inline" message="설정을 새로고침하는 중입니다…" />,
+  name: "새로고침·공통 헤더 버튼 진행 표시",
+  render: () => <Button loading loadingLabel="조회 중…">새로고침</Button>,
 };
 export const Error: Story = {
   name: "조회 오류·재시도",

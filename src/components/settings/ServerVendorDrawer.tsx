@@ -41,7 +41,8 @@ export function ServerVendorDrawer({ organizationId, initial, registeredKinds, e
   const summary = validateServerTiers(draft.tiers ?? [], product?.allowsSeatTiers ?? false);
   const plan = plans.data?.plans.find(item => item.id === draft.plan);
   const row = current ? settingsVendorRow(current, product) : NEW_CONTRACT_ROW;
-  const refresh = () => client.invalidateQueries({ queryKey: organizationKey(organizationId) });
+  // 지운 제품의 조회(상세·좌석)는 다시 읽지 않는다 — 서버에 없는 제품이라 404 다. 창이 닫히면 버려진다.
+  const refresh = (removed?: string) => client.invalidateQueries({ queryKey: organizationKey(organizationId), predicate: (query) => !removed || !query.queryKey.includes(removed) });
   const mutation = useMutation({
     retry: false,
     mutationFn: async (action: "save" | "vendor" | "contract") => {
@@ -67,7 +68,7 @@ export function ServerVendorDrawer({ organizationId, initial, registeredKinds, e
       }
       return current ? "변경사항을 저장했습니다." : "벤더를 추가했습니다.";
     },
-    onSuccess: message => { onSaved(message); onClose(); void refresh(); },
+    onSuccess: (message, action) => { onSaved(message); onClose(); void refresh(action === "vendor" ? current?.vendorId : undefined); },
     onError: error => { if (error instanceof ManagementError && [401, 403].includes(error.status)) onAccessDenied(error); },
     onSettled: () => { inFlight.current = false; },
   });
@@ -121,7 +122,8 @@ export function ServerVendorDrawer({ organizationId, initial, registeredKinds, e
         {current && <section className="flex flex-col gap-2 rounded-md border border-border bg-sub p-3">
           <span className="text-xs font-semibold">신호에서 측정</span>
           {[{ label: "활성 사용자 (7일)", value: current.activeUsers7d }, { label: "30일 누적 사용자", value: current.activeUsers30d }].map(fact => <div key={fact.label} className="flex justify-between text-xs"><span className="text-text3">{fact.label}</span><span>{fact.value == null ? "-" : `${int(fact.value)}명`}</span></div>)}
-          <div className="flex justify-between text-xs"><span className="text-text3">미사용 좌석</span><span>-</span></div>
+          <div className="flex justify-between text-xs"><span className="text-text3">배정 좌석(좌석 원장)</span>
+            <span>{!current.seats?.data ? "-" : `${int(current.seats.data.assigned)}석${current.seats.data.contracted === null ? "" : ` / 계약 ${int(current.seats.data.contracted)}석`}`}</span></div>
         </section>}
       </>}
     </div>

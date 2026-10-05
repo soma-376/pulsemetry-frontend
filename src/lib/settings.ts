@@ -388,8 +388,7 @@ export function policyCopy(ask: PolicyAsk, currentKeep: string) {
 export const ALERT_RULES = [
   { id: "spend_spike", title: "비용 급증 알림", desc: "팀 사용량이 전주 대비 급증할 때", threshold: "+40%" },
   { id: "quota_exceeded", title: "한도 초과 알림", desc: "좌석 한도에 걸려 요청이 차단될 때", threshold: "5명" },
-  { id: "model_not_allowed", title: "비허용 모델 호출 알림", desc: "허용목록에 없는 모델이 호출될 때", threshold: "1회" },
-  { id: "tool_unapproved", title: "미승인 도구 연결 알림", desc: "승인되지 않은 도구가 연결될 때", threshold: "1회" },
+  { id: "product_not_registered", title: "미등록 제품 사용 알림", desc: "계약 벤더로 등록하지 않은 제품의 사용이 관측될 때", threshold: "1회" },
 ];
 
 export { ADMIN_EMAIL };

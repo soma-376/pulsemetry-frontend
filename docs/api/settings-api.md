@@ -47,22 +47,35 @@ type Vendor = {
   meteredMonthToDate: Section<{
     startDate: string;
     endDate: string;
-    equivalentCostUsd: Money;
-    actualBilledUsd: Money | null;
+    equivalentCostUsd: Money | null;  // 서버는 이 절에서 늘 null(환산 비용은 개요·팀의 제품별 사용)
+    actualBilledUsd: Money | null;    // 벤더 청구 누계(서버 ADR 0050) — 환산 비용·계약액이 아니다
+    billingKind?: "usage_cost" | "usage_spend" | null;  // 가산: 이번 달 사용 비용 · 이번 청구 주기 사용 지출
+    finalized?: boolean | null;                         // 가산: false 면 벤더가 고칠 수 있는 진행 중 값
+    source?: "connector" | "seed" | null;               // 가산: seed 는 개발 시드(실제 청구 아님)
+    fetchedAt?: string | null;
   }>;
   checks: { code: string; severity: "info" | "warning" }[];
+  seatSource?: SeatSource;                                             // 서버 가산(ADR 0048) — 아래 "좌석 원천·벤더 연결"
+  seats?: Section<{ assigned: number; contracted: number | null; unallocated: number | null }>;  // 서버 가산 — 좌석 원장
 };
 type CollectionPolicy = {
-  version: number;
+  version: number; // 원문 선택이 실린 manifest 판(설치에 배포하는 정책)
   collectRawContent: boolean;
   reclaimIdleDays: 7 | 14 | 30 | 60;
   aggregateRetentionMonths: 12 | 24 | 36 | null;
   rawContentRetentionDays: number | null;
   effectiveAt: string;
   updatedBy: string;
+  // 회수 기준·집계 보존은 manifest 와 따로 저장하고 판도 따로 센다
+  settingsVersion: number; // 저장 전 0
+  settingsUpdatedAt: string | null;
+  settingsUpdatedBy: string | null;
+  reclaimIdleDaysSource: "organization" | "default"; // default = 서버 기본 설정
+  options: { reclaimIdleDays: number[]; aggregateRetentionMonths: (number | null)[] };
+  cleanupOperationId: string | null; // 이 조직의 가장 최근 보존 정리 작업
 };
 type AlertRule = {
-  ruleId: "spend_spike" | "quota_exceeded" | "model_not_allowed" | "tool_unapproved";
+  ruleId: "spend_spike" | "quota_exceeded" | "product_not_registered";
   version: number;
   enabled: boolean;
   availability: Availability;
@@ -85,8 +98,9 @@ type SettingsResponse = {
     unconfiguredVendors: number;
     monthlySeatFeeUsd: Money | null;
     contractedSeats: number | null;
-    activeSeats7d: number | null;
-    meteredMonthToDate: Section<{ equivalentCostUsd: Money | null; actualBilledUsd: Money | null }>;
+    activeSeats7d: number | null;     // 지난 7일 그 제품을 쓴 배정 좌석(좌석 원장) — 판정할 수 없으면 null
+    assignedSeats?: number | null;    // 서버 가산 — 배정 좌석 합(쓸 수 있는 원장만)
+    meteredMonthToDate: Section<{ equivalentCostUsd: Money | null; actualBilledUsd: Money | null }>;  // 모든 제품이 같은 기간 값을 가질 때만 합(아니면 사유)
   };
   catalog: {
     kinds: { kind: string; displayName: string }[];
@@ -100,6 +114,8 @@ type SettingsResponse = {
   policyRollout: {
     desiredVersion: number; eligibleInstallations: number;
     appliedInstallations: number; outdatedInstallations: number; unknownInstallations: number;
+    /** 판정 근거별 설치 수(서버 가산). 합은 eligibleInstallations. 가산 전 서버는 보내지 않는다 */
+    evidence?: { heartbeat: number; appliedConfirmation: number; none: number };
   };
   alertRules: AlertRule[];
 };
@@ -112,6 +128,10 @@ type InstallationsResponse = {
     installationId: string; memberId: string | null; account: string | null;
     team: TeamRef; agentVersion: string | null; appliedPolicyVersion: number | null;
     lastHeartbeatAt: string | null; canNotify: boolean;
+    /** 지금 판의 근거(서버 가산): 마지막 설치 보고 · 보고가 없어 쓴 적용 확인 기록 · 근거 없음 */
+    appliedEvidence: "heartbeat" | "applied_confirmation" | "none";
+    /** 근거가 applied_confirmation 일 때 그 판의 적용 확인 시각. 그 밖에는 null */
+    appliedConfirmedAt: string | null;
   }>;
 };
 type ContractWrite = {
@@ -127,14 +147,18 @@ type SaveContractRequest = {
   displayName: string;
   contract: ContractWrite;
 };
-type PolicyPatchRequest = {
-  expectedVersion: number;
+type PolicySaveRequest = {
+  expectedVersion: number; // manifest 판(필수)
   collectRawContent?: boolean;
+  expectedSettingsVersion?: number; // 아래 둘 중 하나라도 보내면 필수
   reclaimIdleDays?: 7 | 14 | 30 | 60;
   aggregateRetentionMonths?: 12 | 24 | 36 | null;
 };
-type PolicyPatchResponse = {
-  policy: CollectionPolicy;
+type PolicySaved = {
+  version: number; collectRawContent: boolean | null; confirmedAt: string | null;
+  application: "future_enrollments"; existingInstallationsUpdated: false;
+  reclaimIdleDays: number | null; aggregateRetentionMonths: number | null;
+  settingsVersion: number; settingsUpdatedAt: string | null;
   cleanupOperationId: string | null;
 };
 type AlertRulePatchRequest = { expectedVersion: number; enabled: boolean };
@@ -182,23 +206,57 @@ GET 단건 응답 ETag도 같은 형식이다. 저장은 계약과 displayName�
 - 사용자가 계약 좌석보다 많다는 것만으로 입력 오류를 확정하지 않는다.
   계정/좌석 대응, 좌석 순환, 종량제 사용이 있을 수 있으므로 checks 경고와 근거를 반환한다.
 - 신호 없는 벤더를 미사용 좌석으로 간주하지 않는다. activeSeats7d는 실제 좌석 대응·충분한 관측이 있어야 제공한다.
-- 종량 환산 비용과 실제 청구액은 다르다. 실제 인보이스 원천이 없으면 actualBilledUsd=null.
+- 종량 환산 비용과 실제 청구액은 다르다. actualBilledUsd 는 벤더 청구·비용 API의 누계뿐이고(Claude Enterprise·Cursor Enterprise), 없으면 그 벤더만 사유와 함께 null.
   화면의 “입력 없이 확정”, “콘솔 오차 0.4%” 같은 고정 문구는 실제 연동 시 제거해야 한다.
 - 7일/30일 사용자는 asOf가 속한 조직 날짜를 끝으로 하는 달력 날짜 범위. 당일은 부분 관측이다.
   월 사용량은 조직 시간 기준 이번 달 1일부터 asOf까지이고 월 전체 예상액이 아니다.
 - summary는 목록 전체 범위다. 일부 계약 누락을 0원으로 합쳐 확정 총액으로 보이지 않게 한다.
 
+## 좌석 원천·벤더 연결·좌석 기록
+
+서버 enrollment 명세 §12 "벤더 연결"·"좌석 수동 기록"·"좌석 회수·복원"(ADR 0048·0049).
+
+```ts
+type SeatSource = {
+  authority: "connector" | "manual"; provisional: boolean;
+  connector: { connectorId: string; accountKind: "email" | "github_login"; capabilities: string[]; settingKeys: string[]; supported: string[] } | null;
+  connection: { connectionId: string; version: number; connectorId: string; settings: Record<string, string>;
+    credential: { configured: true; updatedAt: string };   // 비밀은 다시 오지 않는다
+    check: { status: string; checkedAt: string | null };
+    sync: SyncState; billing?: SyncState | null; createdAt: string; updatedAt: string } | null;
+};
+type SyncState = { status: "pending" | "succeeded" | "failing"; lastSucceededAt: string | null; lastFailedAt: string | null; lastError: string | null };
+```
+
+| 요청 | 본문 / 결과 |
+| --- | --- |
+| PUT /vendors/{vendorId}/connection | { expectedVersion(새 연결 0), settings, credential } → 200 { seatSource } |
+| DELETE /vendors/{vendorId}/connection | If-Match: "connection-{version}" → 204 |
+| POST /vendors/{vendorId}/connection/verify | 없음 → 200 { seatSource } |
+| POST /vendors/{vendorId}/connection/sync | {} → 202 OperationResponse(kind seat_sync) |
+| GET /vendors/{vendorId}/seats | limit=50, cursor, snapshotId → VendorSeatsResponse(대시보드) |
+| POST /vendors/{vendorId}/seats | { account, tierId?, note?, memberId?, expectedVersion?(다시 배정) } → 201·200 |
+| PATCH /vendors/{vendorId}/seats/{seatId} | { expectedVersion, tierId?, note?, memberId?, memberLink?: "automatic" } → 200 |
+| POST /vendors/{vendorId}/seats/{seatId}/release | { expectedVersion } → 200 |
+| POST /vendors/{vendorId}/seats/import | { mode: "preview" \| "apply", csv } → 200 { import, provisional } · 오류면 422 seat_import_invalid + details |
+
+- 자격증명은 저장 요청에만 싣는다. 화면은 저장 뒤 입력을 지우고 다시 보여 주지 않는다(브라우저 저장소에도 두지 않는다).
+- 연결이 있는 제품은 동기화가 좌석을 정한다 — 수동 배정·해제·가져오기는 409 connector_managed. 보정(구성원 연결·유형·메모)은 된다.
+- CSV 열은 account(필수)·status·tier·member_email뿐이다. 파일의 행만 바꾸고, 오류가 하나라도 있으면 아무것도 적용하지 않는다.
+
 ## 수집 정책
 
-PATCH /settings/collection-policy → 200 PolicyPatchResponse.
-변경하는 필드만 보내며 최소 1개가 필요하다. UI의 “미적용” 보존 옵션은 null(무기한)이다.
-원문 수집 양방향 변경, 집계 보존 기간 단축은 현재 확인 모달 후 요청한다.
-서버는 정책 버전을 올리고 actor/변경 전후/시각을 감사 기록한다.
-변경 없는 값은 같은 버전 반환, 충돌은 409.
+PUT /api/v1/organizations/{organizationId}/collection-policy(enrollment 서비스) + PolicySaveRequest → 200 PolicySaved.
+별도 PATCH 경로는 없다 — 기존 원문 수집 저장(`{expectedVersion, collectRawContent}`)을 선택 필드로 넓혔다.
+변경하는 필드만 보내며 최소 1개가 필요하다. 보존 옵션의 null은 무기한이다.
+원문 수집 변경과 집계 보존 단축은 확인 모달 뒤에 요청한다. 회수 기준과 보존 연장은 바로 저장한다.
+원문 선택은 새 manifest 판을 만들고, 회수 기준·집계 보존은 manifest 판을 올리지 않고 설정의 판을 올린다(설치의 적용 상태가 흔들리지 않는다).
+같은 값을 다시 보내면 같은 판이다. `expectedVersion`(manifest 판)이나 `expectedSettingsVersion`(설정의 판)이 어긋나면 409 `version_conflict`,
+허용 밖의 값·판 누락은 400 `invalid_request`(`fieldErrors`)다.
 
 예:
 ```json
-{"expectedVersion":4,"collectRawContent":false,"aggregateRetentionMonths":12}
+{"expectedVersion":4,"expectedSettingsVersion":2,"aggregateRetentionMonths":12}
 ```
 
 - 원문 정책은 프롬프트·응답뿐 아니라 도구 인수/파일 경로/오류 본문까지 적용할 범위를 수집기와 합의한다.
@@ -206,22 +264,36 @@ PATCH /settings/collection-policy → 200 PolicyPatchResponse.
   collectRawContent=false이면 서버가 허용되지 않은 본문을 저장하지 않도록 한다.
 - 정책 저장 성공과 전 설치 적용 완료는 다르다. appliedPolicyVersion이 확인된 설치만 applied로 센다.
 - eligible=applied+outdated+unknown. 정책 ACK가 없으면 unknown이며 적용 완료로 추정하지 않는다.
-- 원문 보존 기간과 집계 보존 기간은 별개다. rawContentRetentionDays는 서버의 기존 원문 정책을 읽기만 한다.
-- 집계 보존 단축은 정리 작업을 예약하고 cleanupOperationId로 결과를 조회한다.
-  오래된 집계가 지워지는 정확한 경계는 asOf에서 N개월 전 월력 날짜의 KST 자정 미만으로 한다
-  (일자가 없는 달이면 말일). 원문 삭제는 이 설정의 범위가 아니다.
+- 판정의 근거(`appliedEvidence`·`policyRollout.evidence`)를 구분해 말한다. 적용 확인 기록은 그 판을 적용한 **적이 있다**는 이력이고 최근 보고가 아니다.
+  telemetryctl 기본 브랜치는 설치 보고를 보내지 않으므로 지금 배포된 설치는 대부분 적용 확인 기록이 근거다. "설치 보고 기준"처럼 한 근거로 뭉뚱그리지 않는다.
+- 원문 보존 기간과 집계 보존 기간은 별개다. rawContentRetentionDays는 조회 원천이 없어 서버가 null을 반환하며, 설정 화면에는 표시하지 않는다.
+- 집계 보존 단축(무기한 → 유한 포함)은 정리 작업을 만들고 cleanupOperationId로 돌려준다. 진행은 `GET /operations/{operationId}`를
+  `Retry-After` 간격으로 조회한다(대기 → 진행 → 완료, 미완이면 진행 중인 채로 `retention.status=incomplete`, 정해진 횟수 안에 못 끝내면 실패).
+  완료는 논리 삭제 완료다. 새로고침 뒤에는 설정의 `collectionPolicy.cleanupOperationId`(가장 최근 정리 작업)로 다시 조회한다.
+  지워지는 범위는 분석 원본(팀·일·구성원 집계의 원천)이고 경계는 저장한 날(KST)에서 N개월 전 같은 날의 KST 자정 미만이다
+  (일자가 없는 달이면 말일). 수신 기록·수집 이력 요약과 원문은 이 설정의 범위가 아니다.
+- 실행 전의 정리 작업은 다음 보존 저장이 대체한다(작업은 `superseded`로 실패).
 - 보존 기간 연장으로 이미 삭제된 기록이 복구되지는 않는다.
 - reclaimIdleDays 변경은 구성원의 현재 회수 후보 판정에도 같은 정책 버전으로 적용한다.
 
 ## 알림과 미적용 설치
 
-PATCH /settings/alert-rules/{ruleId}, AlertRulePatchRequest → 200 AlertRule.
-v1은 토글만 수정한다. UI의 고정 임계값은 서버 값으로 대체한다.
+PATCH /settings/alert-rules/{ruleId}, AlertRulePatchRequest → 200 AlertRule (enrollment-api, 허브 ADR 0008).
+수정하는 값은 규칙의 켜짐뿐이며 임계값은 서버에서 제공한다. 신규 미등록 제품 규칙은 기본 꺼짐(version 0)이다.
 spend_spike는 직전 완전한 KST 7일 대 이전 7일 비용 증가율 0.4,
-quota_exceeded는 최근 24시간 차단된 고유 사용자 5명,
-model_not_allowed/tool_unapproved는 최근 24시간 해당 이벤트 1회가 **초기 제안 기준**이다.
-평가 창·허용 목록·차단 이벤트가 없다면 unavailable/reason을 반환하고 토글을 비활성화한다.
-이 명세가 알림 평가 엔진이나 실제 전송 채널까지 구현되었다는 뜻은 아니다.
+quota_exceeded는 최근 24시간 차단된 고유 사용자 5명(검증된 관측 원천 미지원),
+product_not_registered는 최근 24시간 미등록 제품의 대표 사용량 이벤트 1회가 기준이다.
+
+등록 기준은 이 조직이 보관 처리하지 않은 managed_vendors.kind다. 계약 상세가 비었거나 만료되어도 등록된 제품이다.
+관측 product를 카탈로그의 명시적인 제품 매핑과 비교한다. 모델 이름·모델 공급자·도구 이름으로 판정하지 않고,
+미분류·매핑 불가 제품은 알림 대상으로 보지 않는다. 이 알림은 개인 결제나 무단 사용을 뜻하지 않는다.
+등록 제품이 하나도 없으면 unavailable / registered_products_not_configured이며 켤 수 없다.
+다른 사유는 completeness_not_available(수집 구간 보고 없음), source_not_available(한도 초과 관측 원천 없음)이다.
+켜진 규칙은 가용성이 사라져도 끌 수 있다. 켤 수 없는 규칙을 켜면 422 alert_rule_unavailable, 판이 다르면 409다.
+
+현재 설정 응답은 위 세 규칙만 반환한다. 모델 허용·승인 도구 목록과 편집 API는 폐기하고 alertLists도 반환하지 않는다.
+과거 모델·도구 규칙과 목록의 DB 기록, 알림 및 확인 이력은 보존한다. 기존 열린 모델·도구 알림은 마이그레이션에서 닫는다.
+평가와 알림 확인은 개요 명세의 "수집 상태와 알림"이다. 알림 발송(메일 등) 채널은 없다.
 
 GET /installations의 outdated는 적용 버전이 알려져 있고 desiredVersion보다 낮은 설치다.
 미확인 버전은 unknown으로 별도 취급한다. 이메일 등 개인 식별 정보는 기존 서버 권한 정책을 따른다.

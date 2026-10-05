@@ -51,11 +51,11 @@ test("조직·기간·시간대·비교 조건별 캐시를 분리한다", () =>
 test("직접 호출에 필터와 취소 신호를 전달하고 응답 범위를 검증한다", async (context) => {
   const controller = new AbortController();
   context.mock.method(globalThis, "fetch", async (input: string, init: RequestInit) => {
-    const url = new URL(input);
-    assert.equal(url.pathname, `/api/v1/organizations/${params.organizationId}/analytics/overview`);
+    const url = new URL(input, "http://localhost");
+    assert.equal(url.pathname, `/api/bff/dashboard/api/v1/organizations/${params.organizationId}/analytics/overview`);
     assert.equal(url.searchParams.get("compare"), "prev_week");
     assert.equal(init.signal, controller.signal);
-    assert.equal(init.credentials, "omit");
+    assert.equal(init.credentials, "same-origin");
     assert.equal(init.cache, "no-store");
     return Response.json(example);
   });

@@ -1,10 +1,11 @@
 import { StackedBar } from "@/components/charts/StackedBar";
-import type { AxisKey, TeamsModel } from "@/lib/metrics/teams";
+import type { AxisKey, TeamsModel } from "@/lib/metrics/teams-presentation";
 
 /**
- * 팀별 벤더 비중.
+ * 팀별 벤더(등록 제품) 비중.
  *
- * 왼쪽 표가 "얼마나 썼나"라면 이쪽은 "무엇으로 썼나"입니다.
+ * 왼쪽 표가 "얼마나 썼나"라면 이쪽은 "무엇으로 썼나"입니다. 조각은 서버가 팀·제품별로 센 값이고,
+ * 관측 제품은 카탈로그의 명시 매핑으로만 등록 제품에 이어집니다 — 매핑 없는 관측은 "미확인 제품"으로 따로 쌓습니다.
  * 기둥 높이는 선택한 축의 실제 값이라 크기와 구성을 한 번에 읽습니다 —
  * 100% 로 정규화하면 구성비만 남아서, 조금 쓰는 팀과 많이 쓰는 팀이 같은 높이가 됩니다.
  * 기둥 순서는 선택한 축을 따라가므로 왼쪽 표와 같은 줄에서 읽힙니다.
@@ -16,7 +17,7 @@ export function TeamVendorMixCard({
   model: TeamsModel;
   axis: AxisKey;
 }) {
-  const { yTop, yMid, columns, legend } = model.vendorMix(axis);
+  const { yTop, yMid, columns, legend, incomplete } = model.productMix(axis);
 
   return (
     <section
@@ -41,7 +42,10 @@ export function TeamVendorMixCard({
         </div>
       </div>
 
-      <p className="mb-3 text-[11px] leading-5 text-text3">관측된 사용량의 {axis === "cost" ? "환산 비용" : axis === "token" ? "토큰" : "세션"} 비중 · 데모 데이터 · 사용량 미수집 벤더 제외</p>
+      <p className="mb-3 text-[11px] leading-5 text-text3">
+        관측된 사용량의 {axis === "cost" ? "환산 비용" : axis === "token" ? "토큰" : "세션"} 비중 · 사용량 미수집 벤더 제외
+        {incomplete && " · 값을 확인할 수 없는 팀은 비중을 그리지 않습니다"}
+      </p>
       <div className="grid grid-cols-[64px_minmax(0,1fr)] gap-2">
         {/* y축 — 기둥 위 총액 라벨이 들어갈 20px 을 비워두고 시작합니다 */}
         <div className="tnum relative h-[226px] text-[11px] text-text3">
@@ -57,9 +61,9 @@ export function TeamVendorMixCard({
         <div className="flex h-[226px] items-end gap-2.5 border-b border-l border-border px-1 pt-5">
           {columns.map((c) => (
             <div
-              key={c.team}
+              key={c.key}
               role="img"
-              aria-label={`${c.team} · ${c.totalText} · ${c.segments.map((segment) => segment.tip).join(", ")}`}
+              aria-label={`${c.team} · ${c.totalText} · ${c.segments.length ? c.segments.map((segment) => segment.tip).join(", ") : c.topText}`}
               className="relative flex h-full min-w-0 flex-1 flex-col items-center justify-end"
             >
               <span
@@ -79,7 +83,7 @@ export function TeamVendorMixCard({
         <div className="flex gap-2.5 px-1 pt-1.5">
           {columns.map((c) => (
             <div
-              key={c.team}
+              key={c.key}
               className="flex min-w-0 flex-1 flex-col items-center gap-px"
             >
               <span

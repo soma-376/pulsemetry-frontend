@@ -46,6 +46,14 @@ for (const row of rows) {
   near(sum(row.modelMix.data.models, "equivalentCostUsd"), Number(row.current.equivalentCostUsd));
   near(sum(row.modelMix.data.models, "totalTokens"), row.current.tokens.total);
   assert.equal(row.trend.at(-1).cumulativeSessionCount, row.current.sessionCount);
+  near(sum(row.products, "equivalentCostUsd"), Number(row.current.equivalentCostUsd));
+  near(sum(row.products, "sessionCount"), row.current.sessionCount);
+}
+near(sum(overview.productUsage.products, "equivalentCostUsd"), Number(overview.usage.current.equivalentCostUsd));
+near(sum(overview.productUsage.products, "totalTokens"), overview.usage.current.tokens.total);
+for (const kind of new Set(rows.flatMap((row) => row.products.map((product) => product.kind)))) {
+  near(sum(rows.flatMap((row) => row.products.filter((product) => product.kind === kind)), "equivalentCostUsd"),
+    Number(overview.productUsage.products.find((product) => product.kind === kind).equivalentCostUsd));
 }
 for (const model of teams.modelScatter.data.models) {
   near(rows.reduce((n, row) => n + Number(row.modelMix.data.models.find((m) => m.modelId === model.modelId).equivalentCostUsd), 0), Number(model.equivalentCostUsd));

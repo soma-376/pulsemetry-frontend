@@ -14,6 +14,8 @@
 | GET /members | 같은 날짜 + q, limit=20, cursor, snapshotId → MemberListResponse |
 | GET /members/unassigned | 같은 날짜 + limit=20, cursor, snapshotId → MemberListResponse |
 | GET /seat-reclaim-candidates | limit=20, cursor, snapshotId → ReclaimCandidatesResponse |
+| GET /members/{memberId}/seats | snapshotId(선택) → MemberSeatsResponse — 구성원의 벤더 좌석과 판정(서버 원장) |
+| GET /vendors/{vendorId}/seats | limit=50(최대 200), cursor, snapshotId → VendorSeatsResponse — 등록 제품 하나의 좌석 전부(설정 권한) |
 | GET /teams | 현재 배정 가능한 팀 검색. 공통 문서 참조 |
 
 dashboard는 목록·미배정·회수 후보 각각 첫 20개를 포함한다.
@@ -42,13 +44,14 @@ type ReclaimCandidate = {
   account: string;
   team: TeamRef;
   vendorId: string;
-  tierId: string;
+  tierId: string | null;         // 등급을 모르는 좌석은 null
   version: number;
   lastUsedAt: string | null;
   idleDays: number;
   estimatedMonthlySavingsUsd: Money | null;
-  canReclaim: boolean;
-  reason: string | null;
+  canReclaim: boolean;           // 회수 실행이 없어 false
+  reason: string | null;         // vendor_control_unavailable
+  vendorAccount?: string;        // 좌석의 벤더 계정(가산). account 는 구성원의 계정
 };
 type MemberSummary = {
   rosterMembers: number;
@@ -107,14 +110,34 @@ type ReclaimPreviewRequest = {
 };
 type ReclaimPreviewResponse = {
   previewId: string;
-  expiresAt: string;
+  expiresAt: string;                    // 만든 뒤 5분
   eligibleSeatAssignmentIds: string[];
   rejected: { seatAssignmentId: string; reason: string }[];
-  estimatedMonthlySavingsUsd: Money | null;
-  savingsEffectiveAt: string | null;
+  estimatedMonthlySavingsUsd: Money | null;   // 대상 좌석 등급의 계약 단가 합(추정). 모르면 null
+  savingsEffectiveAt: string | null;          // 감액 시점은 모른다 — null
   resultingUnallocatedSeats: number | null;
+  savingsBasis?: "contract_unit_price" | null;                                                          // 서버 가산
+  targets?: { seatAssignmentId: string; vendorId: string; method: "vendor_control" | "admin_action" }[]; // 서버 가산
 };
 type ReclaimRequest = { previewId: string };
+type MemberSeatsResponse = {
+  meta: { organizationId: string; asOf: string; snapshotId: string };
+  memberId: string;
+  policy: { idleDays: number; version: number };
+  seats: MemberSeat[];
+};
+type MemberSeat = {
+  seatAssignmentId: string; version: number; vendorId: string; vendorName: string; kind: string;
+  tierId: string | null; tierLabel: string | null; vendorTier: string | null;
+  account: string; accountKind: "email" | "github_login";
+  state: "assigned" | "pending_assignment" | "pending_release" | "released";
+  source: string; assignedAt: string; releaseEffectiveOn: string | null; releasedAt: string | null;
+  ledgerAvailability: "available" | "partial" | "unavailable"; ledgerReason: string | null;
+  lastUsedAt: string | null; idleDays: number | null; reviewReason: string | null;
+  reclaimCandidate: boolean; canReclaim: boolean; reclaimReason: string | null;
+  reclaimMethod: "vendor_control" | "admin_action" | null;
+  lastControl: { operationId: string; kind: "seat_reclaim" | "seat_restore" } | null;  // 가장 최근 회수·복원 작업
+};
 ```
 
 ## 숫자의 의미
@@ -173,14 +196,18 @@ queued는 초대 레코드와 발송 작업 접수이며 실제 배달 성공이
 3. POST /seat-reclaims, 본문 ReclaimRequest → 202 OperationResponse + Location.
    preview를 조직/요청자/대상 버전에 묶고 실행 시에도 다시 검증한다.
    만료·변경은 409 preview_expired 또는 preview_stale. 별도 Idempotency-Key 필수.
-4. GET /operations/{operationId}로 실제 성공/실패를 확인한다.
-5. POST /seat-reclaims/{operationId}/restore, 본문 {} → 202 OperationResponse.
-   복원 가능 기간, 빈 좌석·권한·벤더 복원 기능을 검사한다. 불가능하면 422 restore_not_available.
-   복원도 실제 외부 처리 결과를 확인하며 canRestore=false일 때 버튼을 숨긴다.
+4. GET /operations/{operationId}로 실제 성공/실패를 확인한다. 벤더 API가 있는 좌석은 서버가 다음 동기화 주기에 해지하고(`pending` → 결과),
+   없는 좌석은 `awaiting_admin_action`(조치 `release_in_vendor_console`)이다 — 관리자가 벤더 콘솔에서 해지한 뒤
+   POST /operations/{operationId}/targets/{seatAssignmentId}/confirm(본문 없음)로 확인해야 좌석이 해제된다. 하지 않으면 …/cancel(원장 불변).
+   조치 대기는 완료가 아니다. 대상별 결과·실패 사유를 그대로 보여 준다.
+5. POST /seat-reclaims/{operationId}/restore, 본문 {} → 202 OperationResponse. 회수 뒤 30일 안, 회수에서 성공한 좌석만.
+   불가능하면 422 restore_not_available. 벤더 복원 API가 없는 좌석은 다시 관리자 조치(`restore_in_vendor_console`) 확인이다.
+   canRestore=false일 때 버튼을 숨긴다.
 
 회수/복원 후 과거 사용 기록, 조직 구성원, 계약 이력은 삭제하지 않는다.
-벤더 회수 기능이 없으면 capabilities.reclaimSeats=false와 reason=vendor_control_unavailable.
-관측 기반 후보 조회 자체가 가능하더라도 실행 가능 여부는 별개다.
+capabilities.reclaimSeats·restoreSeats는 관리 기능이 켜진 서버면 true다 — 벤더 API가 없는 제품도 관리자 조치 확인으로 끝난다.
+좌석마다 canReclaim·reclaimReason·reclaimMethod가 실행 가능 여부다. 회수 후보인가와 회수할 수 있는가는 별개다.
+새로고침 뒤에는 MemberSeat.lastControl로 그 좌석의 최근 작업을 다시 찾는다.
 쓰기 성공 후 구성원/설정/개요 좌석 관련 캐시를 무효화한다.
 
 ## 수용 기준
@@ -194,3 +221,11 @@ queued는 초대 레코드와 발송 작업 접수이며 실제 배달 성공이
 - 미수집 값은 null, 실제 무사용은 0. 관리 목록은 사용량 수집 여부와 무관하게 동작한다.
 
 응답 예시: [members-response.example.json](members-response.example.json).
+
+## 초대·구성원 사용 예정 제품
+
+초대 폼과 온보딩은 조직의 등록 제품을 선택 사항으로 복수 지정한다. 일괄 기본 선택을 개인별로 바꿀 수 있으며 개인별 빈 배열은 미선택, null·생략은 기본 선택 상속이다.
+최종 선택을 각 초대 항목의 `plannedVendorIds?: string[]`로 보낸다. 빈 선택은 생략할 수 있다. 이 값은 벤더 계정 생성이나 실제 좌석 배정을 뜻하지 않는다.
+초대 목록·구성원 조회의 `plannedVendorIds`를 구성원 상세에서 복원한다. `PATCH /members/{memberId}`는 변경된 제품 목록과 `expectedVersion`을 보내며 빈 배열은 전체 해제다.
+제품은 `settings`의 등록 벤더 목록에서 읽는다. 로딩·조회 실패·등록 제품 없음은 구분한다. 등록 해제된 기존 선택은 유지·제거할 수 있고 새로 선택할 수 없다.
+백엔드 enrollment V30·dashboard cache V6 마이그레이션과 API 변경을 먼저 배포한다. 프론트의 선택은 실제 좌석 집계에 사용하지 않는다.

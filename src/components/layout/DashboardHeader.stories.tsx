@@ -6,7 +6,7 @@ import { delay, http, HttpResponse } from "msw";
 import { DashboardHeaderProvider, useDashboardPageRefresh } from "./DashboardHeader";
 import { FiltersProvider } from "@/lib/filters";
 import { Button } from "@/components/ui/Button";
-import { clearBackendSession, seedLogin } from "@/lib/api/session";
+import { clearBackendSession, exchangeLogin } from "@/lib/api/session";
 import { COMPANY_A } from "@/mocks/company-a";
 import { onboardingHandlers } from "../../../.storybook/fixtures/onboarding";
 
@@ -42,7 +42,7 @@ const meta = {
       return HttpResponse.json({ organizationId: params.org, status: parameters.scenario === "empty" ? "empty" : "unknown",
         reason: "source_not_available", asOf: "2026-09-29T00:00:00Z", lastReceivedAt: parameters.scenario === "empty" ? null : "2026-09-28T23:58:00Z" });
     }), ...onboardingHandlers("teams"));
-    await seedLogin(COMPANY_A.members.find(member => member.role === "admin")!.email);
+    await exchangeLogin("storybook-code", "http://localhost/auth/callback", "v".repeat(43), COMPANY_A.organization.organizationId);
     return () => clearBackendSession();
   },
 } satisfies Meta<typeof Pages>;
@@ -79,7 +79,10 @@ export const Refreshing: Story = {
   async play({ canvas, userEvent }) {
     await canvas.findByText("수집 상태 확인 불가");
     await userEvent.click(canvas.getByRole("button", { name: "새로고침" }));
-    await canvas.findByLabelText("수집 상태 갱신 중");
+    const refreshing = await canvas.findByRole("button", { name: "조회 중…" });
+    await expect(refreshing).toBeDisabled();
+    await expect(refreshing).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.queryByLabelText("수집 상태 갱신 중")).not.toBeInTheDocument();
     await expect(canvas.getByText("수집 상태 확인 불가")).toBeVisible();
   },
 };

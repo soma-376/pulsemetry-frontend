@@ -15,7 +15,8 @@ export function settingsVendorRow(vendor: SettingsVendor, product?: CatalogVendo
     noSignal: vendor.observation === "unobserved", setUp: !!contract, confirmed: !!contract,
     contract: { term: contract?.effectiveTo ?? "", planName: contract?.termNote ?? "", reviewedAt: contract?.confirmedAt },
     dot: tone, statusFg: tone, statusLabel: status.label,
-    seatsText: contract ? `${vendor.contractStatus === "expired" ? "마지막 계약 " : vendor.contractStatus === "scheduled" ? "예정 계약 " : ""}${int(contract.tiers.reduce((sum, tier) => sum + tier.seats, 0))}석` : "-",
+    // 배정 좌석은 좌석 원장의 값이고(없으면 "-") 계약 좌석은 구매 수량이다 — 둘을 섞지 않는다.
+    seatsText: `${vendor.seats?.data ? `배정 ${int(vendor.seats.data.assigned)}` : "배정 -"} / ${contract ? `${vendor.contractStatus === "expired" ? "마지막 계약 " : vendor.contractStatus === "scheduled" ? "예정 계약 " : ""}${int(contract.tiers.reduce((sum, tier) => sum + tier.seats, 0))}석` : "계약 -"}`,
     spendText: contract?.monthlySeatFeeUsd != null ? `${vendor.contractStatus === "expired" ? "마지막 계약 " : vendor.contractStatus === "scheduled" ? "예정 계약 " : ""}${usd(Number(contract.monthlySeatFeeUsd))} / 월` : "-",
     spendFg: contract?.monthlySeatFeeUsd != null ? "var(--text)" : "var(--text3)",
     openLabel: `${vendor.displayName} 계약 설정 열기`,

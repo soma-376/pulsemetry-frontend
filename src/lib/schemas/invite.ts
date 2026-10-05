@@ -1,5 +1,9 @@
 import { z } from "zod";
+import { INVITATION_LIMIT } from "@/lib/api/invitations";
 import { memberRoleSchema as roleSchema } from "./member";
+
+export const plannedVendorIdsSchema = z.array(z.string().regex(/^[A-Za-z0-9_-]{1,100}$/)).max(100)
+  .refine(ids => new Set(ids).size === ids.length, "같은 제품을 중복 선택할 수 없습니다");
 
 const emailSchema = z.string().trim().pipe(z.email("이메일 형식이 아닙니다"));
 
@@ -11,10 +15,12 @@ export const inviteFormSchema = z.object({
   ),
   team: z.string(),
   role: roleSchema,
+  plannedVendorIds: plannedVendorIdsSchema.optional(),
   invitees: z.array(z.object({
     email: emailSchema,
     team: z.string().nullable(),
     role: roleSchema.nullable(),
+    plannedVendorIds: plannedVendorIdsSchema.nullable().optional(),
   })),
 }).superRefine(({ draft, invitees }, context) => {
   const emails = new Set<string>();
@@ -46,6 +52,10 @@ export const inviteSubmissionSchema = inviteFormSchema
   .refine(({ invitees }) => invitees.length > 0, {
     path: ["draft"],
     message: "초대할 이메일을 하나 이상 추가하세요",
+  })
+  .refine(({ invitees }) => invitees.length <= INVITATION_LIMIT, {
+    path: ["draft"],
+    message: `한 번에 ${INVITATION_LIMIT}명까지 초대할 수 있습니다`,
   });
 
 export type InviteForm = z.infer<typeof inviteFormSchema>;

@@ -13,16 +13,23 @@ export function settingsFixture(): Settings {
   const data: Settings = {
     meta: { organizationId: org, snapshotId: "storybook-settings" },
     ingest: { status: "unknown", reason: "source_not_available", asOf: `${COMPANY_A.asOf}T00:00:00Z`, lastReceivedAt: null, windowMinutes: 15, activeInstallations: null, observedMembers: null, eligibleMembers: 12, coverageRatio: null },
-    capabilities: { editContracts: true, editCollectionPolicy: true, editAlertRules: false, notifyInstallations: false },
+    capabilities: { editContracts: true, editCollectionPolicy: true, editAlertRules: false, notifyInstallations: true },
     summary: { configuredVendors: 1, unconfiguredVendors: 1, monthlySeatFeeUsd: null, contractedSeats: null, activeSeats7d: null, meteredMonthToDate: { availability: "unavailable", data: null } },
     vendors: { items: COMPANY_A.managedVendors.map(v => settingsVendorSchema.parse({ ...v, firstSeenAt: null, lastSeenAt: null, activeUsers7d: null, activeUsers30d: null, observation: "unobserved" })), totalCount: COMPANY_A.managedVendors.length, nextCursor: null },
-    collectionPolicy: { version: 1, collectRawContent: false, reclaimIdleDays: 14, aggregateRetentionMonths: null },
-    policyRollout: { desiredVersion: 1, eligibleInstallations: 10, appliedInstallations: 10, outdatedInstallations: 0, unknownInstallations: 0 },
+    collectionPolicy: { version: COMPANY_A.policyRollout.desiredVersion, collectRawContent: false, reclaimIdleDays: 14, aggregateRetentionMonths: null,
+      settingsVersion: 0, settingsUpdatedAt: null, reclaimIdleDaysSource: "default",
+      options: { reclaimIdleDays: [7, 14, 30, 60], aggregateRetentionMonths: [12, 24, 36, null] }, cleanupOperationId: null },
+    // 시드 A의 적용 현황(판 2: 적용 7 · 미적용 3 · 미확인 1).
+    policyRollout: { desiredVersion: COMPANY_A.policyRollout.desiredVersion, eligibleInstallations: COMPANY_A.policyRollout.eligible,
+      appliedInstallations: COMPANY_A.policyRollout.applied, outdatedInstallations: COMPANY_A.policyRollout.outdated, unknownInstallations: COMPANY_A.policyRollout.unknown },
+    // 신규 제품 규칙은 자동으로 켜지지 않는다. 한도 초과는 근거가 없어 켤 수 없다.
     alertRules: [
-      { ruleId: "spend_spike", enabled: false, availability: "unavailable", threshold: { value: 0.4, unit: "ratio" } },
-      { ruleId: "quota_exceeded", enabled: false, availability: "unavailable", threshold: { value: 5, unit: "users" } },
-      { ruleId: "model_not_allowed", enabled: false, availability: "unavailable", threshold: { value: 1, unit: "events" } },
-      { ruleId: "tool_unapproved", enabled: false, availability: "unavailable", threshold: { value: 1, unit: "events" } },
+      { ruleId: "spend_spike", version: 1, enabled: true, availability: "available", reason: null, threshold: { value: 0.4, unit: "ratio" },
+        evaluationWindow: "last_complete_7_calendar_days", comparisonWindow: "preceding_7_calendar_days" },
+      { ruleId: "quota_exceeded", version: 0, enabled: false, availability: "unavailable", reason: "source_not_available", threshold: { value: 5, unit: "users" },
+        evaluationWindow: "rolling_24_hours", comparisonWindow: null },
+      { ruleId: "product_not_registered", version: 0, enabled: false, availability: "available", reason: null, threshold: { value: 1, unit: "events" },
+        evaluationWindow: "rolling_24_hours", comparisonWindow: null },
     ],
   };
   return syncSettingsSummary(data);
@@ -52,6 +59,22 @@ export function settingsHandlers(scenario: SettingsScenario) {
   let detailRequests = 0;
   let failSave = scenario === "save-error";
   let conflict = scenario === "conflict";
+  const operations = new Map<string, { polls: number; targets: string[] }>();
+  /** 보존 정리 작업 — 보존 작업을 실행하지 않는 Storybook 에서는 대기에 머문다. */
+  const cleanups = new Set<string>();
+  const cleanup = (id: string) => ({ operationId: id, kind: "retention_cleanup", status: "pending", createdAt: new Date().toISOString(), completedAt: null,
+    results: [{ targetId: "analysis_source", status: "pending", reason: null, action: null }], canRestore: false, restoreUntil: null, retention: null });
+  const operation = (id: string) => {
+    const state = operations.get(id)!;
+    const done = state.polls >= 2;
+    const results = state.targets.map((targetId, index) => ({ targetId, status: !done ? "pending" : index === 0 ? "failed" : "succeeded", reason: done && index === 0 ? "recipient_rejected" : null, action: null }));
+    return { operationId: id, kind: "installation_notification", status: !done ? "running" : results.length > 1 ? "partially_failed" : "failed", createdAt: new Date().toISOString(),
+      completedAt: done ? new Date().toISOString() : null, results, canRestore: false, restoreUntil: null, retention: null };
+  };
+  const installations = () => COMPANY_A.installations.map(row => ({ installationId: row.installationId, memberId: row.memberId,
+    account: COMPANY_A.members.find(member => member.memberId === row.memberId)?.email ?? null, team: { teamId: null, teamName: null },
+    agentVersion: row.agentVersion, appliedPolicyVersion: row.appliedPolicyVersion, lastHeartbeatAt: row.lastHeartbeatAt,
+    canNotify: data.capabilities.notifyInstallations && row.canNotify }));
   const sync = () => {
     const rows = data.vendors.items;
     for (const row of rows) {
@@ -117,13 +140,56 @@ export function settingsHandlers(scenario: SettingsScenario) {
       return HttpResponse.json({ meta: data.meta, vendor }, { status: 201 });
     }),
     http.put(`${api}/collection-policy`, async ({ request }) => {
-      const body = await request.json() as { expectedVersion: number; collectRawContent: boolean };
-      if (body.expectedVersion !== data.collectionPolicy.version) return failure("version_conflict", 409);
-      data.collectionPolicy.version++; data.collectionPolicy.collectRawContent = body.collectRawContent;
-      data.policyRollout.desiredVersion++; data.policyRollout.appliedInstallations = 0; data.policyRollout.outdatedInstallations = 10;
-      return HttpResponse.json({ version: data.collectionPolicy.version, collectRawContent: body.collectRawContent, confirmedAt: new Date().toISOString(), application: "future_enrollments", existingInstallationsUpdated: false });
+      const body = await request.json() as { expectedVersion: number; collectRawContent?: boolean; expectedSettingsVersion?: number; reclaimIdleDays?: number; aggregateRetentionMonths?: number | null };
+      const policy = data.collectionPolicy;
+      if (body.expectedVersion !== policy.version) return failure("version_conflict", 409);
+      const settings = "reclaimIdleDays" in body || "aggregateRetentionMonths" in body;
+      if (settings && body.expectedSettingsVersion !== policy.settingsVersion) return failure("version_conflict", 409);
+      if (body.collectRawContent !== undefined) {
+        policy.version++; policy.collectRawContent = body.collectRawContent;
+        const rollout = data.policyRollout;
+        rollout.desiredVersion++; rollout.outdatedInstallations += rollout.appliedInstallations; rollout.appliedInstallations = 0;
+      }
+      let cleanupOperationId: string | null = null;
+      if (settings) {
+        const before = policy.aggregateRetentionMonths;
+        const next = "aggregateRetentionMonths" in body ? body.aggregateRetentionMonths ?? null : before;
+        if (body.reclaimIdleDays !== undefined) { policy.reclaimIdleDays = body.reclaimIdleDays; policy.reclaimIdleDaysSource = "organization"; }
+        policy.aggregateRetentionMonths = next; policy.settingsVersion++; policy.settingsUpdatedAt = new Date().toISOString();
+        // 서버처럼 줄였을 때만 정리 작업을 만든다. Storybook 에서는 대기에 머문다.
+        if (next !== null && (before === null || next < before)) {
+          cleanupOperationId = crypto.randomUUID();
+          cleanups.add(cleanupOperationId);
+          policy.cleanupOperationId = cleanupOperationId;
+        }
+      }
+      return HttpResponse.json({ version: policy.version, collectRawContent: policy.collectRawContent, confirmedAt: new Date().toISOString(), application: "future_enrollments", existingInstallationsUpdated: false,
+        reclaimIdleDays: policy.reclaimIdleDaysSource === "organization" ? policy.reclaimIdleDays : null, aggregateRetentionMonths: policy.aggregateRetentionMonths,
+        settingsVersion: policy.settingsVersion, settingsUpdatedAt: policy.settingsUpdatedAt, cleanupOperationId });
     }),
-    http.get(`${api}/installations`, () => HttpResponse.json({ meta: data.meta, installations: { items: [], nextCursor: null } })),
+    http.get(`${api}/installations`, ({ request }) => {
+      const status = new URL(request.url).searchParams.get("policyStatus");
+      const desired = data.policyRollout.desiredVersion;
+      const items = installations().filter(row => !status || (row.appliedPolicyVersion == null ? "unknown" : row.appliedPolicyVersion >= desired ? "applied" : "outdated") === status);
+      return HttpResponse.json({ meta: data.meta, desiredPolicyVersion: desired, installations: { items, totalCount: items.length, nextCursor: null } });
+    }),
+    // 안내는 접수(202) 뒤 작업 상태 조회가 한 번 running(Retry-After)을 거쳐 끝난다. 첫 대상은 수신 거부로 실패한다.
+    http.post(`${api}/installation-update-notifications`, async ({ request }) => {
+      if (!data.capabilities.notifyInstallations) return failure("notification_channel_unavailable", 422);
+      const body = await request.json() as { installationIds: string[]; expectedPolicyVersion: number };
+      if (body.expectedPolicyVersion !== data.policyRollout.desiredVersion) return failure("version_conflict", 409);
+      const operationId = crypto.randomUUID();
+      operations.set(operationId, { polls: 0, targets: body.installationIds });
+      return HttpResponse.json(operation(operationId), { status: 202, headers: { Location: `/api/v1/organizations/${org}/operations/${operationId}` } });
+    }),
+    http.get(`${api}/operations/:id`, ({ params }) => {
+      if (cleanups.has(String(params.id))) return HttpResponse.json(cleanup(String(params.id)), { headers: { "Retry-After": "5" } });
+      const state = operations.get(String(params.id));
+      if (!state) return failure("not_found", 404);
+      state.polls++;
+      const body = operation(String(params.id));
+      return HttpResponse.json(body, { headers: body.status === "running" ? { "Retry-After": "1" } : {} });
+    }),
     http.delete(`${api}/vendors/:id/contract`, ({ params, request }) => {
       const vendor = data.vendors.items.find(row => row.vendorId === params.id);
       if (!vendor) return failure("not_found", 404);

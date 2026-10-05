@@ -10,6 +10,7 @@ import { ContractsStep } from "./ContractsStep";
 import { TeamSetupStep } from "./TeamSetupStep";
 import { useOrganization } from "@/lib/organization-store";
 import { backendLogout, useBackendSession } from "@/lib/api/session";
+import { useRateLimit } from "@/lib/use-rate-limit";
 import { organizationKey } from "@/lib/api/query-keys";
 import {
   apiJson,
@@ -31,7 +32,7 @@ const steps = [
     label: "수집 정책",
     title: "프롬프트 원문 수집 여부를 선택하세요",
   },
-  { key: "vendors", label: "벤더 등록", title: "사용 중인 도구를 등록하세요" },
+  { key: "vendors", label: "계약 벤더 등록", title: "계약한 벤더의 제품을 등록하세요" },
   { key: "team", label: "팀·초대", title: "팀을 구성하고 구성원을 초대하세요" },
 ] as const;
 export function OnboardingFlow() {
@@ -115,6 +116,7 @@ function OnboardingSteps({
   const [teamDraft, setTeamDraft] = useState("");
   const [childBusy, setChildBusy] = useState(false);
   const [logoutError, setLogoutError] = useState("");
+  const logoutLimit = useRateLimit();
   const heading = useRef<HTMLHeadingElement>(null);
   const current = steps[index];
   useEffect(() => {
@@ -183,31 +185,35 @@ function OnboardingSteps({
         <div className="flex items-center gap-3">
           <ButtonLink
             href="/login"
+            aria-disabled={logoutLimit.waiting || undefined}
             onClick={async (event) => {
               event.preventDefault();
-              if (busy) return;
+              if (busy || logoutLimit.waiting) return;
               try {
                 await backendLogout();
                 update((previous) => ({ ...previous, session: null }));
                 router.replace("/login");
               } catch (cause) {
+                // 요청 제한(429)이면 세션을 유지한 채 서버가 준 시간 동안 다시 보내지 않는다.
                 setLogoutError(
-                  cause instanceof Error
-                    ? cause.message
-                    : "로그아웃에 실패했습니다.",
+                  logoutLimit.capture(cause)
+                    ? ""
+                    : cause instanceof Error
+                      ? cause.message
+                      : "로그아웃에 실패했습니다.",
                 );
               }
             }}
           >
-            로그아웃
+            {logoutLimit.waiting ? `로그아웃 · ${logoutLimit.seconds}초 뒤` : "로그아웃"}
           </ButtonLink>
           <ThemeToggle />
         </div>
       </header>
       <main className="mx-auto my-10 flex w-full max-w-2xl flex-col gap-8">
-        {logoutError && (
+        {(logoutLimit.message || logoutError) && (
           <p role="alert" className="text-sm text-red">
-            {logoutError}
+            {logoutLimit.message || logoutError}
           </p>
         )}
         <div>

@@ -16,7 +16,6 @@ import { buildVendorSeats } from "@/lib/metrics/vendor-seats";
 import {
   COVERAGE,
   INGEST,
-  INSTALL_CMD,
   MODEL_COLORS,
   MODEL_META,
   ORG as BASE_ORG,
@@ -138,7 +137,7 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
       label: "보안 경보 및 알림",
       value: int(ORG.alerts),
       unit: "건",
-      def: "미확인 알림 · 보안: 비허용 모델 사용, 권한 자동승인 급증, 미승인 도구 연결 · 비용: 팀 비용 +40% 이상, 좌석 한도 차단 발생, 팀 미배분 비용 10% 초과",
+      def: "현재 미확인 알림 · 보안: 계약 벤더로 등록하지 않은 제품의 사용 · 비용: 비용 급증, 한도 초과. 규칙별 평가 가능 여부는 서버의 근거에 따르며 과거 알림 이력도 포함합니다.",
       caption: "현재 미확인 · 보안 2 · 비용 3",
       delta: ORG.alertsDelta,
       up: true,
@@ -220,36 +219,6 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
     noDeltaReason: cmp.reason,
     isEmpty,
     hasData: !isEmpty && current.days.length > 0,
-    installCmd: INSTALL_CMD,
-    setupSteps: [
-      {
-        n: "1",
-        title: "데몬 설치",
-        note: "MDM으로 배포하거나 개발자가 직접 실행합니다",
-        state: "대기 중",
-        stateFg: "var(--orange-ink)",
-        badgeBg: "var(--text)",
-        badgeFg: "var(--card)",
-      },
-      {
-        n: "2",
-        title: "계약 정보 입력",
-        note: "플랜·좌석 단가·좌석 수 · 신호와 무관하게 지금 입력할 수 있습니다",
-        state: "지금 가능",
-        stateFg: "var(--blue)",
-        badgeBg: "var(--sub)",
-        badgeFg: "var(--text2)",
-      },
-      {
-        n: "3",
-        title: "팀 매핑",
-        note: "첫 신호가 들어오면 사용자가 나타납니다 · 그때 팀을 배정합니다",
-        state: "신호 이후",
-        stateFg: "var(--text3)",
-        badgeBg: "var(--sub)",
-        badgeFg: "var(--text3)",
-      },
-    ],
 
     ingest: {
       ...ingest,

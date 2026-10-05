@@ -8,7 +8,7 @@ test("catalog reads all cursors and restarts expired cursor from first page", as
   const previous = global.fetch;
   const paths: URL[] = [];
   global.fetch = async input => {
-    const url = new URL(String(input)); paths.push(url);
+    const url = new URL(String(input), "http://localhost"); paths.push(url);
     if (paths.length === 2) return Response.json({ error: { code: "invalid_request", message: "expired" } }, { status: 400 });
     return Response.json({ catalogVersion: "1", items: [product], totalCount: 2, nextCursor: paths.length === 1 || paths.length === 3 ? "next-page" : null });
   };
