@@ -14,17 +14,17 @@ test.beforeAll(async () => {
     res.setHeader("Content-Type", "application/json");
     const json = (value: unknown, status = 200) => { res.statusCode = status; res.end(JSON.stringify(value)); };
     const tokens = (suffix: string) => ({ access_token: `browser-test-at-${suffix}`, refresh_token: `browser-test-rt-${suffix}`, token_type: "Bearer", expires_in: 300 });
-    if (path === "/v1/auth/token") { revoked = false; return json(tokens("old")); }
-    if (path === "/v1/auth/logout") { revoked = true; res.statusCode = 204; return res.end(); }
+    if (path === "/api/v1/auth/token") { revoked = false; return json(tokens("old")); }
+    if (path === "/api/v1/auth/logout") { revoked = true; res.statusCode = 204; return res.end(); }
     if (revoked) return json({}, 401);
-    if (path === "/v1/auth/refresh") {
+    if (path === "/api/v1/auth/refresh") {
       refreshes++;
       if (refreshes > 1) { revoked = true; return json({}, 401); }
       await new Promise(resolve => setTimeout(resolve, 100));
       return json(tokens("new"));
     }
     if (expired && req.headers.authorization === "Bearer browser-test-at-old") return json({}, 401);
-    if (path === "/v1/auth/me") return json(user);
+    if (path === "/api/v1/auth/me") return json(user);
     if (path === `/api/v1/organizations/${org}/onboarding`) return json(completedOnboarding);
     if (path === `/api/v1/organizations/${org}/analytics/overview`) return json({ ok: true });
     return json({}, 404);

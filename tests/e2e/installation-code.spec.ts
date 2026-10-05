@@ -89,7 +89,7 @@ test("INSTALL-CODE-A @p1 @write 활성 구성원에게 설치 코드를 내면 �
 
   // 폐기한 비밀번호 가입 API는 설치 코드 여부와 무관하게 410이다.
   await paceSignIn(target.account);
-  const refused = await fetch(`${enrollmentBase()}/v1/auth/signup`, { method: "POST", headers: { "Content-Type": "application/json" },
+  const refused = await fetch(`${enrollmentBase()}/api/v1/auth/signup`, { method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ code: issuedCode, email: target.account, password: "retired-password-flow" }) });
   expect(refused.status).toBe(410);
 });

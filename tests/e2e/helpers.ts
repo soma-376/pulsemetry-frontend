@@ -108,7 +108,7 @@ async function cookieSession(page: Page) {
 export async function storedSession(page: Page): Promise<StoredSession | null> {
   const { session } = await cookieSession(page);
   if (!session) return null;
-  const me = await fetch(`${enrollmentBase()}/v1/auth/me`, { headers: { Authorization: `Bearer ${session.accessToken}` } });
+  const me = await fetch(`${enrollmentBase()}/api/v1/auth/me`, { headers: { Authorization: `Bearer ${session.accessToken}` } });
   if (!me.ok) return null;
   return { tokens: { access_token: session.accessToken, refresh_token: session.refreshToken }, user: await me.json() };
 }
@@ -139,10 +139,10 @@ export async function apiSession(organizationId: string, email: string): Promise
     await page.route("**/api/bff/auth/token", async route => {
       try {
         const { code, redirect_uri, code_verifier } = route.request().postDataJSON();
-        const response = await fetch(`${enrollmentBase()}/v1/auth/token`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, redirect_uri, code_verifier }) });
+        const response = await fetch(`${enrollmentBase()}/api/v1/auth/token`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, redirect_uri, code_verifier }) });
         if (!response.ok) throw new PreparationError(`OIDC 코드 교환 HTTP ${response.status}`);
         const tokens = await response.json();
-        const me = await fetch(`${enrollmentBase()}/v1/auth/me`, { headers: { Authorization: `Bearer ${tokens.access_token}` } });
+        const me = await fetch(`${enrollmentBase()}/api/v1/auth/me`, { headers: { Authorization: `Bearer ${tokens.access_token}` } });
         if (!me.ok) throw new PreparationError(`현재 사용자 조회 HTTP ${me.status}`);
         const user = await me.json();
         if (organizationId && user.organizationId !== organizationId) throw new PreparationError("IdP 계정의 조직이 테스트 대상과 다릅니다.");

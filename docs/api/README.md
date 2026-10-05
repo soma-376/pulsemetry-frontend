@@ -69,7 +69,7 @@
 | 미적용 설치 | D GET /installations?policyStatus=outdated | 설치 현황 모달·더보기 |
 | 업데이트 안내 | E POST /installation-update-notifications | 안내 전송 |
 
-조직 경로 밖: 도입 문의 `POST /v1/inquiries`(E, 로그인 없음), 벤더 카탈로그 `GET /api/v1/vendor-catalog`(D).
+조직 경로 밖: 도입 문의 `POST /api/v1/inquiries`(E, 로그인 없음), 벤더 카탈로그 `GET /api/v1/vendor-catalog`(D).
 
 `operations`는 비동기 명령 결과를 읽는 공통 리소스다. 제외한 운영·보안 화면의 API가 아니다.
 처음부터 카드마다 엔드포인트를 만들지 않는다. 각 화면 첫 조회가 필요한 요약과 목록 첫 페이지를 묶어 주고,

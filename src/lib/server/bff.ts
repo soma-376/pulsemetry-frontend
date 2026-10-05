@@ -55,7 +55,7 @@ export function createBff(config: BffConfig, fetcher: typeof fetch = fetch, now 
   }
   const post = (body: unknown): RequestInit => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   async function revoke(session: Session) {
-    const r = await upstream("enrollment", "/v1/auth/logout", post({ refresh_token: session.refreshToken }));
+    const r = await upstream("enrollment", "/api/v1/auth/logout", post({ refresh_token: session.refreshToken }));
     if (!r.ok && r.status !== 401) fail(r.status === 429 ? 429 : 503, r.status === 429 ? "rate_limited" : "unavailable", r.headers.get("Retry-After"));
   }
   function invalidate(id: string) {
@@ -70,7 +70,7 @@ export function createBff(config: BffConfig, fetcher: typeof fetch = fetch, now 
     // microtask에서 시작하므로 Map 등록이 실제 갱신보다 먼저 완료된다.
     entry.task = Promise.resolve().then(async () => {
       const issuedAt = now();
-      const tokens = await json(await upstream("enrollment", "/v1/auth/refresh", post({ refresh_token: session.refreshToken })), tokensSchema);
+      const tokens = await json(await upstream("enrollment", "/api/v1/auth/refresh", post({ refresh_token: session.refreshToken })), tokensSchema);
       const next = tokenSession(tokens, session, issuedAt);
       if (entry.invalidated) { await revoke(next); fail(401, "unauthenticated"); }
       entry.expiresAt = now() + grace;
@@ -131,16 +131,16 @@ export function createBff(config: BffConfig, fetcher: typeof fetch = fetch, now 
       if (route === "auth/organizations" && request.method === "POST") {
         const body = z.object({ email: z.email() }).parse(await requestJson(request));
         const schema = z.object({ organizations: z.array(z.object({ organizationId: z.uuid(), organizationName: z.string() })) });
-        return response(await json(await upstream("enrollment", "/v1/auth/organizations", post(body)), schema));
+        return response(await json(await upstream("enrollment", "/api/v1/auth/organizations", post(body)), schema));
       }
       if (route === "auth/token" && request.method === "POST") {
         const input = z.object({ code: z.string().regex(/^uac_[A-Za-z0-9_-]{43}$/), redirect_uri: z.literal(`${origin}/auth/callback`),
           code_verifier: z.string().regex(/^[A-Za-z0-9._~-]{43,128}$/), organizationId: z.uuid() }).parse(await requestJson(request));
         const issuedAt = now();
-        const tokens = await json(await upstream("enrollment", "/v1/auth/token", post({ code: input.code, redirect_uri: input.redirect_uri, code_verifier: input.code_verifier })), tokensSchema);
+        const tokens = await json(await upstream("enrollment", "/api/v1/auth/token", post({ code: input.code, redirect_uri: input.redirect_uri, code_verifier: input.code_verifier })), tokensSchema);
         const next = tokenSession(tokens, { id: randomUUID(), organizationId: input.organizationId, sessionExpiresAt: issuedAt + 30 * 86400000 }, issuedAt);
         try {
-          const user = await json(await upstream("enrollment", "/v1/auth/me", { headers: { Authorization: `Bearer ${next.accessToken}` } }), authUserSchema);
+          const user = await json(await upstream("enrollment", "/api/v1/auth/me", { headers: { Authorization: `Bearer ${next.accessToken}` } }), authUserSchema);
           if (user.organizationId !== input.organizationId || user.role !== "admin") fail(403, "forbidden");
           const result = write(response({ user }), next);
           if (session) { await revoke(session); invalidate(session.id); }
@@ -153,7 +153,7 @@ export function createBff(config: BffConfig, fetcher: typeof fetch = fetch, now 
       }
       if (route === "auth/session" && request.method === "GET") {
         if (!session) return response({ user: null });
-        const auth = await authorized(session, "enrollment", "/v1/auth/me");
+        const auth = await authorized(session, "enrollment", "/api/v1/auth/me");
         if (auth.renewed) renewedSession = auth.session;
         const user = await json(auth.result, authUserSchema);
         if (user.organizationId !== session.organizationId || user.role !== "admin") fail(403, "forbidden");

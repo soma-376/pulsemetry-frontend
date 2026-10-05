@@ -13,7 +13,7 @@ for (const [error, message] of [["login_cancelled", "취소"], ["member_not_allo
     await mockSeedAuth(page);
     let exchanges = 0;
     page.on("request", r => { if (r.url().endsWith("/api/bff/auth/token")) exchanges++; });
-    await page.route("**/v1/auth/oidc/authorize?*", route => {
+    await page.route("**/api/v1/auth/oidc/authorize?*", route => {
       const p = new URL(route.request().url()).searchParams;
       return route.fulfill({ status: 302, headers: { location: `${p.get("redirect_uri")}?error=${error}&state=${p.get("state")}` } });
     });
@@ -29,7 +29,7 @@ test("state 변조와 콜백 재진입을 거부한다", async ({ page }) => {
   await mockSeedAuth(page);
   let exchanges = 0;
   page.on("request", r => { if (r.url().endsWith("/api/bff/auth/token") && r.method() === "POST") exchanges++; });
-  await page.route("**/v1/auth/oidc/authorize?*", route => {
+  await page.route("**/api/v1/auth/oidc/authorize?*", route => {
     const p = new URL(route.request().url()).searchParams;
     return route.fulfill({ status: 302, headers: { location: `${p.get("redirect_uri")}?code=uac_${"a".repeat(43)}&state=forged` } });
   });
@@ -51,7 +51,7 @@ test("복수 회사 선택 후 한 번만 교환하고 임시 정보와 URL 코�
   let loginHint: string | null = null;
   page.on("request", r => {
     if (r.url().endsWith("/api/bff/auth/token") && r.method() === "POST") exchanges++;
-    if (r.url().includes("/v1/auth/oidc/authorize?")) loginHint = new URL(r.url()).searchParams.get("login_hint");
+    if (r.url().includes("/api/v1/auth/oidc/authorize?")) loginHint = new URL(r.url()).searchParams.get("login_hint");
   });
   await submit(page);
   await expect(page.getByRole("region", { name: "회사 선택" })).toBeVisible();
@@ -71,7 +71,7 @@ for (const completed of [false, true]) {
     await mockSeedAuth(page);
     if (completed) await page.route("**/api/v1/organizations/*/onboarding", route => route.fulfill({ json: completedOnboarding }));
     await page.goto("/contact");
-    const authorization = page.waitForRequest(r => r.url().includes("/v1/auth/oidc/authorize?"));
+    const authorization = page.waitForRequest(r => r.url().includes("/api/v1/auth/oidc/authorize?"));
     await submit(page);
     expect(new URL((await authorization).url()).searchParams.get("login_hint")).toBe("admin@seed-a.example.test");
     await expect(page).toHaveURL(completed ? /\/overview(?:\?.*)?$/ : /\/onboarding$/);

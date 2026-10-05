@@ -22,7 +22,7 @@ test("an inquiry is posted to the public enrollment path without a session and r
   try {
     assert.deepEqual(await submitInquiry(input), receipt);
     assert.equal(calls.length, 1);
-    assert.equal(calls[0].url, "http://localhost:8080/v1/inquiries");
+    assert.equal(calls[0].url, "http://localhost:8080/api/v1/inquiries");
     assert.equal(calls[0].method, "POST");
     assert.deepEqual(calls[0].body, input);
     assert.equal(calls[0].headers.get("Content-Type"), "application/json");

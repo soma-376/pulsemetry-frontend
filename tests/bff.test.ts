@@ -19,19 +19,19 @@ function fixture(options: Partial<BffConfig> = {}) {
   const sent: { url: URL; init: RequestInit }[] = [];
   const fetcher: typeof fetch = async (input, init = {}) => {
     const url = new URL(String(input)); sent.push({ url, init });
-    if (url.pathname === "/v1/auth/token") {
+    if (url.pathname === "/api/v1/auth/token") {
       exchanges++; revoked = false;
       return Response.json({ access_token: `secret-at-${exchanges}`, refresh_token: `secret-rt-${exchanges}`, token_type: "Bearer", expires_in: 300 });
     }
-    if (url.pathname === "/v1/auth/refresh") {
+    if (url.pathname === "/api/v1/auth/refresh") {
       refreshCount++;
       if (pause) await pause;
       if (revoked || refreshStatus !== 200) return Response.json({}, { status: revoked ? 401 : refreshStatus });
       return Response.json({ access_token: "new-secret-at", refresh_token: "new-secret-rt", token_type: "Bearer", expires_in: 300 });
     }
-    if (url.pathname === "/v1/auth/logout") { logoutCount++; revoked = true; return new Response(null, { status: 204 }); }
+    if (url.pathname === "/api/v1/auth/logout") { logoutCount++; revoked = true; return new Response(null, { status: 204 }); }
     if (revoked) return Response.json({}, { status: 401 });
-    if (url.pathname === "/v1/auth/me") return Response.json({ ...user, role, organizationId: meOrg });
+    if (url.pathname === "/api/v1/auth/me") return Response.json({ ...user, role, organizationId: meOrg });
     return Response.json({ ok: true }, { headers: { "Set-Cookie": "upstream-secret=do-not-forward", "Retry-After": "2" } });
   };
   const bff = createBff({ ...config, ...options }, fetcher, () => time);
@@ -81,7 +81,7 @@ test("CSRF·임의 upstream·다른 조직·인증 proxy 경로를 거부한다"
   assert.equal((await f.bff.handle(request(api, saved, {}, { Origin: "https://evil.example.test" }))).status, 403);
   assert.equal((await f.bff.handle(request(api, saved, undefined, { "X-Pulsemetry-Request": "" }))).status, 403);
   assert.equal((await f.bff.handle(request(api, saved, undefined, { "Sec-Fetch-Site": "cross-site" }))).status, 403);
-  assert.equal((await f.bff.handle(request("/enrollment/v1/auth/token", saved))).status, 404);
+  assert.equal((await f.bff.handle(request("/enrollment/api/v1/auth/token", saved))).status, 404);
   assert.equal((await f.bff.handle(request(api.replace(org, "22222222-2222-4222-8222-222222222222"), saved))).status, 403);
   assert.equal((await f.bff.handle(request("/dashboard/api/v1/organizations/evil%2Fhost/settings", saved))).status, 400);
   assert.equal(f.sent.length, before);
@@ -306,7 +306,7 @@ test("upstream 401은 한 번만 갱신하고 재시도하며 작업 타임아�
 test("인증 경로의 429와 Retry-After를 보존하고 쿠키를 삭제하지 않는다", async () => {
   const f = fixture(), saved = cookie(await f.login());
   f.advance(300000);
-  const bff = createBff(config, async (input, init) => String(input).endsWith("/v1/auth/refresh") || String(input).endsWith("/v1/auth/logout")
+  const bff = createBff(config, async (input, init) => String(input).endsWith("/api/v1/auth/refresh") || String(input).endsWith("/api/v1/auth/logout")
     ? Response.json({ error: "rate_limited" }, { status: 429, headers: { "Retry-After": "7" } }) : f.fetcher(input, init), f.clock);
   for (const requestValue of [request("/auth/session", saved), request("/auth/logout", saved, {})]) {
     const result = await bff.handle(requestValue);
@@ -320,7 +320,7 @@ test("세션 갱신 후 역할 거부와 일시적인 me 실패도 회전한 RT�
   for (const status of [403, 503]) {
     const f = fixture(), saved = cookie(await f.login());
     f.advance(300000);
-    const bff = createBff(config, async (input, init) => String(input).endsWith("/v1/auth/me")
+    const bff = createBff(config, async (input, init) => String(input).endsWith("/api/v1/auth/me")
       ? status === 403 ? Response.json({ ...user, role: "member" }) : Response.json({}, { status })
       : f.fetcher(input, init), f.clock);
     const result = await bff.handle(request("/auth/session", saved));

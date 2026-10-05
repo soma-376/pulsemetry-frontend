@@ -7,7 +7,7 @@ async function inquire(page: Page, company: string, email: string) {
   await page.getByLabel("회사명", { exact: true }).fill(company);
   await page.getByLabel("회사 이메일", { exact: true }).fill(email);
   await page.getByRole("button", { name: "문의 내용 확인", exact: true }).click();
-  const posted = page.waitForResponse((response) => response.request().method() === "POST" && response.url() === `${enrollmentBase()}/v1/inquiries`);
+  const posted = page.waitForResponse((response) => response.request().method() === "POST" && response.url() === `${enrollmentBase()}/api/v1/inquiries`);
   await page.getByRole("region", { name: "문의 내용 확인", exact: true }).getByRole("button", { name: "문의 접수", exact: true }).click();
   return posted;
 }
@@ -20,7 +20,7 @@ test("INQUIRY-01 @p0 @write 도입 문의를 실제로 접수하고 같은 입�
 
   // 확인 단계까지는 서버로 아무것도 가지 않는다.
   let sent = 0;
-  page.on("request", (request) => { if (request.method() === "POST" && request.url().endsWith("/v1/inquiries")) sent++; });
+  page.on("request", (request) => { if (request.method() === "POST" && request.url().endsWith("/api/v1/inquiries")) sent++; });
   await page.getByLabel("회사명", { exact: true }).fill(company);
   await page.getByLabel("회사 이메일", { exact: true }).fill(email);
   await page.getByRole("button", { name: "문의 내용 확인", exact: true }).click();
