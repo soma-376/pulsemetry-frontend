@@ -64,9 +64,7 @@ export function Widget({
           <span title={def} className="text-[13px] font-semibold">
             {title}
           </span>
-          {note && (
-            <span className="ml-1 text-[11px] text-text3">{note}</span>
-          )}
+          {note && <span className="ml-1 text-[11px] text-text3">{note}</span>}
         </div>
         {action}
       </div>

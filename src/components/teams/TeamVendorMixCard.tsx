@@ -25,7 +25,9 @@ export function TeamVendorMixCard({
       className="col-span-3 flex min-w-0 flex-col rounded-[10px] border border-border bg-card p-4 @max-[1100px]:col-span-full"
     >
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <span className="min-w-0 text-[12px] font-semibold">팀별 벤더 비중</span>
+        <span className="min-w-0 text-[12px] font-semibold">
+          팀별 벤더 비중
+        </span>
         <div className="flex flex-wrap gap-2.5">
           {legend.map((l) => (
             <span
@@ -43,7 +45,9 @@ export function TeamVendorMixCard({
       </div>
 
       <p className="mb-3 text-[11px] leading-5 text-text3">
-        관측된 사용량의 {axis === "cost" ? "환산 비용" : axis === "token" ? "토큰" : "세션"} 비중 · 사용량 미수집 벤더 제외
+        관측된 사용량의{" "}
+        {axis === "cost" ? "환산 비용" : axis === "token" ? "토큰" : "세션"}{" "}
+        비중 · 사용량 미수집 벤더 제외
         {incomplete && " · 값을 확인할 수 없는 팀은 비중을 그리지 않습니다"}
       </p>
       <div className="grid grid-cols-[64px_minmax(0,1fr)] gap-2">
@@ -55,7 +59,9 @@ export function TeamVendorMixCard({
           <span className="absolute top-[123px] right-0 -translate-y-1/2 whitespace-nowrap">
             {yMid}
           </span>
-          <span className="absolute top-[226px] right-0 -translate-y-1/2">0</span>
+          <span className="absolute top-[226px] right-0 -translate-y-1/2">
+            0
+          </span>
         </div>
 
         <div className="flex h-[226px] items-end gap-2.5 border-b border-l border-border px-1 pt-5">
@@ -88,7 +94,9 @@ export function TeamVendorMixCard({
             >
               <span
                 className="max-w-full overflow-hidden text-[11px] font-medium text-ellipsis whitespace-nowrap"
-                style={{ color: c.unmapped ? "var(--orange-ink)" : "var(--text)" }}
+                style={{
+                  color: c.unmapped ? "var(--orange-ink)" : "var(--text)",
+                }}
               >
                 {c.team}
               </span>

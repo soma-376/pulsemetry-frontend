@@ -1,8 +1,16 @@
 // 기존 Codeworks UI 데모. A회사 백엔드 시드는 ./company-a.ts 참조 (README.md).
 import type { OrganizationState } from "@/lib/organization";
 
-export const SEED_TEAMS = ["플랫폼", "데이터", "결제", "프론트엔드", "모바일"].map((name, index) => ({
-  id: `team-${index + 1}`, name, sourceName: name,
+export const SEED_TEAMS = [
+  "플랫폼",
+  "데이터",
+  "결제",
+  "프론트엔드",
+  "모바일",
+].map((name, index) => ({
+  id: `team-${index + 1}`,
+  name,
+  sourceName: name,
 }));
 
 export const INITIAL_ORGANIZATION: OrganizationState = {
@@ -12,7 +20,12 @@ export const INITIAL_ORGANIZATION: OrganizationState = {
   onboardingCompleted: false,
   onboardingStep: "collection",
   onboardingDraft: {
-    contract: { kind: "copilot", plan: "copilot_business", tiers: [{ label: "표준", seats: "", fee: "" }], term: "" },
+    contract: {
+      kind: "copilot",
+      plan: "copilot_business",
+      tiers: [{ label: "표준", seats: "", fee: "" }],
+      term: "",
+    },
     teamName: "",
     invite: { draft: "", team: "", role: "member", invitees: [] },
   },

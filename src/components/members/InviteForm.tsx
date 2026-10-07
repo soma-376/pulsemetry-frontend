@@ -12,11 +12,24 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
-import { PlannedVendorPicker, PlannedVendorQueryState, usePlannedVendors } from "./PlannedVendorPicker";
+import {
+  PlannedVendorPicker,
+  PlannedVendorQueryState,
+  usePlannedVendors,
+} from "./PlannedVendorPicker";
 import { InviteCode } from "./InviteCode";
-import type { InvitationRequest, InvitationResult } from "@/lib/api/invitations";
+import type {
+  InvitationRequest,
+  InvitationResult,
+} from "@/lib/api/invitations";
 import type { ServerTeam } from "@/lib/api/management";
-import { ASSIGNABLE_ROLES, inviteResults, ROLE_HINT, ROLE_LABEL, type InviteResults } from "@/lib/members-view";
+import {
+  ASSIGNABLE_ROLES,
+  inviteResults,
+  ROLE_HINT,
+  ROLE_LABEL,
+  type InviteResults,
+} from "@/lib/members-view";
 
 import {
   inviteFormSchema,
@@ -86,7 +99,10 @@ export function InviteForm({
     control,
     name: "invitees",
   });
-  const [team, role, plannedVendorIds] = useWatch({ control, name: ["team", "role", "plannedVendorIds"] });
+  const [team, role, plannedVendorIds] = useWatch({
+    control,
+    name: ["team", "role", "plannedVendorIds"],
+  });
   const [sent, setSent] = useState<InviteResults | null>(null);
 
   useEffect(() => {
@@ -150,7 +166,12 @@ export function InviteForm({
           email: invitee.email,
           teamId: (invitee.team ?? values.team) || null,
           role: invitee.role ?? values.role,
-          ...((invitee.plannedVendorIds ?? values.plannedVendorIds)?.length ? { plannedVendorIds: invitee.plannedVendorIds ?? values.plannedVendorIds } : {}),
+          ...((invitee.plannedVendorIds ?? values.plannedVendorIds)?.length
+            ? {
+                plannedVendorIds:
+                  invitee.plannedVendorIds ?? values.plannedVendorIds,
+              }
+            : {}),
         })),
       );
       setSent(inviteResults(results));
@@ -163,7 +184,13 @@ export function InviteForm({
       });
       return;
     }
-    reset({ draft: "", team: values.team, role: values.role, plannedVendorIds: values.plannedVendorIds, invitees: [] });
+    reset({
+      draft: "",
+      team: values.team,
+      role: values.role,
+      plannedVendorIds: values.plannedVendorIds,
+      invitees: [],
+    });
   };
 
   const submitButton = (
@@ -188,155 +215,186 @@ export function InviteForm({
       className="flex flex-col gap-4"
     >
       <fieldset disabled={isSubmitting} className="flex min-w-0 flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-medium">이메일</span>
-        <div
-          className="flex flex-wrap items-center gap-1.5 rounded-md border bg-card p-1.5"
-          style={{ borderColor: invalid ? "var(--red)" : "var(--border)" }}
-        >
-          {invitees.map(({ id, email }, index) => (
-            <span
-              key={id}
-              className="flex items-center gap-1 rounded bg-sub px-2 py-1 text-[11.5px]"
-            >
-              {email}
-              <button
-                type="button"
-                onClick={() => remove(index)}
-                aria-label={`${email} 제거`}
-                className="cursor-pointer text-base hover:text-text"
-              >
-                ×
-              </button>
-            </span>
-          ))}
-          <input
-            {...register("draft")}
-            onKeyDown={(e) => {
-              if (e.nativeEvent.isComposing) return;
-              if (e.key === "Enter" || e.key === ",") {
-                e.preventDefault();
-                void commit();
-              }
-            }}
-            placeholder="name@company.com"
-            aria-label="초대할 이메일"
-            aria-invalid={invalid}
-            aria-describedby={emailHintId}
-            className="h-7 min-w-40 flex-1 border-0 bg-transparent px-1 text-[12px] text-text outline-none placeholder:text-text3"
-          />
-        </div>
-        <span
-          id={emailHintId}
-          aria-live="polite"
-          className="text-[11px]"
-          style={{ color: invalid ? "var(--red)" : "var(--text3)" }}
-        >
-          {errors.draft?.message ?? "Enter 또는 쉼표로 추가 · 여러 명 가능"}
-        </span>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-baseline gap-2">
-          <span className="text-[12px] font-medium">
-            {multi ? "기본 배정" : "배정"}
-          </span>
-          {multi && (
-            <span className="text-[11px] text-text3">
-              아래 목록에서 개별 변경 가능
-            </span>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Select {...register("team")} aria-label="팀">
-            <option value="">팀 미배정</option>
-            {(teams ?? []).map((t) => (
-              <option key={t.teamId} value={t.teamId}>
-                {t.teamName}
-              </option>
-            ))}
-          </Select>
-          <Select {...register("role")} aria-label="역할">
-            {ASSIGNABLE_ROLES.map((value) => (
-              <option key={value} value={value}>
-                {ROLE_LABEL[value]}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <span className="pretty text-[11px] text-text3">{ROLE_HINT[role]}</span>
-
-        <PlannedVendorQueryState query={vendors} />
-        {vendors.data && !vendors.isError && <Controller control={control} name="plannedVendorIds" render={({ field }) =>
-          <PlannedVendorPicker options={vendors.data.vendors.items} value={field.value ?? []} onChange={field.onChange} />
-        } />}
-        <p className="text-[11px] text-text3">여러 제품을 선택할 수 있습니다. 실제 벤더 좌석은 별도로 배정합니다.</p>
-
-        {multi && (
-          <div className="mt-1 flex flex-col gap-1.5 border-t border-border pt-2">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[12px] font-medium">이메일</span>
+          <div
+            className="flex flex-wrap items-center gap-1.5 rounded-md border bg-card p-1.5"
+            style={{ borderColor: invalid ? "var(--red)" : "var(--border)" }}
+          >
             {invitees.map(({ id, email }, index) => (
-              <div key={id} className="flex flex-wrap items-center gap-1.5">
-                <span className="min-w-0 flex-1 basis-40 overflow-hidden text-[11.5px] text-ellipsis whitespace-nowrap">
-                  {email}
-                </span>
-                <Controller
-                  control={control}
-                  name={`invitees.${index}.team`}
-                  render={({ field }) => (
-                    <Select
-                      {...field}
-                      value={field.value ?? team}
-                      aria-label={`${email} 팀`}
-                      className="h-7"
-                    >
-                      <option value="">팀 미배정</option>
-                      {(teams ?? []).map((t) => (
-                        <option key={t.teamId} value={t.teamId}>
-                          {t.teamName}
-                        </option>
-                      ))}
-                    </Select>
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name={`invitees.${index}.role`}
-                  render={({ field }) => (
-                    <Select
-                      {...field}
-                      value={field.value ?? role}
-                      aria-label={`${email} 역할`}
-                      className="h-7"
-                    >
-                      {ASSIGNABLE_ROLES.map((value) => (
-                        <option key={value} value={value}>
-                          {ROLE_LABEL[value]}
-                        </option>
-                      ))}
-                    </Select>
-                  )}
-                />
+              <span
+                key={id}
+                className="flex items-center gap-1 rounded bg-sub px-2 py-1 text-[11.5px]"
+              >
+                {email}
                 <button
                   type="button"
                   onClick={() => remove(index)}
                   aria-label={`${email} 제거`}
-                  className="h-7 w-7 shrink-0 cursor-pointer rounded-md border border-border text-text2 hover:bg-hover"
+                  className="cursor-pointer text-base hover:text-text"
                 >
                   ×
                 </button>
-                {vendors.data && !vendors.isError && <Controller control={control} name={`invitees.${index}.plannedVendorIds`} render={({ field }) =>
-                  <div className="w-full pb-2">
-                    <PlannedVendorPicker label={`${email} 사용 예정 제품`} options={vendors.data.vendors.items}
-                      value={field.value ?? plannedVendorIds ?? []} onChange={field.onChange} />
-                    {field.value != null && <button type="button" className="mt-1 text-[11px] text-text3 underline" onClick={() => field.onChange(null)}>기본 선택 사용</button>}
-                  </div>
-                } />}
-              </div>
+              </span>
             ))}
+            <input
+              {...register("draft")}
+              onKeyDown={(e) => {
+                if (e.nativeEvent.isComposing) return;
+                if (e.key === "Enter" || e.key === ",") {
+                  e.preventDefault();
+                  void commit();
+                }
+              }}
+              placeholder="name@company.com"
+              aria-label="초대할 이메일"
+              aria-invalid={invalid}
+              aria-describedby={emailHintId}
+              className="h-7 min-w-40 flex-1 border-0 bg-transparent px-1 text-[12px] text-text outline-none placeholder:text-text3"
+            />
           </div>
-        )}
-      </div>
+          <span
+            id={emailHintId}
+            aria-live="polite"
+            className="text-[11px]"
+            style={{ color: invalid ? "var(--red)" : "var(--text3)" }}
+          >
+            {errors.draft?.message ?? "Enter 또는 쉼표로 추가 · 여러 명 가능"}
+          </span>
+        </div>
 
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[12px] font-medium">
+              {multi ? "기본 배정" : "배정"}
+            </span>
+            {multi && (
+              <span className="text-[11px] text-text3">
+                아래 목록에서 개별 변경 가능
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Select {...register("team")} aria-label="팀">
+              <option value="">팀 미배정</option>
+              {(teams ?? []).map((t) => (
+                <option key={t.teamId} value={t.teamId}>
+                  {t.teamName}
+                </option>
+              ))}
+            </Select>
+            <Select {...register("role")} aria-label="역할">
+              {ASSIGNABLE_ROLES.map((value) => (
+                <option key={value} value={value}>
+                  {ROLE_LABEL[value]}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <span className="pretty text-[11px] text-text3">
+            {ROLE_HINT[role]}
+          </span>
+
+          <PlannedVendorQueryState query={vendors} />
+          {vendors.data && !vendors.isError && (
+            <Controller
+              control={control}
+              name="plannedVendorIds"
+              render={({ field }) => (
+                <PlannedVendorPicker
+                  options={vendors.data.vendors.items}
+                  value={field.value ?? []}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          )}
+          <p className="text-[11px] text-text3">
+            여러 제품을 선택할 수 있습니다. 실제 벤더 좌석은 별도로 배정합니다.
+          </p>
+
+          {multi && (
+            <div className="mt-1 flex flex-col gap-1.5 border-t border-border pt-2">
+              {invitees.map(({ id, email }, index) => (
+                <div key={id} className="flex flex-wrap items-center gap-1.5">
+                  <span className="min-w-0 flex-1 basis-40 overflow-hidden text-[11.5px] text-ellipsis whitespace-nowrap">
+                    {email}
+                  </span>
+                  <Controller
+                    control={control}
+                    name={`invitees.${index}.team`}
+                    render={({ field }) => (
+                      <Select
+                        {...field}
+                        value={field.value ?? team}
+                        aria-label={`${email} 팀`}
+                        className="h-7"
+                      >
+                        <option value="">팀 미배정</option>
+                        {(teams ?? []).map((t) => (
+                          <option key={t.teamId} value={t.teamId}>
+                            {t.teamName}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name={`invitees.${index}.role`}
+                    render={({ field }) => (
+                      <Select
+                        {...field}
+                        value={field.value ?? role}
+                        aria-label={`${email} 역할`}
+                        className="h-7"
+                      >
+                        {ASSIGNABLE_ROLES.map((value) => (
+                          <option key={value} value={value}>
+                            {ROLE_LABEL[value]}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => remove(index)}
+                    aria-label={`${email} 제거`}
+                    className="h-7 w-7 shrink-0 cursor-pointer rounded-md border border-border text-text2 hover:bg-hover"
+                  >
+                    ×
+                  </button>
+                  {vendors.data && !vendors.isError && (
+                    <Controller
+                      control={control}
+                      name={`invitees.${index}.plannedVendorIds`}
+                      render={({ field }) => (
+                        <div className="w-full pb-2">
+                          <PlannedVendorPicker
+                            label={`${email} 사용 예정 제품`}
+                            options={vendors.data.vendors.items}
+                            value={field.value ?? plannedVendorIds ?? []}
+                            onChange={field.onChange}
+                          />
+                          {field.value != null && (
+                            <button
+                              type="button"
+                              className="mt-1 text-[11px] text-text3 underline"
+                              onClick={() => field.onChange(null)}
+                            >
+                              기본 선택 사용
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </fieldset>
       {errors.root && (
         <p role="alert" className="text-xs text-red">

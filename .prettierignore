@@ -1,0 +1,17 @@
+# Dependencies, build output, and test artifacts
+node_modules/
+.next/
+out/
+build/
+coverage/
+storybook-static/
+test-results/
+playwright-report/
+.e2e-artifacts/
+
+# Generated files: their generators own the format
+package-lock.json
+next-env.d.ts
+*.tsbuildinfo
+.storybook/public/mockServiceWorker.js
+src/mocks/generated/

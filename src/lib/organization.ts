@@ -11,21 +11,41 @@ export type OrganizationState = {
   promptRaw: boolean | null;
   onboardingCompleted: boolean;
   onboardingStep: OnboardingStep;
-  onboardingDraft: { contract: VendorDraft; teamName: string; invite: InviteForm };
+  onboardingDraft: {
+    contract: VendorDraft;
+    teamName: string;
+    invite: InviteForm;
+  };
   vendorEdits: VendorEdits;
   addedVendors: VendorRecord[];
 };
 
 export function teamLabel(teams: Team[], idOrSourceName: string) {
-  return teams.find((team) => team.id === idOrSourceName || team.sourceName === idOrSourceName)?.name ?? idOrSourceName;
+  return (
+    teams.find(
+      (team) =>
+        team.id === idOrSourceName || team.sourceName === idOrSourceName,
+    )?.name ?? idOrSourceName
+  );
 }
 
 export function hasSavedContract(state: OrganizationState) {
-  return state.addedVendors.length > 0 || Object.values(state.vendorEdits).some((edit) => edit?.confirmed && !edit.cleared);
+  return (
+    state.addedVendors.length > 0 ||
+    Object.values(state.vendorEdits).some(
+      (edit) => edit?.confirmed && !edit.cleared,
+    )
+  );
 }
 
-export function completeOnboarding(state: OrganizationState): OrganizationState {
-  if (!state.session || !collectionSchema.safeParse({ promptRaw: state.promptRaw }).success || !hasSavedContract(state)) {
+export function completeOnboarding(
+  state: OrganizationState,
+): OrganizationState {
+  if (
+    !state.session ||
+    !collectionSchema.safeParse({ promptRaw: state.promptRaw }).success ||
+    !hasSavedContract(state)
+  ) {
     return state;
   }
   return { ...state, onboardingCompleted: true };

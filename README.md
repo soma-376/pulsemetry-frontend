@@ -32,17 +32,16 @@ BFF_SESSION_KEYS=<openssl rand -hex 32로 생성한 값>
 백엔드/Cognito 연결과 정확한 callback 설정은 [OIDC 실행·계약 안내](docs/oidc-login.md)를 따릅니다.
 주소를 바꾼 후 개발 서버는 재시작하고, 배포 빌드는 다시 생성해야 합니다.
 
-
 ## 화면과 현재 상태
 
-| 화면 | 경로 | 범위 |
-| --- | --- | --- |
-| 개요 | /overview | 기간별 KPI, 추이, 모델 구성, 상위 3팀과 미배분 요약 |
-| 팀 분석 | /teams | 팀 비교, 모델 분석, 사용자 사용량, 팀 상세 드로어 |
-| 구성원 | /members | 명단·검색, 초대, 팀 배정, 좌석 회수 UI |
-| 설정 | /settings | 벤더 계약, 수집·보존 정책, 알림 규칙 UI |
-| 로그인 | /login | 이메일 회사 탐색·복수 회사 선택 후 실제 OIDC 로그인 |
-| 인증 복귀 | /auth/callback | state 검증·단회 코드 교환·관리자/온보딩 확인 |
+| 화면      | 경로           | 범위                                                |
+| --------- | -------------- | --------------------------------------------------- |
+| 개요      | /overview      | 기간별 KPI, 추이, 모델 구성, 상위 3팀과 미배분 요약 |
+| 팀 분석   | /teams         | 팀 비교, 모델 분석, 사용자 사용량, 팀 상세 드로어   |
+| 구성원    | /members       | 명단·검색, 초대, 팀 배정, 좌석 회수 UI              |
+| 설정      | /settings      | 벤더 계약, 수집·보존 정책, 알림 규칙 UI             |
+| 로그인    | /login         | 이메일 회사 탐색·복수 회사 선택 후 실제 OIDC 로그인 |
+| 인증 복귀 | /auth/callback | state 검증·단회 코드 교환·관리자/온보딩 확인        |
 
 | 로그인 | /login | 시드 이메일로 실제 백엔드에 인증하는 개발용 어댑터(시드 관리자만). 회사 로그인(SSO)은 별도 작업(PROJ-186) |
 | 온보딩 | /onboarding | 수집 정책, 서버 벤더·플랜 카탈로그, 계약과 팀 등록 |
@@ -104,17 +103,22 @@ MSW가 Storybook 전용 API 응답을 제공하므로 백엔드 실행이나 시
 
 ## 검증
 
+포맷은 프로젝트에 고정된 Prettier와 `.prettierrc.json`을 사용합니다.
+VS Code에서는 추천된 Prettier 확장을 설치하면 저장 시 같은 설정으로 포맷합니다.
+전체 파일을 정리하려면 `npm run format`, 변경한 파일만 정리하려면
+`npx --no-install prettier --write <파일 경로>`를 실행합니다.
+자동 생성 파일과 빌드 결과물은 `.prettierignore`로 제외합니다.
+
 ```sh
+npm run format:check
 npm run lint
-npx tsc --noEmit
+npm run typecheck
 npm test
 npm run build
-node scripts/check-api-docs.mjs
 ```
 
 브라우저 테스트는 Playwright Chromium이 필요합니다. 최초 환경에서는
 `npx playwright install chromium`으로 설치합니다.
-API 문서 검사는 문서의 TypeScript 타입과 JSON 예시를 비교하고 링크·집계 합계를 확인합니다.
 
 ## 실제 백엔드 E2E
 

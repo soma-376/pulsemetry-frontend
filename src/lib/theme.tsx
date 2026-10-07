@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
-import { SYSTEM_THEME_QUERY, THEME_STORAGE_KEY, type Theme } from "./theme-config";
+import {
+  SYSTEM_THEME_QUERY,
+  THEME_STORAGE_KEY,
+  type Theme,
+} from "./theme-config";
 
 export type { Theme } from "./theme-config";
 
@@ -70,11 +74,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useTheme() {
-  const theme = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getServerSnapshot,
-  );
+  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const setTheme = useCallback((next: Theme) => {
     selectedTheme = next;

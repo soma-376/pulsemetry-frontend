@@ -32,7 +32,11 @@ const steps = [
     label: "수집 정책",
     title: "프롬프트 원문 수집 여부를 선택하세요",
   },
-  { key: "vendors", label: "계약 벤더 등록", title: "계약한 벤더의 제품을 등록하세요" },
+  {
+    key: "vendors",
+    label: "계약 벤더 등록",
+    title: "계약한 벤더의 제품을 등록하세요",
+  },
   { key: "team", label: "팀·초대", title: "팀을 구성하고 구성원을 초대하세요" },
 ] as const;
 export function OnboardingFlow() {
@@ -205,7 +209,9 @@ function OnboardingSteps({
               }
             }}
           >
-            {logoutLimit.waiting ? `로그아웃 · ${logoutLimit.seconds}초 뒤` : "로그아웃"}
+            {logoutLimit.waiting
+              ? `로그아웃 · ${logoutLimit.seconds}초 뒤`
+              : "로그아웃"}
           </ButtonLink>
           <ThemeToggle />
         </div>
