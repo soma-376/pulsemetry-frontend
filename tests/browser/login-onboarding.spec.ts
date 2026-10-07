@@ -1,0 +1,196 @@
+import { expect, test } from "@playwright/test";
+import { saveOnboardingContract, signIn } from "./helpers";
+
+test("login distinguishes invalid email, unknown organization and SSO failures", async ({ page }) => {
+  await page.goto("/login");
+  const email = page.getByLabel("회사 이메일", { exact: true });
+  const submit = page.getByRole("button", { name: "회사 계정으로 계속", exact: true });
+  await submit.click();
+  await expect(email).toHaveAttribute("aria-invalid", "true");
+  await email.fill("a@unknown.example");
+  await submit.click();
+  await expect(page.getByText(/등록된 조직을 찾지 못했습니다/)).toBeVisible();
+  await email.fill("admin@codeworks.io");
+  await page.getByText("데모 시나리오", { exact: true }).click();
+  for (const scenario of ["cancelled", "configuration", "denied"]) {
+    await page.getByLabel("회사 로그인 결과").selectOption(scenario);
+    await submit.click();
+    await expect(page.getByRole("alert")).toBeVisible();
+    await expect(page.getByRole("link", { name: "조직 관리자에게 문의" })).toBeVisible();
+    await page.getByRole("button", { name: "다시 시도", exact: true }).click();
+  }
+  await page.getByLabel("회사 로그인 결과").selectOption("network");
+  await submit.click();
+  await expect(page.getByText(/로그인 정보를 확인하지 못했습니다/)).toBeVisible();
+  await page.getByLabel("회사 로그인 결과").selectOption("success");
+  await email.fill("developer@codeworks.io");
+  await submit.click();
+  await page.getByRole("button", { name: "데모 인증 완료" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("접근 권한이 없습니다");
+});
+
+test("first login runs three steps at one URL, preserves drafts and skips optional setup", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/login");
+  await signIn(page);
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page.getByRole("navigation", { name: "주 내비게이션" })).toHaveCount(0);
+  const next = page.getByRole("button", { name: "다음", exact: true });
+  const previous = page.getByRole("button", { name: "이전", exact: true });
+  await expect(next).toBeDisabled();
+  await expect(previous).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "건너뛰고 시작" })).toHaveCount(0);
+  await page.getByRole("radio", { name: /^수집하지 않음/ }).check();
+  await next.click();
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(next).toBeDisabled();
+  await page.getByLabel("표시 이름", { exact: true }).fill("Draft vendor");
+  await page.getByLabel("좌석 수", { exact: true }).fill("2.5");
+  await page.getByLabel("월 단가", { exact: true }).fill("10");
+  await expect(page.getByRole("button", { name: "계약 등록", exact: true })).toBeDisabled();
+  await previous.click();
+  await expect(page.getByRole("radio", { name: /^수집하지 않음/ })).toBeChecked();
+  await next.click();
+  await expect(page.getByLabel("표시 이름", { exact: true })).toHaveValue("Draft vendor");
+  await expect(page.getByLabel("좌석 수", { exact: true })).toHaveValue("2.5");
+  await saveOnboardingContract(page, "First contract");
+  await next.click();
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await page.getByLabel("팀 이름", { exact: true }).fill("새 프로젝트");
+  await page.getByRole("textbox", { name: "초대할 이메일" }).fill("minsu@codeworks.io");
+  await previous.click();
+  await expect(page.getByRole("region", { name: "등록한 계약" })).toContainText("First contract");
+  await next.click();
+  await expect(page.getByLabel("팀 이름", { exact: true })).toHaveValue("새 프로젝트");
+  await expect(page.getByRole("textbox", { name: "초대할 이메일" })).toHaveValue("minsu@codeworks.io");
+  await page.getByRole("button", { name: "건너뛰고 시작", exact: true }).click();
+  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page.getByRole("link", { name: "조직 시작하기", exact: true })).toHaveCount(0);
+  await page.getByRole("link", { name: "설정", exact: true }).click();
+  await expect(page.getByRole("button", { name: "First contract 계약 설정 열기" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "프롬프트 원문 수집", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByLabel("클라이언트 ID", { exact: true })).toHaveCount(0);
+  await page.getByRole("link", { name: "로그아웃", exact: true }).click();
+  await signIn(page);
+  await expect(page).toHaveURL(/\/overview$/);
+  expect(errors).toEqual([]);
+});
+
+test("required contract cannot be skipped after deletion and incomplete onboarding resumes on login", async ({ page }) => {
+  await page.goto("/login");
+  await signIn(page);
+  await page.getByRole("radio", { name: /^수집함/ }).check();
+  await page.getByRole("button", { name: "다음", exact: true }).click();
+  await saveOnboardingContract(page, "Required contract");
+  await page.getByRole("button", { name: "Required contract 계약 삭제" }).click();
+  await expect(page.getByRole("button", { name: "다음", exact: true })).toBeDisabled();
+  await page.getByLabel("표시 이름", { exact: true }).fill("Unfinished contract");
+  await page.getByRole("link", { name: "로그아웃", exact: true }).click();
+  await signIn(page);
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page.getByLabel("표시 이름", { exact: true })).toHaveValue("Unfinished contract");
+  await page.reload();
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page.getByRole("button", { name: "다음", exact: true })).toBeDisabled();
+  await expect(page.getByRole("radio", { name: /^수집함/ })).not.toBeChecked();
+});
+
+test("optional setup sends demo invitations and carries the pending list into members", async ({ page }) => {
+  await page.goto("/login");
+  await signIn(page);
+  await page.getByRole("radio", { name: /^수집하지 않음/ }).check();
+  await page.getByRole("button", { name: "다음", exact: true }).click();
+  await saveOnboardingContract(page);
+  await page.getByRole("button", { name: "다음", exact: true }).click();
+  await page.getByLabel("팀 이름", { exact: true }).fill("플랫폼");
+  await page.getByRole("button", { name: "팀 생성", exact: true }).click();
+  await expect(page.getByText("같은 이름의 팀이 이미 있습니다")).toBeVisible();
+  await page.getByLabel("팀 이름", { exact: true }).fill("연구팀");
+  await page.getByRole("button", { name: "팀 생성", exact: true }).click();
+  const email = page.getByRole("textbox", { name: "초대할 이메일" });
+  await email.fill("minsu@codeworks.io");
+  await email.press("Enter");
+  await page.getByRole("combobox", { name: "팀", exact: true }).selectOption({ label: "연구팀" });
+  await page.getByRole("button", { name: "1명에게 초대 메일 발송", exact: true }).click();
+  await expect(page.getByRole("region", { name: "초대 대기", exact: true })).toContainText("minsu@codeworks.io");
+  await expect(page.getByRole("button", { name: "팀 관리", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "완료", exact: true }).click();
+  await page.getByRole("link", { name: "구성원", exact: true }).click();
+  await page.getByRole("button", { name: "팀 관리", exact: true }).click();
+  const drawer = page.getByRole("dialog", { name: "팀 관리", exact: true });
+  await drawer.getByRole("button", { name: "연구팀 팀 수정" }).click();
+  await drawer.getByLabel("팀 이름", { exact: true }).fill("리서치");
+  await drawer.getByRole("button", { name: "변경 저장" }).click();
+  await page.keyboard.press("Escape");
+  await expect(drawer).not.toBeVisible();
+  await expect(page.getByRole("region", { name: "초대 대기", exact: true })).toContainText("리서치");
+  await expect(page.getByRole("region", { name: "등록한 개발자" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "개발자 등록", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "초대 대기", exact: true })).toContainText("minsu@codeworks.io");
+  const members = page.getByRole("region", { name: "구성원 목록", exact: true });
+  await members.getByRole("textbox", { name: "구성원 검색" }).fill("minsu@codeworks.io");
+  await expect(members).toContainText("minsu@codeworks.io");
+  await expect(members).toContainText("리서치");
+  await expect(members.getByText("기록 없음", { exact: true })).toBeVisible();
+});
+
+test("onboarding team chips clear the team from sent and draft invitations", async ({ page }) => {
+  await page.goto("/login");
+  await signIn(page);
+  await page.getByRole("radio", { name: /^수집하지 않음/ }).check();
+  await page.getByRole("button", { name: "다음", exact: true }).click();
+  await saveOnboardingContract(page);
+  await page.getByRole("button", { name: "다음", exact: true }).click();
+  const chips = page.getByRole("list", { name: "온보딩 팀 목록" });
+  await expect(chips.getByRole("button")).toHaveCount(5);
+  const email = page.getByRole("textbox", { name: "초대할 이메일" });
+  const team = page.getByRole("combobox", { name: "팀", exact: true });
+  await email.fill("minsu@codeworks.io");
+  await email.press("Enter");
+  await team.selectOption("team-1");
+  await page.getByRole("button", { name: "1명에게 초대 메일 발송", exact: true }).click();
+  await email.fill("jisu@codeworks.io");
+  await email.press("Enter");
+  await team.selectOption("team-1");
+  await chips.getByRole("button", { name: "플랫폼 팀 제거", exact: true }).click();
+  await expect(chips.getByRole("button")).toHaveCount(4);
+  await expect(page.getByRole("heading", { name: "현재 팀 · 4개" })).toBeVisible();
+  await expect(team).toHaveValue("");
+  await expect(page.getByRole("region", { name: "초대 대기", exact: true })).toContainText("미배정");
+  await page.getByRole("button", { name: "이전", exact: true }).click();
+  await page.getByRole("button", { name: "다음", exact: true }).click();
+  await expect(chips.getByRole("button", { name: "플랫폼 팀 제거", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "jisu@codeworks.io 제거" })).toBeVisible();
+  await expect(team).toHaveValue("");
+  await page.getByRole("button", { name: "1명에게 초대 메일 발송", exact: true }).click();
+  await expect(page.getByRole("region", { name: "초대 대기", exact: true })).toContainText("jisu@codeworks.io");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chips.screenshot({ path: "test-results/onboarding-team-chips-mobile.png" });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("mobile onboarding fits the viewport without a sidebar", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/onboarding");
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await page.screenshot({ path: "test-results/onboarding-collection-mobile.png", fullPage: true });
+  await page.getByRole("radio", { name: /^수집하지 않음/ }).check();
+  await page.getByRole("button", { name: "다음", exact: true }).click();
+  await saveOnboardingContract(page);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: "test-results/onboarding-contract-mobile.png", fullPage: true });
+  await page.getByRole("button", { name: "다음", exact: true }).click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: "test-results/onboarding-team-mobile.png", fullPage: true });
+  await expect(page.getByRole("button", { name: "팀 관리", exact: true })).toHaveCount(0);
+});
+
+
+test("dashboard routes and onboarding are accessible without a login gate", async ({ page }) => {
+  for (const route of ["overview", "members", "settings", "onboarding"]) {
+    await page.goto(`/${route}`);
+    await expect(page).toHaveURL(new RegExp(`/${route}$`));
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  }
+});

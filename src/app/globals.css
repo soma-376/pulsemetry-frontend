@@ -1,0 +1,196 @@
+@import "tailwindcss";
+
+/*
+  Pretendard Variable 동적 서브셋 (자체 호스팅).
+
+  - 한글 variable 전체는 단일 파일 2,009 KB 입니다. 이 서브셋은 unicode-range 로
+    92조각(평균 31 KB)으로 쪼개져 있어 화면에 실제 나온 글자의 조각만 받습니다.
+  - node_modules 에서 직접 import 하므로 번들러가 woff2 에 콘텐츠 해시를 붙여
+    불변 캐시로 내보냅니다. 써드파티 CDN 요청이 없어 DNS+TLS 왕복도,
+    사내망 차단 리스크도 없습니다.
+  - next/font/local 은 쓸 수 없습니다 — src 배열이 path/weight/style 만 받아
+    unicode-range 를 지정할 방법이 없습니다. (next 16.3.5 타입 정의 확인)
+*/
+@import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
+
+/* ──────────────────────────────────────────────────────────────
+   디자인 토큰 — claude.ai/design Pulsemetry 원본 팔레트 그대로
+   테마는 prefers-color-scheme 이 아니라 html[data-theme] 로 제어합니다.
+   ────────────────────────────────────────────────────────────── */
+:root {
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --sub: #eef0f3;
+  --hover: #f3f4f6;
+  --border: #e2e5ea;
+  --text: #111827;
+  --text2: #4b5563;
+  --text3: #6b7280;
+
+  --blue: #33538f;
+  --blue2: #5a7aae;
+  --blue-tint: #edf1f7;
+  --purple: #6b4e93;
+  --lav: #9c86bc;
+  --green: #4a7551;
+  --green-tint: #edf3ee;
+  --orange: #a9743c;
+  --orange-ink: #8a5a28;
+  --red: #a5473c;
+  --red-tint: #f9edeb;
+  --gray: #787e89;
+  --gray-tint: #e4e6ea;
+
+  /* 순차 램프 — 도넛·스택 막대 */
+  --seq1: #22385f;
+  --seq2: #33538f;
+  --seq3: #5a7aae;
+  --seq4: #8aa3c4;
+
+  /* 히트맵 5단계 + 각 단계의 전경색 */
+  --heat1: #e6ebf3;
+  --heat2: #b9c7dc;
+  --heat3: #8aa3c4;
+  --heat4: #5a7aae;
+  --heat5: #33538f;
+  --heatfg1: #111827;
+  --heatfg2: #111827;
+  --heatfg3: #ffffff;
+  --heatfg4: #ffffff;
+  --heatfg5: #ffffff;
+}
+
+[data-theme="dark"] {
+  --bg: #0f1115;
+  --card: #171a21;
+  --sub: #1d2129;
+  --hover: #222733;
+  --border: #2a2f3a;
+  --text: #e5e7eb;
+  --text2: #b4bac6;
+  --text3: #8b93a3;
+
+  --blue: #8fa9d4;
+  --blue2: #b4c5e2;
+  --blue-tint: #1b2333;
+  --purple: #a691ce;
+  --lav: #c3b4dd;
+  --green: #89b48d;
+  --green-tint: #17251b;
+  --orange: #d3a06b;
+  --orange-ink: #d3a06b;
+  --red: #dc8a7f;
+  --red-tint: #2b1b19;
+  --gray: #979ca6;
+  --gray-tint: #2a2f3a;
+
+  --seq1: #d3deee;
+  --seq2: #b4c5e2;
+  --seq3: #8fa9d4;
+  --seq4: #6b87b5;
+
+  --heat1: #222b3d;
+  --heat2: #33538f;
+  --heat3: #6b87b5;
+  --heat4: #8fa9d4;
+  --heat5: #c6d4e8;
+  --heatfg1: #e5e7eb;
+  --heatfg2: #e5e7eb;
+  --heatfg3: #ffffff;
+  --heatfg4: #0f1115;
+  --heatfg5: #0f1115;
+}
+
+/* 토큰을 Tailwind 유틸리티로 노출 — bg-card / text-text2 / border-border … */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-sub: var(--sub);
+  --color-hover: var(--hover);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-text2: var(--text2);
+  --color-text3: var(--text3);
+
+  --color-blue: var(--blue);
+  --color-blue2: var(--blue2);
+  --color-blue-tint: var(--blue-tint);
+  --color-purple: var(--purple);
+  --color-lav: var(--lav);
+  --color-green: var(--green);
+  --color-green-tint: var(--green-tint);
+  --color-orange: var(--orange);
+  --color-orange-ink: var(--orange-ink);
+  --color-red: var(--red);
+  --color-red-tint: var(--red-tint);
+  --color-gray: var(--gray);
+  --color-gray-tint: var(--gray-tint);
+
+  --color-seq1: var(--seq1);
+  --color-seq2: var(--seq2);
+  --color-seq3: var(--seq3);
+  --color-seq4: var(--seq4);
+
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system,
+    BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, Menlo, Consolas, monospace;
+}
+
+/* Tailwind Preflight 가 border-color 를 currentColor 로 돌려놓기 때문에
+   원본처럼 `border` 한 줄로 쓰려면 기본값을 토큰으로 되돌립니다. */
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--border);
+  }
+
+  html {
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a {
+    color: var(--blue);
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+
+  /* 원본은 focus 링을 blue 2px / offset 2px 로 통일합니다 */
+  :focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+  }
+}
+
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility pretty {
+  text-wrap: pretty;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
