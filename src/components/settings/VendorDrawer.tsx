@@ -49,10 +49,9 @@ export function VendorDrawer({
 }) {
   const [askDelete, setAskDelete] = useState(false);
 
-
   if (!row) return null;
 
-  const kind = isNew ? draft.kind ?? "copilot" : row.kind;
+  const kind = isNew ? (draft.kind ?? "copilot") : row.kind;
   const plans = getVendorPlans(kind, row.family);
   const plan = draft.plan !== undefined ? draft.plan : row.plan;
   const planDef = plans.find((p) => p.v === plan) ?? null;
@@ -72,12 +71,25 @@ export function VendorDrawer({
 
   const name = draft.name ?? (isNew ? "" : row.short);
   const kindLabel =
-    ADD_KINDS.find((k) => k.v === (draft.kind ?? "copilot"))?.label ?? ADD_KINDS[0].label;
+    ADD_KINDS.find((k) => k.v === (draft.kind ?? "copilot"))?.label ??
+    ADD_KINDS[0].label;
   const shownName = name.trim() || (isNew ? kindLabel : row.short);
 
   const changed =
-    JSON.stringify({ p: row.plan, t: baseTiers, m: row.contract.term ?? "", n: row.short, pn: row.contract.planName ?? "" }) !==
-    JSON.stringify({ p: plan, t: tiers, m: term, n: shownName, pn: draft.planName?.trim() ?? row.contract.planName ?? "" });
+    JSON.stringify({
+      p: row.plan,
+      t: baseTiers,
+      m: row.contract.term ?? "",
+      n: row.short,
+      pn: row.contract.planName ?? "",
+    }) !==
+    JSON.stringify({
+      p: plan,
+      t: tiers,
+      m: term,
+      n: shownName,
+      pn: draft.planName?.trim() ?? row.contract.planName ?? "",
+    });
 
   const check = contractCheck({
     isSeat: !!isSeat,
@@ -92,8 +104,16 @@ export function VendorDrawer({
 
   const idle = seats > 0 ? Math.max(0, seats - row.users) : null;
   const facts = [
-    { k: "활성 사용자 (7일)", v: row.noSignal ? "신호 없음" : `${int(row.users)}명`, muted: row.noSignal },
-    { k: "30일 누적 사용자", v: row.noSignal ? "신호 없음" : `${int(row.distinct30)}명`, muted: row.noSignal },
+    {
+      k: "활성 사용자 (7일)",
+      v: row.noSignal ? "신호 없음" : `${int(row.users)}명`,
+      muted: row.noSignal,
+    },
+    {
+      k: "30일 누적 사용자",
+      v: row.noSignal ? "신호 없음" : `${int(row.distinct30)}명`,
+      muted: row.noSignal,
+    },
     ...(isSeat
       ? [
           {
@@ -110,9 +130,18 @@ export function VendorDrawer({
       : []),
   ];
 
-  const saveDisabled = !setUp || !contractSchema(row.family).safeParse({ ...draft, kind, plan, tiers }).success || (!isNew && !changed);
-  const deleteDisabled = isNew || (!row.manual && !row.plan && baseTiers.length === 0);
-  const dirty = !!isSeat && setUp && Math.abs(seatSpend - baseSpend) > 0.005 && baseSpend > 0;
+  const saveDisabled =
+    !setUp ||
+    !contractSchema(row.family).safeParse({ ...draft, kind, plan, tiers })
+      .success ||
+    (!isNew && !changed);
+  const deleteDisabled =
+    isNew || (!row.manual && !row.plan && baseTiers.length === 0);
+  const dirty =
+    !!isSeat &&
+    setUp &&
+    Math.abs(seatSpend - baseSpend) > 0.005 &&
+    baseSpend > 0;
 
   return (
     <DetailDrawer
@@ -120,7 +149,13 @@ export function VendorDrawer({
       onClose={onClose}
       onAfterClose={onAfterClose}
       title={isNew ? "벤더 추가" : `${shownName} 계약 설정`}
-      subtitle={planDef ? (kind === "other" && draft.planName?.trim() ? draft.planName.trim() : planDef.label) : "플랜 미선택"}
+      subtitle={
+        planDef
+          ? kind === "other" && draft.planName?.trim()
+            ? draft.planName.trim()
+            : planDef.label
+          : "플랜 미선택"
+      }
       footer={
         <div className="flex flex-col gap-3">
           {/* 저장 전후를 나란히 보여줍니다 — 숫자가 바뀌는 걸 모르고 저장하지 않도록 */}
@@ -139,7 +174,13 @@ export function VendorDrawer({
                   </>
                 )}
                 <span className="text-[15px] font-semibold text-text">
-                  {!planDef ? "미입력" : isSeat ? (setUp ? usd(seatSpend) : "미입력") : usd(row.metered)}
+                  {!planDef
+                    ? "미입력"
+                    : isSeat
+                      ? setUp
+                        ? usd(seatSpend)
+                        : "미입력"
+                      : usd(row.metered)}
                 </span>
                 {planDef && !(isSeat && !setUp) && (
                   <span className="text-[11px] text-text3">/ 월</span>
@@ -148,7 +189,10 @@ export function VendorDrawer({
                   <span
                     className="text-[12px] font-semibold"
                     style={{
-                      color: seatSpend > baseSpend ? "var(--orange-ink)" : "var(--green)",
+                      color:
+                        seatSpend > baseSpend
+                          ? "var(--orange-ink)"
+                          : "var(--green)",
                     }}
                   >
                     {seatSpend >= baseSpend ? "+" : "−"}
@@ -205,14 +249,23 @@ export function VendorDrawer({
               disabled={saveDisabled}
               onClick={() => onSave(tiers, plan ?? null, shownName)}
             >
-              {isNew ? "벤더 추가" : changed ? "변경사항 저장" : "변경사항 없음"}
+              {isNew
+                ? "벤더 추가"
+                : changed
+                  ? "변경사항 저장"
+                  : "변경사항 없음"}
             </Button>
           </div>
         </div>
       }
     >
       <div className="flex flex-col gap-6">
-        <ContractForm row={row} isNew={isNew} draft={draft} onChange={onChange} />
+        <ContractForm
+          row={row}
+          isNew={isNew}
+          draft={draft}
+          onChange={onChange}
+        />
 
         <section className="flex flex-col gap-2 rounded-md border border-border bg-sub p-3">
           <div className="flex items-center gap-1.5">
@@ -220,7 +273,9 @@ export function VendorDrawer({
             <span
               className="rounded-[3px] px-1 text-[10px] leading-[15px] font-semibold"
               style={{
-                background: row.noSignal ? "var(--gray-tint)" : "var(--green-tint)",
+                background: row.noSignal
+                  ? "var(--gray-tint)"
+                  : "var(--green-tint)",
                 color: row.noSignal ? "var(--text2)" : "var(--green)",
               }}
             >
@@ -229,7 +284,10 @@ export function VendorDrawer({
           </div>
 
           {facts.map((f) => (
-            <div key={f.k} className="flex items-baseline justify-between gap-3">
+            <div
+              key={f.k}
+              className="flex items-baseline justify-between gap-3"
+            >
               <span className="text-[11.5px] text-text3">{f.k}</span>
               <span
                 className="tnum text-[12px]"

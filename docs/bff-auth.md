@@ -31,13 +31,13 @@ backend는 최종 권한·세션 검증을 유지한다. BFF는 사용자 JWT를
 
 `src/components/auth/RouteGuard.tsx`는 로그인 페이지, 대시보드·온보딩 레이아웃, 루트 페이지에 연결된다. 최초 접근·경로 변경·창 포커스 복귀·브라우저 뒤로가기 캐시(BFCache) 복원마다 BFF 세션을 확인하고, 동일 브라우저 문서의 동시 확인은 `src/lib/api/session.ts`의 Promise를 공유한다. BFF가 AT를 갱신할 수 있으면 로그인 상태로 인정한다. 이후 조직별 기존 온보딩 쿼리를 다시 조회해 목적지를 정한다.
 
-| 경로 | 미로그인 | 온보딩 미완료 | 온보딩 완료 |
-| --- | --- | --- | --- |
-| `/login` | 로그인 폼 | `/onboarding` | `/overview` |
-| `/onboarding` 및 하위 | `/login` | 접근 허용 | `/overview` |
-| `/overview`, `/teams`, `/members`, `/settings`, `/ops` 및 하위 | `/login` | `/onboarding` | 접근 허용 |
-| `/` | `/login` | `/onboarding` | `/overview` |
-| `/contact`, `/auth/callback` | 접근 허용 | 접근 허용 | 접근 허용 |
+| 경로                                                           | 미로그인  | 온보딩 미완료 | 온보딩 완료 |
+| -------------------------------------------------------------- | --------- | ------------- | ----------- |
+| `/login`                                                       | 로그인 폼 | `/onboarding` | `/overview` |
+| `/onboarding` 및 하위                                          | `/login`  | 접근 허용     | `/overview` |
+| `/overview`, `/teams`, `/members`, `/settings`, `/ops` 및 하위 | `/login`  | `/onboarding` | 접근 허용   |
+| `/`                                                            | `/login`  | `/onboarding` | `/overview` |
+| `/contact`, `/auth/callback`                                   | 접근 허용 | 접근 허용     | 접근 허용   |
 
 OIDC 시작은 `location.assign()`으로 로그인 기록을 유지하며 회사 인증 화면으로 이동한다. 콜백 완료는 `router.replace()`로 목적지에 이동한다. 뒤로가기로 로그인 기록에 돌아오거나 BFCache에서 복원되면 현재 쿠키로 다시 확인한다. 복원 전의 진행 중 요청과 늦은 응답은 재사용하지 않는다.
 

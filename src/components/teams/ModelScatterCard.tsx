@@ -20,7 +20,9 @@ export function ModelScatterCard({ model }: { model: TeamsModel }) {
       <span className="mb-3 text-[12px] font-semibold">
         모델별 토큰 대비 비용
       </span>
-      {scatter.note && <p className="mb-2 text-[11px] text-text3">{scatter.note}</p>}
+      {scatter.note && (
+        <p className="mb-2 text-[11px] text-text3">{scatter.note}</p>
+      )}
 
       <div className="grid grid-cols-[56px_minmax(0,1fr)] gap-2">
         <div className="tnum flex h-[206px] flex-col justify-between text-right text-[11px] text-text3">

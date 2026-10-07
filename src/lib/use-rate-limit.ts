@@ -23,12 +23,22 @@ export function useRateLimit() {
   const seconds = remainingSeconds(until, now);
   /** 429 이고 서버가 대기 시간을 줬으면 안내와 대기를 시작하고 true 다. 아니면 호출자가 평소대로 오류를 그린다. */
   const capture = useCallback((cause: unknown) => {
-    if (!(cause instanceof AuthError) || cause.status !== 429 || cause.retryAfterMs <= 0) return false;
+    if (
+      !(cause instanceof AuthError) ||
+      cause.status !== 429 ||
+      cause.retryAfterMs <= 0
+    )
+      return false;
     const time = Date.now();
     setNow(time);
     setUntil(time + cause.retryAfterMs);
     setNotice(cause.message);
     return true;
   }, []);
-  return { waiting: seconds > 0, seconds, message: seconds > 0 ? notice : "", capture };
+  return {
+    waiting: seconds > 0,
+    seconds,
+    message: seconds > 0 ? notice : "",
+    capture,
+  };
 }

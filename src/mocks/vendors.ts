@@ -13,8 +13,6 @@ import type { SeatTier } from "@/types/domain";
  * users/distinct30/firstSeen 만 측정값이고 c(contract) 는 전부 수동 입력입니다.
  */
 
-
-
 export type VendorContract = {
   planName?: string;
   tiers?: SeatTier[];

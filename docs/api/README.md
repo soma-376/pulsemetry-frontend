@@ -12,12 +12,12 @@
 
 ## 전달할 문서
 
-| 화면 | 명세 | 응답 예시 |
-| --- | --- | --- |
-| 개요 | [overview-api.md](overview-api.md) | [overview-response.example.json](overview-response.example.json) |
-| 팀 분석 | [teams-api.md](teams-api.md) | [teams-response.example.json](teams-response.example.json), [team-users-response.example.json](team-users-response.example.json) |
-| 구성원 | [members-api.md](members-api.md) | [members-response.example.json](members-response.example.json) |
-| 설정 | [settings-api.md](settings-api.md) | [settings-response.example.json](settings-response.example.json) |
+| 화면    | 명세                               | 응답 예시                                                                                                                        |
+| ------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 개요    | [overview-api.md](overview-api.md) | [overview-response.example.json](overview-response.example.json)                                                                 |
+| 팀 분석 | [teams-api.md](teams-api.md)       | [teams-response.example.json](teams-response.example.json), [team-users-response.example.json](team-users-response.example.json) |
+| 구성원  | [members-api.md](members-api.md)   | [members-response.example.json](members-response.example.json)                                                                   |
+| 설정    | [settings-api.md](settings-api.md) | [settings-response.example.json](settings-response.example.json)                                                                 |
 
 예시는 가상의 ID·계정·금액을 쓴 계약 설명용 데이터다. 실제 조직이나 실제 벤더 요금표가 아니다.
 서로 다른 화면 예시는 독립된 조회 시나리오이며, 개요와 팀 분석의 조직 사용 합계만 의도적으로 맞췄다.
@@ -28,46 +28,46 @@
 
 모든 아래 경로의 앞에는 `/api/v1/organizations/{organizationId}`가 붙는다. 서버 열: D = dashboard-api(조회), E = enrollment-api(관리 명령).
 
-| 용도 | Method / path | 호출 시점 |
-| --- | --- | --- |
-| 개요 | D GET /analytics/overview | 진입·기간/비교 변경 |
-| 수집 상태 | D GET /ingest-status | 공통 헤더 |
-| 팀 분석 | D GET /analytics/teams | 진입·기간/비교/정렬·팀 목록 페이지 변경 |
-| 팀 드로어 | D GET /analytics/teams/{teamId} | 목록에 없는 팀 상세 필요 시 |
-| 팀 사용자 | D GET /analytics/teams/{teamId}/users | 선택 팀 변경·더보기 |
-| 조직 팀 선택지 | D GET /teams | 배정/초대·팀 검색 |
-| 팀 생성·이름 변경·삭제 | E POST /teams · PATCH·DELETE /teams/{teamId} | 팀 관리 |
-| 구성원 첫 화면 | D GET /members/dashboard | 진입·기간 변경 |
-| 구성원 목록 | D GET /members | 검색·더보기 |
-| 미배정 목록 | D GET /members/unassigned | 더보기 |
-| 구성원 팀·역할 | E PATCH /members/{memberId} | 저장 |
-| 팀 배정 | E POST /member-team-assignments | 적용 |
-| 초대 | E POST /invitations/batch · GET /invitations · POST /invitations/{invitationId}/revoke·/reissue | 초대 전송·대기 목록 |
-| 설치 코드 | E POST /members/{memberId}/installation-invitations · GET /invitations?status=pending&memberStatus=active | 활성 구성원의 설치 전용 코드(서버 ADR 0055)·쓰지 않은 설치 코드의 발송 상태 |
-| 회수 후보 | D GET /seat-reclaim-candidates | 더보기·기준 변경 후 |
-| 구성원 좌석 | D GET /members/{memberId}/seats | 구성원 상세 |
-| 좌석 회수 미리보기 | E POST /seat-reclaims/preview | 회수 확인창 열기 |
-| 좌석 회수 | E POST /seat-reclaims | 회수 확정 |
-| 회수 복원 | E POST /seat-reclaims/{operationId}/restore | 되돌리기 |
-| 관리자 조치 확인·취소 | E POST /operations/{operationId}/targets/{targetId}/confirm·/cancel | 벤더 콘솔에서 조치한 뒤 |
-| 비동기 작업 상태 | D GET /operations/{operationId} | 실행 중인 회수/복원/동기화/안내/정리 확인 |
-| 설정 첫 화면 | D GET /settings | 진입·저장 후 재조회 |
-| 벤더 목록 | D GET /vendors | 목록 더보기 |
-| 벤더 상세 | D GET /vendors/{vendorId} | 목록에 없는 벤더 편집 |
-| 제품 좌석 | D GET /vendors/{vendorId}/seats | 설정 드로어 |
-| 좌석 기록 | E POST /vendors/{vendorId}/seats · PATCH …/seats/{seatId} · POST …/seats/{seatId}/release · POST …/seats/import | 수동 기록·CSV |
-| 벤더 연결 | E PUT·DELETE /vendors/{vendorId}/connection · POST …/connection/verify · POST …/connection/sync | 연결·확인·지금 동기화 |
-| 수동 벤더 추가 | E POST /vendors | 추가 저장 |
-| 벤더 이름 변경 | E PATCH /vendors/{vendorId} | 이름 저장 |
-| 벤더 계약 저장 | E PUT /vendors/{vendorId}/contract | 계약 저장 |
-| 감지 벤더 계약 해제 | E DELETE /vendors/{vendorId}/contract | 계약 삭제 확인 |
-| 수동 벤더 제거 | E DELETE /vendors/{vendorId} | 벤더 삭제 확인 |
-| 수집 정책 변경 | E PUT /collection-policy | 확인/선택 적용(회수 기준·집계 보존 포함) |
-| 온보딩 | E GET /onboarding · POST /onboarding/complete | 온보딩 진입·완료 |
-| 알림 규칙 변경 | E PATCH /settings/alert-rules/{ruleId} | 토글 |
-| 알림 목록·확인 | D GET /alerts · GET /alerts/{alertId} · E POST /alerts/{alertId}/acknowledge | 개요 알림 보기·확인 |
-| 미적용 설치 | D GET /installations?policyStatus=outdated | 설치 현황 모달·더보기 |
-| 업데이트 안내 | E POST /installation-update-notifications | 안내 전송 |
+| 용도                   | Method / path                                                                                                   | 호출 시점                                                                   |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| 개요                   | D GET /analytics/overview                                                                                       | 진입·기간/비교 변경                                                         |
+| 수집 상태              | D GET /ingest-status                                                                                            | 공통 헤더                                                                   |
+| 팀 분석                | D GET /analytics/teams                                                                                          | 진입·기간/비교/정렬·팀 목록 페이지 변경                                     |
+| 팀 드로어              | D GET /analytics/teams/{teamId}                                                                                 | 목록에 없는 팀 상세 필요 시                                                 |
+| 팀 사용자              | D GET /analytics/teams/{teamId}/users                                                                           | 선택 팀 변경·더보기                                                         |
+| 조직 팀 선택지         | D GET /teams                                                                                                    | 배정/초대·팀 검색                                                           |
+| 팀 생성·이름 변경·삭제 | E POST /teams · PATCH·DELETE /teams/{teamId}                                                                    | 팀 관리                                                                     |
+| 구성원 첫 화면         | D GET /members/dashboard                                                                                        | 진입·기간 변경                                                              |
+| 구성원 목록            | D GET /members                                                                                                  | 검색·더보기                                                                 |
+| 미배정 목록            | D GET /members/unassigned                                                                                       | 더보기                                                                      |
+| 구성원 팀·역할         | E PATCH /members/{memberId}                                                                                     | 저장                                                                        |
+| 팀 배정                | E POST /member-team-assignments                                                                                 | 적용                                                                        |
+| 초대                   | E POST /invitations/batch · GET /invitations · POST /invitations/{invitationId}/revoke·/reissue                 | 초대 전송·대기 목록                                                         |
+| 설치 코드              | E POST /members/{memberId}/installation-invitations · GET /invitations?status=pending&memberStatus=active       | 활성 구성원의 설치 전용 코드(서버 ADR 0055)·쓰지 않은 설치 코드의 발송 상태 |
+| 회수 후보              | D GET /seat-reclaim-candidates                                                                                  | 더보기·기준 변경 후                                                         |
+| 구성원 좌석            | D GET /members/{memberId}/seats                                                                                 | 구성원 상세                                                                 |
+| 좌석 회수 미리보기     | E POST /seat-reclaims/preview                                                                                   | 회수 확인창 열기                                                            |
+| 좌석 회수              | E POST /seat-reclaims                                                                                           | 회수 확정                                                                   |
+| 회수 복원              | E POST /seat-reclaims/{operationId}/restore                                                                     | 되돌리기                                                                    |
+| 관리자 조치 확인·취소  | E POST /operations/{operationId}/targets/{targetId}/confirm·/cancel                                             | 벤더 콘솔에서 조치한 뒤                                                     |
+| 비동기 작업 상태       | D GET /operations/{operationId}                                                                                 | 실행 중인 회수/복원/동기화/안내/정리 확인                                   |
+| 설정 첫 화면           | D GET /settings                                                                                                 | 진입·저장 후 재조회                                                         |
+| 벤더 목록              | D GET /vendors                                                                                                  | 목록 더보기                                                                 |
+| 벤더 상세              | D GET /vendors/{vendorId}                                                                                       | 목록에 없는 벤더 편집                                                       |
+| 제품 좌석              | D GET /vendors/{vendorId}/seats                                                                                 | 설정 드로어                                                                 |
+| 좌석 기록              | E POST /vendors/{vendorId}/seats · PATCH …/seats/{seatId} · POST …/seats/{seatId}/release · POST …/seats/import | 수동 기록·CSV                                                               |
+| 벤더 연결              | E PUT·DELETE /vendors/{vendorId}/connection · POST …/connection/verify · POST …/connection/sync                 | 연결·확인·지금 동기화                                                       |
+| 수동 벤더 추가         | E POST /vendors                                                                                                 | 추가 저장                                                                   |
+| 벤더 이름 변경         | E PATCH /vendors/{vendorId}                                                                                     | 이름 저장                                                                   |
+| 벤더 계약 저장         | E PUT /vendors/{vendorId}/contract                                                                              | 계약 저장                                                                   |
+| 감지 벤더 계약 해제    | E DELETE /vendors/{vendorId}/contract                                                                           | 계약 삭제 확인                                                              |
+| 수동 벤더 제거         | E DELETE /vendors/{vendorId}                                                                                    | 벤더 삭제 확인                                                              |
+| 수집 정책 변경         | E PUT /collection-policy                                                                                        | 확인/선택 적용(회수 기준·집계 보존 포함)                                    |
+| 온보딩                 | E GET /onboarding · POST /onboarding/complete                                                                   | 온보딩 진입·완료                                                            |
+| 알림 규칙 변경         | E PATCH /settings/alert-rules/{ruleId}                                                                          | 토글                                                                        |
+| 알림 목록·확인         | D GET /alerts · GET /alerts/{alertId} · E POST /alerts/{alertId}/acknowledge                                    | 개요 알림 보기·확인                                                         |
+| 미적용 설치            | D GET /installations?policyStatus=outdated                                                                      | 설치 현황 모달·더보기                                                       |
+| 업데이트 안내          | E POST /installation-update-notifications                                                                       | 안내 전송                                                                   |
 
 조직 경로 밖: 도입 문의 `POST /v1/inquiries`(E, 로그인 없음), 벤더 카탈로그 `GET /api/v1/vendor-catalog`(D).
 
@@ -122,8 +122,19 @@ type TeamRef = { teamId: string | null; teamName: string };
 type Role = "admin" | "lead" | "member" | "viewer";
 type OperationResponse = {
   operationId: string;
-  kind: "seat_reclaim" | "seat_restore" | "seat_sync" | "installation_notification" | "retention_cleanup";
-  status: "pending" | "running" | "awaiting_admin_action" | "succeeded" | "partially_failed" | "failed";
+  kind:
+    | "seat_reclaim"
+    | "seat_restore"
+    | "seat_sync"
+    | "installation_notification"
+    | "retention_cleanup";
+  status:
+    | "pending"
+    | "running"
+    | "awaiting_admin_action"
+    | "succeeded"
+    | "partially_failed"
+    | "failed";
   createdAt: string;
   completedAt: string | null;
   results: {
@@ -135,7 +146,13 @@ type OperationResponse = {
   canRestore: boolean;
   restoreUntil: string | null;
   // 보존 정리 작업의 가장 최근 삭제 실행(백엔드 가산) — 그 밖의 작업은 null
-  retention: { status: string; requestedBefore: string; deletedBefore: string | null; startedAt: string; finishedAt: string | null } | null;
+  retention: {
+    status: string;
+    requestedBefore: string;
+    deletedBefore: string | null;
+    startedAt: string;
+    finishedAt: string | null;
+  } | null;
 };
 type TeamDirectoryResponse = {
   meta: CurrentMeta;
@@ -169,14 +186,14 @@ GET /teams는 q(이름 검색, 최대 200자), limit(기본 50), cursor, snapsho
 
 ## 백엔드 데이터 원천
 
-| 원천 | 필요한 정보 |
-| --- | --- |
+| 원천               | 필요한 정보                                                                                                           |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------- |
 | 정규화 사용 이벤트 | event/request ID, occurredAt, canonical user ID, session ID와 도구, 모델 ID, 중복 없는 토큰 범주, 이벤트 당시 대표 팀 |
-| 조직/IdP | 실제 구성원 로스터, 현재 팀, 역할, 활성/비활성 상태, 초대 상태 |
-| 계약·좌석 저장소 | 벤더별 계약 이력, 유효 기간, 등급별 좌석·요금, 실제 좌석 배정과 회수 가능 조건 |
-| 가격표 | 모델/토큰 종류별 이벤트 시점 유효 단가·버전 |
-| 수집 제어면 | 설치별 heartbeat, 지원 정책 버전, 실제 적용 버전, 수신 시각, 관측 누락 구간 |
-| 정책·알림 | 정책 버전/적용 시점, 알림 규칙/평가 창, 전송 또는 집계 삭제 작업 결과 |
+| 조직/IdP           | 실제 구성원 로스터, 현재 팀, 역할, 활성/비활성 상태, 초대 상태                                                        |
+| 계약·좌석 저장소   | 벤더별 계약 이력, 유효 기간, 등급별 좌석·요금, 실제 좌석 배정과 회수 가능 조건                                        |
+| 가격표             | 모델/토큰 종류별 이벤트 시점 유효 단가·버전                                                                           |
+| 수집 제어면        | 설치별 heartbeat, 지원 정책 버전, 실제 적용 버전, 수신 시각, 관측 누락 구간                                           |
+| 정책·알림          | 정책 버전/적용 시점, 알림 규칙/평가 창, 전송 또는 집계 삭제 작업 결과                                                 |
 
 텔레메트리만으로 계약, 역할, 미사용 좌석 또는 초대 가능 여부를 만들어내지 않는다.
 현재 프론트의 랜덤 사용자 생성, 상수 회수 후보 수, 가짜 발송 성공 상태는 서버 구현 사양이 아니다.

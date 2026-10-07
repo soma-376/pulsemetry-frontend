@@ -21,20 +21,20 @@
 
 ## 표시 기준
 
-| 상황 | 표시 범위와 동작 |
-| --- | --- |
-| 최초 페이지 조회 | 해당 응답에 의존하는 본문 전체를 로딩으로 대체한다. 사이드바·헤더 등 공통 틀은 유지한다. |
-| 최초 조회 실패 | 해당 본문에 오류 안내와 재시도 버튼을 표시한다. 빈 상태나 정상 지표로 대체하지 않는다. |
-| 새로고침 | 기존 데이터를 유지하고 공통 헤더의 새로고침 버튼에만 스피너와 “조회 중…”을 표시한다. 열려 있는 드로어나 입력값을 초기화하지 않는다. |
-| 새로고침 실패 | 기존 데이터를 유지하면서 갱신 실패와 재시도 방법을 알린다. 최신 조회가 성공한 것처럼 표시하지 않는다. |
-| 상세 조회 | 클릭한 행 또는 상세 영역에만 진행 상태를 표시한다. 무관한 본문은 유지한다. |
-| 상세 조회 실패 | 어떤 항목의 조회가 실패했는지 알 수 있는 위치에 오류와 상세 재시도를 제공한다. |
-| 저장·삭제 요청 중 | 실행 버튼에 “저장 중…”·“삭제 중…” 등 진행 상태를 표시하고 중복 실행을 막는다. 관련 입력과 충돌하는 동작을 잠근다. |
-| 처리 성공 | 서버가 성공을 확정한 뒤 Toast를 표시하고 관련 쿼리를 갱신한다. 완료 후 닫는 폼은 드로어·모달을 닫는다. |
-| 입력 오류 | 해당 입력 근처에 오류를 표시한다. 사용자가 입력한 값은 유지한다. |
-| 저장 실패·동시 수정 충돌 | 폼 안에 오류와 복구 방법을 유지한다. Toast만 띄운 뒤 사라지게 하지 않는다. |
-| 정상 조회 결과가 비어 있음 | 해당 영역에 빈 상태를 표시한다. 가능하면 추가·검색 초기화 등 다음 행동을 제공한다. |
-| 응답 값이 `null` | 값 자리에 `-`를 표시한다. 로딩이나 실제 값 `0`과 구분한다. |
+| 상황                       | 표시 범위와 동작                                                                                                                    |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 최초 페이지 조회           | 해당 응답에 의존하는 본문 전체를 로딩으로 대체한다. 사이드바·헤더 등 공통 틀은 유지한다.                                            |
+| 최초 조회 실패             | 해당 본문에 오류 안내와 재시도 버튼을 표시한다. 빈 상태나 정상 지표로 대체하지 않는다.                                              |
+| 새로고침                   | 기존 데이터를 유지하고 공통 헤더의 새로고침 버튼에만 스피너와 “조회 중…”을 표시한다. 열려 있는 드로어나 입력값을 초기화하지 않는다. |
+| 새로고침 실패              | 기존 데이터를 유지하면서 갱신 실패와 재시도 방법을 알린다. 최신 조회가 성공한 것처럼 표시하지 않는다.                               |
+| 상세 조회                  | 클릭한 행 또는 상세 영역에만 진행 상태를 표시한다. 무관한 본문은 유지한다.                                                          |
+| 상세 조회 실패             | 어떤 항목의 조회가 실패했는지 알 수 있는 위치에 오류와 상세 재시도를 제공한다.                                                      |
+| 저장·삭제 요청 중          | 실행 버튼에 “저장 중…”·“삭제 중…” 등 진행 상태를 표시하고 중복 실행을 막는다. 관련 입력과 충돌하는 동작을 잠근다.                   |
+| 처리 성공                  | 서버가 성공을 확정한 뒤 Toast를 표시하고 관련 쿼리를 갱신한다. 완료 후 닫는 폼은 드로어·모달을 닫는다.                              |
+| 입력 오류                  | 해당 입력 근처에 오류를 표시한다. 사용자가 입력한 값은 유지한다.                                                                    |
+| 저장 실패·동시 수정 충돌   | 폼 안에 오류와 복구 방법을 유지한다. Toast만 띄운 뒤 사라지게 하지 않는다.                                                          |
+| 정상 조회 결과가 비어 있음 | 해당 영역에 빈 상태를 표시한다. 가능하면 추가·검색 초기화 등 다음 행동을 제공한다.                                                  |
+| 응답 값이 `null`           | 값 자리에 `-`를 표시한다. 로딩이나 실제 값 `0`과 구분한다.                                                                          |
 
 인증·권한이 거부된 경우에는 기존 데이터 유지 규칙보다 접근 제한을 우선한다.
 권한 없는 데이터는 숨기고 로그인 또는 권한 안내를 표시한다.
@@ -105,18 +105,18 @@
 
 `npm run storybook` 실행 후 확인할 사례:
 
-| 사례 | Storybook |
-| --- | --- |
-| 최초 로딩 | [Loading](http://localhost:6006/?path=/story/pages-settings--loading) |
-| 로딩 완료 후 실제 빈 값 표시 | [LoadingThenLoaded](http://localhost:6006/?path=/story/pages-settings--loading-then-loaded) |
-| 기존 화면을 유지하는 새로고침 | [Refreshing](http://localhost:6006/?path=/story/pages-settings--refreshing) |
-| 최초 조회 실패 | [LoadError](http://localhost:6006/?path=/story/pages-settings--load-error) |
-| 벤더 상세 로딩·선택 전환 | [VendorLoading](http://localhost:6006/?path=/story/pages-settings--vendor-loading) |
-| 상세 조회 실패 후 재시도 | [VendorLoadError](http://localhost:6006/?path=/story/pages-settings--vendor-load-error) |
-| 등록 제품 없음 | [Empty](http://localhost:6006/?path=/story/pages-settings--empty) |
-| 저장 실패 시 입력 보존 | [SaveError](http://localhost:6006/?path=/story/pages-settings--save-error) |
-| 동시 수정 충돌 | [Conflict](http://localhost:6006/?path=/story/pages-settings--conflict) |
-| 계약 정정·비우기·삭제·재등록 | [ContractLifecycle](http://localhost:6006/?path=/story/pages-settings--contract-lifecycle) |
+| 사례                          | Storybook                                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------- |
+| 최초 로딩                     | [Loading](http://localhost:6006/?path=/story/pages-settings--loading)                       |
+| 로딩 완료 후 실제 빈 값 표시  | [LoadingThenLoaded](http://localhost:6006/?path=/story/pages-settings--loading-then-loaded) |
+| 기존 화면을 유지하는 새로고침 | [Refreshing](http://localhost:6006/?path=/story/pages-settings--refreshing)                 |
+| 최초 조회 실패                | [LoadError](http://localhost:6006/?path=/story/pages-settings--load-error)                  |
+| 벤더 상세 로딩·선택 전환      | [VendorLoading](http://localhost:6006/?path=/story/pages-settings--vendor-loading)          |
+| 상세 조회 실패 후 재시도      | [VendorLoadError](http://localhost:6006/?path=/story/pages-settings--vendor-load-error)     |
+| 등록 제품 없음                | [Empty](http://localhost:6006/?path=/story/pages-settings--empty)                           |
+| 저장 실패 시 입력 보존        | [SaveError](http://localhost:6006/?path=/story/pages-settings--save-error)                  |
+| 동시 수정 충돌                | [Conflict](http://localhost:6006/?path=/story/pages-settings--conflict)                     |
+| 계약 정정·비우기·삭제·재등록  | [ContractLifecycle](http://localhost:6006/?path=/story/pages-settings--contract-lifecycle)  |
 
 ## 적용 현황
 

@@ -9,7 +9,10 @@ import { StatCard } from "@/components/ui/StatCard";
 import { SortHeader } from "@/components/ui/SortHeader";
 import { ManagementError } from "@/lib/api/management";
 import { TEAM_USERS_PAGE, teamUsersOptions } from "@/lib/api/teams";
-import { presentUsers, type TeamsModel } from "@/lib/metrics/teams-presentation";
+import {
+  presentUsers,
+  type TeamsModel,
+} from "@/lib/metrics/teams-presentation";
 import { nextSort, sortRows, type SortState } from "@/lib/sort";
 
 /**
@@ -30,10 +33,26 @@ const COLS =
   "@max-[620px]:grid-cols-[minmax(0,1.3fr)_96px_76px] " +
   "@max-[620px]:[&>*:nth-child(3)]:hidden @max-[620px]:[&>*:nth-child(7)]:hidden";
 
-type SortKey = "account" | "sessionCount" | "tokenValue" | "costValue" | "cacheValue" | "lastValue";
-const SERVER_ORDER: SortState<SortKey> = { key: "costValue", direction: "desc" };
+type SortKey =
+  | "account"
+  | "sessionCount"
+  | "tokenValue"
+  | "costValue"
+  | "cacheValue"
+  | "lastValue";
+const SERVER_ORDER: SortState<SortKey> = {
+  key: "costValue",
+  direction: "desc",
+};
 
-export function UserUsageCard({ organizationId, period, snapshotId, teams, onSnapshotExpired, onTeamChange }: {
+export function UserUsageCard({
+  organizationId,
+  period,
+  snapshotId,
+  teams,
+  onSnapshotExpired,
+  onTeamChange,
+}: {
   organizationId: string;
   period: { startDate: string; endDate: string };
   snapshotId: string;
@@ -46,9 +65,13 @@ export function UserUsageCard({ organizationId, period, snapshotId, teams, onSna
   const [team, setTeam] = useState(teams[0]?.key ?? "");
   const [visible, setVisible] = useState(TEAM_USERS_PAGE);
   const [sort, setSort] = useState<SortState<SortKey>>(SERVER_ORDER);
-  const serverOrder = sort.key === SERVER_ORDER.key && sort.direction === SERVER_ORDER.direction;
+  const serverOrder =
+    sort.key === SERVER_ORDER.key && sort.direction === SERVER_ORDER.direction;
 
-  const query = useInfiniteQuery({ ...teamUsersOptions(organizationId, team, period, snapshotId), enabled: !!team });
+  const query = useInfiniteQuery({
+    ...teamUsersOptions(organizationId, team, period, snapshotId),
+    enabled: !!team,
+  });
   const pages = useMemo(() => query.data?.pages ?? [], [query.data]);
   const data = useMemo(() => presentUsers(pages), [pages]);
   const loaded = data.rows.length;
@@ -57,13 +80,29 @@ export function UserUsageCard({ organizationId, period, snapshotId, teams, onSna
   const needsMore = !serverOrder || loaded < visible;
   const { hasNextPage, isFetching, isError, fetchNextPage } = query;
   useEffect(() => {
-    if (needsMore && hasNextPage && !isFetching && !isError) void fetchNextPage();
+    if (needsMore && hasNextPage && !isFetching && !isError)
+      void fetchNextPage();
   }, [needsMore, hasNextPage, isFetching, isError, fetchNextPage]);
-  const expired = query.error instanceof ManagementError && query.error.code === "snapshot_expired";
-  useEffect(() => { if (expired) onSnapshotExpired(); }, [expired, onSnapshotExpired]);
-  useEffect(() => { if (team) onTeamChange?.(team); }, [team, onTeamChange]);
+  const expired =
+    query.error instanceof ManagementError &&
+    query.error.code === "snapshot_expired";
+  useEffect(() => {
+    if (expired) onSnapshotExpired();
+  }, [expired, onSnapshotExpired]);
+  useEffect(() => {
+    if (team) onTeamChange?.(team);
+  }, [team, onTeamChange]);
 
-  const ordered = serverOrder ? data.rows : complete ? sortRows(data.rows, (row) => row[sort.key], sort.direction, (row) => row.account) : [];
+  const ordered = serverOrder
+    ? data.rows
+    : complete
+      ? sortRows(
+          data.rows,
+          (row) => row[sort.key],
+          sort.direction,
+          (row) => row.account,
+        )
+      : [];
   const rows = ordered.slice(0, visible);
   const hasMore = visible < data.totalCount;
   const gathering = !serverOrder && !complete && !query.isError;
@@ -72,7 +111,8 @@ export function UserUsageCard({ organizationId, period, snapshotId, teams, onSna
     setTeam(next);
     setVisible(TEAM_USERS_PAGE);
   };
-  const deniedAccess = query.error instanceof ManagementError && query.error.status === 403;
+  const deniedAccess =
+    query.error instanceof ManagementError && query.error.status === 403;
 
   return (
     <section
@@ -82,10 +122,16 @@ export function UserUsageCard({ organizationId, period, snapshotId, teams, onSna
     >
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
         <span className="text-[13px] font-semibold">사용자별 사용량</span>
-        {query.data && <span className="pretty text-[11px] text-text3">{data.note}</span>}
+        {query.data && (
+          <span className="pretty text-[11px] text-text3">{data.note}</span>
+        )}
       </div>
 
-      <div role="group" aria-label="팀 선택" className="mb-3.5 flex flex-wrap gap-1.5">
+      <div
+        role="group"
+        aria-label="팀 선택"
+        className="mb-3.5 flex flex-wrap gap-1.5"
+      >
         {teams.map((t) => {
           const active = t.key === team;
           return (
@@ -107,73 +153,176 @@ export function UserUsageCard({ organizationId, period, snapshotId, teams, onSna
         })}
       </div>
 
-      {query.isPending && team ? <LoadingState message="사용자별 사용량을 불러오는 중입니다…" /> : deniedAccess ? (
-        <p role="status" className="rounded-lg bg-sub p-3 text-xs text-text2">개인별 사용량을 조회할 권한이 없습니다. 팀 합계는 위 표에서 확인할 수 있습니다.</p>
+      {query.isPending && team ? (
+        <LoadingState message="사용자별 사용량을 불러오는 중입니다…" />
+      ) : deniedAccess ? (
+        <p role="status" className="rounded-lg bg-sub p-3 text-xs text-text2">
+          개인별 사용량을 조회할 권한이 없습니다. 팀 합계는 위 표에서 확인할 수
+          있습니다.
+        </p>
       ) : query.isError && !query.data ? (
-        <ErrorState message={expired ? "목록이 갱신되었습니다. 처음부터 다시 불러옵니다." : query.error.message} onRetry={expired ? undefined : () => void query.refetch({ cancelRefetch: false })} retrying={query.isFetching} />
-      ) : query.data && <>
-        <div className="mb-[18px] grid grid-cols-5 gap-2 @max-[1100px]:grid-cols-3 @max-[620px]:grid-cols-2">
-          {data.stats.map((s) => (
-            <StatCard key={s.key} label={s.key} value={s.value} unit={s.sub} tone={s.tone} size="sm" />
-          ))}
-        </div>
+        <ErrorState
+          message={
+            expired
+              ? "목록이 갱신되었습니다. 처음부터 다시 불러옵니다."
+              : query.error.message
+          }
+          onRetry={
+            expired
+              ? undefined
+              : () => void query.refetch({ cancelRefetch: false })
+          }
+          retrying={query.isFetching}
+        />
+      ) : (
+        query.data && (
+          <>
+            <div className="mb-[18px] grid grid-cols-5 gap-2 @max-[1100px]:grid-cols-3 @max-[620px]:grid-cols-2">
+              {data.stats.map((s) => (
+                <StatCard
+                  key={s.key}
+                  label={s.key}
+                  value={s.value}
+                  unit={s.sub}
+                  tone={s.tone}
+                  size="sm"
+                />
+              ))}
+            </div>
 
-        <div className={`${COLS} border-b border-border px-0.5 pb-2 text-[11px] text-text3`}>
-          {([
-            ["account", "계정"], ["sessionCount", "세션"], ["tokenValue", "총 토큰"], ["costValue", "환산 금액"],
-          ] as const).map(([key, label]) => <SortHeader key={key} label={label} align={key === "account" ? "left" : "right"}
-            initial={key === "account" ? "asc" : "desc"} direction={sort.key === key ? sort.direction : undefined}
-            onClick={() => setSort(nextSort(sort, key, key === "account" ? "asc" : "desc"))} />)}
-          <span className="text-right">평균 대비</span>
-          <span>주 사용 모델</span>
-          <SortHeader label="캐시 적중" align="right" initial="desc" direction={sort.key === "cacheValue" ? sort.direction : undefined} onClick={() => setSort(nextSort(sort, "cacheValue", "desc"))} />
-          <SortHeader label="마지막 사용" align="right" initial="desc" direction={sort.key === "lastValue" ? sort.direction : undefined} onClick={() => setSort(nextSort(sort, "lastValue", "desc"))} />
-        </div>
-
-        {gathering && <LoadingState variant="inline" message={`전체 ${data.totalCount}명을 모아 정렬하는 중입니다…`} className="py-3" />}
-        {!gathering && data.totalCount === 0 && <p role="status" className="py-3 text-xs text-text3">선택 기간에 이 팀에서 식별된 사용자가 없습니다.</p>}
-
-        {rows.map((u) => (
-          <div key={u.key} className={`${COLS} border-b border-border px-0.5 py-2.5`}>
-            <span className="overflow-hidden font-mono text-[12px] text-ellipsis whitespace-nowrap text-text2">
-              {u.account}
-            </span>
-            <span className="tnum text-right text-[12px] text-text2">{u.sessions}</span>
-            <span className="tnum text-right text-[12px] text-text2">{u.tokens}</span>
-            <span className="tnum text-right text-[12px] font-semibold">{u.cost}</span>
-            <span
-              className="tnum text-right text-[12px] font-semibold"
-              style={{ color: u.deviationColor }}
+            <div
+              className={`${COLS} border-b border-border px-0.5 pb-2 text-[11px] text-text3`}
             >
-              {u.deviationText}
-            </span>
-            <span className="overflow-hidden text-[12px] text-ellipsis whitespace-nowrap text-text2">
-              {u.model}
-            </span>
-            <span className="tnum text-right text-[12px]" style={{ color: u.cacheColor }}>
-              {u.cache}
-            </span>
-            <span className="tnum text-right text-[12px]" style={{ color: u.lastColor }}>
-              {u.last}
-            </span>
-          </div>
-        ))}
+              {(
+                [
+                  ["account", "계정"],
+                  ["sessionCount", "세션"],
+                  ["tokenValue", "총 토큰"],
+                  ["costValue", "환산 금액"],
+                ] as const
+              ).map(([key, label]) => (
+                <SortHeader
+                  key={key}
+                  label={label}
+                  align={key === "account" ? "left" : "right"}
+                  initial={key === "account" ? "asc" : "desc"}
+                  direction={sort.key === key ? sort.direction : undefined}
+                  onClick={() =>
+                    setSort(
+                      nextSort(sort, key, key === "account" ? "asc" : "desc"),
+                    )
+                  }
+                />
+              ))}
+              <span className="text-right">평균 대비</span>
+              <span>주 사용 모델</span>
+              <SortHeader
+                label="캐시 적중"
+                align="right"
+                initial="desc"
+                direction={
+                  sort.key === "cacheValue" ? sort.direction : undefined
+                }
+                onClick={() => setSort(nextSort(sort, "cacheValue", "desc"))}
+              />
+              <SortHeader
+                label="마지막 사용"
+                align="right"
+                initial="desc"
+                direction={
+                  sort.key === "lastValue" ? sort.direction : undefined
+                }
+                onClick={() => setSort(nextSort(sort, "lastValue", "desc"))}
+              />
+            </div>
 
-        {query.isError && <ErrorState variant="inline" message={expired ? "목록이 갱신되었습니다. 처음부터 다시 불러옵니다." : query.error.message}
-          onRetry={expired ? undefined : () => void query.fetchNextPage()} retrying={query.isFetchingNextPage} className="pt-3" />}
+            {gathering && (
+              <LoadingState
+                variant="inline"
+                message={`전체 ${data.totalCount}명을 모아 정렬하는 중입니다…`}
+                className="py-3"
+              />
+            )}
+            {!gathering && data.totalCount === 0 && (
+              <p role="status" className="py-3 text-xs text-text3">
+                선택 기간에 이 팀에서 식별된 사용자가 없습니다.
+              </p>
+            )}
 
-        <div className="flex flex-wrap items-center gap-3 pt-3">
-          {hasMore && (
-            <Button onClick={() => setVisible((v) => v + TEAM_USERS_PAGE)} disabled={query.isFetchingNextPage || gathering}>
-              {query.isFetchingNextPage && serverOrder ? "불러오는 중…" : `다음 ${Math.min(TEAM_USERS_PAGE, data.totalCount - visible)}명 더보기`}
-            </Button>
-          )}
-          <div className="flex-1" />
-          <span className="tnum text-[11.5px] whitespace-nowrap text-text2">
-            {data.sumNote(rows)}
-          </span>
-        </div>
-      </>}
+            {rows.map((u) => (
+              <div
+                key={u.key}
+                className={`${COLS} border-b border-border px-0.5 py-2.5`}
+              >
+                <span className="overflow-hidden font-mono text-[12px] text-ellipsis whitespace-nowrap text-text2">
+                  {u.account}
+                </span>
+                <span className="tnum text-right text-[12px] text-text2">
+                  {u.sessions}
+                </span>
+                <span className="tnum text-right text-[12px] text-text2">
+                  {u.tokens}
+                </span>
+                <span className="tnum text-right text-[12px] font-semibold">
+                  {u.cost}
+                </span>
+                <span
+                  className="tnum text-right text-[12px] font-semibold"
+                  style={{ color: u.deviationColor }}
+                >
+                  {u.deviationText}
+                </span>
+                <span className="overflow-hidden text-[12px] text-ellipsis whitespace-nowrap text-text2">
+                  {u.model}
+                </span>
+                <span
+                  className="tnum text-right text-[12px]"
+                  style={{ color: u.cacheColor }}
+                >
+                  {u.cache}
+                </span>
+                <span
+                  className="tnum text-right text-[12px]"
+                  style={{ color: u.lastColor }}
+                >
+                  {u.last}
+                </span>
+              </div>
+            ))}
+
+            {query.isError && (
+              <ErrorState
+                variant="inline"
+                message={
+                  expired
+                    ? "목록이 갱신되었습니다. 처음부터 다시 불러옵니다."
+                    : query.error.message
+                }
+                onRetry={expired ? undefined : () => void query.fetchNextPage()}
+                retrying={query.isFetchingNextPage}
+                className="pt-3"
+              />
+            )}
+
+            <div className="flex flex-wrap items-center gap-3 pt-3">
+              {hasMore && (
+                <Button
+                  onClick={() => setVisible((v) => v + TEAM_USERS_PAGE)}
+                  disabled={query.isFetchingNextPage || gathering}
+                >
+                  {query.isFetchingNextPage && serverOrder
+                    ? "불러오는 중…"
+                    : `다음 ${Math.min(TEAM_USERS_PAGE, data.totalCount - visible)}명 더보기`}
+                </Button>
+              )}
+              <div className="flex-1" />
+              <span className="tnum text-[11.5px] whitespace-nowrap text-text2">
+                {data.sumNote(rows)}
+              </span>
+            </div>
+          </>
+        )
+      )}
     </section>
   );
 }

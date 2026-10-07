@@ -7,5 +7,9 @@ export const metadata: Metadata = {
 };
 
 export default function LoginPage() {
-  return <RouteGuard><LoginCard /></RouteGuard>;
+  return (
+    <RouteGuard>
+      <LoginCard />
+    </RouteGuard>
+  );
 }

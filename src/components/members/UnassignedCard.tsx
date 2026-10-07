@@ -68,10 +68,26 @@ export function UnassignedCard({
       }
     >
       <div className="flex flex-col border-t border-border">
-        {error && <ErrorState variant="panel" className="my-2" message={error.message}>
-          {conflict && onReload && <Button size="sm" loading={reloading} loadingLabel="불러오는 중…" onClick={onReload}>최신 목록 불러오기</Button>}
-        </ErrorState>}
-        {picked > ASSIGNMENT_LIMIT && <p className="py-2 text-[11.5px] text-text3">한 번에 {ASSIGNMENT_LIMIT}명까지 배정합니다. 나머지 선택은 그대로 남습니다.</p>}
+        {error && (
+          <ErrorState variant="panel" className="my-2" message={error.message}>
+            {conflict && onReload && (
+              <Button
+                size="sm"
+                loading={reloading}
+                loadingLabel="불러오는 중…"
+                onClick={onReload}
+              >
+                최신 목록 불러오기
+              </Button>
+            )}
+          </ErrorState>
+        )}
+        {picked > ASSIGNMENT_LIMIT && (
+          <p className="py-2 text-[11.5px] text-text3">
+            한 번에 {ASSIGNMENT_LIMIT}명까지 배정합니다. 나머지 선택은 그대로
+            남습니다.
+          </p>
+        )}
         {model.unassignedRows.length === 0 && (
           <p className="py-4 text-[12px] text-text3">모두 배정되었습니다</p>
         )}

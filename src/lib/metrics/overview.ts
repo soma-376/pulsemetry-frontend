@@ -8,10 +8,7 @@ import { aggregateActivity, comparisonRange } from "./activity";
 import { ACTIVITY, SAMPLE_END } from "@/mocks/activity";
 import { int, pct, signedUsd, usd } from "@/lib/format";
 import { contributionColor, costDeltaColor } from "@/lib/metrics/deltas";
-import {
-  ingestBadge,
-  ingestDownCopy,
-} from "@/lib/metrics/observation";
+import { ingestBadge, ingestDownCopy } from "@/lib/metrics/observation";
 import { buildVendorSeats } from "@/lib/metrics/vendor-seats";
 import {
   COVERAGE,
@@ -27,16 +24,30 @@ import { SEED_TEAMS, teamLabel, type Team } from "@/lib/organization";
 
 export type OverviewModel = ReturnType<typeof buildOverview>;
 
-export function buildOverview(compare: CompareKey = "prev_week", dates: DateRange = { start: "2026-09-07", end: SAMPLE_END }, catalog: Team[] = SEED_TEAMS, vendors: VendorRow[] = buildVendorRows({}, []), seatReviewDays = DEFAULT_SEAT_REVIEW_DAYS, source: typeof ACTIVITY = ACTIVITY) {
+export function buildOverview(
+  compare: CompareKey = "prev_week",
+  dates: DateRange = { start: "2026-09-07", end: SAMPLE_END },
+  catalog: Team[] = SEED_TEAMS,
+  vendors: VendorRow[] = buildVendorRows({}, []),
+  seatReviewDays = DEFAULT_SEAT_REVIEW_DAYS,
+  source: typeof ACTIVITY = ACTIVITY,
+) {
   const current = aggregateActivity(dates, source);
   const previous = aggregateActivity(comparisonRange(dates, compare), source);
   const currentTeams = overviewTeams(current.teams, catalog);
   const previousTeams = overviewTeams(previous.teams, catalog);
-  const inventory = aggregateActivity({ start: "0000-01-01", end: "9999-12-31" }, source);
+  const inventory = aggregateActivity(
+    { start: "0000-01-01", end: "9999-12-31" },
+    source,
+  );
   const inventoryUnmapped = overviewTeams(inventory.teams, catalog).unmapped;
-  const showTeamSummary = catalog.length > 1 || inventoryUnmapped.users > 0 || inventoryUnmapped.cost > 0 || inventoryUnmapped.sessions > 0;
+  const showTeamSummary =
+    catalog.length > 1 ||
+    inventoryUnmapped.users > 0 ||
+    inventoryUnmapped.cost > 0 ||
+    inventoryUnmapped.sessions > 0;
   const RANGE_DAYS = dayCount(dates);
-  const growth = (now: number, prev: number) => prev > 0 ? now / prev - 1 : 0;
+  const growth = (now: number, prev: number) => (prev > 0 ? now / prev - 1 : 0);
   const ORG = {
     ...BASE_ORG,
     activeUsers: current.users,
@@ -65,14 +76,20 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
   const cmp = {
     showCompare: compare !== "none",
     canCompare: current.complete && previous.complete && previous.cost > 0,
-    label: compare === "none" ? "" : compare === "prev_week" ? "전주 대비" : "이전 기간 대비",
+    label:
+      compare === "none"
+        ? ""
+        : compare === "prev_week"
+          ? "전주 대비"
+          : "이전 기간 대비",
     reason: isDown ? "수집 중단" : "선택·비교 기간의 관측 데이터 부족",
   };
   const obs = {
     firstObservedIndex: 0,
     hasGap: current.days.length > 0 && !current.complete,
     rangeLabel: `${dates.start} ~ ${dates.end ?? dates.start}`,
-    chartNote: "데이터가 없는 날짜는 차트에서 제외됩니다. 전체 기간 비교는 보류합니다.",
+    chartNote:
+      "데이터가 없는 날짜는 차트에서 제외됩니다. 전체 기간 비교는 보류합니다.",
     coverageNote: `선택 ${RANGE_DAYS}일 중 ${current.days.length}일 관측`,
   };
   const hasGap = obs.hasGap && !isEmpty;
@@ -113,7 +130,10 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
     },
     {
       label: "월 좌석 계약액",
-      value: vendorSeats.monthlyContractAmount === null ? "—" : usd(vendorSeats.monthlyContractAmount),
+      value:
+        vendorSeats.monthlyContractAmount === null
+          ? "—"
+          : usd(vendorSeats.monthlyContractAmount),
       unit: "",
       def: "현재 확인된 좌석제 계약의 수량 × 월 단가 합계(USD) · 종량제·추가 사용료 제외 · 실제 청구액과 별개",
       caption: `현재 확인된 계약 기준 · 조회 기간과 별개${vendorSeats.pendingContracts ? ` · 미확인 ${vendorSeats.pendingContracts}건 제외` : ""}`,
@@ -144,20 +164,29 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
       good: false,
       bad: true,
     },
-  ].map((k, index) => ({ ...k, showDelta: index !== 4 && index !== 2 && showDelta, noDelta: index !== 4 && index !== 2 && noDelta }));
+  ].map((k, index) => ({
+    ...k,
+    showDelta: index !== 4 && index !== 2 && showDelta,
+    noDelta: index !== 4 && index !== 2 && noDelta,
+  }));
 
   /* ── W1.2 일별 시계열 ─────────────────────────────────── */
-  const weekCost = current.days.map((day) => day.teams.reduce((sum, team) => sum + team.cost, 0));
+  const weekCost = current.days.map((day) =>
+    day.teams.reduce((sum, team) => sum + team.cost, 0),
+  );
   const yMax = Math.max(1, ...weekCost) * 1.15;
   const weekTicks = current.days.map((day, i) => ({
-    label: shortDate(day.date), date: day.date, preObserved: false,
+    label: shortDate(day.date),
+    date: day.date,
+    preObserved: false,
     tokens: `${day.teams.reduce((sum, team) => sum + team.tokensM, 0).toFixed(1)}M`,
     cost: usd(weekCost[i]),
   }));
 
   /* ── W1.6 사용 낭비 ───────────────────────────────────── */
   const wasteScale = equivValue / Math.max(current.days.length, 1) / 600;
-  const previousWasteScale = prevEquivValue / Math.max(previous.days.length, 1) / 600;
+  const previousWasteScale =
+    prevEquivValue / Math.max(previous.days.length, 1) / 600;
   const wasteMax = Math.max(...WASTE.map((w) => w.cost));
   const wasteRows = [...WASTE]
     .sort((a, b) => b.cost - a.cost)
@@ -168,8 +197,16 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
         rate: w.rate.toFixed(1) + "%",
         cost: usd(w.cost * wasteScale),
         barWidth: ((w.cost / wasteMax) * 100).toFixed(1) + "%",
-        prevWidth: showDelta ? Math.min(100, w.cost * previousWasteScale / (wasteMax * (wasteScale || 1)) * 100).toFixed(1) + "%" : undefined,
-        delta: showDelta ? (d >= 0 ? "▲ " : "▼ ") + pct(Math.abs(d)).replace("+", "") : "—",
+        prevWidth: showDelta
+          ? Math.min(
+              100,
+              ((w.cost * previousWasteScale) / (wasteMax * (wasteScale || 1))) *
+                100,
+            ).toFixed(1) + "%"
+          : undefined,
+        delta: showDelta
+          ? (d >= 0 ? "▲ " : "▼ ") + pct(Math.abs(d)).replace("+", "")
+          : "—",
         deltaColor: costDeltaColor(d),
       };
     });
@@ -180,32 +217,62 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
 
   /* ── W1.7 팀별 사용량 ─────────────────────────────────── */
   const teams = currentTeams.registered.map((team) => {
-    const prev = previousTeams.registered.find((item) => item.team === team.team)!;
-    return { ...team, contrib: team.cost - prev.cost, perUserPct: growth(team.cost / (team.users || 1), prev.cost / (prev.users || 1)) };
-  });
-  const contribMax = Math.max(...teams.map((team) => Math.abs(team.contrib)), 1);
-  const attrRows = teams.map((t) => {
-    const models = MODEL_META.map((m) => ({ name: m.name, share: (t.models[m.v] ?? 0) / (t.cost || 1) * 100, color: MODEL_COLORS[m.v] ?? "var(--gray)" })).sort((a, b) => b.share - a.share);
+    const prev = previousTeams.registered.find(
+      (item) => item.team === team.team,
+    )!;
     return {
-      teamId: catalog.find((team) => team.sourceName === t.team || team.id === t.team)?.id,
-      vendors: t.vendors.filter((vendor) => vendor.sessions > 0 || vendor.cost > 0).map((vendor) => getVendorProduct(vendor.vendorId ?? "")?.short ?? "벤더 미확인"),
-      team: teamLabel(catalog, t.team), users: int(t.users),
-      userCount: t.users, cost: t.cost,
-      perUser: t.cost / (t.users || 1), contrib: t.contrib,
-      cause: `${models[0].name.replace("claude-", "")} 비중 ${models[0].share.toFixed(0)}%`,
-      costText: usd(t.cost),
-      perUserText: usd(t.cost / (t.users || 1)),
-      perUserDelta: showDelta ? pct(t.perUserPct) : "—",
-      perUserColor: costDeltaColor(t.perUserPct),
-      contribText: showDelta ? signedUsd(t.contrib) : "—",
-      contribColor: contributionColor(t.contrib, orgIncrease),
-      barColor: t.contrib >= 0 ? "var(--red)" : "var(--green)",
-      barWidth: showDelta ? (Math.abs(t.contrib) / contribMax * 100).toFixed(1) + "%" : "0%",
-      sessions: int(t.sessions),
-      tokens: `${t.tokensM.toFixed(1)}M`,
-      models,
+      ...team,
+      contrib: team.cost - prev.cost,
+      perUserPct: growth(
+        team.cost / (team.users || 1),
+        prev.cost / (prev.users || 1),
+      ),
     };
-  }).sort((a, b) => b.cost - a.cost);
+  });
+  const contribMax = Math.max(
+    ...teams.map((team) => Math.abs(team.contrib)),
+    1,
+  );
+  const attrRows = teams
+    .map((t) => {
+      const models = MODEL_META.map((m) => ({
+        name: m.name,
+        share: ((t.models[m.v] ?? 0) / (t.cost || 1)) * 100,
+        color: MODEL_COLORS[m.v] ?? "var(--gray)",
+      })).sort((a, b) => b.share - a.share);
+      return {
+        teamId: catalog.find(
+          (team) => team.sourceName === t.team || team.id === t.team,
+        )?.id,
+        vendors: t.vendors
+          .filter((vendor) => vendor.sessions > 0 || vendor.cost > 0)
+          .map(
+            (vendor) =>
+              getVendorProduct(vendor.vendorId ?? "")?.short ?? "벤더 미확인",
+          ),
+        team: teamLabel(catalog, t.team),
+        users: int(t.users),
+        userCount: t.users,
+        cost: t.cost,
+        perUser: t.cost / (t.users || 1),
+        contrib: t.contrib,
+        cause: `${models[0].name.replace("claude-", "")} 비중 ${models[0].share.toFixed(0)}%`,
+        costText: usd(t.cost),
+        perUserText: usd(t.cost / (t.users || 1)),
+        perUserDelta: showDelta ? pct(t.perUserPct) : "—",
+        perUserColor: costDeltaColor(t.perUserPct),
+        contribText: showDelta ? signedUsd(t.contrib) : "—",
+        contribColor: contributionColor(t.contrib, orgIncrease),
+        barColor: t.contrib >= 0 ? "var(--red)" : "var(--green)",
+        barWidth: showDelta
+          ? ((Math.abs(t.contrib) / contribMax) * 100).toFixed(1) + "%"
+          : "0%",
+        sessions: int(t.sessions),
+        tokens: `${t.tokensM.toFixed(1)}M`,
+        models,
+      };
+    })
+    .sort((a, b) => b.cost - a.cost);
   const unmapped = currentTeams.unmapped;
   const unattrContrib = unmapped.cost - previousTeams.unmapped.cost;
 
@@ -230,11 +297,27 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
       liveCoverage: isEmpty || isDown ? "0%" : COVERAGE.coverageText,
     },
 
-    observation: { ...obs, hasGap, coverageNote: hasGap ? obs.coverageNote : "" },
+    observation: {
+      ...obs,
+      hasGap,
+      coverageNote: hasGap ? obs.coverageNote : "",
+    },
 
     kpis,
     vendorSeats,
-    vendorOverview: buildOverviewVendors(vendors, current, seatReviewDays, inventory.teams.flatMap((team) => team.vendors.filter((vendor) => vendor.cost > 0 || vendor.tokensM > 0 || vendor.sessions > 0).map((vendor) => vendor.vendorId))),
+    vendorOverview: buildOverviewVendors(
+      vendors,
+      current,
+      seatReviewDays,
+      inventory.teams.flatMap((team) =>
+        team.vendors
+          .filter(
+            (vendor) =>
+              vendor.cost > 0 || vendor.tokensM > 0 || vendor.sessions > 0,
+          )
+          .map((vendor) => vendor.vendorId),
+      ),
+    ),
 
     chart: {
       series: buildVendorTrend(current),
@@ -257,15 +340,27 @@ export function buildOverview(compare: CompareKey = "prev_week", dates: DateRang
 
     attribution: {
       show: showTeamSummary,
-      hasUnmapped: inventoryUnmapped.users > 0 || inventoryUnmapped.cost > 0 || inventoryUnmapped.sessions > 0,
+      hasUnmapped:
+        inventoryUnmapped.users > 0 ||
+        inventoryUnmapped.cost > 0 ||
+        inventoryUnmapped.sessions > 0,
       rows: attrRows,
       moreLabel: `전체 ${teams.length}팀`,
-      unmappedVendors: unmapped.vendors.filter((vendor) => vendor.sessions > 0 || vendor.cost > 0).map((vendor) => getVendorProduct(vendor.vendorId ?? "")?.short ?? "벤더 미확인"),
+      unmappedVendors: unmapped.vendors
+        .filter((vendor) => vendor.sessions > 0 || vendor.cost > 0)
+        .map(
+          (vendor) =>
+            getVendorProduct(vendor.vendorId ?? "")?.short ?? "벤더 미확인",
+        ),
       unmappedUsers: int(ORG.unmappedUsers),
       unattributedCostText: usd(unattributedCost),
       unmappedPerUserText: usd(unattributedCost / (ORG.unmappedUsers || 1)),
       unattrText: showDelta ? signedUsd(unattrContrib) : "—",
-      unattrWidth: showDelta ? Math.min(100, Math.abs(unattrContrib) / contribMax * 100).toFixed(1) + "%" : "0%",
+      unattrWidth: showDelta
+        ? Math.min(100, (Math.abs(unattrContrib) / contribMax) * 100).toFixed(
+            1,
+          ) + "%"
+        : "0%",
     },
 
     defs: {

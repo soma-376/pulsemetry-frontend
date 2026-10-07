@@ -26,7 +26,11 @@ export function IngestDownBanner({
         <span className="text-[12.5px] font-semibold text-red">{title}</span>
         <span className="pretty text-[11.5px] text-text2">{detail}</span>
       </div>
-      <ButtonLink href={dashboardHref("/settings#collection")} variant="primary" className="px-3">
+      <ButtonLink
+        href={dashboardHref("/settings#collection")}
+        variant="primary"
+        className="px-3"
+      >
         수집 상태 확인
       </ButtonLink>
     </div>

@@ -37,12 +37,12 @@ npm run dev
 
 정확한 등록 주소:
 
-| 설정 주체 | 주소 |
-| --- | --- |
-| Cognito 개발 app client의 callback URL | `http://localhost:8080/v1/auth/oidc/callback/cognito` |
+| 설정 주체                                | 주소                                                                                              |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Cognito 개발 app client의 callback URL   | `http://localhost:8080/v1/auth/oidc/callback/cognito`                                             |
 | 백엔드 `user-auth.allowed-redirect-uris` | `http://localhost:3000/auth/callback`, 목 브라우저 테스트용 `http://localhost:3107/auth/callback` |
-| 백엔드 `user-auth.allowed-origins` | `http://localhost:3000`, `http://localhost:3107` |
-| 백엔드 `oidc.failure-redirect-uri` | `http://localhost:3000/auth/callback` (임시 세션 유실 시 고정 복귀 주소) |
+| 백엔드 `user-auth.allowed-origins`       | `http://localhost:3000`, `http://localhost:3107`                                                  |
+| 백엔드 `oidc.failure-redirect-uri`       | `http://localhost:3000/auth/callback` (임시 세션 유실 시 고정 복귀 주소)                          |
 
 포트/도메인을 바꾸면 Cognito 앱 클라이언트의 callback 설정과 백엔드 허용 주소를 함께 명시적으로 수정한다. 와일드카드는 쓰지 않는다. 회사별 issuer/client ID/Secret 참조는 `tenants`에 저장하고, 실제 Secret은 Enrollment의 환경변수로 주입한다.
 
@@ -59,7 +59,10 @@ npm run dev
 ```json
 {
   "organizations": [
-    { "organizationId": "1b59ab21-1788-35e0-bfd7-23baa88a35b4", "organizationName": "시드 A · 정상 사용" }
+    {
+      "organizationId": "1b59ab21-1788-35e0-bfd7-23baa88a35b4",
+      "organizationName": "시드 A · 정상 사용"
+    }
   ]
 }
 ```
@@ -96,28 +99,44 @@ state·10분 TTL·복귀 주소·중복 파라미터를 검증한 후에만 교�
 브라우저는 `POST /api/bff/auth/token`에 아래 필드와 선택한 `organizationId`를 보낸다. BFF가 `POST /v1/auth/token`으로 교환한다(60초·일회용 코드). 아래 토큰 응답은 BFF만 받으며 브라우저에는 `{ user }`와 암호화 HttpOnly 쿠키를 반환한다.
 
 ```json
-{ "code": "uac_<43자>", "redirect_uri": "http://localhost:3000/auth/callback", "code_verifier": "<보관한 verifier>" }
+{
+  "code": "uac_<43자>",
+  "redirect_uri": "http://localhost:3000/auth/callback",
+  "code_verifier": "<보관한 verifier>"
+}
 ```
 
 ```json
-{ "access_token": "<Pulsemetry AT>", "refresh_token": "<Pulsemetry RT>", "token_type": "Bearer", "expires_in": 300 }
+{
+  "access_token": "<Pulsemetry AT>",
+  "refresh_token": "<Pulsemetry RT>",
+  "token_type": "Bearer",
+  "expires_in": 300
+}
 ```
 
 BFF가 `GET /v1/auth/me`, `Authorization: Bearer <AT>`로 확인한다. 새로고침 시 브라우저는 `GET /api/bff/auth/session`으로 사용자 정보만 복원한다.
 
 ```json
-{ "memberId": "<UUID>", "organizationId": "<선택한 회사 UUID>", "organizationName": "회사", "email": "owner@example.test", "displayName": "관리자", "role": "admin" }
+{
+  "memberId": "<UUID>",
+  "organizationId": "<선택한 회사 UUID>",
+  "organizationName": "회사",
+  "email": "owner@example.test",
+  "displayName": "관리자",
+  "role": "admin"
+}
 ```
 
 회사가 다르거나 role이 admin이 아니면 저장하지 않고 발급받은 세션을 폐기한다. backend owner/admin은 `/me`에서 admin으로 반환한다. 이후 `GET /api/v1/organizations/{id}/onboarding`의 completed가 true면 `/overview`, false면 `/onboarding`으로 간다. 온보딩 조회 실패는 조회만 재시도하며 코드를 다시 교환하지 않는다.
 
-| 오류 | UI 처리 |
-| --- | --- |
-| login_cancelled | 회사 인증 취소 안내·새 로그인 |
-| member_not_allowed | 사전 등록 회원·회사·신원 연결 조건 불일치 안내·관리자 문의 |
-| invalid_credentials | 인증 검증 실패·새 로그인 |
-| auth_unavailable | IdP/인증 서버 장애·나중에 재시도 |
-| login_expired 또는 state 누락/불일치 | 만료/유효하지 않은 요청 안내·교환 금지 |
+| 오류                                 | UI 처리                                                    |
+| ------------------------------------ | ---------------------------------------------------------- |
+| login_cancelled                      | 회사 인증 취소 안내·새 로그인                              |
+| member_not_allowed                   | 사전 등록 회원·회사·신원 연결 조건 불일치 안내·관리자 문의 |
+| invalid_credentials                  | 인증 검증 실패·새 로그인                                   |
+| auth_unavailable                     | IdP/인증 서버 장애·나중에 재시도                           |
+| login_expired 또는 state 누락/불일치 | 만료/유효하지 않은 요청 안내·교환 금지                     |
 
 저장된 안전한 복귀 요청이 있는 인증 실패만 error/state로 리다이렉트한다. 시작 단계의 잘못된 tenant/redirect/입력이나 제한은 백엔드 JSON 4xx/5xx이며 임의 URI로 리다이렉트하지 않는다. 백엔드 임시 세션이 사라진 경우 요청 파라미터를 믿지 않고 고정 failure URI로만 보낸다.
 
@@ -132,7 +151,6 @@ BFF는 만료 직전 또는 upstream 401에서 갱신하고 동일 RT의 진행 
 브라우저는 `POST /api/bff/auth/logout`을 호출한다. BFF가 backend `/v1/auth/logout`으로 세션을 폐기하고 쿠키와 갱신 캐시를 제거한다.
 IdP SSO 쿠키는 유지되므로 같은 브라우저의 재로그인은 비밀번호 입력을 생략할 수 있다.
 `/api/dev/seed-login`은 삭제했으며 구 서버 비밀번호 API는 410이다.
-
 
 ## 검증
 

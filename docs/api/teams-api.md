@@ -8,11 +8,11 @@
 
 기본 경로: /api/v1/organizations/{organizationId}
 
-| 요청 | 쿼리/응답 |
-| --- | --- |
-| GET /analytics/teams | startDate, endDate, compare, timeZone + sort=cost/token/session(기본 cost), limit=20(최대 50), cursor, snapshotId → TeamsResponse |
-| GET /analytics/teams/{teamId} | 같은 기간·비교·snapshotId → TeamDetailResponse |
-| GET /analytics/teams/{teamId}/users | startDate, endDate, timeZone, snapshotId, limit=12(최대 100), cursor → TeamUsersResponse |
+| 요청                                | 쿼리/응답                                                                                                                         |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| GET /analytics/teams                | startDate, endDate, compare, timeZone + sort=cost/token/session(기본 cost), limit=20(최대 50), cursor, snapshotId → TeamsResponse |
+| GET /analytics/teams/{teamId}       | 같은 기간·비교·snapshotId → TeamDetailResponse                                                                                    |
+| GET /analytics/teams/{teamId}/users | startDate, endDate, timeZone, snapshotId, limit=12(최대 100), cursor → TeamUsersResponse                                          |
 
 첫 조회는 조직 합계·모델 산점도·팀 목록 첫 페이지·그 팀들의 추이/모델 믹스를 함께 반환한다.
 행에 드로어 데이터가 있으므로 동일 snapshot에서는 다시 조회하지 않는다. 직접 링크로 팀을 열 때만 상세 GET.
@@ -68,7 +68,11 @@ type TeamUser = {
   account: string;
   usage: Usage;
   mainModel: { modelId: string; displayName: string } | null;
-  cache: { readTokens: number | null; eligibleInputTokens: number | null; hitRatio: number | null };
+  cache: {
+    readTokens: number | null;
+    eligibleInputTokens: number | null;
+    hitRatio: number | null;
+  };
   lastUsedAt: string | null;
 };
 type TeamUsersResponse = {
@@ -88,24 +92,24 @@ type TeamUsersResponse = {
 
 ## 화면과 필드 대응
 
-| UI | 데이터 / 계산 |
-| --- | --- |
-| 비용 탭 | totals.current.equivalentCostUsd, 팀 current.equivalentCostUsd |
-| 토큰 탭 | totals.current.tokens.total, 팀 current.tokens.total |
-| 세션 탭 | totals.current.sessionCount, 팀 current.sessionCount |
-| 사용자당 | 팀 선택 지표 / 팀 activeUsers |
-| 비용 탭 세션당 | equivalentCostUsd / sessionCount |
-| 토큰 탭 백만당 비용 | equivalentCostUsd / tokens.total × 1,000,000 |
-| 세션 탭 세션당 토큰 | tokens.total / sessionCount |
-| 전주/이전 기간 증감 | 동일 팀 current/previous. 비교 비활성·미관측·이전 0의 처리는 개요 규칙 |
-| 누적 추이 | 비용/토큰은 일별 값을 누적하고 값이 없는 날부터 선을 끊는다. 세션은 cumulativeSessionCount 직접 사용(null인 날부터 끊는다) |
+| UI                   | 데이터 / 계산                                                                                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 비용 탭              | totals.current.equivalentCostUsd, 팀 current.equivalentCostUsd                                                                                         |
+| 토큰 탭              | totals.current.tokens.total, 팀 current.tokens.total                                                                                                   |
+| 세션 탭              | totals.current.sessionCount, 팀 current.sessionCount                                                                                                   |
+| 사용자당             | 팀 선택 지표 / 팀 activeUsers                                                                                                                          |
+| 비용 탭 세션당       | equivalentCostUsd / sessionCount                                                                                                                       |
+| 토큰 탭 백만당 비용  | equivalentCostUsd / tokens.total × 1,000,000                                                                                                           |
+| 세션 탭 세션당 토큰  | tokens.total / sessionCount                                                                                                                            |
+| 전주/이전 기간 증감  | 동일 팀 current/previous. 비교 비활성·미관측·이전 0의 처리는 개요 규칙                                                                                 |
+| 누적 추이            | 비용/토큰은 일별 값을 누적하고 값이 없는 날부터 선을 끊는다. 세션은 cumulativeSessionCount 직접 사용(null인 날부터 끊는다)                             |
 | 팀별 벤더(제품) 비중 | products의 선택 축 값(equivalentCostUsd·totalTokens·sessionCount) / 팀의 같은 축 값. 하나라도 null이면 비중을 그리지 않는다. kind null은 "미확인 제품" |
-| 모델 산점도 | x=totalTokens, y=equivalentCostUsd, 점 크기=usingTeamCount |
-| 팀별 모델 구성 | 비용이면 모델 금액 비중, 토큰이면 모델 토큰 비중 |
-| 사용자 표 | users.items + summary. 비용 내림차순, 동률 memberId |
-| 평균 대비 | (개인 금액 / summary.averageEquivalentCostUsd) - 1 |
-| 드로어 증가 기여 | current.equivalentCostUsd - previous.equivalentCostUsd |
-| 드로어 주요 모델 | 모델 금액 내림차순과 해당 팀 금액 대비 비중 |
+| 모델 산점도          | x=totalTokens, y=equivalentCostUsd, 점 크기=usingTeamCount                                                                                             |
+| 팀별 모델 구성       | 비용이면 모델 금액 비중, 토큰이면 모델 토큰 비중                                                                                                       |
+| 사용자 표            | users.items + summary. 비용 내림차순, 동률 memberId                                                                                                    |
+| 평균 대비            | (개인 금액 / summary.averageEquivalentCostUsd) - 1                                                                                                     |
+| 드로어 증가 기여     | current.equivalentCostUsd - previous.equivalentCostUsd                                                                                                 |
+| 드로어 주요 모델     | 모델 금액 내림차순과 해당 팀 금액 대비 비중                                                                                                            |
 
 분모 0이나 필요한 값이 null이면 파생값도 null이다. 미배정은 일반 팀과 같은 수치 구조지만 ID는 null이다.
 팀 체크박스는 차트의 선 표시만 바꾸며 전체 합계와 분모를 바꾸지 않는다.

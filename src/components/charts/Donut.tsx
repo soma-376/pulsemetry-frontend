@@ -79,7 +79,10 @@ export function Donut({
           onPointerEnter={() => onHover?.(i)}
           onClick={() => onSelect?.(i)}
           initial={false}
-          animate={{ opacity: activeIndex === null || activeIndex === i ? 1 : 0.28, strokeWidth: activeIndex === i ? thickness + 3 : thickness }}
+          animate={{
+            opacity: activeIndex === null || activeIndex === i ? 1 : 0.28,
+            strokeWidth: activeIndex === i ? thickness + 3 : thickness,
+          }}
           style={{
             cursor: onSelect ? "pointer" : undefined,
             pointerEvents: "stroke",

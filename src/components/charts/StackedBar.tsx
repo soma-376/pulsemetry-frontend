@@ -47,8 +47,16 @@ export function StackedBar({
           title={s.tip}
           style={
             vertical
-              ? { width: "100%", height: `${(s.share * 100).toFixed(1)}%`, background: s.color }
-              : { height: "100%", width: `${(s.share * 100).toFixed(1)}%`, background: s.color }
+              ? {
+                  width: "100%",
+                  height: `${(s.share * 100).toFixed(1)}%`,
+                  background: s.color,
+                }
+              : {
+                  height: "100%",
+                  width: `${(s.share * 100).toFixed(1)}%`,
+                  background: s.color,
+                }
           }
         />
       ))}

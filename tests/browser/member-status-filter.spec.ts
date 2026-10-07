@@ -2,9 +2,13 @@ import { expect, test } from "./fixtures";
 import { openDashboard } from "./helpers";
 import { mockMembers } from "./members-fixture";
 
-test.beforeEach(async ({ page }) => { await mockMembers(page); });
+test.beforeEach(async ({ page }) => {
+  await mockMembers(page);
+});
 
-test("status header menu supports keyboard selection, search, reset and dismissal", async ({ page }) => {
+test("status header menu supports keyboard selection, search, reset and dismissal", async ({
+  page,
+}) => {
   await openDashboard(page, "/members");
   const card = page.getByRole("region", { name: "구성원 목록", exact: true });
   const trigger = card.getByRole("button", { name: /^상태 필터/ });
@@ -12,8 +16,12 @@ test("status header menu supports keyboard selection, search, reset and dismissa
   const rows = card.getByRole("button", { name: /구성원 상세$/ });
   await trigger.click();
   await expect(menu).toBeVisible();
-  await expect(menu.getByRole("menuitemradio", { name: "전체", exact: true })).toBeFocused();
-  await page.screenshot({ path: "test-results/member-status-menu-desktop.png" });
+  await expect(
+    menu.getByRole("menuitemradio", { name: "전체", exact: true }),
+  ).toBeFocused();
+  await page.screenshot({
+    path: "test-results/member-status-menu-desktop.png",
+  });
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Enter");
@@ -21,14 +29,20 @@ test("status header menu supports keyboard selection, search, reset and dismissa
   await expect(trigger).toBeFocused();
   await expect(trigger).toHaveText("상태: 회수 후보");
   expect(await rows.count()).toBeGreaterThan(0);
-  for (const row of await rows.all()) await expect(row.getByText("회수 후보", { exact: true })).toBeVisible();
-  const account = (await rows.first().getAttribute("aria-label"))!.replace(" 구성원 상세", "");
+  for (const row of await rows.all())
+    await expect(row.getByText("회수 후보", { exact: true })).toBeVisible();
+  const account = (await rows.first().getAttribute("aria-label"))!.replace(
+    " 구성원 상세",
+    "",
+  );
   const search = card.getByRole("textbox", { name: "구성원 검색" });
   await search.fill(account);
   await search.press("Enter");
   await expect(rows).toHaveCount(1);
   await trigger.click();
-  await expect(menu.getByRole("menuitemradio", { name: "회수 후보", exact: true })).toHaveAttribute("aria-checked", "true");
+  await expect(
+    menu.getByRole("menuitemradio", { name: "회수 후보", exact: true }),
+  ).toHaveAttribute("aria-checked", "true");
   await menu.getByRole("menuitemradio", { name: "전체", exact: true }).click();
   await expect(rows).toHaveCount(1);
   await search.fill("");
@@ -52,14 +66,18 @@ test("status header menu supports keyboard selection, search, reset and dismissa
   await expect(rows.first()).toBeFocused();
 });
 
-test("status menu uses theme tokens and remains inside a narrow viewport", async ({ page }) => {
+test("status menu uses theme tokens and remains inside a narrow viewport", async ({
+  page,
+}) => {
   await openDashboard(page, "/members");
   await page.setViewportSize({ width: 390, height: 800 });
   await page.getByRole("button", { name: "내비게이션 접기/펼치기" }).click();
   const trigger = page.getByRole("button", { name: "상태 필터", exact: true });
   const menu = page.getByRole("menu", { name: "상태 필터" });
   for (const theme of ["light", "dark"]) {
-    await page.evaluate((value) => { document.documentElement.dataset.theme = value; }, theme);
+    await page.evaluate((value) => {
+      document.documentElement.dataset.theme = value;
+    }, theme);
     await trigger.click();
     await expect(menu).toBeVisible();
     const bounds = (await menu.boundingBox())!;
@@ -67,15 +85,21 @@ test("status menu uses theme tokens and remains inside a narrow viewport", async
     expect(bounds.y).toBeGreaterThanOrEqual(0);
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
     expect(bounds.y + bounds.height).toBeLessThanOrEqual(800);
-    expect(await menu.evaluate((element) => {
-      const probe = document.createElement("div");
-      probe.style.backgroundColor = "var(--card)";
-      element.appendChild(probe);
-      const matches = getComputedStyle(element).backgroundColor === getComputedStyle(probe).backgroundColor;
-      probe.remove();
-      return matches;
-    })).toBe(true);
-    await page.screenshot({ path: `test-results/member-status-menu-${theme}.png` });
+    expect(
+      await menu.evaluate((element) => {
+        const probe = document.createElement("div");
+        probe.style.backgroundColor = "var(--card)";
+        element.appendChild(probe);
+        const matches =
+          getComputedStyle(element).backgroundColor ===
+          getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        return matches;
+      }),
+    ).toBe(true);
+    await page.screenshot({
+      path: `test-results/member-status-menu-${theme}.png`,
+    });
     await page.keyboard.press("Escape");
   }
 });

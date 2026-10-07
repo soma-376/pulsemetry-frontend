@@ -28,20 +28,32 @@ const presentation: Record<string, { short: string; color: string }> = {
   gemini: { short: "Gemini Code Assist", color: "var(--text2)" },
   other: { short: "기타", color: "var(--text2)" },
 };
-export const VENDOR_CATALOG: VendorProduct[] = SEED_CATALOG.items.map(product => ({
-  kind: product.id, label: product.displayName,
-  short: presentation[product.id]?.short ?? product.displayName,
-  product: product.product,
-  family: product.provider === "anthropic" || product.provider === "openai" ? product.provider : "generic",
-  color: presentation[product.id]?.color ?? "var(--text2)",
-  allowsSeatTiers: product.allowsSeatTiers,
-  plans: SEED_CATALOG.plans[product.id].map(plan => ({
-    v: plan.id, label: plan.displayName, bill: plan.billing, usage: plan.separateUsageBilling,
-    note: "계약서에 기재된 좌석 수와 월 단가를 입력하세요",
-  })),
-}));
+export const VENDOR_CATALOG: VendorProduct[] = SEED_CATALOG.items.map(
+  (product) => ({
+    kind: product.id,
+    label: product.displayName,
+    short: presentation[product.id]?.short ?? product.displayName,
+    product: product.product,
+    family:
+      product.provider === "anthropic" || product.provider === "openai"
+        ? product.provider
+        : "generic",
+    color: presentation[product.id]?.color ?? "var(--text2)",
+    allowsSeatTiers: product.allowsSeatTiers,
+    plans: SEED_CATALOG.plans[product.id].map((plan) => ({
+      v: plan.id,
+      label: plan.displayName,
+      bill: plan.billing,
+      usage: plan.separateUsageBilling,
+      note: "계약서에 기재된 좌석 수와 월 단가를 입력하세요",
+    })),
+  }),
+);
 
-export const ADD_KINDS = VENDOR_CATALOG.map(({ kind, label }) => ({ v: kind, label }));
+export const ADD_KINDS = VENDOR_CATALOG.map(({ kind, label }) => ({
+  v: kind,
+  label,
+}));
 
 export function getVendorProduct(kind: string) {
   return VENDOR_CATALOG.find((product) => product.kind === kind);
@@ -54,16 +66,25 @@ export const PLAN_SETS: Record<VendorFamily, Plan[]> = {
   generic: getVendorProduct("other")!.plans,
 };
 
-export function getVendorPlans(kind?: string, family: VendorFamily = "generic"): Plan[] {
-  return kind ? getVendorProduct(kind)?.plans ?? [] : PLAN_SETS[family];
+export function getVendorPlans(
+  kind?: string,
+  family: VendorFamily = "generic",
+): Plan[] {
+  return kind ? (getVendorProduct(kind)?.plans ?? []) : PLAN_SETS[family];
 }
 
 export function allowsSeatTiers(kind?: string) {
-  return kind ? getVendorProduct(kind)?.allowsSeatTiers ?? false : true;
+  return kind ? (getVendorProduct(kind)?.allowsSeatTiers ?? false) : true;
 }
 
 export function vendorIdentity(kind: string) {
   const product = getVendorProduct(kind);
   if (!product) throw new Error(`Unknown vendor product: ${kind}`);
-  return { kind, name: product.short, short: product.short, product: product.product, family: product.family };
+  return {
+    kind,
+    name: product.short,
+    short: product.short,
+    product: product.product,
+    family: product.family,
+  };
 }

@@ -20,7 +20,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
       <body className="min-h-screen bg-bg text-text antialiased">
-        <ThemeProvider><OrganizationProvider><QueryProvider>{children}</QueryProvider></OrganizationProvider></ThemeProvider>
+        <ThemeProvider>
+          <OrganizationProvider>
+            <QueryProvider>{children}</QueryProvider>
+          </OrganizationProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

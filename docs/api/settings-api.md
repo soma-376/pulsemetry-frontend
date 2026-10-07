@@ -7,12 +7,12 @@
 
 기본 경로: /api/v1/organizations/{organizationId}
 
-| 요청 | 쿼리 / 응답 |
-| --- | --- |
-| GET /settings | 없음 → SettingsResponse |
-| GET /vendors | limit=20, cursor, snapshotId → VendorsResponse |
-| GET /vendors/{vendorId} | 없음 → VendorResponse |
-| GET /installations | policyStatus=outdated, limit=20, cursor, snapshotId → InstallationsResponse |
+| 요청                    | 쿼리 / 응답                                                                 |
+| ----------------------- | --------------------------------------------------------------------------- |
+| GET /settings           | 없음 → SettingsResponse                                                     |
+| GET /vendors            | limit=20, cursor, snapshotId → VendorsResponse                              |
+| GET /vendors/{vendorId} | 없음 → VendorResponse                                                       |
+| GET /installations      | policyStatus=outdated, limit=20, cursor, snapshotId → InstallationsResponse |
 
 설정 첫 조회에 벤더 첫 20개, 전체 벤더 요약, 정책, 정책 적용 수, 알림 규칙을 묶는다.
 드로어는 목록의 Vendor를 활용한다. 미적용 설치의 상세 목록은 모달을 열 때 조회한다.
@@ -25,7 +25,12 @@ type VendorContractDto = {
   effectiveFrom: string;
   effectiveTo: string | null;
   termNote: string | null;
-  tiers: { tierId: string; label: string; seats: number; monthlyFeePerSeatUsd: Money }[];
+  tiers: {
+    tierId: string;
+    label: string;
+    seats: number;
+    monthlyFeePerSeatUsd: Money;
+  }[];
   monthlySeatFeeUsd: Money | null;
   confirmedAt: string;
   confirmedBy: string;
@@ -47,16 +52,20 @@ type Vendor = {
   meteredMonthToDate: Section<{
     startDate: string;
     endDate: string;
-    equivalentCostUsd: Money | null;  // 서버는 이 절에서 늘 null(환산 비용은 개요·팀의 제품별 사용)
-    actualBilledUsd: Money | null;    // 벤더 청구 누계(서버 ADR 0050) — 환산 비용·계약액이 아니다
-    billingKind?: "usage_cost" | "usage_spend" | null;  // 가산: 이번 달 사용 비용 · 이번 청구 주기 사용 지출
-    finalized?: boolean | null;                         // 가산: false 면 벤더가 고칠 수 있는 진행 중 값
-    source?: "connector" | "seed" | null;               // 가산: seed 는 개발 시드(실제 청구 아님)
+    equivalentCostUsd: Money | null; // 서버는 이 절에서 늘 null(환산 비용은 개요·팀의 제품별 사용)
+    actualBilledUsd: Money | null; // 벤더 청구 누계(서버 ADR 0050) — 환산 비용·계약액이 아니다
+    billingKind?: "usage_cost" | "usage_spend" | null; // 가산: 이번 달 사용 비용 · 이번 청구 주기 사용 지출
+    finalized?: boolean | null; // 가산: false 면 벤더가 고칠 수 있는 진행 중 값
+    source?: "connector" | "seed" | null; // 가산: seed 는 개발 시드(실제 청구 아님)
     fetchedAt?: string | null;
   }>;
   checks: { code: string; severity: "info" | "warning" }[];
-  seatSource?: SeatSource;                                             // 서버 가산(ADR 0048) — 아래 "좌석 원천·벤더 연결"
-  seats?: Section<{ assigned: number; contracted: number | null; unallocated: number | null }>;  // 서버 가산 — 좌석 원장
+  seatSource?: SeatSource; // 서버 가산(ADR 0048) — 아래 "좌석 원천·벤더 연결"
+  seats?: Section<{
+    assigned: number;
+    contracted: number | null;
+    unallocated: number | null;
+  }>; // 서버 가산 — 좌석 원장
 };
 type CollectionPolicy = {
   version: number; // 원문 선택이 실린 manifest 판(설치에 배포하는 정책)
@@ -71,7 +80,10 @@ type CollectionPolicy = {
   settingsUpdatedAt: string | null;
   settingsUpdatedBy: string | null;
   reclaimIdleDaysSource: "organization" | "default"; // default = 서버 기본 설정
-  options: { reclaimIdleDays: number[]; aggregateRetentionMonths: (number | null)[] };
+  options: {
+    reclaimIdleDays: number[];
+    aggregateRetentionMonths: (number | null)[];
+  };
   cleanupOperationId: string | null; // 이 조직의 가장 최근 보존 정리 작업
 };
 type AlertRule = {
@@ -98,22 +110,31 @@ type SettingsResponse = {
     unconfiguredVendors: number;
     monthlySeatFeeUsd: Money | null;
     contractedSeats: number | null;
-    activeSeats7d: number | null;     // 지난 7일 그 제품을 쓴 배정 좌석(좌석 원장) — 판정할 수 없으면 null
-    assignedSeats?: number | null;    // 서버 가산 — 배정 좌석 합(쓸 수 있는 원장만)
-    meteredMonthToDate: Section<{ equivalentCostUsd: Money | null; actualBilledUsd: Money | null }>;  // 모든 제품이 같은 기간 값을 가질 때만 합(아니면 사유)
+    activeSeats7d: number | null; // 지난 7일 그 제품을 쓴 배정 좌석(좌석 원장) — 판정할 수 없으면 null
+    assignedSeats?: number | null; // 서버 가산 — 배정 좌석 합(쓸 수 있는 원장만)
+    meteredMonthToDate: Section<{
+      equivalentCostUsd: Money | null;
+      actualBilledUsd: Money | null;
+    }>; // 모든 제품이 같은 기간 값을 가질 때만 합(아니면 사유)
   };
   catalog: {
     kinds: { kind: string; displayName: string }[];
     plans: {
-      planId: string; kind: string; displayName: string;
-      billing: "seat" | "metered"; separateUsageBilling: boolean;
+      planId: string;
+      kind: string;
+      displayName: string;
+      billing: "seat" | "metered";
+      separateUsageBilling: boolean;
     }[];
   };
   vendors: Page<Vendor>;
   collectionPolicy: CollectionPolicy;
   policyRollout: {
-    desiredVersion: number; eligibleInstallations: number;
-    appliedInstallations: number; outdatedInstallations: number; unknownInstallations: number;
+    desiredVersion: number;
+    eligibleInstallations: number;
+    appliedInstallations: number;
+    outdatedInstallations: number;
+    unknownInstallations: number;
     /** 판정 근거별 설치 수(서버 가산). 합은 eligibleInstallations. 가산 전 서버는 보내지 않는다 */
     evidence?: { heartbeat: number; appliedConfirmation: number; none: number };
   };
@@ -125,9 +146,14 @@ type InstallationsResponse = {
   meta: CurrentMeta;
   desiredPolicyVersion: number;
   installations: Page<{
-    installationId: string; memberId: string | null; account: string | null;
-    team: TeamRef; agentVersion: string | null; appliedPolicyVersion: number | null;
-    lastHeartbeatAt: string | null; canNotify: boolean;
+    installationId: string;
+    memberId: string | null;
+    account: string | null;
+    team: TeamRef;
+    agentVersion: string | null;
+    appliedPolicyVersion: number | null;
+    lastHeartbeatAt: string | null;
+    canNotify: boolean;
     /** 지금 판의 근거(서버 가산): 마지막 설치 보고 · 보고가 없어 쓴 적용 확인 기록 · 근거 없음 */
     appliedEvidence: "heartbeat" | "applied_confirmation" | "none";
     /** 근거가 applied_confirmation 일 때 그 판의 적용 확인 시각. 그 밖에는 null */
@@ -141,7 +167,11 @@ type ContractWrite = {
   termNote: string | null;
   tiers: { label: string; seats: number; monthlyFeePerSeatUsd: Money }[];
 };
-type CreateVendorRequest = { kind: string; displayName: string; contract: ContractWrite };
+type CreateVendorRequest = {
+  kind: string;
+  displayName: string;
+  contract: ContractWrite;
+};
 type SaveContractRequest = {
   expectedVersion: number;
   displayName: string;
@@ -155,30 +185,39 @@ type PolicySaveRequest = {
   aggregateRetentionMonths?: 12 | 24 | 36 | null;
 };
 type PolicySaved = {
-  version: number; collectRawContent: boolean | null; confirmedAt: string | null;
-  application: "future_enrollments"; existingInstallationsUpdated: false;
-  reclaimIdleDays: number | null; aggregateRetentionMonths: number | null;
-  settingsVersion: number; settingsUpdatedAt: string | null;
+  version: number;
+  collectRawContent: boolean | null;
+  confirmedAt: string | null;
+  application: "future_enrollments";
+  existingInstallationsUpdated: false;
+  reclaimIdleDays: number | null;
+  aggregateRetentionMonths: number | null;
+  settingsVersion: number;
+  settingsUpdatedAt: string | null;
   cleanupOperationId: string | null;
 };
 type AlertRulePatchRequest = { expectedVersion: number; enabled: boolean };
-type NotifyInstallationsRequest = { installationIds: string[]; expectedPolicyVersion: number };
+type NotifyInstallationsRequest = {
+  installationIds: string[];
+  expectedPolicyVersion: number;
+};
 ```
 
 ## 벤더 계약 저장/삭제
 
-| 요청 | 본문 / 결과 |
-| --- | --- |
-| POST /vendors | CreateVendorRequest → 201 VendorResponse + Location |
-| PUT /vendors/{vendorId}/contract | SaveContractRequest → 200 VendorResponse |
-| DELETE /vendors/{vendorId}/contract | 본문 없음, If-Match: "vendor-{version}" → 204 |
-| DELETE /vendors/{vendorId} | 본문 없음, If-Match: "vendor-{version}" → 204 |
+| 요청                                | 본문 / 결과                                         |
+| ----------------------------------- | --------------------------------------------------- |
+| POST /vendors                       | CreateVendorRequest → 201 VendorResponse + Location |
+| PUT /vendors/{vendorId}/contract    | SaveContractRequest → 200 VendorResponse            |
+| DELETE /vendors/{vendorId}/contract | 본문 없음, If-Match: "vendor-{version}" → 204       |
+| DELETE /vendors/{vendorId}          | 본문 없음, If-Match: "vendor-{version}" → 204       |
 
 version은 Vendor.version이다. 계약이 아직 없어도 Vendor.version으로 동시 편집을 검사한다.
 GET 단건 응답 ETag도 같은 형식이다. 저장은 계약과 displayName을 한 트랜잭션으로 반영한다.
 신규/갱신된 계약의 confirmedAt/confirmedBy는 서버가 기록하며 UI 저장 버튼은 저장과 확인을 함께 수행한다.
 
 요청 예:
+
 ```json
 {
   "expectedVersion": 3,
@@ -188,7 +227,9 @@ GET 단건 응답 ETag도 같은 형식이다. 저장은 계약과 displayName�
     "effectiveFrom": "2026-09-20",
     "effectiveTo": null,
     "termNote": "월 단위 계약",
-    "tiers": [{"label":"표준","seats":20,"monthlyFeePerSeatUsd":"30.000000"}]
+    "tiers": [
+      { "label": "표준", "seats": 20, "monthlyFeePerSeatUsd": "30.000000" }
+    ]
   }
 }
 ```
@@ -218,27 +259,47 @@ GET 단건 응답 ETag도 같은 형식이다. 저장은 계약과 displayName�
 
 ```ts
 type SeatSource = {
-  authority: "connector" | "manual"; provisional: boolean;
-  connector: { connectorId: string; accountKind: "email" | "github_login"; capabilities: string[]; settingKeys: string[]; supported: string[] } | null;
-  connection: { connectionId: string; version: number; connectorId: string; settings: Record<string, string>;
-    credential: { configured: true; updatedAt: string };   // 비밀은 다시 오지 않는다
+  authority: "connector" | "manual";
+  provisional: boolean;
+  connector: {
+    connectorId: string;
+    accountKind: "email" | "github_login";
+    capabilities: string[];
+    settingKeys: string[];
+    supported: string[];
+  } | null;
+  connection: {
+    connectionId: string;
+    version: number;
+    connectorId: string;
+    settings: Record<string, string>;
+    credential: { configured: true; updatedAt: string }; // 비밀은 다시 오지 않는다
     check: { status: string; checkedAt: string | null };
-    sync: SyncState; billing?: SyncState | null; createdAt: string; updatedAt: string } | null;
+    sync: SyncState;
+    billing?: SyncState | null;
+    createdAt: string;
+    updatedAt: string;
+  } | null;
 };
-type SyncState = { status: "pending" | "succeeded" | "failing"; lastSucceededAt: string | null; lastFailedAt: string | null; lastError: string | null };
+type SyncState = {
+  status: "pending" | "succeeded" | "failing";
+  lastSucceededAt: string | null;
+  lastFailedAt: string | null;
+  lastError: string | null;
+};
 ```
 
-| 요청 | 본문 / 결과 |
-| --- | --- |
-| PUT /vendors/{vendorId}/connection | { expectedVersion(새 연결 0), settings, credential } → 200 { seatSource } |
-| DELETE /vendors/{vendorId}/connection | If-Match: "connection-{version}" → 204 |
-| POST /vendors/{vendorId}/connection/verify | 없음 → 200 { seatSource } |
-| POST /vendors/{vendorId}/connection/sync | {} → 202 OperationResponse(kind seat_sync) |
-| GET /vendors/{vendorId}/seats | limit=50, cursor, snapshotId → VendorSeatsResponse(대시보드) |
-| POST /vendors/{vendorId}/seats | { account, tierId?, note?, memberId?, expectedVersion?(다시 배정) } → 201·200 |
-| PATCH /vendors/{vendorId}/seats/{seatId} | { expectedVersion, tierId?, note?, memberId?, memberLink?: "automatic" } → 200 |
-| POST /vendors/{vendorId}/seats/{seatId}/release | { expectedVersion } → 200 |
-| POST /vendors/{vendorId}/seats/import | { mode: "preview" \| "apply", csv } → 200 { import, provisional } · 오류면 422 seat_import_invalid + details |
+| 요청                                            | 본문 / 결과                                                                                                  |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| PUT /vendors/{vendorId}/connection              | { expectedVersion(새 연결 0), settings, credential } → 200 { seatSource }                                    |
+| DELETE /vendors/{vendorId}/connection           | If-Match: "connection-{version}" → 204                                                                       |
+| POST /vendors/{vendorId}/connection/verify      | 없음 → 200 { seatSource }                                                                                    |
+| POST /vendors/{vendorId}/connection/sync        | {} → 202 OperationResponse(kind seat_sync)                                                                   |
+| GET /vendors/{vendorId}/seats                   | limit=50, cursor, snapshotId → VendorSeatsResponse(대시보드)                                                 |
+| POST /vendors/{vendorId}/seats                  | { account, tierId?, note?, memberId?, expectedVersion?(다시 배정) } → 201·200                                |
+| PATCH /vendors/{vendorId}/seats/{seatId}        | { expectedVersion, tierId?, note?, memberId?, memberLink?: "automatic" } → 200                               |
+| POST /vendors/{vendorId}/seats/{seatId}/release | { expectedVersion } → 200                                                                                    |
+| POST /vendors/{vendorId}/seats/import           | { mode: "preview" \| "apply", csv } → 200 { import, provisional } · 오류면 422 seat_import_invalid + details |
 
 - 자격증명은 저장 요청에만 싣는다. 화면은 저장 뒤 입력을 지우고 다시 보여 주지 않는다(브라우저 저장소에도 두지 않는다).
 - 연결이 있는 제품은 동기화가 좌석을 정한다 — 수동 배정·해제·가져오기는 409 connector_managed. 보정(구성원 연결·유형·메모)은 된다.
@@ -255,8 +316,13 @@ PUT /api/v1/organizations/{organizationId}/collection-policy(enrollment 서비�
 허용 밖의 값·판 누락은 400 `invalid_request`(`fieldErrors`)다.
 
 예:
+
 ```json
-{"expectedVersion":4,"expectedSettingsVersion":2,"aggregateRetentionMonths":12}
+{
+  "expectedVersion": 4,
+  "expectedSettingsVersion": 2,
+  "aggregateRetentionMonths": 12
+}
 ```
 
 - 원문 정책은 프롬프트·응답뿐 아니라 도구 인수/파일 경로/오류 본문까지 적용할 범위를 수집기와 합의한다.
