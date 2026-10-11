@@ -73,7 +73,7 @@ export async function createLogin(
     state,
     createdAt: now,
   });
-  const url = new URL(`${enrollmentUrl()}/v1/auth/oidc/authorize`);
+  const url = new URL(`${enrollmentUrl()}/api/v1/auth/oidc/authorize`);
   url.search = new URLSearchParams({
     tenant_id: organizationId,
     redirect_uri: redirectUri,

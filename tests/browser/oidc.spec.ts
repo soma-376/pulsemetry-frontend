@@ -27,7 +27,7 @@ for (const [error, message] of [
     page.on("request", (r) => {
       if (r.url().endsWith("/api/bff/auth/token")) exchanges++;
     });
-    await page.route("**/v1/auth/oidc/authorize?*", (route) => {
+    await page.route("**/api/v1/auth/oidc/authorize?*", (route) => {
       const p = new URL(route.request().url()).searchParams;
       return route.fulfill({
         status: 302,
@@ -57,7 +57,7 @@ test("state 변조와 콜백 재진입을 거부한다", async ({ page }) => {
     if (r.url().endsWith("/api/bff/auth/token") && r.method() === "POST")
       exchanges++;
   });
-  await page.route("**/v1/auth/oidc/authorize?*", (route) => {
+  await page.route("**/api/v1/auth/oidc/authorize?*", (route) => {
     const p = new URL(route.request().url()).searchParams;
     return route.fulfill({
       status: 302,
@@ -102,7 +102,7 @@ test("복수 회사 선택 후 한 번만 교환하고 임시 정보와 URL 코�
   page.on("request", (r) => {
     if (r.url().endsWith("/api/bff/auth/token") && r.method() === "POST")
       exchanges++;
-    if (r.url().includes("/v1/auth/oidc/authorize?"))
+    if (r.url().includes("/api/v1/auth/oidc/authorize?"))
       loginHint = new URL(r.url()).searchParams.get("login_hint");
   });
   await submit(page);
@@ -135,7 +135,7 @@ for (const completed of [false, true]) {
       );
     await page.goto("/contact");
     const authorization = page.waitForRequest((r) =>
-      r.url().includes("/v1/auth/oidc/authorize?"),
+      r.url().includes("/api/v1/auth/oidc/authorize?"),
     );
     await submit(page);
     expect(

@@ -32,17 +32,17 @@ test.beforeAll(async () => {
       token_type: "Bearer",
       expires_in: 300,
     });
-    if (path === "/v1/auth/token") {
+    if (path === "/api/v1/auth/token") {
       revoked = false;
       return json(tokens("old"));
     }
-    if (path === "/v1/auth/logout") {
+    if (path === "/api/v1/auth/logout") {
       revoked = true;
       res.statusCode = 204;
       return res.end();
     }
     if (revoked) return json({}, 401);
-    if (path === "/v1/auth/refresh") {
+    if (path === "/api/v1/auth/refresh") {
       refreshes++;
       if (refreshes > 1) {
         revoked = true;
@@ -53,7 +53,7 @@ test.beforeAll(async () => {
     }
     if (expired && req.headers.authorization === "Bearer browser-test-at-old")
       return json({}, 401);
-    if (path === "/v1/auth/me") return json(user);
+    if (path === "/api/v1/auth/me") return json(user);
     if (path === `/api/v1/organizations/${org}/onboarding`)
       return json(completedOnboarding);
     if (path === `/api/v1/organizations/${org}/analytics/overview`)

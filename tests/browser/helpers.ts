@@ -43,7 +43,7 @@ export async function mockSeedAuth(page: Page) {
           },
         }),
   );
-  await page.route("**/v1/auth/oidc/authorize?*", (route) => {
+  await page.route("**/api/v1/auth/oidc/authorize?*", (route) => {
     const params = new URL(route.request().url()).searchParams;
     const callback = new URL(params.get("redirect_uri")!);
     callback.search = new URLSearchParams({

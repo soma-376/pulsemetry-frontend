@@ -153,7 +153,7 @@ export function createBff(
   async function revoke(session: Session) {
     const r = await upstream(
       "enrollment",
-      "/v1/auth/logout",
+      "/api/v1/auth/logout",
       post({ refresh_token: session.refreshToken }),
     );
     if (!r.ok && r.status !== 401)
@@ -190,7 +190,7 @@ export function createBff(
         const tokens = await json(
           await upstream(
             "enrollment",
-            "/v1/auth/refresh",
+            "/api/v1/auth/refresh",
             post({ refresh_token: session.refreshToken }),
           ),
           tokensSchema,
@@ -296,7 +296,11 @@ export function createBff(
         });
         return response(
           await json(
-            await upstream("enrollment", "/v1/auth/organizations", post(body)),
+            await upstream(
+              "enrollment",
+              "/api/v1/auth/organizations",
+              post(body),
+            ),
             schema,
           ),
         );
@@ -314,7 +318,7 @@ export function createBff(
         const tokens = await json(
           await upstream(
             "enrollment",
-            "/v1/auth/token",
+            "/api/v1/auth/token",
             post({
               code: input.code,
               redirect_uri: input.redirect_uri,
@@ -334,7 +338,7 @@ export function createBff(
         );
         try {
           const user = await json(
-            await upstream("enrollment", "/v1/auth/me", {
+            await upstream("enrollment", "/api/v1/auth/me", {
               headers: { Authorization: `Bearer ${next.accessToken}` },
             }),
             authUserSchema,
@@ -364,7 +368,7 @@ export function createBff(
       }
       if (route === "auth/session" && request.method === "GET") {
         if (!session) return response({ user: null });
-        const auth = await authorized(session, "enrollment", "/v1/auth/me");
+        const auth = await authorized(session, "enrollment", "/api/v1/auth/me");
         if (auth.renewed) renewedSession = auth.session;
         const user = await json(auth.result, authUserSchema);
         if (

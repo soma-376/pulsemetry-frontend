@@ -12,7 +12,7 @@ async function inquire(page: Page, company: string, email: string) {
   const posted = page.waitForResponse(
     (response) =>
       response.request().method() === "POST" &&
-      response.url() === `${enrollmentBase()}/v1/inquiries`,
+      response.url() === `${enrollmentBase()}/api/v1/inquiries`,
   );
   await page
     .getByRole("region", { name: "문의 내용 확인", exact: true })
@@ -33,7 +33,10 @@ test("INQUIRY-01 @p0 @write 도입 문의를 실제로 접수하고 같은 입�
   // 확인 단계까지는 서버로 아무것도 가지 않는다.
   let sent = 0;
   page.on("request", (request) => {
-    if (request.method() === "POST" && request.url().endsWith("/v1/inquiries"))
+    if (
+      request.method() === "POST" &&
+      request.url().endsWith("/api/v1/inquiries")
+    )
       sent++;
   });
   await page.getByLabel("회사명", { exact: true }).fill(company);

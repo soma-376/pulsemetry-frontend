@@ -166,7 +166,7 @@ test("INVITE-MAIL-01 @p0 @write 초대 메일이 실제로 도착하고, 발송 
 
     // 폐기된 코드는 설치 API에서 거절한다. 브라우저의 이전 링크는 SSO 안내만 표시한다.
     await paceSignIn(email);
-    const refused = await fetch(`${enrollmentBase()}/v1/enroll`, {
+    const refused = await fetch(`${enrollmentBase()}/api/v1/enroll`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

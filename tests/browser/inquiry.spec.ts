@@ -26,7 +26,7 @@ async function mockInquiries(page: Page, replies: Reply[]) {
     release: () => {},
     hold: false,
   };
-  await page.route("**/v1/inquiries", async (route) => {
+  await page.route("**/api/v1/inquiries", async (route) => {
     const request = route.request();
     if (request.method() === "OPTIONS")
       return route.fulfill({ status: 204, headers: cors });

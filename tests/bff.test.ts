@@ -53,7 +53,7 @@ function fixture(options: Partial<BffConfig> = {}) {
   const fetcher: typeof fetch = async (input, init = {}) => {
     const url = new URL(String(input));
     sent.push({ url, init });
-    if (url.pathname === "/v1/auth/token") {
+    if (url.pathname === "/api/v1/auth/token") {
       exchanges++;
       revoked = false;
       return Response.json({
@@ -63,7 +63,7 @@ function fixture(options: Partial<BffConfig> = {}) {
         expires_in: 300,
       });
     }
-    if (url.pathname === "/v1/auth/refresh") {
+    if (url.pathname === "/api/v1/auth/refresh") {
       refreshCount++;
       if (pause) await pause;
       if (revoked || refreshStatus !== 200)
@@ -75,13 +75,13 @@ function fixture(options: Partial<BffConfig> = {}) {
         expires_in: 300,
       });
     }
-    if (url.pathname === "/v1/auth/logout") {
+    if (url.pathname === "/api/v1/auth/logout") {
       logoutCount++;
       revoked = true;
       return new Response(null, { status: 204 });
     }
     if (revoked) return Response.json({}, { status: 401 });
-    if (url.pathname === "/v1/auth/me")
+    if (url.pathname === "/api/v1/auth/me")
       return Response.json({ ...user, role, organizationId: meOrg });
     return Response.json(
       { ok: true },
@@ -219,7 +219,8 @@ test("CSRF·임의 upstream·다른 조직·인증 proxy 경로를 거부한다"
     403,
   );
   assert.equal(
-    (await f.bff.handle(request("/enrollment/v1/auth/token", saved))).status,
+    (await f.bff.handle(request("/enrollment/api/v1/auth/token", saved)))
+      .status,
     404,
   );
   assert.equal(
@@ -622,8 +623,8 @@ test("인증 경로의 429와 Retry-After를 보존하고 쿠키를 삭제하지
   const bff = createBff(
     config,
     async (input, init) =>
-      String(input).endsWith("/v1/auth/refresh") ||
-      String(input).endsWith("/v1/auth/logout")
+      String(input).endsWith("/api/v1/auth/refresh") ||
+      String(input).endsWith("/api/v1/auth/logout")
         ? Response.json(
             { error: "rate_limited" },
             { status: 429, headers: { "Retry-After": "7" } },
@@ -650,7 +651,7 @@ test("세션 갱신 후 역할 거부와 일시적인 me 실패도 회전한 RT�
     const bff = createBff(
       config,
       async (input, init) =>
-        String(input).endsWith("/v1/auth/me")
+        String(input).endsWith("/api/v1/auth/me")
           ? status === 403
             ? Response.json({ ...user, role: "member" })
             : Response.json({}, { status })

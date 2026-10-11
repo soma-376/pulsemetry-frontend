@@ -213,7 +213,7 @@ async function cookieSession(page: Page) {
 export async function storedSession(page: Page): Promise<StoredSession | null> {
   const { session } = await cookieSession(page);
   if (!session) return null;
-  const me = await fetch(`${enrollmentBase()}/v1/auth/me`, {
+  const me = await fetch(`${enrollmentBase()}/api/v1/auth/me`, {
     headers: { Authorization: `Bearer ${session.accessToken}` },
   });
   if (!me.ok) return null;
@@ -299,7 +299,7 @@ export async function apiSession(
         const { code, redirect_uri, code_verifier } = route
           .request()
           .postDataJSON();
-        const response = await fetch(`${enrollmentBase()}/v1/auth/token`, {
+        const response = await fetch(`${enrollmentBase()}/api/v1/auth/token`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code, redirect_uri, code_verifier }),
@@ -307,7 +307,7 @@ export async function apiSession(
         if (!response.ok)
           throw new PreparationError(`OIDC 코드 교환 HTTP ${response.status}`);
         const tokens = await response.json();
-        const me = await fetch(`${enrollmentBase()}/v1/auth/me`, {
+        const me = await fetch(`${enrollmentBase()}/api/v1/auth/me`, {
           headers: { Authorization: `Bearer ${tokens.access_token}` },
         });
         if (!me.ok)
