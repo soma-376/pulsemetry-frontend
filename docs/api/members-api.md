@@ -8,15 +8,15 @@
 
 경로 앞: /api/v1/organizations/{organizationId}
 
-| 요청 | 파라미터 / 결과 |
-| --- | --- |
-| GET /members/dashboard | startDate, endDate, timeZone → MembersResponse |
-| GET /members | 같은 날짜 + q, limit=20, cursor, snapshotId → MemberListResponse |
-| GET /members/unassigned | 같은 날짜 + limit=20, cursor, snapshotId → MemberListResponse |
-| GET /seat-reclaim-candidates | limit=20, cursor, snapshotId → ReclaimCandidatesResponse |
-| GET /members/{memberId}/seats | snapshotId(선택) → MemberSeatsResponse — 구성원의 벤더 좌석과 판정(서버 원장) |
+| 요청                          | 파라미터 / 결과                                                                                      |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------- |
+| GET /members/dashboard        | startDate, endDate, timeZone → MembersResponse                                                       |
+| GET /members                  | 같은 날짜 + q, limit=20, cursor, snapshotId → MemberListResponse                                     |
+| GET /members/unassigned       | 같은 날짜 + limit=20, cursor, snapshotId → MemberListResponse                                        |
+| GET /seat-reclaim-candidates  | limit=20, cursor, snapshotId → ReclaimCandidatesResponse                                             |
+| GET /members/{memberId}/seats | snapshotId(선택) → MemberSeatsResponse — 구성원의 벤더 좌석과 판정(서버 원장)                        |
 | GET /vendors/{vendorId}/seats | limit=50(최대 200), cursor, snapshotId → VendorSeatsResponse — 등록 제품 하나의 좌석 전부(설정 권한) |
-| GET /teams | 현재 배정 가능한 팀 검색. 공통 문서 참조 |
+| GET /teams                    | 현재 배정 가능한 팀 검색. 공통 문서 참조                                                             |
 
 dashboard는 목록·미배정·회수 후보 각각 첫 20개를 포함한다.
 q는 최대 200자, 계정/이름 검색이다. 검색은 첫 페이지 클라이언트 배열이 아니라 권한 범위 전체 로스터에 적용한다.
@@ -44,14 +44,14 @@ type ReclaimCandidate = {
   account: string;
   team: TeamRef;
   vendorId: string;
-  tierId: string | null;         // 등급을 모르는 좌석은 null
+  tierId: string | null; // 등급을 모르는 좌석은 null
   version: number;
   lastUsedAt: string | null;
   idleDays: number;
   estimatedMonthlySavingsUsd: Money | null;
-  canReclaim: boolean;           // 회수 실행이 없어 false
-  reason: string | null;         // vendor_control_unavailable
-  vendorAccount?: string;        // 좌석의 벤더 계정(가산). account 는 구성원의 계정
+  canReclaim: boolean; // 회수 실행이 없어 false
+  reason: string | null; // vendor_control_unavailable
+  vendorAccount?: string; // 좌석의 벤더 계정(가산). account 는 구성원의 계정
 };
 type MemberSummary = {
   rosterMembers: number;
@@ -75,7 +75,12 @@ type MembersResponse = {
   ingest: OverviewResponse["ingest"];
   summary: MemberSummary;
   policy: { idleDays: 7 | 14 | 30 | 60; version: number };
-  capabilities: { invite: boolean; assignTeam: boolean; reclaimSeats: boolean; restoreSeats: boolean };
+  capabilities: {
+    invite: boolean;
+    assignTeam: boolean;
+    reclaimSeats: boolean;
+    restoreSeats: boolean;
+  };
   members: Page<Member>;
   unassigned: Page<Member>;
   reclaimCandidates: Section<Page<ReclaimCandidate>>;
@@ -110,14 +115,18 @@ type ReclaimPreviewRequest = {
 };
 type ReclaimPreviewResponse = {
   previewId: string;
-  expiresAt: string;                    // 만든 뒤 5분
+  expiresAt: string; // 만든 뒤 5분
   eligibleSeatAssignmentIds: string[];
   rejected: { seatAssignmentId: string; reason: string }[];
-  estimatedMonthlySavingsUsd: Money | null;   // 대상 좌석 등급의 계약 단가 합(추정). 모르면 null
-  savingsEffectiveAt: string | null;          // 감액 시점은 모른다 — null
+  estimatedMonthlySavingsUsd: Money | null; // 대상 좌석 등급의 계약 단가 합(추정). 모르면 null
+  savingsEffectiveAt: string | null; // 감액 시점은 모른다 — null
   resultingUnallocatedSeats: number | null;
-  savingsBasis?: "contract_unit_price" | null;                                                          // 서버 가산
-  targets?: { seatAssignmentId: string; vendorId: string; method: "vendor_control" | "admin_action" }[]; // 서버 가산
+  savingsBasis?: "contract_unit_price" | null; // 서버 가산
+  targets?: {
+    seatAssignmentId: string;
+    vendorId: string;
+    method: "vendor_control" | "admin_action";
+  }[]; // 서버 가산
 };
 type ReclaimRequest = { previewId: string };
 type MemberSeatsResponse = {
@@ -127,16 +136,34 @@ type MemberSeatsResponse = {
   seats: MemberSeat[];
 };
 type MemberSeat = {
-  seatAssignmentId: string; version: number; vendorId: string; vendorName: string; kind: string;
-  tierId: string | null; tierLabel: string | null; vendorTier: string | null;
-  account: string; accountKind: "email" | "github_login";
+  seatAssignmentId: string;
+  version: number;
+  vendorId: string;
+  vendorName: string;
+  kind: string;
+  tierId: string | null;
+  tierLabel: string | null;
+  vendorTier: string | null;
+  account: string;
+  accountKind: "email" | "github_login";
   state: "assigned" | "pending_assignment" | "pending_release" | "released";
-  source: string; assignedAt: string; releaseEffectiveOn: string | null; releasedAt: string | null;
-  ledgerAvailability: "available" | "partial" | "unavailable"; ledgerReason: string | null;
-  lastUsedAt: string | null; idleDays: number | null; reviewReason: string | null;
-  reclaimCandidate: boolean; canReclaim: boolean; reclaimReason: string | null;
+  source: string;
+  assignedAt: string;
+  releaseEffectiveOn: string | null;
+  releasedAt: string | null;
+  ledgerAvailability: "available" | "partial" | "unavailable";
+  ledgerReason: string | null;
+  lastUsedAt: string | null;
+  idleDays: number | null;
+  reviewReason: string | null;
+  reclaimCandidate: boolean;
+  canReclaim: boolean;
+  reclaimReason: string | null;
   reclaimMethod: "vendor_control" | "admin_action" | null;
-  lastControl: { operationId: string; kind: "seat_reclaim" | "seat_restore" } | null;  // 가장 최근 회수·복원 작업
+  lastControl: {
+    operationId: string;
+    kind: "seat_reclaim" | "seat_restore";
+  } | null; // 가장 최근 회수·복원 작업
 };
 ```
 
@@ -169,8 +196,17 @@ effectiveAt은 서버 시각이며 과거 사용 집계를 소급 변경하지 �
 IdP가 팀의 원천이면 로컬 override 허용 여부를 확인하고, 변경 금지인 경우 422 directory_managed로 응답한다.
 
 요청 예:
+
 ```json
-{"assignments":[{"memberId":"member-003","teamId":"team-platform","expectedVersion":2}]}
+{
+  "assignments": [
+    {
+      "memberId": "member-003",
+      "teamId": "team-platform",
+      "expectedVersion": 2
+    }
+  ]
+}
 ```
 
 ## 초대
@@ -184,8 +220,17 @@ queued는 초대 레코드와 발송 작업 접수이며 실제 배달 성공이
 초대만으로 벤더 유료 좌석을 자동 구매/배정하지 않는다. SSO 자동 가입도 별도의 기존 인증 흐름이다.
 
 요청 예:
+
 ```json
-{"invitations":[{"email":"collaborator@example.org","teamId":"team-platform","role":"viewer"}]}
+{
+  "invitations": [
+    {
+      "email": "collaborator@example.org",
+      "teamId": "team-platform",
+      "role": "viewer"
+    }
+  ]
+}
 ```
 
 ## 회수 확인 → 실행 → 되돌리기

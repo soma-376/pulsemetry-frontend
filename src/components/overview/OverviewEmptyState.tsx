@@ -2,7 +2,11 @@
 
 import { ButtonLink } from "@/components/ui/Button";
 import { useFilters, useDashboardHref } from "@/lib/filters";
-import { FIRST_COLLECTION_STEPS, INVITE_DEEP_LINK, waitingText } from "@/lib/first-collection";
+import {
+  FIRST_COLLECTION_STEPS,
+  INVITE_DEEP_LINK,
+  waitingText,
+} from "@/lib/first-collection";
 
 /**
  * 신호가 한 번도 들어온 적 없는 조직.
@@ -20,7 +24,8 @@ export function OverviewEmptyState() {
           아직 수집된 신호가 없습니다
         </span>
         <span className="pretty text-[12.5px] text-text2">
-          구성원이 CLI를 설치한 시점부터 사용량이 쌓입니다 · 설치 이전 기간은 조회할 수 없습니다
+          구성원이 CLI를 설치한 시점부터 사용량이 쌓입니다 · 설치 이전 기간은
+          조회할 수 없습니다
         </span>
       </div>
 
@@ -32,13 +37,19 @@ export function OverviewEmptyState() {
           >
             <span
               className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-              style={index === 0 ? { background: "var(--text)", color: "var(--card)" } : { background: "var(--sub)", color: "var(--text2)" }}
+              style={
+                index === 0
+                  ? { background: "var(--text)", color: "var(--card)" }
+                  : { background: "var(--sub)", color: "var(--text2)" }
+              }
             >
               {step.n}
             </span>
             <div className="flex min-w-0 flex-col gap-0.5">
               <span className="text-[12.5px] font-semibold">{step.title}</span>
-              <span className="pretty text-[11.5px] text-text2">{step.note}</span>
+              <span className="pretty text-[11.5px] text-text2">
+                {step.note}
+              </span>
             </div>
             <span
               className="text-[11.5px] font-semibold whitespace-nowrap"
@@ -54,10 +65,18 @@ export function OverviewEmptyState() {
         <span
           aria-hidden="true"
           className="h-[13px] w-[13px] shrink-0 rounded-full border-2 border-text3 border-t-transparent"
-          style={autoRefresh ? { animation: "spin .8s linear infinite" } : undefined}
+          style={
+            autoRefresh ? { animation: "spin .8s linear infinite" } : undefined
+          }
         />
-        <span className="pretty min-w-0 flex-1 text-[12px] text-text2">{waitingText(autoRefresh)}</span>
-        <ButtonLink href={dashboardHref(INVITE_DEEP_LINK)} variant="primary" className="h-8 px-[13px]">
+        <span className="pretty min-w-0 flex-1 text-[12px] text-text2">
+          {waitingText(autoRefresh)}
+        </span>
+        <ButtonLink
+          href={dashboardHref(INVITE_DEEP_LINK)}
+          variant="primary"
+          className="h-8 px-[13px]"
+        >
           구성원 초대
         </ButtonLink>
       </div>

@@ -6,13 +6,17 @@ test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(new Date("2026-09-22T00:00:00Z"));
 });
 
-test("onboarding retains typed date drafts and rejects impossible dates", async ({ page }) => {
+test("onboarding retains typed date drafts and rejects impossible dates", async ({
+  page,
+}) => {
   await page.goto("/login");
   await signIn(page);
   await page.getByRole("radio", { name: /^수집하지 않음/ }).check();
   await page.getByRole("button", { name: "다음", exact: true }).click();
   await page.getByLabel("제품", { exact: true }).selectOption("copilot");
-  await page.getByLabel("플랜", { exact: true }).selectOption("copilot_business");
+  await page
+    .getByLabel("플랜", { exact: true })
+    .selectOption("copilot_business");
   await page.getByLabel("좌석 수", { exact: true }).fill("2");
   await page.getByLabel("월 단가", { exact: true }).fill("0");
   const date = page.getByLabel("계약 종료일", { exact: true });
@@ -45,33 +49,53 @@ test("onboarding retains typed date drafts and rejects impossible dates", async 
   await expect(date).toHaveValue("");
 });
 
-test("calendar works within the settings drawer, saves dates and clears them", async ({ page }) => {
+test("calendar works within the settings drawer, saves dates and clears them", async ({
+  page,
+}) => {
   serveSettings(page);
   await openDashboard(page, "/settings");
   await page.getByRole("button", { name: "벤더 추가", exact: true }).click();
-  const drawer = page.getByRole("dialog").filter({ has: page.getByLabel("표시 이름", { exact: true }) });
+  const drawer = page
+    .getByRole("dialog")
+    .filter({ has: page.getByLabel("표시 이름", { exact: true }) });
   await drawer.getByLabel("제품", { exact: true }).selectOption("claude_team");
   await drawer.getByLabel("플랜", { exact: true }).selectOption("team");
-  await drawer.getByLabel("표시 이름", { exact: true }).fill("Calendar contract");
+  await drawer
+    .getByLabel("표시 이름", { exact: true })
+    .fill("Calendar contract");
   await drawer.getByLabel("좌석 수", { exact: true }).fill("2");
   await drawer.getByLabel("월 단가", { exact: true }).fill("0");
   const date = drawer.getByLabel("계약 종료일", { exact: true });
   const trigger = drawer.getByRole("button", { name: "계약 종료일 달력 열기" });
-  const calendar = page.getByRole("dialog", { name: "계약 종료일 선택", exact: true });
+  const calendar = page.getByRole("dialog", {
+    name: "계약 종료일 선택",
+    exact: true,
+  });
   const save = drawer.getByRole("button", { name: "벤더 추가", exact: true });
   await date.fill("20260921");
   await expect(date).toHaveAttribute("aria-invalid", "true");
   await expect(save).toBeDisabled();
   await trigger.click();
   await expect(calendar).toBeVisible();
-  await expect(calendar.getByRole("button", { name: "2026.09.21", exact: true })).toBeDisabled();
-  const today = calendar.getByRole("button", { name: "2026.09.22", exact: true });
+  await expect(
+    calendar.getByRole("button", { name: "2026.09.21", exact: true }),
+  ).toBeDisabled();
+  const today = calendar.getByRole("button", {
+    name: "2026.09.22",
+    exact: true,
+  });
   await expect(today).toBeEnabled();
   await expect(today).toBeFocused();
   await page.keyboard.press("ArrowLeft");
   await expect(today).toBeFocused();
-  await expect(calendar.getByRole("button", { name: "이전 달", exact: true })).toBeDisabled();
-  await expect(calendar.getByLabel("계약 종료일 월", { exact: true }).locator('option[value="7"]')).toBeDisabled();
+  await expect(
+    calendar.getByRole("button", { name: "이전 달", exact: true }),
+  ).toBeDisabled();
+  await expect(
+    calendar
+      .getByLabel("계약 종료일 월", { exact: true })
+      .locator('option[value="7"]'),
+  ).toBeDisabled();
   await today.click();
   await expect(date).toHaveValue("2026.09.22");
   await expect(save).toBeEnabled();
@@ -82,14 +106,20 @@ test("calendar works within the settings drawer, saves dates and clears them", a
   await expect(trigger).toBeFocused();
   await trigger.click();
   await calendar.getByLabel("계약 종료일 연도").selectOption("2030");
-  await calendar.getByLabel("계약 종료일 월", { exact: true }).selectOption("1");
-  await calendar.getByRole("button", { name: "2030.02.15", exact: true }).focus();
+  await calendar
+    .getByLabel("계약 종료일 월", { exact: true })
+    .selectOption("1");
+  await calendar
+    .getByRole("button", { name: "2030.02.15", exact: true })
+    .focus();
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("Enter");
   await expect(date).toHaveValue("2030.02.16");
   await expect(calendar).not.toBeVisible();
   await drawer.getByRole("button", { name: "벤더 추가", exact: true }).click();
-  await page.getByRole("button", { name: "Calendar contract 계약 설정 열기" }).click();
+  await page
+    .getByRole("button", { name: "Calendar contract 계약 설정 열기" })
+    .click();
   await expect(date).toHaveValue("2030.02.16");
   await page.setViewportSize({ width: 390, height: 700 });
   await trigger.click();
@@ -101,9 +131,13 @@ test("calendar works within the settings drawer, saves dates and clears them", a
   expect(bounds!.y).toBeGreaterThanOrEqual(0);
   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(700);
   await page.screenshot({ path: "test-results/contract-date-mobile.png" });
-  await calendar.getByRole("button", { name: "날짜 지우기", exact: true }).click();
+  await calendar
+    .getByRole("button", { name: "날짜 지우기", exact: true })
+    .click();
   await expect(date).toHaveValue("");
   await drawer.getByRole("button", { name: "변경사항 저장" }).click();
-  await page.getByRole("button", { name: "Calendar contract 계약 설정 열기" }).click();
+  await page
+    .getByRole("button", { name: "Calendar contract 계약 설정 열기" })
+    .click();
   await expect(date).toHaveValue("");
 });

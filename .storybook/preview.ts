@@ -6,17 +6,20 @@ import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import "../src/app/globals.css";
 
 const preview: Preview = {
-  loaders: [mswLoader(async () => {
-    const worker = setupWorker();
-    await worker.start({
-      quiet: true,
-      onUnhandledRequest(request, print) {
-        const path = new URL(request.url).pathname;
-        if (path.startsWith("/api/") || path.startsWith("/v1/")) print.error();
-      },
-    });
-    return worker;
-  })],
+  loaders: [
+    mswLoader(async () => {
+      const worker = setupWorker();
+      await worker.start({
+        quiet: true,
+        onUnhandledRequest(request, print) {
+          const path = new URL(request.url).pathname;
+          if (path.startsWith("/api/") || path.startsWith("/v1/"))
+            print.error();
+        },
+      });
+      return worker;
+    }),
+  ],
   parameters: {
     nextjs: { appDirectory: true },
     controls: { matchers: { color: /(background|color)$/i, date: /Date$/i } },

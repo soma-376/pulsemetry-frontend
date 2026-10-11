@@ -47,7 +47,11 @@ export function KpiCard({
   action,
 }: KpiCardProps) {
   return (
-    <div role="region" aria-label={label} className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-border bg-card p-4">
+    <div
+      role="region"
+      aria-label={label}
+      className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-border bg-card p-4"
+    >
       <div className="flex items-center justify-between gap-1.5">
         <span
           title={def}
@@ -55,7 +59,15 @@ export function KpiCard({
         >
           {label}
         </span>
-        {action && <button type="button" onClick={action.onClick} className="shrink-0 cursor-pointer rounded px-1 text-[11px] text-text2 hover:bg-hover hover:text-text">{action.label}</button>}
+        {action && (
+          <button
+            type="button"
+            onClick={action.onClick}
+            className="shrink-0 cursor-pointer rounded px-1 text-[11px] text-text2 hover:bg-hover hover:text-text"
+          >
+            {action.label}
+          </button>
+        )}
       </div>
 
       <div className="tnum flex flex-wrap items-baseline gap-[3px] leading-[1.1] tracking-[-0.02em]">
@@ -74,12 +86,19 @@ export function KpiCard({
         <div className="tnum flex items-center gap-1.5 text-[12px]">
           <span
             className="font-semibold"
-            style={{ color: showArrow ? deltaColor(up ? 1 : -1, { good, bad }) : "var(--text2)" }}
+            style={{
+              color: showArrow
+                ? deltaColor(up ? 1 : -1, { good, bad })
+                : "var(--text2)",
+            }}
           >
-            {showArrow && `${arrow(up)} `}{delta}
+            {showArrow && `${arrow(up)} `}
+            {delta}
           </span>
           {compareLabel && <span className="text-text3">{compareLabel}</span>}
-          {previousText && <span className="text-text3">· 이전 {previousText}</span>}
+          {previousText && (
+            <span className="text-text3">· 이전 {previousText}</span>
+          )}
         </div>
       )}
 

@@ -67,10 +67,7 @@
   "seats": {
     "availability": "available",
     "reason": null,
-    "scopeVendorIds": [
-      "vendor-a",
-      "vendor-b"
-    ],
+    "scopeVendorIds": ["vendor-a", "vendor-b"],
     "allocationMethod": "estimated_30_day",
     "current": {
       "contractedSeats": 148,

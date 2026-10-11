@@ -44,10 +44,16 @@ export function DateRangePicker({
     };
     document.addEventListener("click", onDocClick);
     const escape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setOpen(false); triggerRef.current?.focus(); }
+      if (e.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
     };
     document.addEventListener("keydown", escape);
-    return () => { document.removeEventListener("click", onDocClick); document.removeEventListener("keydown", escape); };
+    return () => {
+      document.removeEventListener("click", onDocClick);
+      document.removeEventListener("keydown", escape);
+    };
   }, [open]);
 
   const setRange = (from: Date, to: Date) => {
@@ -65,8 +71,18 @@ export function DateRangePicker({
         setRange(new Date(today.getTime() - offset * DAY_MS), today);
       },
     },
-    { label: "이번 달", run: () => setRange(utcDate(today.getUTCFullYear(), today.getUTCMonth(), 1), today) },
-    { label: "최근 1년", run: () => setRange(new Date(today.getTime() - 364 * DAY_MS), today) },
+    {
+      label: "이번 달",
+      run: () =>
+        setRange(
+          utcDate(today.getUTCFullYear(), today.getUTCMonth(), 1),
+          today,
+        ),
+    },
+    {
+      label: "최근 1년",
+      run: () => setRange(new Date(today.getTime() - 364 * DAY_MS), today),
+    },
   ];
 
   const cells = calendarCells(viewYear, viewMonth, draft);
@@ -84,7 +100,11 @@ export function DateRangePicker({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          if (!open) { setDraft(value); setViewYear(anchor.getUTCFullYear()); setViewMonth(anchor.getUTCMonth()); }
+          if (!open) {
+            setDraft(value);
+            setViewYear(anchor.getUTCFullYear());
+            setViewMonth(anchor.getUTCMonth());
+          }
           setOpen((v) => !v);
         }}
         aria-haspopup="dialog"
@@ -101,7 +121,6 @@ export function DateRangePicker({
         <div
           role="dialog"
           aria-label="기간 선택"
-          onClick={(e) => e.stopPropagation()}
           className="absolute top-9 left-0 z-40 flex w-[316px] flex-col gap-3 rounded-lg border border-border bg-card p-3.5"
         >
           <div className="grid grid-cols-2 gap-1.5">
@@ -163,7 +182,7 @@ export function DateRangePicker({
                       ? "var(--card)"
                       : !c.inMonth
                         ? "var(--text3)"
-                      : c.iso === toIso(today)
+                        : c.iso === toIso(today)
                           ? "var(--blue)"
                           : "var(--text)",
                     borderRadius: edge ? 6 : c.inRange ? 0 : 6,
@@ -186,7 +205,11 @@ export function DateRangePicker({
               variant="primary"
               className="px-4"
               disabled={!draft.end}
-              onClick={() => { onChange(draft); setOpen(false); triggerRef.current?.focus(); }}
+              onClick={() => {
+                onChange(draft);
+                setOpen(false);
+                triggerRef.current?.focus();
+              }}
             >
               적용
             </Button>

@@ -110,7 +110,10 @@ export function Modal({
               initial={{ scale: reduced ? 1 : 0.96, y: reduced ? 0 : 8 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: reduced ? 1 : 0.98, y: 0 }}
-              transition={{ duration: reduced ? 0 : EXIT_MS / 1000, ease: [0.22, 1, 0.36, 1] }}
+              transition={{
+                duration: reduced ? 0 : EXIT_MS / 1000,
+                ease: [0.22, 1, 0.36, 1],
+              }}
               style={{ maxWidth: width }}
               className="relative flex max-h-full w-full flex-col overflow-hidden rounded-[10px] border border-border bg-card shadow-2xl"
             >
@@ -120,7 +123,9 @@ export function Modal({
                     {title}
                   </h2>
                   {subtitle && (
-                    <p className="pretty mt-0.5 text-[11.5px] text-text3">{subtitle}</p>
+                    <p className="pretty mt-0.5 text-[11.5px] text-text3">
+                      {subtitle}
+                    </p>
                   )}
                 </div>
                 <button
@@ -134,7 +139,9 @@ export function Modal({
                 </button>
               </header>
 
-              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
+              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+                {children}
+              </div>
 
               {footer && (
                 <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-border px-5 py-3">

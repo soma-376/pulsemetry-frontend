@@ -16,17 +16,19 @@ export default async function DashboardLayout({
   await connection();
   const todayIso = currentDateIso();
   return (
-    <RouteGuard><DashboardFiltersProvider todayIso={todayIso}>
-      <MotionProvider>
-        <div className="relative flex h-dvh w-dvw items-stretch overflow-hidden bg-bg text-text">
-          <Sidebar />
-          <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto @container">
-
-              <DashboardHeaderProvider todayIso={todayIso}>{children}</DashboardHeaderProvider>
-
-          </main>
-        </div>
-      </MotionProvider>
-    </DashboardFiltersProvider></RouteGuard>
+    <RouteGuard>
+      <DashboardFiltersProvider todayIso={todayIso}>
+        <MotionProvider>
+          <div className="relative flex h-dvh w-dvw items-stretch overflow-hidden bg-bg text-text">
+            <Sidebar />
+            <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto @container">
+              <DashboardHeaderProvider todayIso={todayIso}>
+                {children}
+              </DashboardHeaderProvider>
+            </main>
+          </div>
+        </MotionProvider>
+      </DashboardFiltersProvider>
+    </RouteGuard>
   );
 }

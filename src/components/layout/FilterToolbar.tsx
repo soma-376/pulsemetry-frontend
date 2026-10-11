@@ -8,9 +8,22 @@ import { useFilters } from "@/lib/filters";
 import type { CompareKey } from "@/types/domain";
 
 /** 공통 대시보드 헤더에서 한 번 렌더링하는 기간·조회 도구. */
-export function FilterToolbar({ todayIso, onRefresh, refreshing = false, csv }: { todayIso?: string; onRefresh?: () => void; refreshing?: boolean;
+export function FilterToolbar({
+  todayIso,
+  onRefresh,
+  refreshing = false,
+  csv,
+}: {
+  todayIso?: string;
+  onRefresh?: () => void;
+  refreshing?: boolean;
   /** 화면이 등록한 CSV 내보내기. 사유가 있으면 끈다. */
-  csv?: { disabledReason: string | null; exporting: boolean; onExport: () => void } }) {
+  csv?: {
+    disabledReason: string | null;
+    exporting: boolean;
+    onExport: () => void;
+  };
+}) {
   const {
     compare,
     setCompare,
@@ -49,7 +62,15 @@ export function FilterToolbar({ todayIso, onRefresh, refreshing = false, csv }: 
 
       <div className="hidden flex-1 @min-[1180px]:block" />
 
-      {onRefresh && <Button onClick={onRefresh} loading={refreshing} loadingLabel="조회 중…">새로고침</Button>}
+      {onRefresh && (
+        <Button
+          onClick={onRefresh}
+          loading={refreshing}
+          loadingLabel="조회 중…"
+        >
+          새로고침
+        </Button>
+      )}
       <Button
         onClick={toggleAutoRefresh}
         aria-pressed={autoRefresh}
@@ -72,8 +93,15 @@ export function FilterToolbar({ todayIso, onRefresh, refreshing = false, csv }: 
         </span>
       </Button>
 
-      <Button disabled={!csv || !!csv.disabledReason} title={csv?.disabledReason ?? "이 화면의 조건으로 CSV를 내려받습니다"} loading={csv?.exporting} loadingLabel="CSV 만드는 중…"
-        onClick={() => csv?.onExport()}>CSV</Button>
+      <Button
+        disabled={!csv || !!csv.disabledReason}
+        title={csv?.disabledReason ?? "이 화면의 조건으로 CSV를 내려받습니다"}
+        loading={csv?.exporting}
+        loadingLabel="CSV 만드는 중…"
+        onClick={() => csv?.onExport()}
+      >
+        CSV
+      </Button>
 
       <ThemeToggle />
     </div>

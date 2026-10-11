@@ -1,6 +1,14 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { FullConfig, FullResult, Reporter, Suite, TestCase, TestError, TestResult } from "@playwright/test/reporter";
+import type {
+  FullConfig,
+  FullResult,
+  Reporter,
+  Suite,
+  TestCase,
+  TestError,
+  TestResult,
+} from "@playwright/test/reporter";
 import { ANNOTATION, PREPARATION, pacerLog } from "./harness";
 
 type Entry = { id: string; title: string; detail?: string };
@@ -31,21 +39,36 @@ export default class E2EReporter implements Reporter {
     const annotations = result.annotations;
     const intended = annotations.some((a) => a.type === ANNOTATION.intended429);
     for (const annotation of annotations) {
-      if (annotation.type === ANNOTATION.pacerWait) this.waits.push({ ...entry, detail: `${annotation.description}ms` });
-      if (annotation.type === ANNOTATION.observed429) (intended ? this.intended429 : this.unexpected429).push({ ...entry, detail: annotation.description });
+      if (annotation.type === ANNOTATION.pacerWait)
+        this.waits.push({ ...entry, detail: `${annotation.description}ms` });
+      if (annotation.type === ANNOTATION.observed429)
+        (intended ? this.intended429 : this.unexpected429).push({
+          ...entry,
+          detail: annotation.description,
+        });
     }
     if (result.status === "passed") this.passed.push(entry);
     else if (result.status === "skipped") this.skipped.push(entry);
     else {
       const messages = result.errors.map((error) => error.message ?? "");
-      const detail = messages.find((message) => message.includes(PREPARATION)) ?? messages[0] ?? result.status;
-      (messages.some((message) => message.includes(PREPARATION)) ? this.preparation : this.functional).push({ ...entry, detail: firstLine(detail) });
+      const detail =
+        messages.find((message) => message.includes(PREPARATION)) ??
+        messages[0] ??
+        result.status;
+      (messages.some((message) => message.includes(PREPARATION))
+        ? this.preparation
+        : this.functional
+      ).push({ ...entry, detail: firstLine(detail) });
     }
   }
 
   onError(error: TestError) {
     // globalSetup·설정 단계의 실패는 테스트 밖에서 난다. 서버·인증 설정을 확인하지 못한 것이므로 준비 실패다.
-    this.preparation.push({ id: "global", title: "실행 준비", detail: firstLine(error.message ?? "") });
+    this.preparation.push({
+      id: "global",
+      title: "실행 준비",
+      detail: firstLine(error.message ?? ""),
+    });
   }
 
   onEnd(result: FullResult) {
@@ -61,16 +84,45 @@ export default class E2EReporter implements Reporter {
       functionalFailures: this.functional,
       preparationFailures: this.preparation,
       skipped: this.skipped,
-      notRun: Math.max(0, this.total - this.passed.length - this.functional.length - this.preparation.filter((e) => e.id !== "global").length - this.skipped.length),
-      pacer: { logins: logins.length, waits: waitLog.length, waitedMs: waitLog.reduce((sum, wait) => sum + wait.waitedMs, 0), byTest: this.waits, log: waitLog },
-      observed429: { unexpected: this.unexpected429, intended: this.intended429 },
+      notRun: Math.max(
+        0,
+        this.total -
+          this.passed.length -
+          this.functional.length -
+          this.preparation.filter((e) => e.id !== "global").length -
+          this.skipped.length,
+      ),
+      pacer: {
+        logins: logins.length,
+        waits: waitLog.length,
+        waitedMs: waitLog.reduce((sum, wait) => sum + wait.waitedMs, 0),
+        byTest: this.waits,
+        log: waitLog,
+      },
+      observed429: {
+        unexpected: this.unexpected429,
+        intended: this.intended429,
+      },
     };
     mkdirSync(directory, { recursive: true });
-    writeFileSync(join(directory, "e2e-summary.json"), JSON.stringify(summary, null, 2) + "\n");
-    console.log(`\nE2E 집계: 통과 ${summary.passed}/${summary.tests} · 기능 실패 ${this.functional.length} · 준비 실패 ${this.preparation.length} · 건너뜀 ${this.skipped.length}` +
-      ` · 미실행 ${summary.notRun} · 로그인 ${logins.length} · pacer 대기 ${waitLog.length}회(${summary.pacer.waitedMs}ms) · 429 ${this.unexpected429.length}(의도한 시험 ${this.intended429.length})`);
-    for (const [label, list] of [["기능 실패", this.functional], ["준비 실패", this.preparation], ["건너뜀", this.skipped], ["429", this.unexpected429]] as const)
-      for (const item of list) console.log(`  ${label}: ${item.title}${item.detail ? ` — ${item.detail}` : ""}`);
+    writeFileSync(
+      join(directory, "e2e-summary.json"),
+      JSON.stringify(summary, null, 2) + "\n",
+    );
+    console.log(
+      `\nE2E 집계: 통과 ${summary.passed}/${summary.tests} · 기능 실패 ${this.functional.length} · 준비 실패 ${this.preparation.length} · 건너뜀 ${this.skipped.length}` +
+        ` · 미실행 ${summary.notRun} · 로그인 ${logins.length} · pacer 대기 ${waitLog.length}회(${summary.pacer.waitedMs}ms) · 429 ${this.unexpected429.length}(의도한 시험 ${this.intended429.length})`,
+    );
+    for (const [label, list] of [
+      ["기능 실패", this.functional],
+      ["준비 실패", this.preparation],
+      ["건너뜀", this.skipped],
+      ["429", this.unexpected429],
+    ] as const)
+      for (const item of list)
+        console.log(
+          `  ${label}: ${item.title}${item.detail ? ` — ${item.detail}` : ""}`,
+        );
     console.log(`  → ${join(directory, "e2e-summary.json")}`);
   }
 
@@ -81,13 +133,27 @@ export default class E2EReporter implements Reporter {
 
 function firstLine(message: string) {
   // 터미널 색 코드와 긴 본문을 덜어 낸다.
-  return message.replace(/\u001b\[[0-9;]*m/g, "").split("\n").find((line) => line.trim())?.trim().slice(0, 300) ?? "";
+  return (
+    message
+      .replace(/\u001b\[[0-9;]*m/g, "")
+      .split("\n")
+      .find((line) => line.trim())
+      ?.trim()
+      .slice(0, 300) ?? ""
+  );
 }
 
 /** 이 실행이 시작된 뒤의 로그인(globalSetup 포함). 기록은 파일이라 테스트 밖의 로그인·대기도 남는다. 로그인 시각(대기가 끝난 뒤)으로 적힌다. */
-function readLogins(since: Date): { at: string; label: string; waitedMs: number }[] {
+function readLogins(
+  since: Date,
+): { at: string; label: string; waitedMs: number }[] {
   if (!existsSync(pacerLog)) return [];
-  return readFileSync(pacerLog, "utf8").split("\n").filter(Boolean)
-    .map((line) => JSON.parse(line) as { at: string; label: string; waitedMs: number })
+  return readFileSync(pacerLog, "utf8")
+    .split("\n")
+    .filter(Boolean)
+    .map(
+      (line) =>
+        JSON.parse(line) as { at: string; label: string; waitedMs: number },
+    )
     .filter((wait) => Date.parse(wait.at) >= since.getTime());
 }

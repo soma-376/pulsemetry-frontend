@@ -8,6 +8,7 @@ test("역할 설명은 서버 인가와 같다 — 구성원은 대시보드에 
   assert.match(ROLE_HINT.member, /CLI/);
   assert.match(ROLE_HINT.admin, /웹 대시보드를 보고/);
   assert.match(ROLE_HINT.owner, /웹 대시보드를 보고/);
-  for (const text of [...Object.values(ROLE_HINT), ROLE_ACCESS_NOTE]) assert.doesNotMatch(text, /조회만|읽기 전용|조회 가능/);
+  for (const text of [...Object.values(ROLE_HINT), ROLE_ACCESS_NOTE])
+    assert.doesNotMatch(text, /조회만|읽기 전용|조회 가능/);
   assert.match(ROLE_ACCESS_NOTE, /관리자와 소유자만/);
 });

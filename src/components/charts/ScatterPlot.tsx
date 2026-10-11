@@ -39,12 +39,14 @@ export function ScatterPlot({
   className,
 }: ScatterPlotProps) {
   // 기준선이 위쪽 경계를 뚫지 않도록 x 를 잘라냅니다
-  const refX = referenceSlope
-    ? Math.min(xMax, yMax / referenceSlope)
-    : 0;
+  const refX = referenceSlope ? Math.min(xMax, yMax / referenceSlope) : 0;
 
   return (
-    <div className={["relative h-full w-full", className].filter(Boolean).join(" ")}>
+    <div
+      className={["relative h-full w-full", className]
+        .filter(Boolean)
+        .join(" ")}
+    >
       {referenceSlope ? (
         <svg
           viewBox="0 0 100 100"

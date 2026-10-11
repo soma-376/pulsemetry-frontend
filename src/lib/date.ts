@@ -23,9 +23,13 @@ export function fromIso(v: string) {
 /** 실제 오늘의 일자. 계약 입력은 목 데이터 시점이 아닌 조직 기본 시간대를 따릅니다. */
 export function currentDateIso(now = new Date()) {
   const parts = new Intl.DateTimeFormat("en", {
-    timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit",
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   }).formatToParts(now);
-  const part = (type: string) => parts.find((entry) => entry.type === type)!.value;
+  const part = (type: string) =>
+    parts.find((entry) => entry.type === type)!.value;
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
 

@@ -111,18 +111,8 @@
     "settingsUpdatedBy": "member-001",
     "reclaimIdleDaysSource": "organization",
     "options": {
-      "reclaimIdleDays": [
-        7,
-        14,
-        30,
-        60
-      ],
-      "aggregateRetentionMonths": [
-        12,
-        24,
-        36,
-        null
-      ]
+      "reclaimIdleDays": [7, 14, 30, 60],
+      "aggregateRetentionMonths": [12, 24, 36, null]
     },
     "cleanupOperationId": null
   },

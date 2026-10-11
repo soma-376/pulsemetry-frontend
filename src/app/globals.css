@@ -118,8 +118,9 @@
   --color-seq3: var(--seq3);
   --color-seq4: var(--seq4);
 
-  --font-sans: "Pretendard Variable", Pretendard, -apple-system,
-    BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", sans-serif;
+  --font-sans:
+    "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Segoe UI", sans-serif;
   --font-mono: ui-monospace, Menlo, Consolas, monospace;
 }
 

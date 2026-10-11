@@ -1,4 +1,11 @@
-import { bandPath, nullableLinePath, points, xAt, yAt, type Domain } from "./scale";
+import {
+  bandPath,
+  nullableLinePath,
+  points,
+  xAt,
+  yAt,
+  type Domain,
+} from "./scale";
 
 /**
  * 해칭 패턴은 모든 차트에서 동일하므로 id 를 공유합니다.
@@ -144,9 +151,20 @@ export function LineAreaChart({
           }}
         />
       ))}
-      {count === 1 && series.map((s, i) => (
-        s.values[0] !== null && <ellipse key={`point-${i}`} cx={xAt(0, count)} cy={yAt(s.values[0], domain)} rx={0.8} ry={1.2} fill={s.color} />
-      ))}
+      {count === 1 &&
+        series.map(
+          (s, i) =>
+            s.values[0] !== null && (
+              <ellipse
+                key={`point-${i}`}
+                cx={xAt(0, count)}
+                cy={yAt(s.values[0], domain)}
+                rx={0.8}
+                ry={1.2}
+                fill={s.color}
+              />
+            ),
+        )}
     </svg>
   );
 }

@@ -17,7 +17,12 @@ import {
 
 export const TODAY = "2026-09-17";
 
-export { ADD_KINDS, PLAN_SETS, getVendorPlans, type Plan } from "./vendor-catalog";
+export {
+  ADD_KINDS,
+  PLAN_SETS,
+  getVendorPlans,
+  type Plan,
+} from "./vendor-catalog";
 
 export const NEW_VENDOR_ID = "__new";
 
@@ -37,7 +42,13 @@ export type VendorDraft = {
 /** 저장된 편집 — 벤더 id → 계약 패치. cleared 면 계약을 비운 상태입니다 */
 export type VendorEdits = Record<
   string,
-  (VendorContract & { plan?: string | null; cleared?: boolean; confirmed?: boolean; name?: string }) | undefined
+  | (VendorContract & {
+      plan?: string | null;
+      cleared?: boolean;
+      confirmed?: boolean;
+      name?: string;
+    })
+  | undefined
 >;
 
 // 지수 표기로 직렬화되는 작은 단가도 편집 시 원래 소수 값으로 복원합니다.
@@ -56,7 +67,9 @@ const normalizeDecimal = (text: string) => {
   const [whole, fraction = ""] = text.split(".");
   const normalizedWhole = whole.replace(/^0+(?=\d)/, "");
   const normalizedFraction = fraction.replace(/0+$/, "");
-  return normalizedFraction ? `${normalizedWhole}.${normalizedFraction}` : normalizedWhole;
+  return normalizedFraction
+    ? `${normalizedWhole}.${normalizedFraction}`
+    : normalizedWhole;
 };
 
 export type TierErrors = { seats?: string; fee?: string; subtotal?: string };
@@ -78,8 +91,11 @@ export function validateTiers(drafts: DraftTier[]) {
     }
     if (!/^\d+(\.\d+)?$/.test(feeText)) {
       error.fee = "월 단가는 0 이상의 숫자로 입력하세요 (예: 0, 12.345)";
-    } else if (!Number.isFinite(fee) || fee > Number.MAX_SAFE_INTEGER ||
-      normalizeDecimal(feeText) !== normalizeDecimal(decimalText(fee))) {
+    } else if (
+      !Number.isFinite(fee) ||
+      fee > Number.MAX_SAFE_INTEGER ||
+      normalizeDecimal(feeText) !== normalizeDecimal(decimalText(fee))
+    ) {
       error.fee = "월 단가의 크기 또는 정밀도가 계산 가능한 범위를 넘었습니다";
     }
     if (!error.seats && !error.fee && seats * fee > Number.MAX_SAFE_INTEGER) {
@@ -93,13 +109,27 @@ export function validateTiers(drafts: DraftTier[]) {
     totalError = `좌석 유형은 1~${MAX_TIERS}개 입력하세요`;
   }
   const fieldsValid = errors.every((error) => Object.keys(error).length === 0);
-  const seats = fieldsValid ? parsed.reduce((sum, tier) => sum + tier.seats, 0) : 0;
-  const spend = fieldsValid ? parsed.reduce((sum, tier) => sum + tier.seats * tier.fee, 0) : 0;
-  if (!Number.isSafeInteger(seats) || !Number.isFinite(spend) || spend > Number.MAX_SAFE_INTEGER) {
+  const seats = fieldsValid
+    ? parsed.reduce((sum, tier) => sum + tier.seats, 0)
+    : 0;
+  const spend = fieldsValid
+    ? parsed.reduce((sum, tier) => sum + tier.seats * tier.fee, 0)
+    : 0;
+  if (
+    !Number.isSafeInteger(seats) ||
+    !Number.isFinite(spend) ||
+    spend > Number.MAX_SAFE_INTEGER
+  ) {
     totalError = "총 좌석 수 또는 월 계약액이 계산 가능한 범위를 넘었습니다";
   }
   const valid = fieldsValid && !totalError;
-  return { errors, totalError, tiers: valid ? parsed : null, seats: valid ? seats : 0, spend: valid ? spend : 0 };
+  return {
+    errors,
+    totalError,
+    tiers: valid ? parsed : null,
+    seats: valid ? seats : 0,
+    spend: valid ? spend : 0,
+  };
 }
 
 export const tierSpend = (tiers: DraftTier[]) => validateTiers(tiers).spend;
@@ -126,7 +156,11 @@ export type VendorRow = ReturnType<typeof buildVendorRows>[number];
  * 입력이 바뀌면 확인이 풀리고, 확인 전까지 조직 합계는 이전 확인값을 씁니다 —
  * 오타 한 번이 전사 지출을 바꾸지 못하게 하는 장치입니다.
  */
-export function buildVendorRows(edits: VendorEdits, added: VendorRecord[], base: VendorRecord[] = VENDORS) {
+export function buildVendorRows(
+  edits: VendorEdits,
+  added: VendorRecord[],
+  base: VendorRecord[] = VENDORS,
+) {
   return [...base, ...added].map((v) => {
     const edit = edits[v.id] ?? {};
     const contract: VendorContract & { plan?: string | null } = edit.cleared
@@ -134,9 +168,14 @@ export function buildVendorRows(edits: VendorEdits, added: VendorRecord[], base:
       : { ...v.c, ...edit };
 
     const plans = getVendorPlans(v.kind, v.family);
-    const plan = edit.cleared ? (contract.plan ?? null) : (contract.plan ?? v.plan);
+    const plan = edit.cleared
+      ? (contract.plan ?? null)
+      : (contract.plan ?? v.plan);
     const catalogPlan = plans.find((p) => p.v === plan) ?? null;
-    const planDef = catalogPlan && v.kind === "other" && contract.planName ? { ...catalogPlan, label: contract.planName } : catalogPlan;
+    const planDef =
+      catalogPlan && v.kind === "other" && contract.planName
+        ? { ...catalogPlan, label: contract.planName }
+        : catalogPlan;
     const billing = planDef?.bill ?? null;
     const isSeat = billing === "seat";
 
@@ -149,7 +188,8 @@ export function buildVendorRows(edits: VendorEdits, added: VendorRecord[], base:
 
     // 좌석제는 좌석 수와 단가가 둘 다 있어야 금액이 성립합니다
     const setUp = !!billing && (!isSeat || validation.tiers !== null);
-    const confirmed = setUp && edit.confirmed !== false && !!contract.reviewedAt;
+    const confirmed =
+      setUp && edit.confirmed !== false && !!contract.reviewedAt;
     const spendMonthly = isSeat ? seatSpend : metered;
     const noSignal = v.users === 0 && v.distinct30 === 0;
 
@@ -178,7 +218,11 @@ export function buildVendorRows(edits: VendorEdits, added: VendorRecord[], base:
       confirmed,
       contract,
 
-      dot: !setUp ? "var(--gray)" : confirmed ? "var(--green)" : "var(--orange-ink)",
+      dot: !setUp
+        ? "var(--gray)"
+        : confirmed
+          ? "var(--green)"
+          : "var(--orange-ink)",
       statusLabel: !planDef
         ? "감지됨 · 미설정"
         : !setUp
@@ -219,7 +263,16 @@ export function contractCheck(input: {
   seats: number;
   stdFee: number;
 }) {
-  const { isSeat, isMetered, setUp, noSignal, users, distinct30, seats, stdFee } = input;
+  const {
+    isSeat,
+    isMetered,
+    setUp,
+    noSignal,
+    users,
+    distinct30,
+    seats,
+    stdFee,
+  } = input;
 
   if (isSeat && setUp) {
     if (noSignal)
@@ -259,7 +312,9 @@ export function vendorSummary(rows: VendorRow[]) {
   const seatRows = done.filter((r) => r.isSeat);
 
   const seatSpendAll = seatRows.reduce((n, r) => n + r.seatSpend, 0);
-  const meteredAll = done.filter((r) => !r.isSeat).reduce((n, r) => n + r.metered, 0);
+  const meteredAll = done
+    .filter((r) => !r.isSeat)
+    .reduce((n, r) => n + r.metered, 0);
   const seatsAll = seatRows.reduce((n, r) => n + r.seats, 0);
   const activeAll = seatRows.reduce((n, r) => n + r.users, 0);
   const pendingUsers = pending.reduce((n, r) => n + r.users, 0);
@@ -322,18 +377,46 @@ export const KEEP_NOTES: Record<string, string> = {
 };
 
 /** 보존 기간의 길이 순서 — 줄이는 방향만 확인을 받습니다 */
-export const KEEP_ORDER: Record<string, number> = { "12": 1, "24": 2, "36": 3, none: 4 };
+export const KEEP_ORDER: Record<string, number> = {
+  "12": 1,
+  "24": 2,
+  "36": 3,
+  none: 4,
+};
 
 export const STALE_INSTALLS = [
-  { id: "inst_8f3a41c0", mail: "***@codeworks.io", team: "데이터", ver: "v0.9", last: "2시간 전" },
-  { id: "inst_2b71c9e4", mail: "***@codeworks.io", team: "결제", ver: "v0.9", last: "1일 전" },
-  { id: "inst_5d0e77ab", mail: "***@codeworks.io", team: "플랫폼", ver: "v0.8", last: "3일 전" },
-  { id: "inst_c194a2f7", mail: "***@vendor.dev", team: "모바일", ver: "v0.9", last: "6시간 전" },
+  {
+    id: "inst_8f3a41c0",
+    mail: "***@codeworks.io",
+    team: "데이터",
+    ver: "v0.9",
+    last: "2시간 전",
+  },
+  {
+    id: "inst_2b71c9e4",
+    mail: "***@codeworks.io",
+    team: "결제",
+    ver: "v0.9",
+    last: "1일 전",
+  },
+  {
+    id: "inst_5d0e77ab",
+    mail: "***@codeworks.io",
+    team: "플랫폼",
+    ver: "v0.8",
+    last: "3일 전",
+  },
+  {
+    id: "inst_c194a2f7",
+    mail: "***@vendor.dev",
+    team: "모바일",
+    ver: "v0.9",
+    last: "6시간 전",
+  },
 ];
 
 export type PolicyAsk =
-  | { kind: "prompt"; value: boolean }
-  | { kind: "keep"; value: string };
+  { kind: "prompt"; value: boolean } | { kind: "keep"; value: string };
 
 /**
  * 되돌릴 수 없는 변경에만 확인을 받습니다.
@@ -341,25 +424,45 @@ export type PolicyAsk =
  * 보존 기간은 줄일 때만 — 늘리는 건 아무것도 지우지 않습니다.
  */
 export function policyCopy(ask: PolicyAsk, currentKeep: string) {
-  const version = { k: "수집 정책 버전", v: `v${POLICY_VERSION} → v${POLICY_VERSION + 1}` };
-  const foot = "각 설치가 다음 실행 때 새 정책을 받아갑니다 · 변경은 감사 로그에 기록됩니다";
+  const version = {
+    k: "수집 정책 버전",
+    v: `v${POLICY_VERSION} → v${POLICY_VERSION + 1}`,
+  };
+  const foot =
+    "각 설치가 다음 실행 때 새 정책을 받아갑니다 · 변경은 감사 로그에 기록됩니다";
 
   if (ask.kind === "prompt") {
     return ask.value
       ? {
           title: "프롬프트 원문 수집을 켭니다",
-          badge: { text: "개인정보 범위 변경", bg: "var(--red-tint)", fg: "var(--red)" },
+          badge: {
+            text: "개인정보 범위 변경",
+            bg: "var(--red-tint)",
+            fg: "var(--red)",
+          },
           body: "이 순간부터 프롬프트와 응답 본문이 저장됩니다 · 코드, 고객 정보, 자격증명이 함께 들어올 수 있습니다",
-          rows: [version, { k: "적용 대상", v: "설치 128대 전체" }, { k: "과거 기간", v: "소급 적용 없음" }],
+          rows: [
+            version,
+            { k: "적용 대상", v: "설치 128대 전체" },
+            { k: "과거 기간", v: "소급 적용 없음" },
+          ],
           foot,
           okLabel: "켜기",
           danger: true,
         }
       : {
           title: "프롬프트 원문 수집을 끕니다",
-          badge: { text: "수집 정책 배포", bg: "var(--blue-tint)", fg: "var(--blue)" },
+          badge: {
+            text: "수집 정책 배포",
+            bg: "var(--blue-tint)",
+            fg: "var(--blue)",
+          },
           body: "이후 본문은 저장되지 않고 길이와 토큰 수만 집계됩니다 · 이미 저장된 원문은 보존 기간까지 남습니다",
-          rows: [version, { k: "적용 대상", v: "설치 128대 전체" }, { k: "기존 원문", v: "보존 기간까지 유지" }],
+          rows: [
+            version,
+            { k: "적용 대상", v: "설치 128대 전체" },
+            { k: "기존 원문", v: "보존 기간까지 유지" },
+          ],
           foot,
           okLabel: "끄기",
           danger: false,
@@ -386,9 +489,24 @@ export function policyCopy(ask: PolicyAsk, currentKeep: string) {
 /* ── 알림 규칙 ───────────────────────────────────────── */
 
 export const ALERT_RULES = [
-  { id: "spend_spike", title: "비용 급증 알림", desc: "팀 사용량이 전주 대비 급증할 때", threshold: "+40%" },
-  { id: "quota_exceeded", title: "한도 초과 알림", desc: "좌석 한도에 걸려 요청이 차단될 때", threshold: "5명" },
-  { id: "product_not_registered", title: "미등록 제품 사용 알림", desc: "계약 벤더로 등록하지 않은 제품의 사용이 관측될 때", threshold: "1회" },
+  {
+    id: "spend_spike",
+    title: "비용 급증 알림",
+    desc: "팀 사용량이 전주 대비 급증할 때",
+    threshold: "+40%",
+  },
+  {
+    id: "quota_exceeded",
+    title: "한도 초과 알림",
+    desc: "좌석 한도에 걸려 요청이 차단될 때",
+    threshold: "5명",
+  },
+  {
+    id: "product_not_registered",
+    title: "미등록 제품 사용 알림",
+    desc: "계약 벤더로 등록하지 않은 제품의 사용이 관측될 때",
+    threshold: "1회",
+  },
 ];
 
 export { ADMIN_EMAIL };

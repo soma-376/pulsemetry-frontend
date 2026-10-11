@@ -89,8 +89,17 @@ export function TeamForm({
       </p>
       {recovery}
       <div className="flex justify-end gap-2">
-        {onCancel && <Button onClick={onCancel} disabled={isSubmitting}>취소</Button>}
-        <Button type="submit" variant="primary" loading={isSubmitting} loadingLabel="저장 중…">
+        {onCancel && (
+          <Button onClick={onCancel} disabled={isSubmitting}>
+            취소
+          </Button>
+        )}
+        <Button
+          type="submit"
+          variant="primary"
+          loading={isSubmitting}
+          loadingLabel="저장 중…"
+        >
           {team ? "변경 저장" : "팀 생성"}
         </Button>
       </div>

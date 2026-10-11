@@ -6,9 +6,18 @@ const meta = {
   title: "UI/Button",
   component: Button,
   parameters: { layout: "centered" },
-  args: { children: "변경사항 저장", variant: "default", size: "md", disabled: false, onClick: fn() },
+  args: {
+    children: "변경사항 저장",
+    variant: "default",
+    size: "md",
+    disabled: false,
+    onClick: fn(),
+  },
   argTypes: {
-    variant: { control: "select", options: ["default", "primary", "ghost", "danger"] },
+    variant: {
+      control: "select",
+      options: ["default", "primary", "ghost", "danger"],
+    },
     size: { control: "inline-radio", options: ["sm", "md"] },
   },
 } satisfies Meta<typeof Button>;
@@ -19,7 +28,9 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 export const Primary: Story = { args: { variant: "primary" } };
 export const Ghost: Story = { args: { variant: "ghost", children: "취소" } };
-export const Danger: Story = { args: { variant: "danger", children: "좌석 회수" } };
+export const Danger: Story = {
+  args: { variant: "danger", children: "좌석 회수" },
+};
 export const Disabled: Story = { args: { variant: "primary", disabled: true } };
 export const Small: Story = { args: { size: "sm", children: "다시 보내기" } };
 export const Loading: Story = {

@@ -129,23 +129,23 @@ export function DetailDrawer({
             >
               <header className="shrink-0 border-b border-border p-6">
                 <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 id={titleId} className="text-lg font-semibold">
-                    {title}
-                  </h2>
-                  {subtitle && (
-                    <p className="mt-1 text-xs text-text3">{subtitle}</p>
-                  )}
-                </div>
-                <button
-                  ref={close}
-                  type="button"
-                  onClick={onClose}
-                  aria-label="상세 패널 닫기"
-                  className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border text-lg hover:bg-hover"
-                >
-                  ×
-                </button>
+                  <div>
+                    <h2 id={titleId} className="text-lg font-semibold">
+                      {title}
+                    </h2>
+                    {subtitle && (
+                      <p className="mt-1 text-xs text-text3">{subtitle}</p>
+                    )}
+                  </div>
+                  <button
+                    ref={close}
+                    type="button"
+                    onClick={onClose}
+                    aria-label="상세 패널 닫기"
+                    className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border text-lg hover:bg-hover"
+                  >
+                    ×
+                  </button>
                 </div>
                 {headerContent && <div className="mt-4">{headerContent}</div>}
               </header>
@@ -156,9 +156,11 @@ export function DetailDrawer({
               >
                 {children}
               </div>
-              {footer !== null && <footer className="shrink-0 border-t border-border px-6 py-3 text-[11px] text-text3">
-                {footer ?? "Esc 키 또는 바깥 영역을 눌러 닫기"}
-              </footer>}
+              {footer !== null && (
+                <footer className="shrink-0 border-t border-border px-6 py-3 text-[11px] text-text3">
+                  {footer ?? "Esc 키 또는 바깥 영역을 눌러 닫기"}
+                </footer>
+              )}
             </motion.section>
           </motion.div>
         )}

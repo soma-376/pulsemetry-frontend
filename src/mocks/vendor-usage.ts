@@ -9,7 +9,10 @@ export const USAGE_VENDORS = ["claude_team", "openai_biz"].map((id) => {
 });
 
 // Claude's shares per metric; Codex receives the remainder. Cursor usage is not collected.
-const CLAUDE_SHARE: Record<string, { cost: number; tokensM: number; sessions: number }> = {
+const CLAUDE_SHARE: Record<
+  string,
+  { cost: number; tokensM: number; sessions: number }
+> = {
   플랫폼: { cost: 0.82, tokensM: 0.68, sessions: 0.74 },
   결제: { cost: 0.76, tokensM: 0.61, sessions: 0.7 },
   데이터: { cost: 0.58, tokensM: 0.43, sessions: 0.49 },
@@ -18,7 +21,11 @@ const CLAUDE_SHARE: Record<string, { cost: number; tokensM: number; sessions: nu
   미배정: { cost: 0.62, tokensM: 0.48, sessions: 0.53 },
 };
 
-export function demoVendorUsage(team: string, day: number, totals: Omit<VendorUsage, "vendorId">): VendorUsage[] {
+export function demoVendorUsage(
+  team: string,
+  day: number,
+  totals: Omit<VendorUsage, "vendorId">,
+): VendorUsage[] {
   const share = CLAUDE_SHARE[team];
   if (!share) return [{ vendorId: null, ...totals }];
   const drift = 0.04 * Math.sin(day / 9);
@@ -29,6 +36,11 @@ export function demoVendorUsage(team: string, day: number, totals: Omit<VendorUs
   };
   return [
     { vendorId: "claude_team", ...claude },
-    { vendorId: "openai_biz", cost: totals.cost - claude.cost, tokensM: totals.tokensM - claude.tokensM, sessions: totals.sessions - claude.sessions },
+    {
+      vendorId: "openai_biz",
+      cost: totals.cost - claude.cost,
+      tokensM: totals.tokensM - claude.tokensM,
+      sessions: totals.sessions - claude.sessions,
+    },
   ];
 }

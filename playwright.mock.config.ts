@@ -10,7 +10,9 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:3107",
     viewport: { width: 1440, height: 1000 },
-    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE } : {},
+    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
+      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE }
+      : {},
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
   },
@@ -20,6 +22,13 @@ export default defineConfig({
     url: "http://localhost:3107/login",
     reuseExistingServer: false,
     timeout: 120000,
-    env: { BFF_ORIGIN: "http://localhost:3107", BFF_SESSION_KEYS: "abababababababababababababababababababababababababababababababab", DASHBOARD_API_URL: "http://localhost:3110", NEXT_PUBLIC_ENROLLMENT_API_URL: "http://localhost:3110", ENROLLMENT_API_URL: "http://localhost:3110" },
+    env: {
+      BFF_ORIGIN: "http://localhost:3107",
+      BFF_SESSION_KEYS:
+        "abababababababababababababababababababababababababababababababab",
+      DASHBOARD_API_URL: "http://localhost:3110",
+      NEXT_PUBLIC_ENROLLMENT_API_URL: "http://localhost:3110",
+      ENROLLMENT_API_URL: "http://localhost:3110",
+    },
   },
 });

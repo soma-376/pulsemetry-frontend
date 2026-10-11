@@ -1,4 +1,10 @@
-import { appendFileSync, mkdirSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  appendFileSync,
+  mkdirSync,
+  readdirSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 
 /**
@@ -48,7 +54,11 @@ function recentLogins(now: number) {
     const at = Number(name.split("-")[0]);
     if (Number.isFinite(at) && now - at < LOGIN_WINDOW_MS) recent.push(at);
     else {
-      try { unlinkSync(join(loginsDir, name)); } catch { /* 다른 프로세스가 먼저 지웠다 */ }
+      try {
+        unlinkSync(join(loginsDir, name));
+      } catch {
+        /* 다른 프로세스가 먼저 지웠다 */
+      }
     }
   }
   return recent.sort((a, b) => a - b);
@@ -58,18 +68,32 @@ function recentLogins(now: number) {
  * 로그인 한 번을 기록하기 전에 창이 찰 때까지 기다린다. 기록은 파일 타임스탬프라 worker 재시작·globalSetup·이전 실행을 넘어 이어진다.
  * 대기는 실패가 아니다 — `onWait`(테스트 제한 시간 연장 등)를 부르고 대기 기록을 남긴다. 기다린 밀리초를 돌려준다.
  */
-export async function paceLogin(label: string, onWait: (ms: number) => void = () => {}) {
+export async function paceLogin(
+  label: string,
+  onWait: (ms: number) => void = () => {},
+) {
   let waited = 0;
   for (;;) {
     const now = Date.now();
     const recent = recentLogins(now);
     if (recent.length < LOGIN_LIMIT) break;
-    const delay = recent[recent.length - LOGIN_LIMIT] + LOGIN_WINDOW_MS - now + 100;
+    const delay =
+      recent[recent.length - LOGIN_LIMIT] + LOGIN_WINDOW_MS - now + 100;
     onWait(delay);
     await new Promise((done) => setTimeout(done, delay));
     waited += delay;
   }
-  writeFileSync(join(loginsDir, `${Date.now()}-${process.pid}-${Math.random().toString(36).slice(2)}`), label);
-  appendFileSync(pacerLog, JSON.stringify({ at: new Date().toISOString(), label, waitedMs: waited }) + "\n");
+  writeFileSync(
+    join(
+      loginsDir,
+      `${Date.now()}-${process.pid}-${Math.random().toString(36).slice(2)}`,
+    ),
+    label,
+  );
+  appendFileSync(
+    pacerLog,
+    JSON.stringify({ at: new Date().toISOString(), label, waitedMs: waited }) +
+      "\n",
+  );
   return waited;
 }

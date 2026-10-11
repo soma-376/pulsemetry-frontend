@@ -1,7 +1,13 @@
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 import { int } from "@/lib/format";
-import { apiJson, managementKey, ManagementError, orgPath, readOptions } from "./management";
+import {
+  apiJson,
+  managementKey,
+  ManagementError,
+  orgPath,
+  readOptions,
+} from "./management";
 
 const count = z.number().int().nonnegative().nullable();
 export const ingestStatusSchema = z.object({
@@ -35,29 +41,44 @@ const REASONS: Record<string, string> = {
   source_not_available: "수집 기기의 보고가 없어 판정할 수 없습니다",
 };
 
-const time = (value: string) => new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+const time = (value: string) =>
+  new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
 
 /** 헤더에 싣는 설명. 서버가 null로 준 값은 싣지 않는다 — 0이나 정상으로 바꾸지 않는다. */
 export function ingestDetails(data: IngestStatus): string[] {
   const details: string[] = [];
   if (data.reason) details.push(REASONS[data.reason] ?? `사유 ${data.reason}`);
-  if (data.lastReceivedAt) details.push(`마지막 수신 ${time(data.lastReceivedAt)}`);
-  else if (data.status === "empty") details.push("아직 수집된 데이터가 없습니다");
+  if (data.lastReceivedAt)
+    details.push(`마지막 수신 ${time(data.lastReceivedAt)}`);
+  else if (data.status === "empty")
+    details.push("아직 수집된 데이터가 없습니다");
   if (data.activeInstallations != null) {
-    details.push(`보고 중인 설치 ${int(data.activeInstallations)}대${data.windowMinutes ? `(최근 ${int(data.windowMinutes)}분)` : ""}`);
+    details.push(
+      `보고 중인 설치 ${int(data.activeInstallations)}대${data.windowMinutes ? `(최근 ${int(data.windowMinutes)}분)` : ""}`,
+    );
   }
   return details;
 }
 
-export async function fetchIngestStatus(organizationId: string, signal?: AbortSignal) {
-  const result = await apiJson("dashboard", orgPath(organizationId, "/ingest-status"), ingestStatusSchema, { signal });
-  if (result.organizationId !== organizationId) throw new ManagementError("invalid_response", 422);
+export async function fetchIngestStatus(
+  organizationId: string,
+  signal?: AbortSignal,
+) {
+  const result = await apiJson(
+    "dashboard",
+    orgPath(organizationId, "/ingest-status"),
+    ingestStatusSchema,
+    { signal },
+  );
+  if (result.organizationId !== organizationId)
+    throw new ManagementError("invalid_response", 422);
   return result;
 }
 
-export const ingestStatusOptions = (organizationId: string) => queryOptions({
-  queryKey: managementKey(organizationId, "ingest-status"),
-  queryFn: ({ signal }) => fetchIngestStatus(organizationId, signal),
-  enabled: !!organizationId,
-  ...readOptions,
-});
+export const ingestStatusOptions = (organizationId: string) =>
+  queryOptions({
+    queryKey: managementKey(organizationId, "ingest-status"),
+    queryFn: ({ signal }) => fetchIngestStatus(organizationId, signal),
+    enabled: !!organizationId,
+    ...readOptions,
+  });

@@ -61,7 +61,9 @@ export function StatCard({
 
       <span className="tnum flex min-w-0 items-baseline gap-[3px] leading-[1.1] tracking-[-0.02em]">
         <span
-          className={big ? "text-[28px] font-semibold" : "text-[18px] font-semibold"}
+          className={
+            big ? "text-[28px] font-semibold" : "text-[18px] font-semibold"
+          }
           style={{ color: tone }}
         >
           {value}

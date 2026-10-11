@@ -34,7 +34,9 @@ export function VendorTable({
           연동 벤더 {rows.length}
         </span>
         <div className="flex-1" />
-        <Button disabled={addDisabled} onClick={onAdd}>벤더 추가</Button>
+        <Button disabled={addDisabled} onClick={onAdd}>
+          벤더 추가
+        </Button>
       </div>
 
       {rows.map((v, i) => (
@@ -45,7 +47,9 @@ export function VendorTable({
           aria-label={v.openLabel}
           aria-busy={loadingVendorId === v.id || undefined}
           aria-disabled={loadingVendorId === v.id || undefined}
-          onClick={() => { if (loadingVendorId !== v.id) onOpen(v.id); }}
+          onClick={() => {
+            if (loadingVendorId !== v.id) onOpen(v.id);
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
@@ -86,10 +90,19 @@ export function VendorTable({
             {v.spendText}
           </span>
           <span className="flex items-center justify-center text-text3">
-            {loadingVendorId === v.id ? <>
-              <span aria-hidden="true" className="size-3.5 rounded-full border-2 border-current border-r-transparent motion-safe:animate-spin" />
-              <span role="status" className="sr-only">{v.short} 상세 정보를 불러오는 중입니다…</span>
-            </> : "›"}
+            {loadingVendorId === v.id ? (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="size-3.5 rounded-full border-2 border-current border-r-transparent motion-safe:animate-spin"
+                />
+                <span role="status" className="sr-only">
+                  {v.short} 상세 정보를 불러오는 중입니다…
+                </span>
+              </>
+            ) : (
+              "›"
+            )}
           </span>
         </div>
       ))}

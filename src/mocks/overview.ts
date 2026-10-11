@@ -209,7 +209,14 @@ export const TEAM_SOURCES: TeamSource[] = [
     gainW: -8,
     cause: "haiku 전환 (절감)",
   },
-  { team: "모바일", users: 15, prevUsers: 14, costW: 214, gainW: 3, cause: "—" },
+  {
+    team: "모바일",
+    users: 15,
+    prevUsers: 14,
+    costW: 214,
+    gainW: 3,
+    cause: "—",
+  },
 ];
 
 /** 팀 미배분분의 증가 기여 가중치 */
