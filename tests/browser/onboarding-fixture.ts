@@ -103,6 +103,39 @@ function settingsVendor(vendor: Vendor) {
     activeUsers30d: null,
   };
 }
+function settingsValue<T>(value: T | null, reasons: string[] = []) {
+  return {
+    value,
+    status:
+      value === null ? "unavailable" : reasons.length ? "partial" : "complete",
+    reasons,
+  };
+}
+function settingsRow(vendor: Vendor) {
+  return {
+    vendorId: vendor.vendorId,
+    displayName: vendor.displayName,
+    kind: vendor.kind,
+    source: vendor.source,
+    version: vendor.version,
+    contractStatus: settingsVendor(vendor).contractStatus,
+    contractInput: vendor.contract
+      ? { status: "complete", missingFields: [] }
+      : {
+          status: "required",
+          missingFields: ["planId", "seats", "monthlyFeePerSeatUsd"],
+        },
+    contractSeats: settingsValue(
+      vendor.contract?.tiers.reduce((sum, tier) => sum + tier.seats, 0) ?? null,
+      vendor.contract ? [] : ["contract_missing"],
+    ),
+    monthlySeatFeeUsd: settingsValue(
+      vendor.contract?.monthlySeatFeeUsd ?? null,
+      vendor.contract ? [] : ["contract_missing"],
+    ),
+    assignedSeats: settingsValue(null, ["seat_source_not_recorded"]),
+  };
+}
 
 export async function mockOnboarding(page: Page) {
   if (installed.has(page)) return;
@@ -239,7 +272,14 @@ export async function mockOnboarding(page: Page) {
       return json(state);
     }
     if (path === "/vendors" && method === "GET")
-      return json({ meta, vendors: { items: vendors, nextCursor: null } });
+      return json({
+        meta,
+        vendors: {
+          items: vendors.map(settingsRow),
+          totalCount: vendors.length,
+          nextCursor: null,
+        },
+      });
     if (path === "/vendors" && method === "POST") {
       if (vendors.some((v) => v.kind === body.kind))
         return json(
@@ -268,29 +308,44 @@ export async function mockOnboarding(page: Page) {
     }
     if (settings && path === "/settings" && method === "GET") {
       const data = structuredClone(settingsExample);
-      const items = vendors.map(settingsVendor);
-      const configured = items.filter((item) => item.contract);
+      const details = vendors.map(settingsVendor);
+      const items = vendors.map(settingsRow);
+      const configured = details.filter(
+        (item) => item.contractStatus === "active",
+      );
+      const excluded = [
+        ...new Set(
+          details
+            .filter((item) => item.contractStatus !== "active")
+            .map((item) => `contract_${item.contractStatus}`),
+        ),
+      ];
       return json({
         ...data,
         meta: { ...data.meta, organizationId: org },
         summary: {
           ...data.summary,
-          configuredVendors: configured.length,
-          unconfiguredVendors: items.length - configured.length,
-          monthlySeatFeeUsd: configured
-            .reduce(
-              (sum, item) => sum + Number(item.contract!.monthlySeatFeeUsd),
-              0,
-            )
-            .toFixed(6),
-          contractedSeats: configured.reduce(
-            (sum, item) =>
-              sum +
-              item.contract!.tiers.reduce(
-                (seats, tier) => seats + tier.seats,
+          unconfiguredVendors: settingsValue(items.length - configured.length),
+          monthlySeatFeeUsd: settingsValue(
+            configured
+              .reduce(
+                (sum, item) => sum + Number(item.contract!.monthlySeatFeeUsd),
                 0,
-              ),
-            0,
+              )
+              .toFixed(6),
+            excluded,
+          ),
+          contractedSeats: settingsValue(
+            configured.reduce(
+              (sum, item) =>
+                sum +
+                item.contract!.tiers.reduce(
+                  (seats, tier) => seats + tier.seats,
+                  0,
+                ),
+              0,
+            ),
+            excluded,
           ),
         },
         vendors: { items, totalCount: items.length, nextCursor: null },

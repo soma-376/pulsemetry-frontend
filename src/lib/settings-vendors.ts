@@ -1,24 +1,102 @@
+import { settingsValueStatus } from "./metrics/settings-presentation";
+import { contractInputText } from "./api/contract-input";
 import { CONTRACT_STATUS } from "./contract-status";
-import type { SettingsVendor } from "./api/settings";
+import type { SettingsVendor, SettingsVendorRow } from "./api/settings";
 import type { CatalogVendor } from "./api/vendor-catalog";
 import { NEW_CONTRACT_ROW } from "./contracts";
 import { int, usd } from "./format";
 import type { VendorDraft, VendorRow } from "./settings";
 
-/** 서버 응답을 기존 행 배치에 맞춘다. 관측 인원에서 좌석을 추측하지 않는다. */
+/** 서버가 산출한 목록 값을 표시한다. 관측 인원에서 좌석을 추측하지 않는다. */
 export function settingsVendorRow(
-  vendor: SettingsVendor,
+  vendor: SettingsVendorRow,
   product?: CatalogVendor,
 ): VendorRow {
-  const contract = vendor.contract;
   const status = CONTRACT_STATUS[vendor.contractStatus];
-  const tone = status.color;
+  const prefix =
+    vendor.contractStatus === "expired"
+      ? "마지막 계약 "
+      : vendor.contractStatus === "scheduled"
+        ? "예정 계약 "
+        : "";
   return {
     ...NEW_CONTRACT_ROW,
     id: vendor.vendorId,
     kind: vendor.kind,
     short: vendor.displayName,
     product: product?.product ?? vendor.displayName,
+    dot: status.color,
+    statusFg: status.color,
+    statusLabel: status.label,
+    seatsText: `배정 ${vendor.assignedSeats.value === null ? "-" : int(vendor.assignedSeats.value)} / ${vendor.contractSeats.value === null ? "계약 -" : `${prefix}${int(vendor.contractSeats.value)}석`}`,
+    spendText:
+      vendor.monthlySeatFeeUsd.value === null
+        ? "-"
+        : `${prefix}${usd(Number(vendor.monthlySeatFeeUsd.value))} / 월`,
+    spendFg:
+      vendor.monthlySeatFeeUsd.value === null ? "var(--text3)" : "var(--text)",
+    inputNotice:
+      vendor.contractInput.status === "required"
+        ? contractInputText(vendor.contractInput.missingFields)
+        : undefined,
+    seatsStatus: settingsValueStatus(vendor.assignedSeats),
+    spendStatus: settingsValueStatus(vendor.monthlySeatFeeUsd),
+    openLabel: `${vendor.displayName} 계약 설정 열기`,
+  };
+}
+
+/** 편집기는 단건 상세를 사용한다. 목록 응답에 계약 등급을 다시 싣지 않는다. */
+export function settingsVendorDetailRow(
+  vendor: SettingsVendor,
+  product?: CatalogVendor,
+): VendorRow {
+  const contract = vendor.contract;
+  const count =
+    contract?.tiers.reduce((sum, tier) => sum + tier.seats, 0) ?? null;
+  const row = settingsVendorRow(
+    {
+      vendorId: vendor.vendorId,
+      displayName: vendor.displayName,
+      kind: vendor.kind,
+      source: vendor.source,
+      version: vendor.version,
+      contractStatus: vendor.contractStatus,
+      contractInput:
+        vendor.contractInput ??
+        (contract
+          ? { status: "complete", missingFields: [] }
+          : {
+              status: "required",
+              missingFields: ["planId", "seats", "monthlyFeePerSeatUsd"],
+            }),
+      contractSeats: {
+        value: count,
+        status: count === null ? "unavailable" : "complete",
+        reasons: count === null ? ["contract_missing"] : [],
+      },
+      monthlySeatFeeUsd: {
+        value: contract?.monthlySeatFeeUsd ?? null,
+        status:
+          contract?.monthlySeatFeeUsd == null ? "unavailable" : "complete",
+        reasons:
+          contract?.monthlySeatFeeUsd == null
+            ? ["contract_amount_unavailable"]
+            : [],
+      },
+      assignedSeats: {
+        value: vendor.seats?.data?.assigned ?? null,
+        status: !vendor.seats?.data
+          ? "unavailable"
+          : vendor.seats.availability === "available"
+            ? "complete"
+            : "partial",
+        reasons: vendor.seats?.reason ? [vendor.seats.reason] : [],
+      },
+    },
+    product,
+  );
+  return {
+    ...row,
     manual: vendor.source === "manual",
     plan: contract?.planId ?? null,
     noSignal: vendor.observation === "unobserved",
@@ -29,18 +107,6 @@ export function settingsVendorRow(
       planName: contract?.termNote ?? "",
       reviewedAt: contract?.confirmedAt,
     },
-    dot: tone,
-    statusFg: tone,
-    statusLabel: status.label,
-    // 배정 좌석은 좌석 원장의 값이고(없으면 "-") 계약 좌석은 구매 수량이다 — 둘을 섞지 않는다.
-    seatsText: `${vendor.seats?.data ? `배정 ${int(vendor.seats.data.assigned)}` : "배정 -"} / ${contract ? `${vendor.contractStatus === "expired" ? "마지막 계약 " : vendor.contractStatus === "scheduled" ? "예정 계약 " : ""}${int(contract.tiers.reduce((sum, tier) => sum + tier.seats, 0))}석` : "계약 -"}`,
-    spendText:
-      contract?.monthlySeatFeeUsd != null
-        ? `${vendor.contractStatus === "expired" ? "마지막 계약 " : vendor.contractStatus === "scheduled" ? "예정 계약 " : ""}${usd(Number(contract.monthlySeatFeeUsd))} / 월`
-        : "-",
-    spendFg:
-      contract?.monthlySeatFeeUsd != null ? "var(--text)" : "var(--text3)",
-    openLabel: `${vendor.displayName} 계약 설정 열기`,
   };
 }
 export function settingsVendorDraft(vendor?: SettingsVendor): VendorDraft {

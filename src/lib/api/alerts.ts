@@ -56,27 +56,26 @@ const alertSchema = z.object({
   members: z.array(
     z.object({ memberId: z.string(), account: z.string().nullable() }),
   ),
-  summary: z.record(z.string(), z.unknown()),
-  acknowledgement: z
-    .object({ acknowledgedAt: z.string(), acknowledgedBy: z.string() })
+  evidence: z
+    .discriminatedUnion("kind", [
+      z.object({ kind: z.literal("usage"), targetName: z.string() }),
+      z.object({
+        kind: z.literal("spend"),
+        startDate: z.iso.date(),
+        endDate: z.iso.date(),
+        currentCostUsd: z.string().regex(/^\d+(\.\d+)?$/),
+        previousCostUsd: z.string().regex(/^\d+(\.\d+)?$/),
+        increaseRatio: z.number().finite(),
+      }),
+    ])
     .nullable(),
+  acknowledgement: z.object({ acknowledgedAt: z.string() }).nullable(),
 });
 export type Alert = z.infer<typeof alertSchema>;
 const evaluationSchema = z.object({
-  availability: z.enum(["available", "unavailable"]),
-  reason: z.string().nullable(),
+  status: z.enum(["complete", "partial", "unavailable"]),
+  reasons: z.array(z.string()),
   asOf: z.string().nullable(),
-  rules: z.array(
-    z.object({
-      ruleId: z.string(),
-      enabled: z.boolean(),
-      evaluatedAt: z.string().nullable(),
-      status: z.enum(["evaluated", "not_evaluated", "failed"]).nullable(),
-      reason: z.string().nullable(),
-      windowStart: z.string().nullable(),
-      windowEnd: z.string().nullable(),
-    }),
-  ),
 });
 export const alertsResponseSchema = z.object({
   meta: z.object({
@@ -214,12 +213,11 @@ const REASONS: Record<string, string> = {
   approved_tools_not_configured: "승인 도구 목록을 먼저 입력하세요",
   evaluation_not_configured: "켜진 알림 규칙이 없습니다",
   evaluation_pending: "규칙을 켰지만 아직 평가 전입니다",
-  period_incomplete:
-    "두 기간 중 완전히 관측되지 않은 날이 있어 평가하지 않았습니다",
-  cost_not_available: "비용을 알 수 없는 사용이 있어 평가하지 않았습니다",
-  no_previous_spend: "앞 7일 비용이 0이라 증가율이 없습니다",
-  period_not_settled: "아직 확정된 날이 없습니다",
-  evaluation_error: "평가 중 오류가 났습니다 — 다음 주기에 다시 평가합니다",
+  period_incomplete: "비교 기간 데이터 부족",
+  cost_not_available: "비용 데이터 부족",
+  no_previous_spend: "이전 7일 비용 0",
+  period_not_settled: "데이터 확정 대기",
+  evaluation_error: "평가 오류",
 };
 export const alertReasonText = (reason: string | null | undefined) =>
   reason ? (REASONS[reason] ?? reason) : "-";
@@ -229,21 +227,18 @@ const usdText = (value: unknown) =>
 
 /** 알림 한 줄 요약 — 서버가 준 값만 쓴다. */
 export function alertSummary(alert: Alert): string {
-  const s = alert.summary;
+  const evidence = alert.evidence;
   if (alert.ruleId === "spend_spike") {
-    const ratio =
-      typeof s.increaseRatio === "number"
-        ? `+${Math.round(s.increaseRatio * 100)}%`
-        : "-";
-    return `${s.currentStartDate ?? "-"}~${s.currentEndDate ?? "-"} ${usdText(s.currentCostUsd)} · 앞 7일 ${usdText(s.previousCostUsd)} · ${ratio}`;
+    if (evidence?.kind !== "spend") return "비용 정보를 확인할 수 없습니다";
+    return `${evidence.startDate}~${evidence.endDate} ${usdText(evidence.currentCostUsd)} · 앞 7일 ${usdText(evidence.previousCostUsd)} · +${Math.round(evidence.increaseRatio * 100)}%`;
   }
-  if (alert.ruleId === "product_not_registered") {
-    const product =
-      typeof s.productName === "string"
-        ? s.productName
-        : (alert.subject ?? "-");
-    return `제품 ${product} · ${alert.eventCount ?? "-"}건 · 구성원 ${alert.memberCount ?? "-"}명`;
-  }
-  const what = alert.ruleId === "model_not_allowed" ? "모델" : "도구";
-  return `${what} ${alert.subject ?? "-"} · ${alert.eventCount ?? "-"}건 · 구성원 ${alert.memberCount ?? "-"}명`;
+  const what =
+    alert.ruleId === "product_not_registered"
+      ? "제품"
+      : alert.ruleId === "model_not_allowed"
+        ? "모델"
+        : "도구";
+  const target =
+    evidence?.kind === "usage" ? evidence.targetName : (alert.subject ?? "-");
+  return `${what} ${target} · ${alert.eventCount ?? "-"}건 · 구성원 ${alert.memberCount ?? "-"}명`;
 }

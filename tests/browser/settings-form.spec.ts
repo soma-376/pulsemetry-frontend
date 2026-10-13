@@ -37,6 +37,60 @@ test.beforeEach(async ({ page }) => {
   await openDashboard(page, "/settings");
 });
 
+test("알림의 같은 계약 갱신 링크를 닫은 뒤 다시 눌러도 계약 폼이 열린다", async ({
+  page,
+}) => {
+  const settingsResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/settings") &&
+      response.request().method() === "GET",
+  );
+  await page.getByRole("button", { name: "새로고침", exact: true }).click();
+  const data = await (await settingsResponse).json();
+  const vendor = data.vendors.items[0];
+  await page.route("**/api/v1/organizations/*/contract-input-status", (route) =>
+    route.fulfill({
+      json: {
+        organizationId: data.meta.organizationId,
+        asOf: "2026-10-13T00:00:00Z",
+        requiredCount: 0,
+        vendors: [],
+        expiredCount: 1,
+        expiredContracts: [
+          {
+            vendorId: vendor.vendorId,
+            displayName: vendor.displayName,
+            endDate: "2026-10-12",
+          },
+        ],
+      },
+    }),
+  );
+  await page.reload();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await page
+      .getByRole("button", { name: "알림, 미확인 1건", exact: true })
+      .click();
+    await page
+      .getByRole("dialog", { name: "알림", exact: true })
+      .getByRole("link", { name: "계약 갱신" })
+      .click();
+    const editor = page.getByRole("dialog", {
+      name: `${vendor.displayName} 계약 설정`,
+      exact: true,
+    });
+    await expect(
+      editor.getByRole("textbox", { name: "표시 이름", exact: true }),
+    ).toHaveValue(vendor.displayName);
+    await expect(
+      page.getByRole("dialog", { name: "알림", exact: true }),
+    ).not.toBeVisible();
+    await editor.getByRole("button", { name: "취소", exact: true }).click();
+    await expect(editor).not.toBeVisible();
+    await expect(page).toHaveURL(/\/settings$/);
+  }
+});
+
 test("deleting a middle vendor then adding another keeps edit and delete targets separate", async ({
   page,
 }) => {

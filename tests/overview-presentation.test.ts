@@ -1,388 +1,264 @@
+import {
+  valueStatus,
+  reasonsText,
+} from "../src/lib/metrics/overview-presentation";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import example from "../docs/api/overview-response.example.json";
-import { overviewSchema } from "../src/lib/api/overview";
-import { overviewSettingsSchema } from "../src/lib/api/overview-vendors";
+import { overviewSchema, type OverviewValue } from "../src/lib/api/overview";
 import { presentOverview } from "../src/lib/metrics/overview-presentation";
 import { nullableLinePath } from "../src/components/charts/scale";
-
-test("기존 5개 지표에 서버 값을 연결하며 미제공 값은 0으로 바꾸지 않는다", () => {
-  const data = overviewSchema.parse(example);
-  data.usage.current!.equivalentCostUsd = "0.525980";
-  data.usage.current!.tokens.total = null;
-  data.alerts.availability = "unavailable";
-  const model = presentOverview(data);
-  assert.deepEqual(
-    model.kpis.map((kpi) => kpi.label),
-    [
-      "사용 관측 인원",
-      "토큰 비용",
-      "월 좌석 계약액",
-      "세션",
-      "보안 경보 및 알림",
-    ],
-  );
-  assert.equal(model.kpis[1].value, "$0.53");
-  assert.equal(model.kpis[1].unit, " / -");
-  assert.equal(model.kpis[2].value, "-");
-  assert.equal(model.kpis[4].value, "-");
-  assert.equal(data.usage.current!.equivalentCostUsd, "0.525980");
-  assert.deepEqual(model.vendorOverview.rows, []);
+const data = () => overviewSchema.parse(example);
+const value = <T>(v: T | null, reasons: string[] = []): OverviewValue<T> => ({
+  value: v,
+  status: v === null ? "unavailable" : reasons.length ? "partial" : "complete",
+  reasons,
 });
-test("등록 제품의 사용 관측 인원과 팀별 사용 제품은 서버의 제품별 사용에서 오고 매핑 없는 관측은 미확인 제품이다", () => {
-  const data = overviewSchema.parse(example);
-  const settings = overviewSettingsSchema.parse({
-    meta: {
-      organizationId: data.meta.organizationId,
-      asOf: "2026-09-14T00:00:00Z",
-      snapshotId: "s",
-    },
-    summary: { monthlySeatFeeUsd: null },
-    catalog: { plans: [] },
-    vendors: {
-      totalCount: 3,
-      nextCursor: null,
-      items: [
-        {
-          vendorId: "v1",
-          displayName: "Claude",
-          kind: "claude_team",
-          state: "configured",
-          contractStatus: "active",
-          contract: null,
-        },
-        {
-          vendorId: "v2",
-          displayName: "Codex",
-          kind: "openai_biz",
-          state: "configured",
-          contractStatus: "active",
-          contract: null,
-        },
-        {
-          vendorId: "v3",
-          displayName: "Cursor",
-          kind: "cursor",
-          state: "configured",
-          contractStatus: "active",
-          contract: null,
-        },
-      ],
-    },
-  });
-  const model = presentOverview(data, settings);
-  // 목록에 없는 등록 제품(Cursor)은 그 기간에 관측된 사용이 없다 — 0("미관측"). 제품의 인원이 null이면 null이다.
+const unavailable = {
+  status: "unavailable" as const,
+  reasons: ["previous_period_incomplete"],
+  previousValue: null,
+  absoluteChange: null,
+  percentChange: null,
+  change: null,
+};
+test("KPI 5개는 파생값을 재계산하지 않고 서버 값을 표시한다", () => {
+  const d = data();
+  d.summary!.equivalentCostUsd.value = "0.525980";
+  d.summary!.equivalentCostPerUserUsd.value = "1.2345";
+  d.summary!.totalTokens = {
+    ...value<number>(null, ["token_data_incomplete"]),
+    comparison: unavailable,
+  };
+  const m = presentOverview(d);
   assert.deepEqual(
-    model.vendorOverview.rows.map((row) => [row.name, row.observedUsers]),
-    [
-      ["Claude", 77],
-      ["Codex", 28],
-      ["Cursor", 0],
-    ],
+    m.kpis.map((k) => k.label),
+    ["사용자 수", "사용 환산액", "세션 수", "사용자당 환산액", "총 토큰 수"],
   );
-  assert.deepEqual(
-    model.attribution.rows.map((row) => row.vendors),
-    [
-      ["Claude (Anthropic)", "ChatGPT / Codex (OpenAI)"],
-      ["Claude (Anthropic)"],
-      ["Claude (Anthropic)", "ChatGPT / Codex (OpenAI)"],
-    ],
-  );
-  assert.deepEqual(model.attribution.unmappedVendors, [
+  assert.equal(m.kpis[1].value, "$0.53");
+  assert.equal(m.kpis[3].value, "$1.23");
+  assert.equal(m.kpis[4].value, "-");
+  assert.equal(m.kpis[2].unit, "개");
+  assert.equal("vendorOverview" in m, false);
+});
+test("팀의 관측 제품과 미확인 제품은 유지하고 계약·제품별 집계는 제거한다", () => {
+  const d = data(),
+    m = presentOverview(d);
+  assert.deepEqual(m.attribution.rows[0].vendors, [
+    "Claude (Anthropic)",
+    "ChatGPT / Codex (OpenAI)",
+  ]);
+  assert.deepEqual(m.attribution.unmappedVendors, [
     "Claude (Anthropic)",
     "미확인 제품",
   ]);
-  data.productUsage.products[0].activeUsers = null;
-  assert.equal(
-    presentOverview(data, settings).vendorOverview.rows[0].observedUsers,
-    null,
-  );
-  data.usage.current = null;
-  assert.deepEqual(
-    presentOverview(data, settings).vendorOverview.rows.map(
-      (row) => row.observedUsers,
-    ),
-    [null, null, null],
-  );
+  assert.equal("productUsage" in d, false);
+  assert.equal("seats" in d, false);
 });
-test("미관측 날짜를 원래 차트에서 연결하지 않고 단일 모델은 단일 모델 카드 데이터를 유지한다", () => {
-  const data = overviewSchema.parse(example);
-  data.trend.points[1].observation = "unobserved";
-  data.trend.points[1].equivalentCostUsd = "123";
-  data.modelMix.models = [data.modelMix.models[0]];
-  const model = presentOverview(data);
-  assert.equal(model.chart.cost[1], null);
-  assert.equal(model.chart.ticks.length, data.meta.dayCount);
-  assert.equal(model.mix.count, 1);
-  assert.equal(model.mix.rows[0].shareText, "100.0%");
+test("미관측 날짜는 연결하지 않고 단일 모델 비중은 서버 값을 사용한다", () => {
+  const d = data();
+  d.trend!.points[1].observation = "unobserved";
+  d.modelMix!.models = [{ ...d.modelMix!.models[0], costShare: value(1) }];
+  const m = presentOverview(d);
+  assert.equal(m.chart.cost[1], null);
+  assert.equal(m.chart.ticks.length, d.meta.dayCount);
+  assert.equal(m.mix.count, 1);
+  assert.equal(m.mix.rows[0].shareText, "100.0%");
   assert.equal(
     nullableLinePath([1, null, 3, 0], { max: 4 }),
     "M0,75 M66.67,25 L100,100",
   );
 });
-test("토큰 수가 미확정인 partial 응답도 모델별 비용이 모두 있으면 비용 비중을 표시한다", () => {
-  const data = overviewSchema.parse(example);
-  data.modelMix.availability = "partial";
-  data.modelMix.reason = "source_not_available";
-  data.modelMix.models = data.modelMix.models
-    .slice(0, 2)
-    .map((model, index) => ({
-      ...model,
-      equivalentCostUsd: index === 0 ? "75" : "25",
-      totalTokens: null,
-      effectiveCostPerMillionTokensUsd: null,
-    }));
-  const model = presentOverview(data);
+test("토큰이 누락돼도 서버가 확인한 금액 비중은 보여준다", () => {
+  const d = data();
+  d.modelMix!.models = d.modelMix!.models.slice(0, 2).map((m, i) => ({
+    ...m,
+    costShare: value(i ? 0.25 : 0.75),
+    totalTokens: value<number>(null, ["token_data_incomplete"]),
+    effectiveCostPerMillionTokensUsd: value<string>(null, [
+      "token_data_incomplete",
+    ]),
+  }));
+  const m = presentOverview(d);
   assert.deepEqual(
-    model.mix.slices.map((slice) => slice.share),
+    m.mix.slices.map((s) => s.share),
     [75, 25],
   );
-  assert.deepEqual(
-    model.mix.rows.map((row) => row.shareText),
-    ["75.0%", "25.0%"],
-  );
-  assert.ok(model.mix.rows.every((row) => row.perMText === "-"));
+  assert.ok(m.mix.rows.every((r) => r.perMText === "-"));
 });
-test("비용이 누락된 모델은 목록에 유지하고 도넛 비중을 만들지 않는다", () => {
-  const data = overviewSchema.parse(example);
-  data.modelMix.models = data.modelMix.models.slice(0, 2);
-  data.modelMix.models[0].equivalentCostUsd = null;
-  data.modelMix.models[0].displayName = "unknown-model";
-  const model = presentOverview(data);
-  assert.equal(model.mix.rows.length, 2);
-  assert.ok(
-    model.mix.rows.some(
-      (row) => row.name === "unknown-model" && row.costText === "-",
-    ),
-  );
-  assert.deepEqual(model.mix.slices, []);
-  assert.equal(model.mix.topShare, "-");
+test("금액 누락과 비중 산출 불가 상태는 목록에 남고 도넛은 생략한다", () => {
+  const d = data();
+  d.modelMix!.models = d.modelMix!.models.slice(0, 2).map((m) => ({
+    ...m,
+    costShare: value<number>(null, ["pricing_missing"]),
+  }));
+  d.modelMix!.models[0].equivalentCostUsd = value<string>(null, [
+    "pricing_missing",
+  ]);
+  const m = presentOverview(d);
+  assert.equal(m.mix.rows.length, 2);
+  assert.ok(m.mix.rows.some((r) => r.costText === "-"));
+  assert.deepEqual(m.mix.slices, []);
 });
-test("두 기간이 모두 완전하면 서버의 이전 값으로 증감·이전 값·팀 증가 기여를 그린다", () => {
-  const model = presentOverview(overviewSchema.parse(example));
-  const [users, cost, , sessions] = model.kpis;
-  // 100명 ← 90명, $5,000 ← $4,000, 1,000회 ← 800회(예시 응답).
-  assert.deepEqual(
-    [
-      users.delta,
-      users.up,
-      users.showDelta,
-      users.showArrow,
-      users.previousText,
-    ],
-    ["11.1%", true, true, true, "90명"],
-  );
-  assert.deepEqual(
-    [cost.delta, cost.previousText, sessions.delta, sessions.previousText],
-    ["25.0%", "$4,000.00", "25.0%", "800"],
-  );
-  assert.ok(model.kpis.every((kpi) => !kpi.noDelta));
-  assert.equal(model.compareLabel, "전주 대비");
-  assert.equal(model.attribution.comparable, true);
-  assert.deepEqual(
-    model.attribution.rows.map((row) => [
-      row.team,
-      row.changeText,
-      row.contribText,
-    ]),
-    [
-      ["플랫폼", "+42.9%", "+$600.00"],
-      ["결제", "+16.7%", "+$200.00"],
-      ["데이터", "+14.3%", "+$100.00"],
-    ],
-  );
-  assert.deepEqual(
-    [
-      model.attribution.unmapped.changeText,
-      model.attribution.unmapped.contribText,
-    ],
-    ["변화 없음", "+$0.00"],
-  );
+test("두 기간이 완전한 지표는 서버 증감·이전 값·팀 변화액을 표시한다", () => {
+  const m = presentOverview(data());
+  assert.equal(m.kpis[0].delta, "11.1%");
+  assert.equal(m.kpis[0].previousText, "90명");
+  assert.equal(m.kpis[3].delta, "12.5%");
+  assert.equal(m.kpis[3].previousText, "$44.44");
+  assert.equal(m.attribution.rows[0].contribText, "+$600.00");
+  assert.equal(m.attribution.rows[0].changeText, "+42.9%");
 });
-test("완전한 이전 기간에 사용이 없었으면 0% 대신 신규·변화 없음이고 화살표가 없다", () => {
-  const data = overviewSchema.parse(example);
-  data.usage.previous = {
-    ...data.usage.previous!,
-    activeUsers: 0,
-    equivalentCostUsd: "0",
-    sessionCount: 0,
+test("신규·변화 없음은 0분모 증감률이나 화살표로 대체하지 않는다", () => {
+  const d = data();
+  d.summary!.activeUsers.comparison = {
+    status: "available",
+    reasons: [],
+    previousValue: 0,
+    absoluteChange: 100,
+    percentChange: null,
+    change: "new",
   };
-  data.usage.current!.sessionCount = 0;
-  const [users, cost, , sessions] = presentOverview(data).kpis;
-  assert.deepEqual(
-    [users.delta, users.showArrow, users.showDelta],
-    ["신규", false, true],
-  );
-  assert.equal(cost.delta, "신규");
-  assert.deepEqual([sessions.delta, sessions.showArrow], ["변화 없음", false]);
-});
-test("비교를 내지 않으면 사유를 보여 주고 0%로 그리지 않는다", () => {
-  const data = overviewSchema.parse(example);
-  data.comparison = {
-    ...data.comparison,
-    status: "unavailable",
-    reason: "source_not_available",
-    coverage: { status: "partial", observedDays: 5 },
+  d.summary!.sessionCount.comparison = {
+    status: "available",
+    reasons: [],
+    previousValue: 0,
+    absoluteChange: 0,
+    percentChange: 0,
+    change: "unchanged",
   };
-  data.usage.previous = null;
-  data.teamUsage.topTeams.forEach((team) => {
-    team.previous = null;
-  });
-  let model = presentOverview(data);
-  const compared = model.kpis.filter((_, index) => index !== 2 && index !== 4);
-  assert.ok(
-    compared.every(
-      (kpi) => kpi.noDelta && !kpi.showDelta && kpi.previousText === undefined,
-    ),
-  );
-  assert.equal(
-    compared[0].noDeltaReason,
-    "비교 기간(2026-08-31 ~ 2026-09-06)에 수집 근거가 완전하지 않은 날이 있습니다",
-  );
-  assert.equal(model.attribution.comparable, false);
-  assert.ok(
-    model.attribution.rows.every(
-      (row) => row.changeText === "비교 불가" && row.contribText === "-",
-    ),
-  );
+  const m = presentOverview(d);
+  assert.equal(m.kpis[0].delta, "신규");
+  assert.equal(m.kpis[0].showArrow, false);
+  assert.equal(m.kpis[2].delta, "변화 없음");
+  assert.equal(m.kpis[2].showArrow, false);
+});
+test("비교 불가 사유는 지표마다 다르게 표시하고 값의 상태와 분리한다", () => {
+  const d = data();
+  d.summary!.activeUsers.comparison = unavailable;
+  d.summary!.equivalentCostUsd.comparison = {
+    ...unavailable,
+    reasons: ["pricing_missing"],
+  };
+  const m = presentOverview(d);
+  assert.match(m.kpis[0].noDeltaReason, /비교 기간/);
+  assert.match(m.kpis[1].noDeltaReason, /단가/);
+  assert.equal(m.kpis[0].valueStatus, undefined);
+  assert.equal(m.kpis[0].showDelta, false);
+  assert.equal(m.kpis[2].showDelta, true);
+});
+test("서버가 제공한 지표 상태를 따르며 전역 관측 상태로 덮어쓰지 않는다", () => {
+  const d = data();
+  d.meta.currentCoverage = { status: "partial", observedDays: 7 };
+  d.summary!.activeUsers = {
+    ...d.summary!.activeUsers,
+    status: "partial",
+    reasons: ["member_identity_missing"],
+    comparison: unavailable,
+  };
+  const m = presentOverview(d);
+  assert.match(m.kpis[0].valueStatus!.reason, /구성원/);
+  assert.equal(m.kpis[1].valueStatus, undefined);
+});
+test("좌석 후보는 개요 API와 표시 모델에서 제외한다", () => {
+  const d = data();
+  assert.equal("seats" in d, false);
+  assert.equal("vendorOverview" in presentOverview(d), false);
+});
+test("평균 산출 불가는 null과 사유, 실제 0원은 0으로 표시한다", () => {
+  const d = data();
+  d.summary!.equivalentCostPerUserUsd = {
+    ...value<string>(null, ["zero_denominator"]),
+    comparison: unavailable,
+  };
+  assert.equal(presentOverview(d).kpis[3].value, "-");
+  d.summary!.equivalentCostPerUserUsd = {
+    ...value("0"),
+    comparison: unavailable,
+  };
+  assert.equal(presentOverview(d).kpis[3].value, "$0.00");
+});
+test("비교 없음에서도 현재 값의 부분 관측·누락은 유지한다", () => {
+  const d = data();
+  d.comparison.mode = "none";
+  for (const m of Object.values(d.summary!))
+    if ("comparison" in m)
+      m.comparison = {
+        status: "disabled",
+        reasons: [],
+        previousValue: null,
+        absoluteChange: null,
+        percentChange: null,
+        change: null,
+      };
+  d.summary!.sessionCount = {
+    ...d.summary!.sessionCount,
+    ...value(0, ["current_period_incomplete"]),
+  };
+  d.summary!.totalTokens = {
+    ...d.summary!.totalTokens,
+    ...value<number>(null, ["token_data_incomplete"]),
+  };
+  const m = presentOverview(d);
+  assert.equal(m.kpis[2].value, "0");
+  assert.equal(m.kpis[2].valueStatus!.label, "관측 근거 부족");
+  assert.equal(m.kpis[4].valueStatus!.label, "값 확인 불가");
+  assert.ok(m.kpis.every((k) => !k.noDelta && !k.showDelta));
+});
+test("추이 부분 실패는 다른 지표를 보존하고 빈 기간은 팀 요약까지 숨긴다", () => {
+  const d = data();
+  d.trend = null;
+  d.errors = [
+    { section: "trend", code: "source_unavailable", retryable: true },
+  ];
+  assert.equal(overviewSchema.safeParse(d).success, true);
+  const m = presentOverview(d);
+  assert.equal(m.kpis.length, 5);
+  assert.equal(m.mix.count, 5);
+  assert.equal(m.chart.cost.length, 0);
+  d.meta.dataState = "no_data";
+  d.summary = null;
+  d.modelMix = null;
+  d.teamUsage = null;
+  d.errors = [];
+  assert.equal(overviewSchema.safeParse(d).success, true);
+  assert.equal(presentOverview(d).attribution.show, false);
+});
 
-  // 선택 기간이 완전하지 않으면 그것이 이유다. 확정된 마지막 날은 dataThrough(다음 날 자정)의 전날이다.
-  data.meta.currentCoverage = { status: "partial", observedDays: 6 };
-  data.meta.dataThrough = "2026-09-10T15:00:00Z";
-  model = presentOverview(data);
+test("집계 대기와 수집 공백의 배지 및 비교 기간 사유를 구분한다", () => {
+  const pending = ["current_period_incomplete", "period_pending"];
   assert.equal(
-    model.kpis[0].noDeltaReason,
-    "선택 기간에 수집 근거가 완전하지 않은 날이 있습니다",
+    valueStatus({ value: 10, status: "partial", reasons: pending })?.label,
+    "집계 중",
   );
   assert.equal(
-    model.observation.coverageNote,
-    "선택 7일 중 6일 관측 · 9월 10일까지 확정",
+    valueStatus({
+      value: 10,
+      status: "partial",
+      reasons: [...pending, "collection_gap"],
+    })?.label,
+    "관측 근거 부족",
   );
-
-  // 비교 없음을 고르면 증감도 사유도 없다.
-  data.comparison = {
-    mode: "none",
-    status: "disabled",
-    reason: null,
-    startDate: null,
-    endDate: null,
-    coverage: null,
-  };
-  model = presentOverview(data);
-  assert.ok(model.kpis.every((kpi) => !kpi.noDelta && !kpi.showDelta));
-});
-test("서버가 비교를 냈더라도 선택 기간이 완전하지 않으면 비교하지 않고 그 이유를 말한다", () => {
-  const data = overviewSchema.parse(example);
-  data.meta.currentCoverage = { status: "partial", observedDays: 7 };
-  const model = presentOverview(data);
-  assert.ok(
-    model.kpis
-      .filter((_, index) => index !== 2 && index !== 4)
-      .every(
-        (kpi) =>
-          kpi.noDelta &&
-          kpi.noDeltaReason ===
-            "선택 기간에 수집 근거가 완전하지 않은 날이 있습니다",
-      ),
+  assert.equal(
+    valueStatus({
+      value: null,
+      status: "unavailable",
+      reasons: [...pending, "token_data_incomplete"],
+    })?.label,
+    "값 확인 불가",
   );
-  assert.equal(model.attribution.comparable, false);
-});
-test("계약·좌석 표의 회수 후보와 배정 좌석은 서버 회수 후보 목록·좌석 원장에서 오고, 읽지 못하면 모른다", () => {
-  const data = overviewSchema.parse(example);
-  const base = overviewSettingsSchema.parse({
-    meta: {
-      organizationId: data.meta.organizationId,
-      asOf: "2026-09-14T00:00:00Z",
-      snapshotId: "s",
-    },
-    summary: { monthlySeatFeeUsd: null },
-    catalog: { plans: [] },
-    vendors: {
-      totalCount: 2,
-      nextCursor: null,
-      items: [
-        {
-          vendorId: "v1",
-          displayName: "Claude",
-          kind: "claude_team",
-          state: "configured",
-          contractStatus: "active",
-          contract: null,
-          seats: {
-            availability: "partial",
-            reason: "seat_sync_outdated",
-            data: { assigned: 5, contracted: 10 },
-          },
-        },
-        {
-          vendorId: "v3",
-          displayName: "Cursor",
-          kind: "cursor",
-          state: "configured",
-          contractStatus: "active",
-          contract: null,
-          seats: {
-            availability: "unavailable",
-            reason: "seat_source_not_recorded",
-            data: null,
-          },
-        },
-      ],
-    },
-  });
-  const counted = presentOverview(data, {
-    ...base,
-    candidates: { availability: "partial", byVendor: { v1: 2 } },
-  }).vendorOverview;
-  assert.deepEqual(
-    counted.rows.map((row) => [
-      row.name,
-      row.candidates,
-      row.assigned,
-      row.seatsReason,
-    ]),
-    [
-      ["Claude", 2, 5, null],
-      ["Cursor", 0, null, "seat_source_not_recorded"],
-    ],
+  assert.equal(
+    valueStatus({
+      value: 10,
+      status: "partial",
+      reasons: ["member_identity_missing"],
+    })?.label,
+    "일부 집계",
   );
-  assert.equal(counted.candidatesPartial, true);
-  // 회수 후보 목록을 읽지 못했으면 0이 아니라 모른다.
-  assert.deepEqual(
-    presentOverview(data, {
-      ...base,
-      candidates: null,
-    }).vendorOverview.rows.map((row) => row.candidates),
-    [null, null],
-  );
-});
-test("월 좌석 계약액의 설명은 서버의 좌석 효율(좌석료 배분 추정 대비 환산가치)만 쓴다", () => {
-  const data = overviewSchema.parse(example);
-  data.seats = {
-    ...data.seats,
-    availability: "partial",
-    reason: "product_unobservable",
-    allocationMethod: "estimated_30_day",
-    current: {
-      contractedSeats: 10,
-      activeSeats: null,
-      monthlyFeeUsd: "300",
-      allocatedFeeUsd: "70",
-      equivalentCostUsd: "1",
-      efficiency: 1 / 70,
-    },
-    previous: null,
-    reclaimEstimate: null,
-  };
   assert.match(
-    presentOverview(data).kpis[2].caption,
-    /기간 좌석료 배분 추정 \$70\.00 대비 환산가치 1\.4% · 일부 제품 제외/,
+    reasonsText(["previous_period_incomplete", "previous_collection_gap"]),
+    /비교 기간:.*보고 공백/,
   );
-  data.seats = {
-    ...data.seats,
-    availability: "unavailable",
-    reason: "not_applicable",
-    current: null,
-  };
-  assert.doesNotMatch(presentOverview(data).kpis[2].caption, /배분/);
+  assert.doesNotMatch(reasonsText(pending), /근거가 완전하지/);
+  assert.equal(reasonsText([...pending, ...pending]), reasonsText(pending));
 });

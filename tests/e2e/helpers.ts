@@ -145,8 +145,8 @@ export async function selectPeriod(page: Page, start: string, end: string) {
   await picker.getByRole("button", { name: "적용", exact: true }).click();
 }
 
-/** 시드의 조회 구간 — 기준일 직전 28일, 종료일 포함. */
-export function seedPeriod() {
+/** 시드의 조회 구간 — A는 기준일을 포함한 최근 28일, 나머지는 기준일 직전 28일. */
+export function seedPeriod(scenario: "A" | "B" | "C" | "D" | "E" = "A") {
   const value = process.env.E2E_SEED_DATE ?? "";
   const date = new Date(`${value}T00:00:00Z`);
   if (
@@ -160,7 +160,55 @@ export function seedPeriod() {
   }
   const offset = (days: number) =>
     new Date(date.getTime() + days * 86_400_000).toISOString().slice(0, 10);
-  return { start: offset(-28), end: offset(-1) };
+  return scenario === "A"
+    ? { start: offset(-27), end: offset(0) }
+    : { start: offset(-28), end: offset(-1) };
+}
+
+/** API의 최대 100명 페이지를 같은 snapshot으로 이어 전체 명단을 읽는다. */
+export async function readAllMembers<T>(page: Page, organizationId: string) {
+  const { start, end } = seedPeriod();
+  const items: T[] = [];
+  let cursor: string | null = null;
+  let snapshotId: string | undefined;
+  let total = 0;
+  do {
+    const query = new URLSearchParams({
+      startDate: start,
+      endDate: end,
+      timeZone: "Asia/Seoul",
+      limit: "100",
+    });
+    if (cursor) query.set("cursor", cursor);
+    if (snapshotId) query.set("snapshotId", snapshotId);
+    const response = await authenticatedRequest(
+      page,
+      dashboardBase(),
+      `/api/v1/organizations/${organizationId}/members?${query}`,
+    );
+    expect(response.status).toBe(200);
+    snapshotId ??= response.body.meta.snapshotId;
+    expect(response.body.meta.snapshotId).toBe(snapshotId);
+    items.push(...(response.body.members.items as T[]));
+    cursor = response.body.members.nextCursor;
+    total = response.body.members.totalCount;
+  } while (cursor);
+  expect(items).toHaveLength(total);
+  return items;
+}
+
+/** 서버의 전체 명단을 읽은 뒤 화면의 20명 단위 더보기도 끝까지 펼친다. */
+export async function showAllMembers(page: Page, total: number) {
+  const list = page.getByRole("region", { name: "구성원 목록", exact: true });
+  const rows = list.getByRole("button", { name: /구성원 상세$/ });
+  await expect(rows.first()).toBeVisible();
+  let count = await rows.count();
+  while (count < total) {
+    await list.getByRole("button", { name: /^다음 \d+명 더보기$/ }).click();
+    count = Math.min(count + 20, total);
+    await expect(rows).toHaveCount(count);
+  }
+  await expect(rows).toHaveCount(total);
 }
 
 /** 로그인 한 번을 pacer 에 맡긴다. 기다린 만큼 테스트 제한 시간을 늘린다 — 대기는 실패가 아니다. */

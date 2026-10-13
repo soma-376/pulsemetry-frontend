@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MetricStatusBadge } from "./KpiCard";
 import { Donut } from "@/components/charts/Donut";
 import { Widget } from "@/components/ui/Card";
 import type { OverviewModel } from "@/lib/metrics/overview";
@@ -11,6 +12,7 @@ export function ModelMixCard({
 }: {
   model: Pick<OverviewModel, "mix" | "observedTokens"> & {
     defs: Pick<OverviewModel["defs"], "w14">;
+    mixStatus?: { label: string; reason: string };
   };
 }) {
   const { mix, defs } = model;
@@ -26,9 +28,14 @@ export function ModelMixCard({
     return (
       <Widget
         id="w14"
-        label="모델 구성"
-        title="모델 구성"
+        label="모델별 사용 환산액 비중"
+        title="모델별 사용 환산액 비중"
         note="선택 기간 기준"
+        action={
+          model.mixStatus ? (
+            <MetricStatusBadge {...model.mixStatus} />
+          ) : undefined
+        }
         def={defs.w14}
         className="col-span-2 @max-[1023px]:col-span-full"
       >
@@ -59,7 +66,9 @@ export function ModelMixCard({
             </dl>
           </div>
         ) : (
-          <p className="py-8 text-sm text-text3">관측된 모델이 없습니다.</p>
+          <p className="py-8 text-sm text-text3">
+            사용이 확인된 모델이 없습니다.
+          </p>
         )}
       </Widget>
     );
@@ -68,13 +77,16 @@ export function ModelMixCard({
   return (
     <Widget
       id="w14"
-      label="모델 구성"
-      title="모델 구성"
-      note="환산가치 비중"
+      label="모델별 사용 환산액 비중"
+      title="모델별 사용 환산액 비중"
+      note="선택 기간 기준"
+      action={
+        model.mixStatus ? <MetricStatusBadge {...model.mixStatus} /> : undefined
+      }
       def={defs.w14}
       className="col-span-2 @max-[1023px]:col-span-full"
     >
-      <div className="mb-3.5 flex flex-col gap-0.5 rounded-md border border-border bg-sub px-3 py-2.5">
+      <div className="mb-3.5 min-w-0 [overflow-wrap:anywhere] flex flex-col gap-0.5 rounded-md border border-border bg-sub px-3 py-2.5">
         <span className="text-[12.5px] font-semibold">{mix.headline}</span>
         <span className="pretty text-[11.5px] text-text2">{mix.detail}</span>
       </div>
@@ -125,7 +137,7 @@ export function ModelMixCard({
                 style={{ background: m.color }}
               />
               <span className="flex min-w-0 flex-col gap-px">
-                <span className="overflow-hidden text-[12.5px] font-medium text-ellipsis whitespace-nowrap">
+                <span className="min-w-0 text-[12.5px] font-medium [overflow-wrap:anywhere]">
                   {m.name}
                 </span>
                 <span className="tnum text-[11px] text-text3">

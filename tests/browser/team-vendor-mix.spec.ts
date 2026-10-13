@@ -26,7 +26,7 @@ test("team mix displays server product usage, keeps unmapped observations separa
     "미확인 제품",
   ])
     await expect(card.getByText(name, { exact: true })).toBeVisible();
-  await expect(card).toContainText("사용량 미수집 벤더 제외");
+  await expect(card).not.toContainText("사용량 미수집 벤더 제외");
   // 화면이 받은 것과 같은 fixture 응답의 팀별 제품 값에서 기대값을 만든다.
   const data = teamsFixture(
     new URL(
@@ -59,7 +59,7 @@ test("team mix displays server product usage, keeps unmapped observations separa
     /미확인 제품 33\.3%/,
   );
   await page
-    .getByRole("toolbar", { name: "전역 필터" })
+    .getByRole("group", { name: "조회 기간" })
     .getByRole("button", { name: /^\d{4}\.\d{2}\.\d{2} ~ / })
     .click();
   const calendar = page.getByRole("dialog", { name: "기간 선택" });

@@ -5,6 +5,7 @@ import { useDashboardHref } from "@/lib/filters";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { MetricStatusBadge } from "./KpiCard";
 import { Widget } from "@/components/ui/Card";
 import type { OverviewTeamSummary } from "@/lib/metrics/overview-presentation";
 
@@ -86,7 +87,7 @@ export function TeamUsageTable({
           <thead className="border-b border-border text-[11px] text-text3">
             <tr>
               {header("team", "팀")}
-              {header("userCount", "사용 관측 인원")}
+              {header("userCount", "사용자 수")}
               <th scope="col" className="font-medium">
                 사용 벤더
               </th>
@@ -105,7 +106,7 @@ export function TeamUsageTable({
                   </th>
                 </>
               )}
-              <th scope="col">
+              <th scope="col" className="relative">
                 <span className="sr-only">상세</span>
               </th>
             </tr>
@@ -132,19 +133,36 @@ export function TeamUsageTable({
                       {row.team}
                     </Link>
                   </th>
-                  <td className="tnum py-3">
-                    {row.users === "-" ? "-" : `${row.users}명`}
+                  <td className="relative tnum py-3">
+                    {row.users === "-" ? "-" : `${row.users}명`}{" "}
+                    {row.userStatus && (
+                      <MetricStatusBadge {...row.userStatus} />
+                    )}
                   </td>
                   <td className="py-3 text-text2">
                     {row.vendors === null
                       ? "-"
                       : row.vendors.join(" · ") || "미관측"}
                   </td>
-                  <td className="tnum py-3">{row.costText}</td>
+                  <td className="relative tnum py-3">
+                    {row.costText}{" "}
+                    {row.costStatus && (
+                      <MetricStatusBadge {...row.costStatus} />
+                    )}
+                  </td>
                   {attribution.comparable && (
                     <>
-                      <td className="tnum py-3">{row.changeText}</td>
-                      <td className="tnum py-3">{row.contribText}</td>
+                      <td className="relative tnum py-3">
+                        {row.comparisonReason ? (
+                          <MetricStatusBadge
+                            label="비교 불가"
+                            reason={row.comparisonReason}
+                          />
+                        ) : (
+                          row.changeText
+                        )}
+                      </td>
+                      <td className="relative tnum py-3">{row.contribText}</td>
                     </>
                   )}
                   <td
@@ -161,21 +179,40 @@ export function TeamUsageTable({
                 <th scope="row" className="py-3 font-normal">
                   미배정
                 </th>
-                <td className="tnum">
+                <td className="relative tnum">
                   {attribution.unmappedUsers === "-"
                     ? "-"
-                    : `${attribution.unmappedUsers}명`}
+                    : `${attribution.unmappedUsers}명`}{" "}
+                  {attribution.unmapped.userStatus && (
+                    <MetricStatusBadge {...attribution.unmapped.userStatus} />
+                  )}
                 </td>
                 <td>
                   {attribution.unmappedVendors === null
                     ? "-"
                     : attribution.unmappedVendors.join(" · ") || "미관측"}
                 </td>
-                <td className="tnum">{attribution.unattributedCostText}</td>
+                <td className="relative tnum">
+                  {attribution.unattributedCostText}{" "}
+                  {attribution.unmapped.costStatus && (
+                    <MetricStatusBadge {...attribution.unmapped.costStatus} />
+                  )}
+                </td>
                 {attribution.comparable && (
                   <>
-                    <td className="tnum">{attribution.unmapped.changeText}</td>
-                    <td className="tnum">{attribution.unmapped.contribText}</td>
+                    <td className="relative tnum">
+                      {attribution.unmapped.comparisonReason ? (
+                        <MetricStatusBadge
+                          label="비교 불가"
+                          reason={attribution.unmapped.comparisonReason}
+                        />
+                      ) : (
+                        attribution.unmapped.changeText
+                      )}
+                    </td>
+                    <td className="relative tnum">
+                      {attribution.unmapped.contribText}
+                    </td>
                   </>
                 )}
                 <td aria-hidden="true" />

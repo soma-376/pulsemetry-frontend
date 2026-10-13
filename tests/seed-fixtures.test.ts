@@ -21,12 +21,54 @@ test("A fixture는 완료 조직이며 좌석 계약과 관측 인원을 연결�
   assert.equal(onboardingSchema.parse(COMPANY_A_ONBOARDING).completed, true);
   assert.equal(
     COMPANY_A.members.filter((member) => member.status === "active").length,
-    12,
+    101,
   );
-  assert.equal(COMPANY_A.usage.activeUsers, 8);
+  assert.equal(
+    COMPANY_A.members.filter((member) => member.status === "invited").length,
+    6,
+  );
+  assert.equal(COMPANY_A.asOf, "2026-10-11");
+  assert.equal(COMPANY_A.usage.startDate, "2026-09-14");
+  assert.equal(COMPANY_A.usage.endDate, "2026-10-11");
+  assert.equal(COMPANY_A.usage.activeUsers, 97);
+  assert.deepEqual(COMPANY_A.usage.models, [
+    "claude-fable-5-1",
+    "claude-haiku-5-5",
+    "claude-sonnet-5-5",
+    "gpt-6-astra",
+    "gpt-6-luna",
+    "gpt-6.1-sol",
+  ]);
   assert.deepEqual(
     COMPANY_A.teams.map((team) => team.teamName),
-    ["플랫폼", "제품", "데이터", "디자인"],
+    [
+      "플랫폼팀",
+      "제품팀",
+      "데이터팀",
+      "디자인팀",
+      "프론트엔드팀",
+      "백엔드팀",
+      "보안팀",
+      "AI팀",
+      "SRE팀",
+      "QA팀",
+    ],
+  );
+  assert.deepEqual(
+    COMPANY_A.teams.map(
+      (team) =>
+        COMPANY_A.members.filter(
+          (member) =>
+            member.status === "active" && member.teamId === team.teamId,
+        ).length,
+    ),
+    [12, 12, 10, 8, 10, 12, 8, 10, 10, 8],
+  );
+  assert.equal(
+    COMPANY_A.members.filter(
+      (member) => member.status === "active" && member.teamId === null,
+    ).length,
+    1,
   );
   const claude = COMPANY_A_VENDORS.map((vendor) =>
     managedVendorSchema.parse(vendor),
@@ -87,42 +129,42 @@ test("A fixture는 완료 조직이며 좌석 계약과 관측 인원을 연결�
   );
 });
 
-test("A fixture의 정책 적용 현황은 판 2 기준 적용 7 · 미적용 3 · 미확인 1이고 적용하지 않은 설치만 안내할 수 있다", () => {
+test("A fixture의 정책 적용 현황은 판 2 기준 적용 78 · 미적용 21 · 미확인 1이고 적용하지 않은 설치만 안내할 수 있다", () => {
   assert.deepEqual(COMPANY_A.policyRollout, {
     desiredVersion: 2,
-    eligible: 11,
-    applied: 7,
-    outdated: 3,
+    eligible: 100,
+    applied: 78,
+    outdated: 21,
     unknown: 1,
   });
   assert.equal(COMPANY_A_ONBOARDING.policy.version, 2);
   const installations = COMPANY_A.installations;
-  assert.equal(installations.length, 11);
+  assert.equal(installations.length, 100);
   assert.equal(
     installations.filter((row) => row.appliedPolicyVersion === 2).length,
-    7,
+    78,
   );
   assert.equal(
     installations.filter((row) => row.appliedPolicyVersion === 1).length,
-    3,
+    21,
   );
   const unknown = installations.filter(
     (row) => row.appliedPolicyVersion === null,
   );
   assert.equal(unknown.length, 1);
-  // 미확인 설치는 보고한 적이 없다. 나머지는 기준 시각(기준일의 서울 자정)에 마지막으로 보고했다.
+  // 미확인 설치는 보고한 적이 없다. 나머지는 기준 시각(기준일의 서울 18시)에 마지막으로 보고했다.
   assert.equal(unknown[0].lastHeartbeatAt, null);
   assert.ok(
     installations
       .filter((row) => row.appliedPolicyVersion !== null)
-      .every((row) => row.lastHeartbeatAt === "2026-09-27T15:00:00Z"),
+      .every((row) => row.lastHeartbeatAt === "2026-10-11T09:00:00Z"),
   );
   assert.deepEqual(
     installations
       .filter((row) => row.canNotify)
       .map((row) => row.appliedPolicyVersion)
       .sort(),
-    [1, 1, 1, null],
+    [...Array(21).fill(1), null],
   );
 });
 

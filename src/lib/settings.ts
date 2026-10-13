@@ -147,7 +147,11 @@ export const EMPTY_TIER: DraftTier = { label: "표준", seats: "", fee: "" };
 /** 좌석 유형은 3개까지 — 그 이상은 계약서가 아니라 요금표입니다 */
 export const MAX_TIERS = 3;
 
-export type VendorRow = ReturnType<typeof buildVendorRows>[number];
+export type VendorRow = ReturnType<typeof buildVendorRows>[number] & {
+  inputNotice?: string;
+  seatsStatus?: { label: string; reason: string };
+  spendStatus?: { label: string; reason: string };
+};
 
 /**
  * 목록 한 줄을 만듭니다.

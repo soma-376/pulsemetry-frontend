@@ -88,14 +88,18 @@ async function overviewFor(
   return (await result.json()) as Overview;
 }
 
-test("INGEST-HEADER @p0 @read 헤더가 서버의 수집 판정과 사유·보고 중인 설치 수를 그대로 보여 준다", async ({
+test("INGEST-HEADER @p0 @read 헤더가 수집 판정과 연도를 포함한 마지막 수신 시각을 보여 준다", async ({
   page,
 }) => {
-  // A: 설치 10대가 기준 시각에 마지막으로 보고한 뒤 조용하다 → 보고가 끊김(중단 또는 확인 불가), 창 안의 보고 0대.
+  // A: 설치 99대가 기준 시각에 마지막으로 보고한 뒤 조용하다 → 보고가 끊김(중단 또는 확인 불가), 창 안의 보고 0대.
   await signIn(page, "owner@seed-a.example.test");
   const bar = page.getByLabel("조직 수집 현황", { exact: true });
-  await expect(bar).toContainText("수집 기기의 보고가 끊겼습니다");
-  await expect(bar).toContainText(/보고 중인 설치 0대\(최근 \d+분\)/);
+  await expect(bar.locator("[role=status]")).toHaveAttribute(
+    "title",
+    /수집 기기의 보고가 끊겼습니다/,
+  );
+  await expect(bar).not.toContainText(/보고 기기|보고 중인 설치/);
+  await expect(bar).toContainText(/마지막 수신 \d{4}년/);
   const status = await authenticatedRequest(
     page,
     dashboardBase(),
@@ -115,7 +119,7 @@ test("INGEST-HEADER @p0 @read 헤더가 서버의 수집 판정과 사유·보�
   await page.goto("/overview");
   await expect(bar).toContainText("수집 상태 확인 불가");
   await expect(bar).toContainText("수집 기기의 보고가 없어 판정할 수 없습니다");
-  await expect(bar).not.toContainText("보고 중인 설치");
+  await expect(bar).not.toContainText("보고 기기");
 });
 
 test("COMPARE-A @p0 @read 두 기간이 모두 완전하면 증감·이전 값·팀 증가 기여를, 아니면 비교 불가 사유를 보여 준다", async ({
@@ -124,10 +128,10 @@ test("COMPARE-A @p0 @read 두 기간이 모두 완전하면 증감·이전 값·
   await signIn(page, "owner@seed-a.example.test");
   await page.goto("/overview");
   await expect(
-    page.getByRole("region", { name: "사용 관측 인원", exact: true }),
+    page.getByRole("region", { name: "사용자 수", exact: true }),
   ).toBeVisible();
 
-  // 시드 A는 등록(기준일 58일 전)부터 기준일 4일 전까지 모든 설치가 손실 없이 보고했다 — 그 안의 두 기간은 비교할 수 있다.
+  // 시드 A는 등록(기준일 182일 전)부터 기준일 4일 전까지 모든 설치가 손실 없이 보고했다 — 그 안의 두 기간은 비교할 수 있다.
   const body = await overviewFor(page, A, day(-21), day(-8), "prev_period");
   expect(body.comparison).toMatchObject({
     status: "available",
@@ -139,10 +143,10 @@ test("COMPARE-A @p0 @read 두 기간이 모두 완전하면 증감·이전 값·
   expect(body.meta.dataThrough).toBe(
     new Date(`${day(-7)}T00:00:00+09:00`).toISOString().replace(".000Z", "Z"),
   );
-  const cost = page.getByRole("region", { name: "토큰 비용", exact: true });
+  const cost = page.getByRole("region", { name: "사용 환산액", exact: true });
   const [now, before] = [
-    Number(body.usage.current!.equivalentCostUsd),
-    Number(body.usage.previous!.equivalentCostUsd),
+    Number(body.summary!.equivalentCostUsd.value),
+    Number(body.summary!.equivalentCostUsd.comparison.previousValue),
   ];
   const money = (value: number) =>
     new Intl.NumberFormat("en-US", {
@@ -163,32 +167,34 @@ test("COMPARE-A @p0 @read 두 기간이 모두 완전하면 증감·이전 값·
   await expect(
     table.getByRole("columnheader", { name: "증가 기여" }),
   ).toBeVisible();
-  const top = body.teamUsage.topTeams[0];
+  const top = body.teamUsage!.topTeams[0];
   const contrib =
-    Number(top.current.equivalentCostUsd) -
-    Number(top.previous!.equivalentCostUsd);
+    Number(top.equivalentCostUsd.value) -
+    Number(top.equivalentCostUsd.comparison.previousValue);
   await expect(
     table.getByRole("row", { name: new RegExp(top.teamName) }),
   ).toContainText(`${contrib >= 0 ? "+" : "−"}${money(Math.abs(contrib))}`);
 
-  // 기준일 직전 28일은 두 번째 설치(보고 없음)가 등록된 뒤의 날을 포함한다 — 선택 기간이 완전하지 않아 비교하지 않는다.
+  // 기준일을 포함한 최근 28일은 두 번째 설치(보고 없음)가 등록된 뒤의 날을 포함한다 — 선택 기간이 완전하지 않아 비교하지 않는다.
   const { start, end } = seedPeriod();
   const partial = await overviewFor(page, A, start, end, "prev_period");
-  expect(partial.comparison.status).toBe("unavailable");
-  await expect(cost).toContainText("비교 불가");
-  await expect(cost).toContainText(
-    "선택 기간에 수집 근거가 완전하지 않은 날이 있습니다",
+  expect(partial.summary!.equivalentCostUsd.comparison.status).toBe(
+    "unavailable",
   );
+  await expect(cost).toContainText("비교 불가");
+  await expect(page.getByRole("note", { name: "데이터 안내" })).toHaveCount(0);
   await expect(cost).not.toContainText("0.0%");
-  await expect(page.getByText(/일 관측 · \d+월 \d+일까지 확정/)).toBeVisible();
+  await expect(
+    page.getByText(/선택한 \d+일 중 \d+일의 데이터가 있습니다/),
+  ).toBeVisible();
   await expect(
     table.getByRole("columnheader", { name: "증가 기여" }),
   ).toHaveCount(0);
 });
 
-// 시드 A: 판 2 — 적용 7 · 미적용 3 · 확인 불가 1(두 번째 설치). 근거는 기본 설치 10대가 기준 시각에 보낸 설치 보고, 두 번째 설치는 보고도 적용 확인도 없다(시드 README "정책 적용"·"설치 보고").
+// 시드 A: 판 2 — 적용 78 · 미적용 21 · 확인 불가 1(두 번째 설치). 근거는 기본 설치 99대가 기준 시각에 보낸 설치 보고, 두 번째 설치는 보고도 적용 확인도 없다(시드 README "정책 적용"·"설치 보고").
 const A_ROLLOUT =
-  "적용 7대 · 미적용 3대 · 확인 불가 1대 · 근거: 설치 보고 10대 · 근거 없음 1대";
+  "적용 78대 · 미적용 21대 · 확인 불가 1대 · 근거: 설치 보고 99대 · 근거 없음 1대";
 
 test("ROLLOUT-A @p0 @write 정책 적용 현황을 판정 근거와 함께 보여 주고 확인 알림 메일이 실제로 도착한다", async ({
   page,
@@ -209,18 +215,18 @@ test("ROLLOUT-A @p0 @write 정책 적용 현황을 판정 근거와 함께 보�
   const rows = dialog
     .getByRole("table", { name: "설치 목록" })
     .locator("tbody tr");
-  // 기본은 미적용 — 이전 판(v1)을 보고한 설치 셋. 근거는 최근 설치 보고이고 그 시각은 기준 시각(기준일 서울 자정)이다.
-  await expect(rows).toHaveCount(3);
+  // 기본은 미적용 — 이전 판(v1)을 보고한 설치 21대. 근거는 최근 설치 보고이고 그 시각은 기준 시각(기준일 서울 18시)이다.
+  await expect(rows).toHaveCount(21);
   for (const row of await rows.all()) {
     await expect(row).toContainText("v1");
     await expect(row).toContainText("최근 설치 보고");
     await expect(row).toContainText(shownDay(0));
     await expect(row.getByRole("checkbox")).toBeVisible();
   }
-  await dialog.getByRole("button", { name: /^적용 7$/ }).click();
-  await expect(rows).toHaveCount(7);
+  await dialog.getByRole("button", { name: /^적용 78$/ }).click();
+  await expect(rows).toHaveCount(78);
   await expect(rows.getByRole("checkbox")).toHaveCount(0);
-  await expect(rows.filter({ hasText: "최근 설치 보고" })).toHaveCount(7);
+  await expect(rows.filter({ hasText: "최근 설치 보고" })).toHaveCount(78);
   await dialog.getByRole("button", { name: /^확인 불가 1$/ }).click();
   await expect(rows).toHaveCount(1);
   await expect(rows.first()).toContainText("확인 불가");

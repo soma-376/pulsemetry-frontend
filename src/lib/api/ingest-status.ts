@@ -1,6 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
-import { int } from "@/lib/format";
 import {
   apiJson,
   managementKey,
@@ -45,18 +44,36 @@ const time = (value: string) =>
   new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
 
 /** 헤더에 싣는 설명. 서버가 null로 준 값은 싣지 않는다 — 0이나 정상으로 바꾸지 않는다. */
-export function ingestDetails(data: IngestStatus): string[] {
+export function ingestDetails(data: IngestStatus, compact = false): string[] {
   const details: string[] = [];
-  if (data.reason) details.push(REASONS[data.reason] ?? `사유 ${data.reason}`);
-  if (data.lastReceivedAt)
-    details.push(`마지막 수신 ${time(data.lastReceivedAt)}`);
-  else if (data.status === "empty")
-    details.push("아직 수집된 데이터가 없습니다");
-  if (data.activeInstallations != null) {
+  if (
+    data.reason &&
+    !(
+      compact &&
+      data.status === "down" &&
+      data.reason === "installations_silent"
+    )
+  )
+    details.push(REASONS[data.reason] ?? `사유 ${data.reason}`);
+  if (data.lastReceivedAt) {
+    const received = new Date(data.lastReceivedAt);
+    const date = received.toLocaleDateString("ko-KR", {
+      timeZone: "Asia/Seoul",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const clock = received.toLocaleTimeString("ko-KR", {
+      timeZone: "Asia/Seoul",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    });
     details.push(
-      `보고 중인 설치 ${int(data.activeInstallations)}대${data.windowMinutes ? `(최근 ${int(data.windowMinutes)}분)` : ""}`,
+      `마지막 수신 ${compact ? `${date} ${clock}` : time(data.lastReceivedAt)}`,
     );
-  }
+  } else if (data.status === "empty")
+    details.push("아직 수집된 데이터가 없습니다");
   return details;
 }
 

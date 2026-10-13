@@ -57,6 +57,37 @@ export async function issueFixtureCookie(
 }
 export async function mockAuthenticatedRoutes(page: Page) {
   await issueFixtureCookie(page);
+  await page.route(
+    `**/api/v1/organizations/${fixtureOrg}/contract-input-status`,
+    (route) =>
+      route.fulfill({
+        json: {
+          organizationId: fixtureOrg,
+          asOf: "2026-09-13T00:00:00Z",
+          requiredCount: 0,
+          vendors: [],
+          expiredCount: 0,
+          expiredContracts: [],
+        },
+      }),
+  );
+  await page.route(`**/api/v1/organizations/${fixtureOrg}/alerts?*`, (route) =>
+    route.fulfill({
+      json: {
+        meta: {
+          organizationId: fixtureOrg,
+          snapshotId: "notifications",
+          asOf: "2026-09-13T00:00:00Z",
+        },
+        evaluation: {
+          status: "complete",
+          reasons: [],
+          asOf: null,
+        },
+        alerts: { items: [], totalCount: 0, nextCursor: null },
+      },
+    }),
+  );
   await page.route("**/api/bff/auth/session", (route) =>
     route.fulfill({ json: { user: fixtureUser } }),
   );

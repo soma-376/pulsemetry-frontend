@@ -65,11 +65,6 @@ export function SeatReclaimCard({
             않습니다.
           </p>
         )}
-        {reclaim.available && reclaim.partial && (
-          <p className="py-4 text-xs text-text3">
-            {reclaim.partial}. 판정한 좌석만 후보로 보여 줍니다.
-          </p>
-        )}
         {reclaim.available && !reclaim.partial && rows.length === 0 && (
           <p className="py-4 text-xs text-text3">
             확인된 배정·관측 정보에서 회수 후보가 없습니다.

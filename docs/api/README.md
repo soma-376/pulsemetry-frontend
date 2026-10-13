@@ -5,19 +5,21 @@
 관리 명령은 `pulsemetry-backend/docs/enrollment-server-spec.md` §12·§13. 이 문서들과 다르면 백엔드 명세를 따르고 이 문서를 고친다.
 응답 예시 JSON은 백엔드가 키 구조 대조에 쓰는 사본의 원본이다 — 백엔드가 더한 필드는 가산 키로 따로 선언한다.
 
-범위는 개요, 팀 분석, 구성원, 설정이다. **운영·보안 페이지의 조회/조작 API는 제외**한다.
-설정 화면에 있는 수집 정책과 알림 규칙은 포함한다.
+범위는 개요, 팀 분석, 구성원, 운영·보안, 설정과 공통 헤더다.
+각 조회 응답은 현재 화면에서 사용하는 값과 상태·사유를 제공한다. 수집 상태와 계약 입력·만료 현황은 공통 헤더의 별도 조회로 관리한다.
 로그인은 [OIDC 계약](../oidc-login.md)에 따라 이메일 회사 탐색·IdP 왕복·서비스 토큰 교환으로 연결한다.
 `/me`의 사용자 ID, 조직 ID, 관리자 역할을 API 인증의 공통 선행 조건으로 둔다. IdP 토큰을 업무 API에 보내지 않는다.
 
 ## 전달할 문서
 
-| 화면    | 명세                               | 응답 예시                                                                                                                        |
-| ------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| 개요    | [overview-api.md](overview-api.md) | [overview-response.example.json](overview-response.example.json)                                                                 |
-| 팀 분석 | [teams-api.md](teams-api.md)       | [teams-response.example.json](teams-response.example.json), [team-users-response.example.json](team-users-response.example.json) |
-| 구성원  | [members-api.md](members-api.md)   | [members-response.example.json](members-response.example.json)                                                                   |
-| 설정    | [settings-api.md](settings-api.md) | [settings-response.example.json](settings-response.example.json)                                                                 |
+| 화면             | 명세                                                         | 응답 예시                                                                                                                        |
+| ---------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| 개요             | [overview-api.md](overview-api.md)                           | [overview-response.example.json](overview-response.example.json)                                                                 |
+| 팀 분석          | [teams-api.md](teams-api.md)                                 | [teams-response.example.json](teams-response.example.json), [team-users-response.example.json](team-users-response.example.json) |
+| 구성원           | [members-api.md](members-api.md)                             | [members-response.example.json](members-response.example.json)                                                                   |
+| 설정             | [settings-api.md](settings-api.md)                           | [settings-response.example.json](settings-response.example.json)                                                                 |
+| 운영·보안 / 알림 | [alerts-api.md](alerts-api.md)                               | 문서 내 타입·상태 계약                                                                                                           |
+| 계약 입력·만료   | [contract-input-status-api.md](contract-input-status-api.md) | [contract-input-status-response.example.json](contract-input-status-response.example.json)                                       |
 
 예시는 가상의 ID·계정·금액을 쓴 계약 설명용 데이터다. 실제 조직이나 실제 벤더 요금표가 아니다.
 서로 다른 화면 예시는 독립된 조회 시나리오이며, 개요와 팀 분석의 조직 사용 합계만 의도적으로 맞췄다.
@@ -32,12 +34,13 @@
 | ---------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | 개요                   | D GET /analytics/overview                                                                                       | 진입·기간/비교 변경                                                         |
 | 수집 상태              | D GET /ingest-status                                                                                            | 공통 헤더                                                                   |
+| 계약 입력·만료 현황    | D GET /contract-input-status                                                                                    | 공통 헤더·알림, 계약 저장 후 재조회                                         |
 | 팀 분석                | D GET /analytics/teams                                                                                          | 진입·기간/비교/정렬·팀 목록 페이지 변경                                     |
 | 팀 드로어              | D GET /analytics/teams/{teamId}                                                                                 | 목록에 없는 팀 상세 필요 시                                                 |
 | 팀 사용자              | D GET /analytics/teams/{teamId}/users                                                                           | 선택 팀 변경·더보기                                                         |
 | 조직 팀 선택지         | D GET /teams                                                                                                    | 배정/초대·팀 검색                                                           |
 | 팀 생성·이름 변경·삭제 | E POST /teams · PATCH·DELETE /teams/{teamId}                                                                    | 팀 관리                                                                     |
-| 구성원 첫 화면         | D GET /members/dashboard                                                                                        | 진입·기간 변경                                                              |
+| 구성원 첫 화면         | D GET /members/dashboard                                                                                        | 진입·현재 기준 최근 7일 조회                                                |
 | 구성원 목록            | D GET /members                                                                                                  | 검색·더보기                                                                 |
 | 미배정 목록            | D GET /members/unassigned                                                                                       | 더보기                                                                      |
 | 구성원 팀·역할         | E PATCH /members/{memberId}                                                                                     | 저장                                                                        |
@@ -53,7 +56,7 @@
 | 비동기 작업 상태       | D GET /operations/{operationId}                                                                                 | 실행 중인 회수/복원/동기화/안내/정리 확인                                   |
 | 설정 첫 화면           | D GET /settings                                                                                                 | 진입·저장 후 재조회                                                         |
 | 벤더 목록              | D GET /vendors                                                                                                  | 목록 더보기                                                                 |
-| 벤더 상세              | D GET /vendors/{vendorId}                                                                                       | 목록에 없는 벤더 편집                                                       |
+| 벤더 상세              | D GET /vendors/{vendorId}                                                                                       | 모든 벤더 계약 폼을 열 때                                                   |
 | 제품 좌석              | D GET /vendors/{vendorId}/seats                                                                                 | 설정 드로어                                                                 |
 | 좌석 기록              | E POST /vendors/{vendorId}/seats · PATCH …/seats/{seatId} · POST …/seats/{seatId}/release · POST …/seats/import | 수동 기록·CSV                                                               |
 | 벤더 연결              | E PUT·DELETE /vendors/{vendorId}/connection · POST …/connection/verify · POST …/connection/sync                 | 연결·확인·지금 동기화                                                       |
@@ -65,14 +68,15 @@
 | 수집 정책 변경         | E PUT /collection-policy                                                                                        | 확인/선택 적용(회수 기준·집계 보존 포함)                                    |
 | 온보딩                 | E GET /onboarding · POST /onboarding/complete                                                                   | 온보딩 진입·완료                                                            |
 | 알림 규칙 변경         | E PATCH /settings/alert-rules/{ruleId}                                                                          | 토글                                                                        |
-| 알림 목록·확인         | D GET /alerts · GET /alerts/{alertId} · E POST /alerts/{alertId}/acknowledge                                    | 개요 알림 보기·확인                                                         |
+| 알림 목록·확인         | D GET /alerts · GET /alerts/{alertId} · E POST /alerts/{alertId}/acknowledge                                    | 공통 헤더 알림·운영 보안 목록/확인                                          |
 | 미적용 설치            | D GET /installations?policyStatus=outdated                                                                      | 설치 현황 모달·더보기                                                       |
 | 업데이트 안내          | E POST /installation-update-notifications                                                                       | 안내 전송                                                                   |
 
 조직 경로 밖: 도입 문의 `POST /api/v1/inquiries`(E, 로그인 없음), 벤더 카탈로그 `GET /api/v1/vendor-catalog`(D).
 
-`operations`는 비동기 명령 결과를 읽는 공통 리소스다. 제외한 운영·보안 화면의 API가 아니다.
-처음부터 카드마다 엔드포인트를 만들지 않는다. 각 화면 첫 조회가 필요한 요약과 목록 첫 페이지를 묶어 주고,
+`operations`는 회수·복원·동기화 등 비동기 명령 결과를 읽는 공통 리소스다. 운영·보안 화면은 `alerts?category=security`를 사용한다.
+개요는 단일 API에서 지표별 상태·비교 불가 사유와 영역별 오류를 제공한다. 부분 실패의 재시도는 페이지 공통 새로고침으로 처리한다.
+팀 분석·구성원·설정의 첫 조회는 필요한 요약과 목록 첫 페이지를 묶어 주고,
 사용자가 목록을 넘기거나 저장할 때 추가 호출한다. 팀 사용자 표는 권한·선택 팀이 달라 별도 조회한다.
 초기 선택 팀은 팀 분석 응답 첫 행(없으면 미배정)으로 정한다. 사용량이 없으면 사용자 표도 빈 상태다.
 
@@ -80,7 +84,8 @@
 
 - 날짜, USD 금액, 토큰 정규화, 데이터 부재, 비교 기준은 [개요 명세](overview-api.md)의 2~4절을 따른다.
 - 기간 조회: startDate/endDate 필수, 종료일 포함, 1~366일, timeZone 기본/지원값 Asia/Seoul.
-- compare는 개요·팀 분석만 지원한다. 구성원에는 비교 카드가 없고 설정은 선택 기간과 무관한 현재 상태다.
+- 선택 기간과 compare는 개요·팀 분석 URL에만 저장한다. 다른 페이지로 이동하면 URL에서 제거하며 분석 페이지로 돌아오면 마지막 선택을 복원한다.
+- 구성원 명단·좌석은 현재 상태, 사용량은 현재 기준 최근 7일로 조회한다. 구성원·운영·설정은 사용자 선택 기간과 비교를 받지 않는다.
 - 팀 ID/구성원 ID/벤더 ID/좌석 배정 ID는 서버의 불변 ID다. 화면 이름이나 이메일을 기본 키로 쓰지 않는다.
 - analytics의 `teamId=unassigned`는 실제 팀 ID로 쓸 수 없는 예약 경로값이다. DTO의 미배정 teamId는 null.
 - 멤버 현재 팀과 이벤트 당시 귀속 팀은 서로 다른 개념이다. 배정 이후 과거 비용을 자동으로 옮기지 않는다.
@@ -90,13 +95,14 @@
 - snapshotId는 불투명 문자열, 기본 유효기간 10분 제안. 날짜·권한·필터가 바뀌면 새 조회.
   cursor는 원 요청의 필터·정렬·snapshotId에 묶인다. 만료는 409 snapshot_expired → 첫 페이지부터 재조회.
 - snapshotId가 고정하는 것은 사용 데이터 cutoff, 가격/계약/팀 매핑 버전과 목록 순서다.
-  ingest.asOf 등 현재 수집 상태는 별도 시점이며, 쓰기 시 자격·권한은 다시 확인한다.
+  `/ingest-status`와 `/contract-input-status`의 현재 상태는 별도 시점이며, 쓰기 시 자격·권한은 다시 확인한다.
 - 개요는 목록 페이지 이동이 없어 기존 dataThrough 계약을 유지한다. 동일 cutoff/버전/권한으로 조회했을 때 화면 간 합계가 같아야 한다.
 - 개인 목록은 서버가 권한을 검사한다. UI에서 숨기는 것만으로 접근을 제한하지 않는다.
   팀 리드가 볼 수 있는 팀 범위, 일반 구성원이 개인 목록을 볼 수 있는지는 기존 RBAC와 합의한다.
   제한된 범위의 합계를 전사 합계라고 표시하지 않는다.
 
-공통 타입. OverviewResponse와 Usage 등은 overview-api.md의 타입을 참조한다.
+화면별 지표는 `Value<T> = { value: T | null; status: "complete" | "partial" | "unavailable"; reasons: string[] }`를 사용한다. 비교가 있는 지표는 서버의 비교 결과와 불가 사유도 받는다. 빈 기간·부분 근거·조회 실패는 서로 다른 상태다.
+페이지마다 필요한 meta만 반환하며 공통 수집/계약 상태를 중복 포함하지 않는다. 상세 타입은 각 화면 문서를 참조한다.
 
 ```ts
 type Page<T> = {
@@ -109,7 +115,6 @@ type Section<T> = {
   reason: string | null;
   data: T | null;
 };
-type AnalyticsMeta = OverviewResponse["meta"] & { snapshotId: string };
 type CurrentMeta = {
   organizationId: string;
   generatedAt: string;
@@ -210,4 +215,4 @@ GET /teams는 q(이름 검색, 최대 200자), limit(기본 50), cursor, snapsho
 여러 HTTP 호출 개수보다 같은 원본을 중복 스캔하는지, 응답에 불필요한 전체 명단을 담는지가 중요하다.
 기존 서버 안에서 공통 집계·병렬 조회·캐시를 사용한다. 이 명세를 위해 GraphQL이나 Prometheus를 새로 도입할 필요는 없다.
 
-프론트 연동은 별도 작업이다. 이 문서들은 API 호출, 외부 메일 전송, 좌석 회수 또는 정책 변경을 실행하지 않는다.
+프론트와 백엔드의 화면별 응답 변경은 함께 반영한다. API 예시·상태 표시·CSV가 같은 값을 사용하도록 검증한다.

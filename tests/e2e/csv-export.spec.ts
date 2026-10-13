@@ -8,6 +8,7 @@ import {
   signIn,
 } from "./helpers";
 import { PreparationError } from "./harness";
+import { groupModels } from "../../src/lib/api/overview-format";
 import type { Overview } from "../../src/lib/api/overview";
 
 // 공통 헤더의 CSV — 실제로 내려받은 파일을 화면이 쓴 같은 응답(같은 기간·비교·snapshot)과 시드 명세에 대조한다.
@@ -102,35 +103,34 @@ test("CSV-OVERVIEW-A @p1 @read 개요 CSV 는 화면과 같은 기간의 응답�
   const api = (await (await shown).json()) as Overview;
   const csv = await download(page);
   expect(csv.name).toBe(`overview_${start}_${end}.csv`);
-  expect(csv.meta.get("조직")).toBe(A.name);
-  expect(csv.meta.get("기간")).toBe(`${start} ~ ${end} (Asia/Seoul)`);
+  expect(csv.meta.get("organization")).toBe(A.name);
+  expect(csv.meta.get("period")).toBe(`${start} ~ ${end}`);
   const cost = csv.sections.summary.find(
     (row) => row.metric === "equivalentCostUsd",
   )!;
-  expect(cost.current).toBe(api.usage.current!.equivalentCostUsd);
-  expect(Number(cost.current)).toBeCloseTo(seedCostA(), 6);
+  expect(cost.value).toBe(api.summary!.equivalentCostUsd.value);
+  expect(Number(cost.value)).toBeCloseTo(seedCostA(), 6);
   expect(csv.sections.trend).toHaveLength(api.meta.dayCount);
   csv.sections.trend.forEach((row, index) => {
-    const point = api.trend.points[index];
+    const point = api.trend!.points[index];
     expect(row.date).toBe(point.date);
-    expect(row.equivalentCostUsd).toBe(point.equivalentCostUsd ?? "");
+    expect(row.equivalentCostUsd).toBe(point.equivalentCostUsd.value ?? "");
     expect(row.totalTokens).toBe(
-      point.totalTokens === null ? "" : String(point.totalTokens),
+      point.totalTokens.value === null ? "" : String(point.totalTokens.value),
     );
   });
   expect(
-    csv.sections.model_mix.map((row) => [row.modelId, row.equivalentCostUsd]),
+    csv.sections.modelMix.map((row) => [row.model, row.equivalentCostUsd]),
   ).toEqual(
-    api.modelMix.models.map((model) => [
+    groupModels(api.modelMix!.models).map((model) => [
       model.modelId,
-      model.equivalentCostUsd ?? "",
+      model.equivalentCostUsd.value ?? "",
     ]),
   );
+  expect(csv.sections.product_usage).toBeUndefined();
   expect(
-    csv.sections.product_usage.map((row) => row.equivalentCostUsd),
-  ).toEqual(
-    api.productUsage.products.map((product) => product.equivalentCostUsd ?? ""),
-  );
+    csv.sections.teamUsage.some((row) => row.teamId === "other_teams"),
+  ).toBe(false);
 });
 
 test("CSV-TEAMS-A @p1 @read 팀 CSV 는 같은 snapshot 의 팀 전부와 사용자 표에서 고른 팀의 사용자 전부다", async ({
@@ -198,7 +198,7 @@ test("CSV-TEAMS-A @p1 @read 팀 CSV 는 같은 snapshot 의 팀 전부와 사용
   );
 });
 
-test("CSV-SETTINGS-C @p1 @read 설정 CSV 는 등록 제품의 계약·좌석·종량 지출을 원천과 함께 담고, 청구 누계는 벤더 청구 원천의 금액 그대로다", async ({
+test("CSV-SETTINGS-C @p1 @read 설정 CSV는 화면의 카드·벤더 표 값과 상태만 담는다", async ({
   page,
 }) => {
   await signIn(page, `owner@seed-${C.seed}.example.test`);
@@ -214,7 +214,7 @@ test("CSV-SETTINGS-C @p1 @read 설정 CSV 는 등록 제품의 계약·좌석·�
       items: {
         vendorId: string;
         kind: string;
-        contract: { monthlySeatFeeUsd: string | null } | null;
+        monthlySeatFeeUsd: { value: string | null };
       }[];
     };
   };
@@ -224,11 +224,16 @@ test("CSV-SETTINGS-C @p1 @read 설정 CSV 는 등록 제품의 계약·좌석·�
   expect(csv.sections.vendors).toHaveLength(api.vendors.totalCount);
   const cursor = csv.sections.vendors.find((row) => row.kind === "cursor")!;
   expect(cursor.monthlySeatFeeUsd).toBe(
-    api.vendors.items.find((vendor) => vendor.kind === "cursor")!.contract!
-      .monthlySeatFeeUsd,
+    api.vendors.items.find((vendor) => vendor.kind === "cursor")!
+      .monthlySeatFeeUsd.value,
   );
-  // 시드 README: C 의 Cursor 청구 누계 $137.42, 원천 seed — 실제 청구의 증거가 아니라는 원천을 함께 싣는다.
-  expect(Number(cursor.meteredActualBilledUsd)).toBe(137.42);
-  expect(cursor.meteredSource).toBe("seed");
-  expect(cursor.billingKind).toBe("usage_spend");
+  expect(cursor).not.toHaveProperty("meteredActualBilledUsd");
+  expect(csv.sections).not.toHaveProperty("contract_tiers");
+  expect(csv.sections.summary.map((row) => row.metric)).toEqual(
+    expect.arrayContaining([
+      "activeSeats7d",
+      "meteredMonthToDate",
+      "unconfiguredVendors",
+    ]),
+  );
 });

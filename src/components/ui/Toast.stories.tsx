@@ -3,11 +3,17 @@ import { expect, waitFor } from "storybook/test";
 import { Button } from "./Button";
 import { Toast, useToast } from "./Toast";
 
-function ToastExample({ message }: { message: string }) {
+function ToastExample({
+  message,
+  tone = "success",
+}: {
+  message: string;
+  tone?: "success" | "error";
+}) {
   const { toast, showToast, dismissToast } = useToast();
   return (
     <div className="flex flex-wrap gap-2 p-6">
-      <Button onClick={() => showToast(message)}>알림 표시</Button>
+      <Button onClick={() => showToast(message, tone)}>알림 표시</Button>
       <Button onClick={() => showToast("계약 정보를 비웠습니다.")}>
         다른 알림 표시
       </Button>
@@ -32,6 +38,21 @@ export const Success: Story = {
     await userEvent.click(trigger);
     await expect(canvas.getByRole("status")).toHaveTextContent(
       "변경사항을 저장했습니다.",
+    );
+    await expect(trigger).toHaveFocus();
+  },
+};
+export const SaveError: Story = {
+  name: "저장 실패 알림",
+  args: {
+    message: "팀을 저장하지 못했습니다. 다시 시도해 주세요.",
+    tone: "error",
+  },
+  async play({ canvas, userEvent }) {
+    const trigger = canvas.getByRole("button", { name: "알림 표시" });
+    await userEvent.click(trigger);
+    await expect(canvas.getByRole("alert")).toHaveTextContent(
+      "팀을 저장하지 못했습니다.",
     );
     await expect(trigger).toHaveFocus();
   },

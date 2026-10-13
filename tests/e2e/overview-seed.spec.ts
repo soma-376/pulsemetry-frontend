@@ -17,11 +17,11 @@ function seedCostA() {
 
 async function openSeedOverview(page: Page, index: 0 | 2) {
   const org = seedOrganizations[index];
-  const { start, end } = seedPeriod();
+  const { start, end } = seedPeriod(index === 0 ? "A" : "C");
   await signIn(page, `owner@seed-${org.seed}.example.test`);
   await page.goto("/overview");
   await expect(
-    page.getByRole("region", { name: "사용 관측 인원", exact: true }),
+    page.getByRole("region", { name: "사용자 수", exact: true }),
   ).toBeVisible();
   await selectPeriod(page, start, end);
   await expect(
@@ -68,16 +68,16 @@ test("OVERVIEW-A @p0 @read 달력으로 시드 기간 조회 후 관측 인원·
   }).format(cost);
   const body = await openSeedOverview(page, 0);
   // 백엔드 시드 시나리오의 독립 기대값. UI와 같은 응답만 비교해서 통과시키지 않는다.
-  expect(body.usage.current?.activeUsers).toBe(8);
-  expect(Number(body.usage.current?.equivalentCostUsd)).toBe(cost);
+  expect(body.summary?.activeUsers.value).toBe(97);
+  expect(Number(body.summary?.equivalentCostUsd.value)).toBe(cost);
   await expect(
     page
-      .getByRole("region", { name: "사용 관측 인원", exact: true })
-      .getByText("8", { exact: true }),
+      .getByRole("region", { name: "사용자 수", exact: true })
+      .getByText("97", { exact: true }),
   ).toBeVisible();
   await expect(
     page
-      .getByRole("region", { name: "토큰 비용", exact: true })
+      .getByRole("region", { name: "사용 환산액", exact: true })
       .getByText(costText, { exact: true }),
   ).toBeVisible();
   const changed = page.waitForResponse(
@@ -90,9 +90,11 @@ test("OVERVIEW-A @p0 @read 달력으로 시드 기간 조회 후 관측 인원·
     .selectOption("none");
   const response = await changed;
   expect(response.status()).toBe(200);
-  expect((await response.json()).comparison.status).toBe("disabled");
+  expect(
+    (await response.json()).summary.equivalentCostUsd.comparison.status,
+  ).toBe("disabled");
   await expect(
-    page.getByRole("region", { name: "토큰 비용", exact: true }),
+    page.getByRole("region", { name: "사용 환산액", exact: true }),
   ).toContainText(costText);
 });
 
@@ -100,20 +102,20 @@ test("OVERVIEW-C @p0 @read 미등록 모델과 비용 미확정 값을 0으로 �
   page,
 }) => {
   const body = await openSeedOverview(page, 2);
-  const unknown = body.modelMix.models.find(
+  const unknown = body.modelMix!.models.find(
     (model) => model.displayName === "unrecognized-seed-model",
   );
   expect(unknown).toBeDefined();
-  expect(unknown?.equivalentCostUsd).toBeNull();
-  expect(unknown?.effectiveCostPerMillionTokensUsd).toBeNull();
-  expect(body.usage.current?.equivalentCostUsd).toBeNull();
+  expect(unknown?.equivalentCostUsd.value).toBeNull();
+  expect(unknown?.effectiveCostPerMillionTokensUsd.value).toBeNull();
+  expect(body.summary?.equivalentCostUsd.value).toBeNull();
   await expect(
     page
-      .getByRole("region", { name: "토큰 비용", exact: true })
+      .getByRole("region", { name: "사용 환산액", exact: true })
       .getByText("-", { exact: true }),
   ).toBeVisible();
   const row = page
-    .getByRole("region", { name: "모델 구성", exact: true })
+    .getByRole("region", { name: "모델별 사용 환산액 비중", exact: true })
     .getByRole("button", { name: /unrecognized-seed-model/ });
   await expect(row).toBeVisible();
   await expect(row.getByText("-", { exact: true }).first()).toBeVisible();

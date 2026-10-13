@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { MetricStatusBadge } from "@/components/overview/KpiCard";
 import { MemberStatusBadges } from "./MemberStatusBadges";
 import { Button } from "@/components/ui/Button";
 import { Widget } from "@/components/ui/Card";
@@ -227,7 +228,7 @@ export function MemberListCard({
                   onClick={() => onOpen(m)}
                   aria-label={`${m.account} 구성원 상세`}
                   aria-haspopup="dialog"
-                  className={`${COLS} w-full cursor-pointer border-b border-border px-0.5 py-3 text-left transition-colors hover:bg-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue`}
+                  className={`${COLS} relative w-full cursor-pointer border-b border-border px-0.5 py-3 text-left transition-colors hover:bg-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue`}
                 >
                   <span className="overflow-hidden text-[12.5px] text-ellipsis whitespace-nowrap">
                     {m.account}
@@ -236,8 +237,9 @@ export function MemberListCard({
                     {m.team}
                   </span>
                   <span className="text-[12px] text-text2">{m.roleLabel}</span>
-                  <span className="tnum text-right text-[12px]">
+                  <span className="tnum flex min-w-0 flex-col items-end gap-1 text-right text-[12px]">
                     {m.costText}
+                    {m.costStatus && <MetricStatusBadge {...m.costStatus} />}
                   </span>
                   <span className="tnum text-right text-[12px] whitespace-nowrap text-text3">
                     {m.lastSeen}

@@ -1,5 +1,7 @@
 "use client";
 
+import { PageHeader } from "@/components/layout/PageHeader";
+
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -20,7 +22,8 @@ import { UnassignedCard } from "@/components/members/UnassignedCard";
 import { TeamManagement } from "@/components/teams/TeamManagement";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingState } from "@/components/ui/LoadingState";
+import { refreshFeedback } from "@/components/ui/RefreshNotice";
+import { MembersSkeleton } from "./MembersSkeleton";
 import { StatCard } from "@/components/ui/StatCard";
 import { Toast, useToast } from "@/components/ui/Toast";
 import {
@@ -39,6 +42,7 @@ import { assignTeams, teamAssignments } from "@/lib/api/member-commands";
 import { membersOptions } from "@/lib/api/members";
 import { organizationKey } from "@/lib/api/query-keys";
 import { useBackendSession } from "@/lib/api/session";
+import { DAY_MS, fromIso, toIso } from "@/lib/date";
 import { useFilters } from "@/lib/filters";
 import {
   buildMembersView,
@@ -102,8 +106,11 @@ function OrganizationMembers({
   initialInvite: boolean;
 }) {
   const client = useQueryClient();
-  const { dates, autoRefresh } = useFilters();
-  const period = { startDate: dates.start, endDate: dates.end ?? dates.start };
+  const { todayIso, autoRefresh } = useFilters();
+  const period = {
+    startDate: toIso(new Date(fromIso(todayIso).getTime() - 6 * DAY_MS)),
+    endDate: todayIso,
+  };
   const refetchInterval = autoRefresh ? 300_000 : (false as const);
   const query = useQuery({
     ...membersOptions(organizationId, period),
@@ -126,8 +133,7 @@ function OrganizationMembers({
   // 권한이 거부되면 이전에 받은 값도 보여 주지 않는다.
   const forbidden = [query.error, invitations.error, teams.error].some(denied);
   const data = forbidden ? undefined : query.data;
-  const invitationData =
-    forbidden || invitations.error ? undefined : invitations.data;
+  const invitationData = forbidden ? undefined : invitations.data;
   const model = useMemo(
     () => (data ? buildMembersView(data, invitationData) : null),
     [data, invitationData],
@@ -141,6 +147,7 @@ function OrganizationMembers({
   useDashboardPageRefresh(
     refresh,
     query.isFetching || invitations.isFetching || teams.isFetching,
+    forbidden ? undefined : refreshFeedback(query, invitations, teams),
   );
 
   const openDetail = (kind: Selection["kind"], memberId: string) => {
@@ -235,54 +242,39 @@ function OrganizationMembers({
 
   return (
     <>
-      <PageContainer className="flex flex-col gap-4 pt-5 pb-10">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <div className="flex items-baseline gap-2.5">
-            <h1 className="text-[18px] font-semibold tracking-[-0.01em]">
-              구성원
-            </h1>
-            <span className="text-[12px] text-text3">
-              전체 구성원 · 팀·역할 및 벤더 좌석 관리
-            </span>
-          </div>
-          <div className="ml-auto flex flex-wrap items-center gap-3">
-            <TeamManagement />
-            <Button
-              variant="primary"
-              className="px-3.5"
-              disabled={!capabilities?.invite}
-              onClick={() => setInviteOpen(true)}
-            >
-              구성원 초대
-            </Button>
-          </div>
-        </div>
+      <PageContainer className="flex flex-col gap-6 pt-6 pb-10">
+        <PageHeader
+          page="members"
+          actions={
+            <>
+              <TeamManagement />
+              <Button
+                variant="primary"
+                className="px-3.5"
+                disabled={!capabilities?.invite}
+                onClick={() => setInviteOpen(true)}
+              >
+                구성원 초대
+              </Button>
+            </>
+          }
+        />
 
-        {query.error && (
+        {!data && query.error && (
           <ErrorState
-            message={
-              <>
-                {query.error.message}
-                {data && " 마지막으로 조회한 명단을 표시합니다."}
-              </>
-            }
+            message={query.error.message}
             retrying={query.isFetching}
             onRetry={() => void query.refetch({ cancelRefetch: false })}
           />
         )}
-        {teams.error && !denied(teams.error) && (
+        {!teams.data && teams.error && !denied(teams.error) && (
           <ErrorState
             message={`팀 목록을 불러오지 못했습니다. ${teams.error.message}`}
             retrying={teams.isFetching}
             onRetry={() => void teams.refetch({ cancelRefetch: false })}
           />
         )}
-        {!data && !forbidden && query.isPending && (
-          <LoadingState
-            message="구성원을 불러오는 중입니다…"
-            className="min-h-[480px]"
-          />
-        )}
+        {!data && !forbidden && query.isPending && <MembersSkeleton />}
 
         {model && (
           <div className="grid grid-cols-4 gap-4 @max-[1180px]:grid-cols-2 @max-[620px]:grid-cols-1">
@@ -294,6 +286,7 @@ function OrganizationMembers({
                 unit={c.unit}
                 caption={c.caption}
                 tone={c.tone}
+                status={c.status}
               />
             ))}
 
@@ -302,7 +295,11 @@ function OrganizationMembers({
               post={post}
               model={model}
               loading={invitations.isPending}
-              error={denied(invitations.error) ? null : invitations.error}
+              error={
+                invitationData || denied(invitations.error)
+                  ? null
+                  : invitations.error
+              }
               retrying={invitations.isFetching}
               onRetry={() => void invitations.refetch({ cancelRefetch: false })}
               editable={model.capabilities.invite}

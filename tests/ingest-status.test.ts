@@ -63,8 +63,20 @@ test("header describes the server's judgement and omits values the server left n
     [
       "수집 중인 모든 기기의 전달이 멈췄습니다",
       `마지막 수신 ${new Date("2026-09-28T23:00:00Z").toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}`,
-      "보고 중인 설치 3대(최근 15분)",
     ],
+  );
+  assert.deepEqual(
+    ingestDetails(
+      {
+        ...base,
+        status: "down",
+        reason: "installations_silent",
+        lastReceivedAt: "2026-09-27T14:00:00Z",
+        activeInstallations: 0,
+      },
+      true,
+    ),
+    ["마지막 수신 2026년 9월 27일 23:00"],
   );
   assert.deepEqual(
     ingestDetails({
@@ -74,7 +86,7 @@ test("header describes the server's judgement and omits values the server left n
       lastReceivedAt: null,
       activeInstallations: 0,
     }),
-    ["보고 중인 설치 0대(최근 15분)"],
+    [],
   );
   assert.deepEqual(
     ingestDetails({

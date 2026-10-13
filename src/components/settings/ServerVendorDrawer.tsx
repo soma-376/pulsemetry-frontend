@@ -1,13 +1,21 @@
 "use client";
 
+import { contractInputText } from "@/lib/api/contract-input";
 import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge";
 import { contractAmountLabel } from "@/lib/contract-status";
 import { useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useIsMutating,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { z } from "zod";
 import { ContractForm } from "./ContractForm";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { VendorContractSkeleton } from "./VendorContractSkeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { DetailDrawer } from "@/components/ui/DetailDrawer";
 import { NEW_CONTRACT_ROW } from "@/lib/contracts";
 import { currentDateIso } from "@/lib/date";
@@ -17,7 +25,10 @@ import {
   serverVendorSchema,
   validateServerTiers,
 } from "@/lib/schemas/server-contract";
-import { settingsVendorDraft, settingsVendorRow } from "@/lib/settings-vendors";
+import {
+  settingsVendorDraft,
+  settingsVendorDetailRow,
+} from "@/lib/settings-vendors";
 import { catalogOptions, plansOptions } from "@/lib/api/vendor-catalog";
 import {
   apiJson,
@@ -27,32 +38,109 @@ import {
 } from "@/lib/api/management";
 import {
   fetchSettingsVendor,
+  settingsVendorOptions,
   settingsVendorResponseSchema,
   type SettingsVendor,
 } from "@/lib/api/settings";
 import { organizationKey } from "@/lib/api/query-keys";
 
-export function ServerVendorDrawer({
-  organizationId,
-  initial,
-  registeredKinds,
-  editable,
-  open,
-  onClose,
-  onAfterClose,
-  onSaved,
-  onAccessDenied,
-}: {
+type EditorProps = {
   organizationId: string;
   initial: SettingsVendor | null;
   registeredKinds: string[];
   editable: boolean;
-  open: boolean;
   onClose: () => void;
-  onAfterClose: () => void;
   onSaved: (message: string) => void;
   onAccessDenied: (error: Error) => void;
+};
+const editorMutationKey = (org: string, id: string | null) =>
+  ["vendor-contract-editor", org, id] as const;
+
+/** 드로어는 조회 전부터 유지하고, 편집기는 최초 상세 응답이 준비된 뒤 한 번 초기화한다. */
+export function ServerVendorDrawer({
+  vendorId,
+  vendorName,
+  open,
+  onAfterClose,
+  ...props
+}: Omit<EditorProps, "initial"> & {
+  vendorId: string | null;
+  vendorName?: string;
+  open: boolean;
+  onAfterClose: () => void;
 }) {
+  const query = useQuery({
+    ...settingsVendorOptions(props.organizationId, vendorId),
+    enabled: (query) => !!vendorId && open && query.state.data === undefined,
+    gcTime: 0,
+  });
+  const busy =
+    useIsMutating({
+      mutationKey: editorMutationKey(props.organizationId, vendorId),
+    }) > 0;
+  const close = () => {
+    if (!busy) props.onClose();
+  };
+  const title = vendorId
+    ? `${vendorName ?? query.data?.displayName ?? "벤더"} 계약 설정`
+    : "벤더 추가";
+  const denied =
+    query.error instanceof ManagementError &&
+    [401, 403].includes(query.error.status);
+  const ready = !vendorId || (!!query.data && !denied);
+  return (
+    <DetailDrawer
+      open={open}
+      onClose={close}
+      onAfterClose={onAfterClose}
+      title={title}
+      subtitle="계약 정보와 좌석을 확인하고 수정합니다"
+      footer={null}
+      bodyClassName="flex min-h-0 flex-1 flex-col"
+    >
+      {ready ? (
+        <VendorContractEditor
+          {...props}
+          initial={vendorId ? query.data! : null}
+        />
+      ) : (
+        <>
+          <div className="min-h-0 flex-1 overflow-y-auto p-6">
+            {query.isError ? (
+              <ErrorState
+                message={query.error.message}
+                description={`${vendorName ?? "벤더"} 계약 정보를 불러오지 못했습니다.`}
+                retryLabel="상세 다시 조회"
+                retrying={query.isFetching}
+                onRetry={() => void query.refetch({ cancelRefetch: false })}
+              />
+            ) : query.fetchStatus === "paused" ? (
+              <EmptyState
+                message="연결을 기다리고 있습니다"
+                description="네트워크가 연결되면 계약 정보를 불러옵니다."
+              />
+            ) : (
+              <VendorContractSkeleton />
+            )}
+          </div>
+          <div className="flex shrink-0 justify-end border-t border-border px-6 py-3">
+            <Button onClick={close}>닫기</Button>
+          </div>
+        </>
+      )}
+    </DetailDrawer>
+  );
+}
+
+function VendorContractEditor({
+  organizationId,
+  initial,
+  registeredKinds,
+  editable,
+  onClose,
+  onSaved,
+  onAccessDenied,
+}: EditorProps) {
   const client = useQueryClient();
   const [current, setCurrent] = useState(initial);
   const [draft, setDraft] = useState<VendorDraft>(() =>
@@ -83,13 +171,23 @@ export function ServerVendorDrawer({
     currentDateIso(),
     current?.contract ?? undefined,
   ).safeParse(draft);
+  const missingInput = [
+    ...(!draft.plan ? ["planId"] : []),
+    ...(!draft.tiers?.length || draft.tiers.some((t) => !t.seats.trim())
+      ? ["seats"]
+      : []),
+    ...(!draft.tiers?.length || draft.tiers.some((t) => !t.fee.trim())
+      ? ["monthlyFeePerSeatUsd"]
+      : []),
+  ];
   const clearing = !!current?.contract && !draft.plan;
   const summary = validateServerTiers(
     draft.tiers ?? [],
     product?.allowsSeatTiers ?? false,
   );
-  const plan = plans.data?.plans.find((item) => item.id === draft.plan);
-  const row = current ? settingsVendorRow(current, product) : NEW_CONTRACT_ROW;
+  const row = current
+    ? settingsVendorDetailRow(current, product)
+    : NEW_CONTRACT_ROW;
   // 지운 제품의 조회(상세·좌석)는 다시 읽지 않는다 — 서버에 없는 제품이라 404 다. 창이 닫히면 버려진다.
   const refresh = (removed?: string) =>
     client.invalidateQueries({
@@ -97,6 +195,7 @@ export function ServerVendorDrawer({
       predicate: (query) => !removed || !query.queryKey.includes(removed),
     });
   const mutation = useMutation({
+    mutationKey: editorMutationKey(organizationId, initial?.vendorId ?? null),
     retry: false,
     mutationFn: async (action: "save" | "vendor" | "contract") => {
       if (action !== "save") {
@@ -166,6 +265,7 @@ export function ServerVendorDrawer({
     },
   });
   const reload = useMutation({
+    mutationKey: editorMutationKey(organizationId, initial?.vendorId ?? null),
     mutationFn: async () => {
       if (!current) return;
       const latest = await fetchSettingsVendor(
@@ -212,98 +312,91 @@ export function ServerVendorDrawer({
     catalog.isPending ||
     catalog.isError ||
     (!!draft.plan && (plans.isFetching || plans.isError));
-  return (
-    <DetailDrawer
-      open={open}
-      onClose={() => {
-        if (!busy) onClose();
-      }}
-      onAfterClose={onAfterClose}
-      title={current ? `${current.displayName} 계약 설정` : "벤더 추가"}
-      subtitle={plan?.displayName ?? "플랜 미선택"}
-      footer={
-        <div className="flex flex-col gap-3">
-          <div className="flex items-baseline gap-2">
-            <span className="text-xs text-text2">
-              {changed
-                ? "입력한 월 계약액"
-                : current
-                  ? contractAmountLabel(current.contractStatus)
-                  : "월 계약액"}
-            </span>
-            <strong className="tnum text-[15px]">
-              {draft.plan && summary.tiers ? usd(summary.spend) : "-"}
-            </strong>
-          </div>
-          {confirm && (
-            <div
-              role="alert"
-              className="flex flex-wrap items-center gap-2 rounded-md border border-red bg-red-tint px-3 py-2.5"
-            >
-              <span className="flex-1 text-xs">
-                {confirm === "contract"
-                  ? "계약 정보만 비웁니다. 등록한 제품은 유지됩니다."
-                  : "등록한 제품을 삭제합니다. 이전 변경 이력은 보존됩니다."}
-              </span>
-              <Button
-                size="sm"
-                disabled={busy}
-                onClick={() => setConfirm(null)}
-              >
-                되돌리기
-              </Button>
-              <Button
-                size="sm"
-                loading={mutation.isPending && mutation.variables === confirm}
-                loadingLabel={
-                  confirm === "contract" ? "비우는 중…" : "삭제 중…"
-                }
-                disabled={busy || conflict || restricted}
-                onClick={() => submit(confirm)}
-              >
-                {confirm === "contract" ? "계약 비우기 확인" : "제품 삭제 확인"}
-              </Button>
-            </div>
-          )}
-          <div className="flex flex-wrap items-center gap-2">
-            {current && (
-              <Button
-                disabled={!editable || busy || conflict || restricted}
-                onClick={() => setConfirm("vendor")}
-                className="text-red"
-              >
-                벤더 삭제
-              </Button>
-            )}
-            {current?.contract && (
-              <Button
-                disabled={!editable || busy || conflict || restricted}
-                onClick={() => setConfirm("contract")}
-              >
-                계약 비우기
-              </Button>
-            )}
-            <div className="flex-1" />
-            <Button disabled={busy} onClick={onClose}>
-              취소
-            </Button>
-            <Button
-              variant="primary"
-              loading={mutation.isPending && mutation.variables === "save"}
-              loadingLabel="저장 중…"
-              disabled={disabled}
-              onClick={() => submit("save")}
-            >
-              {current ? "변경사항 저장" : "벤더 추가"}
-            </Button>
-          </div>
+  const footer = (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-baseline gap-2">
+        <span className="text-xs text-text2">
+          {changed
+            ? "입력한 월 계약액"
+            : current
+              ? contractAmountLabel(current.contractStatus)
+              : "월 계약액"}
+        </span>
+        <strong className="tnum text-[15px]">
+          {draft.plan && summary.tiers ? usd(summary.spend) : "-"}
+        </strong>
+      </div>
+      {confirm && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center gap-2 rounded-md border border-red bg-red-tint px-3 py-2.5"
+        >
+          <span className="flex-1 text-xs">
+            {confirm === "contract"
+              ? "계약 정보만 비웁니다. 등록한 제품은 유지됩니다."
+              : "등록한 제품을 삭제합니다. 이전 변경 이력은 보존됩니다."}
+          </span>
+          <Button size="sm" disabled={busy} onClick={() => setConfirm(null)}>
+            되돌리기
+          </Button>
+          <Button
+            size="sm"
+            loading={mutation.isPending && mutation.variables === confirm}
+            loadingLabel={confirm === "contract" ? "비우는 중…" : "삭제 중…"}
+            disabled={busy || conflict || restricted}
+            onClick={() => submit(confirm)}
+          >
+            {confirm === "contract" ? "계약 비우기 확인" : "제품 삭제 확인"}
+          </Button>
         </div>
-      }
-    >
-      <div className="flex flex-col gap-6">
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        {current && (
+          <Button
+            disabled={!editable || busy || conflict || restricted}
+            onClick={() => setConfirm("vendor")}
+            className="text-red"
+          >
+            벤더 삭제
+          </Button>
+        )}
+        {current?.contract && (
+          <Button
+            disabled={!editable || busy || conflict || restricted}
+            onClick={() => setConfirm("contract")}
+          >
+            계약 비우기
+          </Button>
+        )}
+        <div className="flex-1" />
+        <Button disabled={busy} onClick={onClose}>
+          취소
+        </Button>
+        <Button
+          variant="primary"
+          loading={mutation.isPending && mutation.variables === "save"}
+          loadingLabel="저장 중…"
+          disabled={disabled}
+          onClick={() => submit("save")}
+        >
+          {current ? "변경사항 저장" : "벤더 추가"}
+        </Button>
+      </div>
+    </div>
+  );
+  return (
+    <>
+      <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-6">
         {current && (
           <div className="flex flex-col gap-2">
             <ContractStatusBadge status={current.contractStatus} />
+            {current.contractInput?.status === "required" && (
+              <p role="status" className="text-xs text-orange-ink">
+                {missingInput.length
+                  ? contractInputText(missingInput)
+                  : "필수 항목을 입력했습니다. 저장하면 계약 입력이 완료됩니다."}
+              </p>
+            )}
             {current.contract && (
               <p className="text-xs text-text3">
                 계약 기간 {current.contract.effectiveFrom} ~{" "}
@@ -421,6 +514,9 @@ export function ServerVendorDrawer({
           </>
         )}
       </div>
-    </DetailDrawer>
+      <footer className="shrink-0 border-t border-border px-6 py-3">
+        {footer}
+      </footer>
+    </>
   );
 }

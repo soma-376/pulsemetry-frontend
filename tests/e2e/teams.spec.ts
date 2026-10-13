@@ -12,11 +12,22 @@ import { usd } from "../../src/lib/format";
 import { PreparationError } from "./harness";
 
 // 팀 분석 화면과 개요의 제품 관측을 실제 서버·시드로 본다. 기대값은 백엔드 tools/dev-seed/README.md의 A 시나리오와 대시보드 명세에서 쓴다:
-// 팀 플랫폼·제품·데이터·디자인 + 미배정 사용자, member2(플랫폼 → 제품 이동)·member6이 Claude Code와 Codex를 함께 사용 — 두 도구가 섞인 팀은 플랫폼·제품이고 데이터·디자인은 한 도구,
+// 팀 10개 + 미배정 사용자, member2(플랫폼팀 → 제품팀 이동)·member6이 Claude Code와 Codex를 함께 사용 — 두 도구가 섞인 팀은 플랫폼팀·제품팀이고 나머지는 한 도구,
 // 설치 등록일부터 기준일 4일 전까지의 날만 완전(누적 세션·비교의 근거), 최근 28일 환산 비용은 plan의 period_known_estimated_usd.
 const A = seedOrganizations[0];
-const TEAMS = ["플랫폼", "제품", "데이터", "디자인"];
-const MIXED = ["플랫폼", "제품"];
+const TEAMS = [
+  "플랫폼팀",
+  "제품팀",
+  "데이터팀",
+  "디자인팀",
+  "프론트엔드팀",
+  "백엔드팀",
+  "보안팀",
+  "AI팀",
+  "SRE팀",
+  "QA팀",
+];
+const MIXED = ["플랫폼팀", "제품팀"];
 const CLAUDE = "Claude (Anthropic)",
   CODEX = "ChatGPT / Codex (OpenAI)";
 
@@ -99,24 +110,22 @@ test("TEAMS-A-PARTIAL @p0 @read 팀 목록·제품 비중·드로어·사용자 
     exact: true,
   });
 
-  // 시드의 팀 넷과 미배정 사용자. 데모 팀(결제·모바일 등)은 없다.
+  // 시드의 팀 열 개과 미배정 사용자. 데모 팀(결제·모바일 등)은 없다.
   expect(body.teams.items.map((team) => team.teamName).sort()).toEqual(
     [...TEAMS].sort(),
   );
-  expect(body.unassigned.current?.activeUsers).toBeGreaterThan(0);
-  // 조직 활성 사용자는 팀을 옮긴 구성원을 두 번 세지 않는다(최근 28일 8명).
-  expect(body.totals.current?.activeUsers).toBe(8);
+  expect(body.unassigned.metrics.activeUsers.value).toBeGreaterThan(0);
+  // 조직 활성 사용자는 팀을 옮긴 구성원을 두 번 세지 않는다(최근 28일 97명).
+  expect(body.totals.activeUsers.value).toBe(97);
   await expect
     .poll(() => panelNames(page).then((names) => [...names].sort()))
     .toEqual([...TEAMS, "미배정"].sort());
   await expect(panel).toContainText(usd(seedCostA()));
-  // 기준일 전 3일이 완전하지 않아 비교하지 않는다(0%로 그리지 않는다).
+  // 기준일을 포함한 최근 4일이 완전하지 않아 비교하지 않는다(0%로 그리지 않는다).
   expect(body.comparison.status).toBe("unavailable");
-  await expect(panel.getByRole("note")).toHaveText(
-    "증감을 표시하지 않습니다 · 선택 기간에 수집 근거가 완전하지 않은 날이 있습니다",
-  );
+  await expect(panel.getByRole("note")).toHaveCount(0);
 
-  // 누적 세션: 기준일 4일 전까지는 값, 그 뒤는 null — 서버 값이고 줄지 않는다. 화면은 끊긴 이유를 적는다.
+  // 누적 세션: 기준일 4일 전까지는 값, 그 뒤는 null — 안내 문구 없이도 누락 구간은 연결하지 않는다.
   for (const team of [...body.teams.items, body.unassigned]) {
     const known = team.trend
       .filter((point) => point.date <= day(-4))
@@ -167,15 +176,17 @@ test("TEAMS-A-PARTIAL @p0 @read 팀 목록·제품 비중·드로어·사용자 
         ),
       );
   }
-  const platform = body.teams.items.find((team) => team.teamName === "플랫폼")!;
+  const platform = body.teams.items.find(
+    (team) => team.teamName === "플랫폼팀",
+  )!;
   expect(platform.products.map((product) => product.kind)).toEqual([
     "claude_team",
     "openai_biz",
   ]);
 
   // 드로어는 그 행의 값이다(다시 조회하지 않는다).
-  await panel.getByRole("button", { name: "플랫폼", exact: true }).click();
-  const drawer = page.getByRole("dialog", { name: "플랫폼 팀", exact: true });
+  await panel.getByRole("button", { name: "플랫폼팀", exact: true }).click();
+  const drawer = page.getByRole("dialog", { name: "플랫폼팀 팀", exact: true });
   await expect(drawer).toContainText("제품별 환산가치 비중");
   await expect(drawer).toContainText(CLAUDE);
   await expect(drawer).toContainText(CODEX);
@@ -186,9 +197,9 @@ test("TEAMS-A-PARTIAL @p0 @read 팀 목록·제품 비중·드로어·사용자 
     name: "사용자별 사용량",
     exact: true,
   });
-  await usage.getByRole("button", { name: "플랫폼", exact: true }).click();
+  await usage.getByRole("button", { name: "플랫폼팀", exact: true }).click();
   await expect(
-    usage.getByRole("button", { name: "플랫폼", exact: true }),
+    usage.getByRole("button", { name: "플랫폼팀", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   const usersQuery = new URLSearchParams({
     startDate: start,
@@ -213,7 +224,7 @@ test("TEAMS-A-PARTIAL @p0 @read 팀 목록·제품 비중·드로어·사용자 
   await usage.getByRole("button", { name: "세션 정렬", exact: true }).click();
   const bySessions = [...users.users.items].sort(
     (a, b) =>
-      (b.usage.sessionCount ?? -1) - (a.usage.sessionCount ?? -1) ||
+      (b.usage.sessionCount.value ?? -1) - (a.usage.sessionCount.value ?? -1) ||
       a.account.localeCompare(b.account, "ko", { numeric: true }),
   );
   await expect.poll(accounts).toEqual(bySessions.map((user) => user.account));
@@ -245,7 +256,7 @@ test("TEAMS-A-PARTIAL @p0 @read 팀 목록·제품 비중·드로어·사용자 
   expect(pages).toEqual(users.users.items.map((user) => user.account));
 
   // member2는 기간 중에 플랫폼 → 제품으로 옮겼다 — 이동 전·후 사용이 각 팀의 사용자로 나온다. 미배정 사용자는 member9다.
-  const product = body.teams.items.find((team) => team.teamName === "제품")!;
+  const product = body.teams.items.find((team) => team.teamName === "제품팀")!;
   const accountsOf = async (teamId: string) => {
     const query = new URLSearchParams({
       startDate: start,
@@ -296,7 +307,7 @@ test("TEAMS-A-COMPLETE @p0 @read 완전한 두 기간이면 증감과 끊기지 
       team.teamName,
     ).toBe(true);
     expect(team.trend.at(-1)!.cumulativeSessionCount, team.teamName).toBe(
-      team.current!.sessionCount,
+      team.metrics.sessionCount.value,
     );
   }
   await panel.getByRole("tab", { name: "세션", exact: true }).click();
@@ -317,14 +328,14 @@ test("TEAMS-A-COMPLETE @p0 @read 완전한 두 기간이면 증감과 끊기지 
   ).toBe(true);
 
   // 개요 표의 팀 링크처럼 직접 연 팀은 드로어가 열린다.
-  const design = body.teams.items.find((team) => team.teamName === "디자인")!;
+  const design = body.teams.items.find((team) => team.teamName === "디자인팀")!;
   await page.goto(`/teams?team=${encodeURIComponent(design.teamId!)}`);
   await expect(
-    page.getByRole("dialog", { name: "디자인 팀", exact: true }),
+    page.getByRole("dialog", { name: "디자인팀 팀", exact: true }),
   ).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(
-    page.getByRole("dialog", { name: "디자인 팀", exact: true }),
+    page.getByRole("dialog", { name: "디자인팀 팀", exact: true }),
   ).not.toBeVisible();
 });
 
@@ -348,40 +359,12 @@ test("OVERVIEW-PRODUCTS @p0 @read 개요의 벤더 관측 인원·팀별 사용 
   await selectPeriod(page, start, end);
   const overview = (await (await response).json()) as Overview;
   // 매핑된 두 도구가 관측됐다. 관측 인원은 좌석 수가 아니다.
-  expect(overview.productUsage.products.map((product) => product.kind)).toEqual(
-    ["claude_team", "openai_biz"],
+  expect("productUsage" in overview).toBe(false);
+  await expect(page.getByRole("table", { name: "계약·좌석 현황" })).toHaveCount(
+    0,
   );
-  const settings = await authenticatedRequest(
-    page,
-    dashboardBase(),
-    `/api/v1/organizations/${A.id}/settings`,
-  );
-  const vendors = settings.body.vendors.items as {
-    kind: string;
-    displayName: string;
-  }[];
-  const table = page.getByRole("table", { name: "계약·좌석 현황" });
-  for (const vendor of vendors) {
-    const cell = table
-      .getByRole("row")
-      .filter({
-        has: page.getByRole("button", {
-          name: `${vendor.displayName} 벤더 상세`,
-          exact: true,
-        }),
-      })
-      .getByRole("cell")
-      .nth(2);
-    const product = overview.productUsage.products.find(
-      (item) => item.kind === vendor.kind,
-    );
-    // Copilot·Cursor는 수집 도구가 아니라 관측이 없다 — "미관측"이고 추측한 값이 아니다.
-    await expect(cell).toHaveText(
-      product ? `${product.activeUsers}명` : "미관측",
-    );
-  }
   const summary = page.getByRole("table", { name: "팀별 요약" });
-  for (const team of overview.teamUsage.topTeams) {
+  for (const team of overview.teamUsage!.topTeams) {
     const cell = summary
       .getByRole("row")
       .filter({

@@ -15,7 +15,8 @@ import {
   money,
   productUsage,
   reason,
-  usage,
+  valueSchema,
+  metricSchema,
 } from "./overview";
 
 /**
@@ -23,7 +24,12 @@ import {
  * 목록 → 상세 → 사용자가 같은 snapshot을 읽는다. 값은 서버가 센 그대로 두고 다시 집계하지 않는다.
  */
 
+const pointStatus = {
+  status: z.enum(["complete", "partial", "unavailable"]),
+  reasons: z.array(z.string()),
+};
 const modelUsage = z.object({
+  ...pointStatus,
   modelId: z.string(),
   displayName: z.string(),
   equivalentCostUsd: money,
@@ -32,11 +38,39 @@ const modelUsage = z.object({
 const section = <T extends z.ZodType>(data: T) =>
   z.object({ availability, reason, data: data.nullable() });
 const observation = z.enum(["complete", "partial", "unobserved"]);
+const countValue = valueSchema(count);
+const moneyValue = valueSchema(money);
+const decimalValue = valueSchema(z.number().nonnegative().nullable());
+const countMetric = metricSchema(count, z.number().int().nullable());
+const moneyMetric = metricSchema(
+  money,
+  z
+    .string()
+    .regex(/^-?\d+(?:\.\d+)?$/)
+    .nullable(),
+);
+export const teamMetricsSchema = z.object({
+  activeUsers: countValue,
+  equivalentCostUsd: moneyMetric,
+  totalTokens: countMetric,
+  sessionCount: countMetric,
+  equivalentCostPerUserUsd: moneyMetric,
+  equivalentCostPerSessionUsd: moneyValue,
+  tokensPerUser: decimalValue,
+  sessionsPerUser: decimalValue,
+  tokensPerSession: decimalValue,
+  effectiveCostPerMillionTokensUsd: moneyValue,
+});
+const teamSummaryUsage = z.object({
+  activeUsers: countValue,
+  sessionCount: countValue,
+  totalTokens: countValue,
+  equivalentCostUsd: moneyValue,
+});
 export const teamAnalyticsSchema = z.object({
   teamId: z.string().nullable(),
   teamName: z.string(),
-  current: usage.nullable(),
-  previous: usage.nullable(),
+  metrics: teamMetricsSchema,
   modelMix: section(
     z.object({
       sessionMixAvailable: z.boolean(),
@@ -49,6 +83,7 @@ export const teamAnalyticsSchema = z.object({
     z.object({
       date: z.iso.date(),
       observation,
+      ...pointStatus,
       equivalentCostUsd: money,
       totalTokens: count,
       cumulativeSessionCount: count,
@@ -78,7 +113,7 @@ export const teamsResponseSchema = z.object({
   meta: metaSchema,
   comparison,
   attributionBasis: z.literal("event_time"),
-  totals: z.object({ current: usage.nullable(), previous: usage.nullable() }),
+  totals: teamMetricsSchema,
   sort: z.enum(["cost", "token", "session"]),
   teams: page(teamAnalyticsSchema),
   unassigned: teamAnalyticsSchema,
@@ -98,27 +133,25 @@ const teamDetailSchema = z.object({
 export const teamUserSchema = z.object({
   memberId: z.string(),
   account: z.string(),
-  usage,
+  usage: z.object({
+    sessionCount: countValue,
+    totalTokens: countValue,
+    equivalentCostUsd: moneyValue,
+  }),
   lastUsedAt: z.iso.datetime({ offset: true }).nullable(),
   mainModel: z
     .object({ modelId: z.string(), displayName: z.string() })
     .nullable(),
-  cache: z.object({
-    readTokens: count,
-    eligibleInputTokens: count,
-    hitRatio: z.number().min(0).max(1).nullable(),
-  }),
+  cacheHitRatio: valueSchema(z.number().min(0).max(1).nullable()),
 });
 export type TeamUser = z.infer<typeof teamUserSchema>;
 export const teamUsersSchema = z.object({
   meta: metaSchema,
   team: z.object({ teamId: z.string().nullable(), teamName: z.string() }),
   summary: z.object({
-    usage: usage.nullable(),
+    usage: teamSummaryUsage,
     averageEquivalentCostUsd: money,
-    cacheReadTokens: count,
-    cacheEligibleInputTokens: count,
-    cacheHitRatio: z.number().min(0).max(1).nullable(),
+    cacheHitRatio: valueSchema(z.number().min(0).max(1).nullable()),
     unidentifiedEquivalentCostUsd: money,
   }),
   users: page(teamUserSchema),

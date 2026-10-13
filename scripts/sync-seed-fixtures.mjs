@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const target = resolve(root, "src/mocks/generated/company-a.json");
 const args = process.argv.slice(2);
-const date = args.find((arg) => arg !== "--check") ?? "2026-09-28";
+const date = args.find((arg) => arg !== "--check") ?? "2026-10-11";
 if (
   args.some((arg) => arg !== date && arg !== "--check") ||
   !/^\d{4}-\d{2}-\d{2}$/.test(date)

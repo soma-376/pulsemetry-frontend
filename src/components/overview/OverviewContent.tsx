@@ -1,17 +1,19 @@
 "use client";
 
+import { PageHeader } from "@/components/layout/PageHeader";
+
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useQuery } from "@tanstack/react-query";
 import {
   useDashboardPageExport,
   useDashboardPageRefresh,
 } from "@/components/layout/DashboardHeader";
-import { LoadingState } from "@/components/ui/LoadingState";
+import { OverviewSkeleton } from "./OverviewSkeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { refreshFeedback } from "@/components/ui/RefreshNotice";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { OverviewData } from "./OverviewData";
 import { DashboardError, overviewQueryOptions } from "@/lib/api/overview";
-import { overviewSettingsOptions } from "@/lib/api/overview-vendors";
 import { useBackendSession } from "@/lib/api/session";
 import { useFilters } from "@/lib/filters";
 import { downloadCsv, overviewCsv } from "@/lib/csv-export";
@@ -49,21 +51,9 @@ export function OverviewContent() {
         : false;
     },
   });
-  // 현재 계약은 기간별 사용량과 독립적으로 조회한다. 한 요청의 실패가 다른 카드를 지우지 않는다.
-  const contracts = useQuery({
-    ...overviewSettingsOptions(organizationId),
-    enabled: configured,
-    refetchInterval: autoRefresh ? 300_000 : false,
-  });
   const denied =
     query.error instanceof DashboardError &&
     [401, 403, 404].includes(query.error.status);
-  const contractsDenied =
-    contracts.error instanceof DashboardError &&
-    [401, 403, 404].includes(contracts.error.status);
-  // 설정 조회의 404 는 활성 manifest 가 없는 조직 — 최초 수집 정책을 저장하기 전이라 조회할 계약이 없다(대시보드 명세). 조회 실패가 아니다.
-  const contractsMissing =
-    contracts.error instanceof DashboardError && contracts.error.status === 404;
   const data = denied ? undefined : query.data;
   // CSV 는 화면이 쓰는 같은 응답(기간·비교·서버 기준 시각)으로 만든다.
   useDashboardPageExport(
@@ -82,23 +72,21 @@ export function OverviewContent() {
   );
   useDashboardPageRefresh(
     () => {
-      if (configured)
-        void Promise.all([
-          query.refetch({ cancelRefetch: false }),
-          contracts.refetch({ cancelRefetch: false }),
-        ]);
+      if (configured) void query.refetch({ cancelRefetch: false });
     },
-    !configured || query.isFetching || contracts.isFetching,
+    !configured || query.isFetching,
+    data
+      ? (refreshFeedback(query) ??
+          (data.errors.length
+            ? { paused: false, updatedAt: query.dataUpdatedAt, partial: true }
+            : undefined))
+      : undefined,
   );
   return (
     <>
-      {(!data || query.error) && (
-        <PageContainer className="flex flex-col gap-8 pt-5 pb-10">
-          {!data && (
-            <h1 className="text-[18px] font-semibold tracking-[-0.01em]">
-              개요
-            </h1>
-          )}
+      {!data && (
+        <PageContainer className="flex flex-col gap-6 pt-6 pb-10">
+          <PageHeader page="overview" />
           {!configured ? (
             <EmptyState
               message="조회할 조직이 설정되지 않았습니다."
@@ -106,21 +94,13 @@ export function OverviewContent() {
             />
           ) : (
             <>
-              {query.isPending && (
-                <LoadingState
-                  message="개요 데이터를 불러오는 중입니다…"
-                  className="min-h-[480px]"
-                />
-              )}
+              {query.isPending && <OverviewSkeleton />}
               {query.error && (
                 <ErrorState
                   message={
-                    <>
-                      {query.error instanceof DashboardError
-                        ? query.error.message
-                        : "개요 데이터를 불러오지 못했습니다. 연결 상태를 확인해 주세요."}
-                      {data && " 마지막으로 조회한 데이터를 표시합니다."}
-                    </>
+                    query.error instanceof DashboardError
+                      ? query.error.message
+                      : "개요 데이터를 불러오지 못했습니다. 연결 상태를 확인해 주세요."
                   }
                   onRetry={() => void query.refetch({ cancelRefetch: false })}
                   retrying={query.isFetching}
@@ -135,21 +115,6 @@ export function OverviewContent() {
         <OverviewData
           key={[organizationId, dates.start, dates.end, compare].join(":")}
           data={data}
-          settings={contractsDenied ? undefined : contracts.data}
-          contractsMessage={
-            contractsMissing
-              ? "수집 정책을 저장하기 전이라 계약 정보가 없습니다."
-              : contracts.error
-                ? "계약 정보를 불러오지 못했습니다."
-                : contracts.isPending
-                  ? "계약 정보를 불러오는 중입니다…"
-                  : undefined
-          }
-          retryContracts={
-            contracts.error && !contractsMissing
-              ? () => void contracts.refetch({ cancelRefetch: false })
-              : undefined
-          }
         />
       )}
     </>

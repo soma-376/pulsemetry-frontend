@@ -1,3 +1,4 @@
+import { notificationHandlers } from "./fixtures/alerts";
 import { setupWorker } from "msw/browser";
 import { mswLoader } from "msw-storybook-addon/csf3";
 import type { Preview } from "@storybook/nextjs-vite";
@@ -8,7 +9,7 @@ import "../src/app/globals.css";
 const preview: Preview = {
   loaders: [
     mswLoader(async () => {
-      const worker = setupWorker();
+      const worker = setupWorker(...notificationHandlers());
       await worker.start({
         quiet: true,
         onUnhandledRequest(request, print) {
@@ -22,6 +23,28 @@ const preview: Preview = {
   ],
   parameters: {
     nextjs: { appDirectory: true },
+    options: {
+      storySort: {
+        order: [
+          "Pages",
+          [
+            "개요",
+            ["일반", "로딩", "에러", "세부 사례"],
+            "팀 분석",
+            ["일반", "로딩", "에러"],
+            "구성원",
+            ["일반", "로딩", "에러"],
+            "운영·보안",
+            ["일반", "로딩", "에러"],
+            "설정",
+            ["일반", "로딩", "에러", "세부 사례"],
+            "Onboarding",
+          ],
+          "Layout",
+          "UI",
+        ],
+      },
+    },
     controls: { matchers: { color: /(background|color)$/i, date: /Date$/i } },
     backgrounds: { disable: true },
   },

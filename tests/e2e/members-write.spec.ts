@@ -7,13 +7,29 @@ import {
   enrollmentBase,
   seedOrganizations,
 } from "./fixtures";
-import { authenticatedRequest, seedPeriod, signIn } from "./helpers";
+import {
+  authenticatedRequest,
+  readAllMembers,
+  showAllMembers,
+  signIn,
+} from "./helpers";
 
-// 시드 A(백엔드 tools/dev-seed/README.md): member5는 디자인 팀의 일반 구성원, member9만 미배정, 팀은 넷, 초대 대기 1·만료 1.
+// 시드 A(백엔드 tools/dev-seed/README.md): member5는 디자인 팀의 일반 구성원, member9만 미배정, 팀은 열 개, 초대 대기 3·만료 3.
 // 쓰기 검증은 새 팀·새 초대를 만들고, 시드 구성원에게 한 변경은 같은 테스트 안에서 되돌린다.
 const org = seedOrganizations[0];
 const O = `/api/v1/organizations/${org.id}`;
-const SEED_TEAMS = ["플랫폼", "제품", "데이터", "디자인"];
+const SEED_TEAMS = [
+  "플랫폼팀",
+  "제품팀",
+  "데이터팀",
+  "디자인팀",
+  "프론트엔드팀",
+  "백엔드팀",
+  "보안팀",
+  "AI팀",
+  "SRE팀",
+  "QA팀",
+];
 const TARGET = "member5@seed-a.example.test",
   OWNER = "owner@seed-a.example.test",
   ADMIN = "admin@seed-a.example.test",
@@ -41,15 +57,9 @@ type ApiInvitation = {
 };
 
 async function roster(page: Page): Promise<ApiMember[]> {
-  const { start, end } = seedPeriod();
-  const response = await authenticatedRequest(
-    page,
-    dashboardBase(),
-    `${O}/members?startDate=${start}&endDate=${end}&timeZone=Asia/Seoul&limit=100`,
-  );
-  expect(response.status).toBe(200);
-  return response.body.members.items;
+  return readAllMembers<ApiMember>(page, org.id);
 }
+
 const memberOf = async (page: Page, account: string) =>
   (await roster(page)).find((member) => member.account === account)!;
 async function teams(page: Page): Promise<ApiTeam[]> {
@@ -106,11 +116,12 @@ async function openMembers(page: Page, email: string) {
   );
   await page.goto("/members");
   await loaded;
+  await showAllMembers(page, 101);
   await expect(
     page
       .getByRole("region", { name: "구성원 목록", exact: true })
       .getByRole("button", { name: /구성원 상세$/ }),
-  ).toHaveCount(12);
+  ).toHaveCount(101);
 }
 const rowOf = (page: Page, account: string) =>
   page
@@ -144,12 +155,12 @@ test("MEMBERS-W1 @p0 @write 팀·역할 저장이 새로고침 뒤에도 남고,
       (await teams(page)).map((team) => [team.teamName, team.teamId]),
     );
     const before = await memberOf(page, TARGET);
-    expect([before.team.teamName, before.role]).toEqual(["디자인", "member"]);
+    expect([before.team.teamName, before.role]).toEqual(["디자인팀", "member"]);
     const { drawer, team, role, save } = editor(page);
 
     // 역할 변경 — 서버의 역할 둘만 고를 수 있고, 저장은 서버가 확정한 뒤에 화면에 반영된다.
     await rowOf(page, TARGET).click();
-    await expect(team).toHaveValue(teamId["디자인"]);
+    await expect(team).toHaveValue(teamId["디자인팀"]);
     await expect(role).toHaveValue("member");
     await expect(role.getByRole("option")).toHaveText(["구성원", "관리자"]);
     await expect(save).toBeDisabled();
@@ -174,12 +185,13 @@ test("MEMBERS-W1 @p0 @write 팀·역할 저장이 새로고침 뒤에도 남고,
     const promoted = await memberOf(page, TARGET);
     expect([promoted.role, promoted.team.teamName]).toEqual([
       "admin",
-      "디자인",
+      "디자인팀",
     ]);
     expect(promoted.version).not.toBe(before.version);
     await page.reload();
+    await showAllMembers(page, 101);
     await expect(rowOf(page, TARGET)).toContainText("관리자");
-    await expect(rowOf(page, TARGET)).toContainText("디자인");
+    await expect(rowOf(page, TARGET)).toContainText("디자인팀");
 
     // 팀을 비우면 미배정 카드로 옮겨 간다.
     const unassigned = page.getByRole("region", {
@@ -205,7 +217,7 @@ test("MEMBERS-W1 @p0 @write 팀·역할 저장이 새로고침 뒤에도 남고,
     await expect(apply).toBeDisabled();
     await unassigned
       .getByLabel(`${TARGET} 팀 선택`, { exact: true })
-      .selectOption({ label: "디자인" });
+      .selectOption({ label: "디자인팀" });
     await expect(apply).toHaveText("1명 배정");
     const assigned = page.waitForResponse(
       (response) =>
@@ -226,12 +238,13 @@ test("MEMBERS-W1 @p0 @write 팀·역할 저장이 새로고침 뒤에도 남고,
           item.memberId,
           item.teamId,
         ]),
-    ).toEqual([[before.memberId, teamId["디자인"]]]);
+    ).toEqual([[before.memberId, teamId["디자인팀"]]]);
     await expect(toast(page, "1명을 팀에 배정했습니다.")).toBeVisible();
     await expect(unassigned.getByRole("combobox")).toHaveCount(1);
     await expect(unassigned).not.toContainText(TARGET);
     await page.reload();
-    await expect(rowOf(page, TARGET)).toContainText("디자인");
+    await showAllMembers(page, 101);
+    await expect(rowOf(page, TARGET)).toContainText("디자인팀");
     await expect(
       page.getByRole("group", { name: "팀 미배정", exact: true }),
     ).toContainText("1명");
@@ -242,7 +255,7 @@ test("MEMBERS-W1 @p0 @write 팀·역할 저장이 새로고침 뒤에도 남고,
     // 이 탭에서 편집기를 열어 둔 사이 다른 탭(다른 관리자)이 같은 구성원을 바꾼다.
     await rowOf(page, TARGET).click();
     await expect(role).toHaveValue("admin");
-    await team.selectOption({ label: "데이터" });
+    await team.selectOption({ label: "데이터팀" });
     const other = await context.newPage();
     const otherErrors: string[] = [];
     other.on("pageerror", (error) => otherErrors.push(error.message));
@@ -266,8 +279,8 @@ test("MEMBERS-W1 @p0 @write 팀·역할 저장이 새로고침 뒤에도 남고,
     await expect(alert).toContainText("다른 곳에서 변경되었습니다");
     // 서버는 오래된 요청으로 덮어쓰지 않았고, 화면은 입력을 지우지 않았다.
     const kept = await memberOf(page, TARGET);
-    expect([kept.team.teamName, kept.role]).toEqual(["디자인", "member"]);
-    await expect(team).toHaveValue(teamId["데이터"]);
+    expect([kept.team.teamName, kept.role]).toEqual(["디자인팀", "member"]);
+    await expect(team).toHaveValue(teamId["데이터팀"]);
     await expect(save).toBeDisabled();
     await alert
       .getByRole("button", {
@@ -276,7 +289,7 @@ test("MEMBERS-W1 @p0 @write 팀·역할 저장이 새로고침 뒤에도 남고,
       })
       .click();
     await expect(drawer.getByRole("alert")).toHaveCount(0);
-    await expect(team).toHaveValue(teamId["디자인"]);
+    await expect(team).toHaveValue(teamId["디자인팀"]);
     await expect(role).toHaveValue("member");
     await expect(save).toBeDisabled();
     await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
@@ -290,7 +303,7 @@ test("MEMBERS-W1 @p0 @write 팀·역할 저장이 새로고침 뒤에도 남고,
     await second.drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
     await expect(second.drawer).not.toBeVisible();
     const owner = await memberOf(other, OWNER);
-    expect(owner.team.teamName).toBe("플랫폼");
+    expect(owner.team.teamName).toBe("플랫폼팀");
     await rowOf(other, OWNER).click();
     await second.role.selectOption("member");
     await second.save.click();
@@ -302,7 +315,7 @@ test("MEMBERS-W1 @p0 @write 팀·역할 저장이 새로고침 뒤에도 남고,
       .getByRole("button", { name: "취소", exact: true })
       .click();
     await expect(second.drawer.getByRole("alert")).toHaveCount(0);
-    await second.team.selectOption({ label: "데이터" });
+    await second.team.selectOption({ label: "데이터팀" });
     const ownerPatched = other.waitForResponse(
       (response) =>
         response.request().method() === "PATCH" &&
@@ -314,15 +327,15 @@ test("MEMBERS-W1 @p0 @write 팀·역할 저장이 새로고침 뒤에도 남고,
     // 바꾸지 않은 역할은 보내지 않는다. 명단은 소유자도 관리자로 보여 주기 때문이다.
     expect(ownerSaved.request().postDataJSON()).toEqual({
       expectedVersion: owner.version,
-      teamId: teamId["데이터"],
+      teamId: teamId["데이터팀"],
     });
     await expect(second.drawer).not.toBeVisible();
-    await expect(rowOf(other, OWNER)).toContainText("데이터");
+    await expect(rowOf(other, OWNER)).toContainText("데이터팀");
     expect(otherErrors, "두 번째 탭의 런타임 오류").toEqual([]);
     await other.close();
   } finally {
-    await restoreMember(page, TARGET, "디자인", "member");
-    await restoreMember(page, OWNER, "플랫폼", "admin");
+    await restoreMember(page, TARGET, "디자인팀", "member");
+    await restoreMember(page, OWNER, "플랫폼팀", "admin");
   }
   const after = await roster(page);
   expect(
@@ -331,7 +344,7 @@ test("MEMBERS-W1 @p0 @write 팀·역할 저장이 새로고침 뒤에도 남고,
       .map((member) => member.account),
   ).toEqual([UNASSIGNED]);
   expect(after.find((member) => member.account === OWNER)!.team.teamName).toBe(
-    "플랫폼",
+    "플랫폼팀",
   );
 });
 
@@ -352,22 +365,22 @@ test("MEMBERS-W2 @p0 @write 팀을 만들고 이름을 바꾸고 삭제하면 �
     const drawer = page.getByRole("dialog", { name: "팀 관리", exact: true });
     const list = drawer.getByRole("list", { name: "팀 목록" });
     await expect(list.getByRole("listitem")).toHaveCount(SEED_TEAMS.length);
-    // 시드: 디자인 팀에는 구성원 한 명, 초대 없음.
+    // 시드: 디자인팀에는 구성원 여덟 명, 초대 없음.
     await expect(
-      list.getByRole("button", { name: "디자인 팀 수정", exact: true }),
-    ).toContainText("구성원 1명 · 초대 0명");
+      list.getByRole("button", { name: "디자인팀 팀 수정", exact: true }),
+    ).toContainText("구성원 8명 · 초대 0명");
 
     // 같은 이름은 서버가 거절하고 입력을 남긴다.
     await drawer
       .getByRole("button", { name: "팀 만들기", exact: true })
       .click();
     const input = drawer.getByRole("textbox", { name: "팀 이름", exact: true });
-    await input.fill("플랫폼");
+    await input.fill("플랫폼팀");
     await drawer.getByRole("button", { name: "팀 생성", exact: true }).click();
     await expect(input).toHaveAccessibleDescription(
       /같은 이름의 팀이 있습니다/,
     );
-    await expect(input).toHaveValue("플랫폼");
+    await expect(input).toHaveValue("플랫폼팀");
     expect((await teams(page)).map((team) => team.teamName).sort()).toEqual(
       [...SEED_TEAMS].sort(),
     );
@@ -510,14 +523,14 @@ test("MEMBERS-W3 @p0 @write 초대 코드를 발급·편집·재발급·취소�
     await expect(input).toHaveValue("");
   };
   try {
-    await expect(waitingCard).toContainText("1명");
+    await expect(waitingCard).toContainText("3명");
     // 발급 — 코드는 발급 결과에만 있고, 화면은 발송했다고 말하지 않는다.
     await page
       .getByRole("button", { name: "구성원 초대", exact: true })
       .click();
     await dialog
       .getByRole("combobox", { name: "팀", exact: true })
-      .selectOption({ label: "제품" });
+      .selectOption({ label: "제품팀" });
     await add(email);
     const issued = page.waitForResponse(
       (response) =>
@@ -539,7 +552,7 @@ test("MEMBERS-W3 @p0 @write 초대 코드를 발급·편집·재발급·취소�
     const first = (await invitations(page, "pending")).find(
       (item) => item.email === email,
     )!;
-    expect([first.role, first.team?.teamName]).toEqual(["member", "제품"]);
+    expect([first.role, first.team?.teamName]).toEqual(["member", "제품팀"]);
 
     // 이미 초대한 사람과 이미 구성원인 사람은 새 코드를 받지 않는다.
     await add(email);
@@ -562,10 +575,10 @@ test("MEMBERS-W3 @p0 @write 초대 코드를 발급·편집·재발급·취소�
     ).toHaveLength(1);
 
     await expect(pending).toContainText(email);
-    await expect(pending).toContainText("제품 · 구성원");
+    await expect(pending).toContainText("제품팀 · 구성원");
     await expect(pending).toContainText("3일 남음");
     await expect(pending.locator("code")).toHaveCount(0);
-    await expect(waitingCard).toContainText("2명");
+    await expect(waitingCard).toContainText("4명");
     // 초대 대기자는 아직 명단의 구성원이 아니다.
     await expect(rowOf(page, email)).toHaveCount(0);
 
@@ -576,7 +589,7 @@ test("MEMBERS-W3 @p0 @write 초대 코드를 발급·편집·재발급·취소�
     const { drawer, team, role, save } = editor(page);
     await expect(drawer).toContainText(email);
     await expect(role).toHaveValue("member");
-    await team.selectOption({ label: "데이터" });
+    await team.selectOption({ label: "데이터팀" });
     await role.selectOption("admin");
     const patched = page.waitForResponse(
       (response) =>
@@ -593,9 +606,9 @@ test("MEMBERS-W3 @p0 @write 초대 코드를 발급·편집·재발급·취소�
     await expect(
       toast(page, `${email}의 초대 팀·역할을 변경했습니다.`),
     ).toBeVisible();
-    await expect(pending).toContainText("데이터 · 관리자");
+    await expect(pending).toContainText("데이터팀 · 관리자");
     await page.reload();
-    await expect(pending).toContainText("데이터 · 관리자");
+    await expect(pending).toContainText("데이터팀 · 관리자");
     const edited = (await invitations(page, "pending")).find(
       (item) => item.email === email,
     )!;
@@ -604,7 +617,7 @@ test("MEMBERS-W3 @p0 @write 초대 코드를 발급·편집·재발급·취소�
       edited.memberId,
       edited.role,
       edited.team?.teamName,
-    ]).toEqual([first.invitationId, first.memberId, "admin", "데이터"]);
+    ]).toEqual([first.invitationId, first.memberId, "admin", "데이터팀"]);
 
     // 다시 보내기(재발급) — 먼저 알리고 확인받는다. 기존 초대는 폐기되고 같은 사람에게 새 초대와 새 코드가 생긴다.
     await pending
@@ -639,14 +652,14 @@ test("MEMBERS-W3 @p0 @write 초대 코드를 발급·편집·재발급·취소�
       reissued[0].memberId,
       reissued[0].role,
       reissued[0].team?.teamName,
-    ]).toEqual([first.memberId, "admin", "데이터"]);
+    ]).toEqual([first.memberId, "admin", "데이터팀"]);
     expect(
       (await invitations(page, "revoked")).some(
         (item) => item.invitationId === first.invitationId,
       ),
     ).toBe(true);
     await expect(pending.getByText(email, { exact: true })).toHaveCount(1);
-    await expect(waitingCard).toContainText("2명");
+    await expect(waitingCard).toContainText("4명");
 
     // 취소 — 확인한 뒤에 폐기하고 목록에서 빠진다.
     await pending
@@ -667,7 +680,7 @@ test("MEMBERS-W3 @p0 @write 초대 코드를 발급·편집·재발급·취소�
     expect((await revoked).status()).toBe(204);
     await expect(toast(page, `${email}의 초대를 취소했습니다.`)).toBeVisible();
     await expect(pending).not.toContainText(email);
-    await expect(waitingCard).toContainText("1명");
+    await expect(waitingCard).toContainText("3명");
     expect(
       (await invitations(page, "pending")).some((item) => item.email === email),
     ).toBe(false);
@@ -717,11 +730,19 @@ test("MEMBERS-W3 @p0 @write 초대 코드를 발급·편집·재발급·취소�
         );
     }
   }
-  // 시드의 대기 1명·만료 1명만 남는다.
+  // 시드의 대기 3명·만료 3명만 남는다.
   expect(
-    (await invitations(page, "pending")).map((item) => item.email),
-  ).toEqual(["member12@seed-a.example.test"]);
+    (await invitations(page, "pending")).map((item) => item.email).sort(),
+  ).toEqual([
+    "member12@seed-a.example.test",
+    "member50@seed-a.example.test",
+    "member52@seed-a.example.test",
+  ]);
   expect(
-    (await invitations(page, "expired")).map((item) => item.email),
-  ).toEqual(["member13@seed-a.example.test"]);
+    (await invitations(page, "expired")).map((item) => item.email).sort(),
+  ).toEqual([
+    "member13@seed-a.example.test",
+    "member51@seed-a.example.test",
+    "member53@seed-a.example.test",
+  ]);
 });

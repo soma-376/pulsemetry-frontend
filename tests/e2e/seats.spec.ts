@@ -17,7 +17,7 @@ async function memberId(page: Page, email: string, org: string = A.id) {
   const members = await authenticatedRequest(
     page,
     dashboardBase(),
-    `/api/v1/organizations/${org}/members?startDate=${start}&endDate=${end}&timeZone=Asia/Seoul&limit=100`,
+    `/api/v1/organizations/${org}/members?startDate=${start}&endDate=${end}&timeZone=Asia/Seoul&limit=100&q=${encodeURIComponent(email)}`,
   );
   expect(members.status).toBe(200);
   return members.body.members.items.find(
@@ -167,56 +167,28 @@ test("SEATS-CSV @p0 @write 관리자 기록 제품의 CSV API는 잘못된 열�
   }
 });
 
-test("SEATS-OVERVIEW @p0 @read 개요의 제품별 배정 좌석은 구성원 요약과 같은 좌석 원장이고, 좌석을 기록하지 않은 제품은 사유를 말한다", async ({
+test("SEATS-OVERVIEW @p0 @read 개요에서 현재 계약·좌석 현황을 제거하고 구성원에서 좌석 원장을 확인한다", async ({
   page,
 }) => {
-  // 시드 A 좌석 원장의 독립 기대값(백엔드 tools/dev-seed/README.md) — 보유 7석(Claude 5·OpenAI 2), Copilot·Cursor 는 좌석 기록 없음.
-  // Copilot 은 커넥터가 없는 플랜이다(백엔드 ADR 0054). 쓰기 테스트는 끝에 원래 수로 되돌린다.
-  const expected: Record<string, string> = {
-    "Claude (Anthropic)": "배정 5석",
-    "ChatGPT / Codex (OpenAI)": "배정 2석",
-    "GitHub Copilot": "배정 이 제품은 좌석을 기록하지 않았습니다",
-    Cursor: "배정 이 제품은 좌석을 기록하지 않았습니다",
-  };
   await signIn(page, `owner@seed-${A.seed}.example.test`);
-  const { start, end } = seedPeriod();
-  const summary = (
-    await authenticatedRequest(
-      page,
-      dashboardBase(),
-      `/api/v1/organizations/${A.id}/members/dashboard?startDate=${start}&endDate=${end}&timeZone=Asia/Seoul`,
-    )
-  ).body.summary.seats;
-  expect(summary.data.assigned).toBe(7);
   await page.goto("/overview");
-  const table = page.getByRole("table", { name: "계약·좌석 현황" });
-  for (const reload of [false, true]) {
-    if (reload) await page.reload();
-    for (const [name, text] of Object.entries(expected)) {
-      const row = table.getByRole("row").filter({
-        has: page.getByRole("button", {
-          name: `${name} 벤더 상세`,
-          exact: true,
-        }),
-      });
-      await expect(row.getByRole("cell").nth(1)).toContainText(text);
-    }
-  }
-  // 판정하지 못한 좌석이 있으면 후보 수가 판정한 좌석만이라고 말한다(빈 후보를 "0석 확정"으로 보이지 않는다).
-  const candidates = (
-    await authenticatedRequest(
-      page,
-      dashboardBase(),
-      `/api/v1/organizations/${A.id}/seat-reclaim-candidates?limit=50`,
-    )
-  ).body.candidates;
-  const card = page.getByRole("region", {
-    name: "계약·좌석 현황",
-    exact: true,
-  });
-  if (candidates.availability === "partial")
-    await expect(card).toContainText("회수 후보는 판정한 좌석만");
-  else await expect(card).not.toContainText("회수 후보는 판정한 좌석만");
+  await expect(
+    page.getByRole("heading", { name: "개요", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "계약·좌석 현황", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "월 좌석 계약액", exact: true }),
+  ).toHaveCount(0);
+  await page.goto("/members");
+  await expect(
+    page.getByRole("region", { name: "구성원 목록", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("group", { name: "좌석 회수 후보", exact: true }),
+  ).toContainText("석");
+  await expect(page.getByText(/명단·좌석은 현재 기준/)).toBeVisible();
 });
 
 test("SEATS-BILLING @p0 @read 설정 요약의 종량 지출은 벤더 청구 누계이며, 청구 원천이 없는 제품은 금액을 만들지 않는다", async ({
@@ -236,21 +208,26 @@ test("SEATS-BILLING @p0 @read 설정 요약의 종량 지출은 벤더 청구 �
   const cursor = settings.vendors.items.find(
     (vendor: { kind: string }) => vendor.kind === "cursor",
   );
-  expect(cursor.meteredMonthToDate.data).toMatchObject({
+  const detail = (
+    await authenticatedRequest(
+      page,
+      dashboardBase(),
+      `/api/v1/organizations/${C.id}/vendors/${cursor.vendorId}`,
+    )
+  ).body.vendor;
+  expect(detail.meteredMonthToDate.data).toMatchObject({
     billingKind: "usage_spend",
     source: "seed",
     equivalentCostUsd: null,
   });
-  expect(Number(cursor.meteredMonthToDate.data.actualBilledUsd)).toBe(137.42);
+  expect(Number(detail.meteredMonthToDate.data.actualBilledUsd)).toBe(137.42);
   const total = page.getByRole("group", { name: "종량 지출", exact: true });
   await expect(total).toContainText(
-    settings.summary.meteredMonthToDate.data?.actualBilledUsd != null
-      ? "$137.42"
-      : "-",
+    settings.summary.meteredMonthToDate.value != null ? "$137.42" : "-",
   );
   await signIn(page, `owner@seed-${A.seed}.example.test`);
   await page.goto("/settings");
   await expect(
     page.getByRole("group", { name: "종량 지출", exact: true }),
-  ).toContainText("이 플랜에는 청구 조회 API가 없습니다");
+  ).toContainText("값 확인 불가");
 });

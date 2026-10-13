@@ -11,14 +11,17 @@ export function DetailDrawer({
   onClose,
   onAfterClose,
   title,
+  titleAccessory,
   subtitle,
   headerContent,
   footer,
   children,
+  bodyClassName = "min-h-0 flex-1 overflow-y-auto p-6",
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
+  titleAccessory?: ReactNode;
   subtitle?: string;
   headerContent?: ReactNode;
   /** 퇴장 애니메이션과 dialog 닫기가 끝난 뒤 내용을 정리합니다. */
@@ -26,6 +29,8 @@ export function DetailDrawer({
   /** 하단 액션 영역 — 넘기지 않으면 닫는 방법 안내가 들어갑니다 */
   footer?: ReactNode;
   children: ReactNode;
+  /** 폼이 스크롤 본문과 하단 액션을 함께 소유할 때 사용한다. */
+  bodyClassName?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const close = useRef<HTMLButtonElement>(null);
@@ -130,9 +135,12 @@ export function DetailDrawer({
               <header className="shrink-0 border-b border-border p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h2 id={titleId} className="text-lg font-semibold">
-                      {title}
-                    </h2>
+                    <div className="flex items-baseline gap-2">
+                      <h2 id={titleId} className="text-lg font-semibold">
+                        {title}
+                      </h2>
+                      {titleAccessory}
+                    </div>
                     {subtitle && (
                       <p className="mt-1 text-xs text-text3">{subtitle}</p>
                     )}
@@ -152,7 +160,7 @@ export function DetailDrawer({
               <div
                 tabIndex={0}
                 aria-label={`${title} 내용`}
-                className="min-h-0 flex-1 overflow-y-auto p-6"
+                className={bodyClassName}
               >
                 {children}
               </div>

@@ -1,4 +1,5 @@
 import { test, type Page, type Route } from "@playwright/test";
+import type { TeamUser } from "../../src/lib/api/teams";
 import example from "../../docs/api/teams-response.example.json";
 
 /**
@@ -30,7 +31,7 @@ export function teamsFixture(url: URL) {
         .toISOString()
         .slice(0, 10),
       cumulativeSessionCount: Math.round(
-        (team.current.sessionCount * (index + 1)) / dayCount,
+        ((team.metrics.sessionCount.value ?? 0) * (index + 1)) / dayCount,
       ),
     }));
   }
@@ -43,32 +44,33 @@ export function teamsFixture(url: URL) {
       endDate: null,
       coverage: null,
     });
-    Object.assign(data.totals, { previous: null });
-    for (const team of [...data.teams.items, data.unassigned])
-      Object.assign(team, { previous: null });
+    for (const metrics of [
+      data.totals,
+      ...data.teams.items.map((team) => team.metrics),
+      data.unassigned.metrics,
+    ]) {
+      for (const metric of Object.values(metrics)) {
+        if ("comparison" in metric)
+          Object.assign(metric.comparison, {
+            status: "disabled",
+            reasons: [],
+            previousValue: null,
+            absoluteChange: null,
+            percentChange: null,
+            change: null,
+          });
+      }
+    }
   }
   return data;
 }
 
-type User = {
-  memberId: string;
-  account: string;
-  usage: {
-    activeUsers: number;
-    sessionCount: number;
-    tokens: {
-      inputUncached: null;
-      output: null;
-      cacheRead: null;
-      cacheWrite: null;
-      total: number;
-    };
-    equivalentCostUsd: string;
-  };
-  mainModel: { modelId: string; displayName: string };
-  cache: { readTokens: number; eligibleInputTokens: number; hitRatio: number };
-  lastUsedAt: string;
-};
+type User = TeamUser;
+const value = <T>(value: T) => ({
+  value,
+  status: "complete" as const,
+  reasons: [],
+});
 /** 한 팀의 사용자. 서버처럼 비용 내림차순(동률 구성원 ID)이다. 비용·세션·토큰·캐시·마지막 사용의 순서가 서로 다르다. */
 export function fixtureTeamUsers(prefix: string, count: number): User[] {
   return Array.from({ length: count }, (_, index) => {
@@ -77,28 +79,18 @@ export function fixtureTeamUsers(prefix: string, count: number): User[] {
       memberId: `${prefix}-${pad(n)}`,
       account: `${prefix}${pad(n)}@codeworks.io`,
       usage: {
-        activeUsers: 1,
-        sessionCount: ((n * 7) % 23) + 1,
-        tokens: {
-          inputUncached: null,
-          output: null,
-          cacheRead: null,
-          cacheWrite: null,
-          total: (((n * 13) % 29) + 1) * 10_000,
-        },
-        equivalentCostUsd: (((n * 11) % 31) + n / 100).toFixed(6),
+        sessionCount: value(((n * 7) % 23) + 1),
+        totalTokens: value((((n * 13) % 29) + 1) * 10_000),
+        equivalentCostUsd: value((((n * 11) % 31) + n / 100).toFixed(6)),
       },
       mainModel: { modelId: "vendor-a/model-pro", displayName: "Model Pro" },
-      cache: {
-        readTokens: n,
-        eligibleInputTokens: 100,
-        hitRatio: ((n * 17) % 100) / 100,
-      },
+      cacheHitRatio: value(((n * 17) % 100) / 100),
       lastUsedAt: `2026-09-${pad(((n * 5) % 13) + 1)}T0${n % 10}:00:00Z`,
     };
   }).sort(
     (a, b) =>
-      Number(b.usage.equivalentCostUsd) - Number(a.usage.equivalentCostUsd) ||
+      Number(b.usage.equivalentCostUsd.value) -
+        Number(a.usage.equivalentCostUsd.value) ||
       a.memberId.localeCompare(b.memberId),
   );
 }
@@ -159,20 +151,23 @@ export async function mockTeams(
       const offset = Number(url.searchParams.get("cursor") ?? 0),
         limit = Number(url.searchParams.get("limit") ?? 12);
       const total = all.reduce(
-        (sum, user) => sum + Number(user.usage.equivalentCostUsd),
+        (sum, user) => sum + Number(user.usage.equivalentCostUsd.value),
         0,
       );
       return json(route, {
         meta: data.meta,
         team: { teamId: team.teamId, teamName: team.teamName },
         summary: {
-          usage: team.current,
+          usage: {
+            activeUsers: team.metrics.activeUsers,
+            sessionCount: team.metrics.sessionCount,
+            totalTokens: team.metrics.totalTokens,
+            equivalentCostUsd: team.metrics.equivalentCostUsd,
+          },
           averageEquivalentCostUsd: all.length
             ? (total / all.length).toFixed(6)
             : null,
-          cacheReadTokens: null,
-          cacheEligibleInputTokens: null,
-          cacheHitRatio: 0.3125,
+          cacheHitRatio: value(0.3125),
           unidentifiedEquivalentCostUsd: "0.000000",
         },
         users: {

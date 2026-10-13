@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   defaultDashboardFilters,
   readFilterQuery,
+  resolveDashboardFilters,
   withFilterQuery,
 } from "../src/lib/filter-query";
 
@@ -67,7 +68,9 @@ test("필터를 바꿔도 벤더·팀·초대 파라미터와 해시를 보존�
   );
   const url = new URL(result, "http://localhost");
   assert.equal(url.searchParams.get("vendor"), "a/b");
-  assert.deepEqual(url.searchParams.getAll("startDate"), ["2026-09-28"]);
+  assert.deepEqual(url.searchParams.getAll("startDate"), []);
+  assert.equal(url.searchParams.has("endDate"), false);
+  assert.equal(url.searchParams.has("compare"), false);
   assert.equal(url.hash, "#collection");
   assert.equal(
     new URL(
@@ -81,5 +84,69 @@ test("필터를 바꿔도 벤더·팀·초대 파라미터와 해시를 보존�
       "team",
     ),
     "t1",
+  );
+});
+
+test("분석 화면만 기간·비교를 포함하고 관리 화면은 다른 파라미터를 보존한다", () => {
+  const filters = {
+    dates: { start: "2026-09-01", end: "2026-09-13" },
+    compare: "none" as const,
+  };
+  for (const path of ["/members", "/ops", "/settings"]) {
+    const url = new URL(
+      withFilterQuery(
+        `${path}?startDate=old&endDate=old&compare=prev_week&invite=1&vendor=v1#section`,
+        filters,
+      ),
+      "http://localhost",
+    );
+    assert.equal(url.searchParams.toString(), "invite=1&vendor=v1");
+    assert.equal(url.hash, "#section");
+  }
+  for (const path of ["/overview", "/teams"]) {
+    const url = new URL(
+      withFilterQuery(`${path}?team=t1`, filters),
+      "http://localhost",
+    );
+    assert.equal(url.searchParams.get("startDate"), filters.dates.start);
+    assert.equal(url.searchParams.get("endDate"), filters.dates.end);
+    assert.equal(url.searchParams.get("compare"), "none");
+    assert.equal(url.searchParams.get("team"), "t1");
+  }
+});
+
+test("관리 페이지를 거쳐 돌아오면 마지막 조건을 복원하고 명시된 분석 URL은 우선한다", () => {
+  const today = "2026-10-10";
+  const selected = readFilterQuery(
+    new URLSearchParams("startDate=2026-09-01&endDate=2026-09-13&compare=none"),
+    today,
+  );
+  const stale = new URLSearchParams(
+    "startDate=2026-01-01&endDate=2026-01-28&compare=prev_week",
+  );
+  let remembered = selected;
+  for (const path of ["/members", "/ops", "/settings"])
+    remembered = resolveDashboardFilters(path, stale, today, remembered);
+  assert.deepEqual(remembered, selected);
+  assert.deepEqual(
+    resolveDashboardFilters(
+      "/overview",
+      new URLSearchParams(),
+      today,
+      remembered,
+    ),
+    selected,
+  );
+  const shared = resolveDashboardFilters("/teams", stale, today, remembered);
+  assert.equal(shared.dates.start, "2026-01-01");
+  assert.equal(shared.compare, "prev_week");
+  assert.deepEqual(
+    resolveDashboardFilters(
+      "/overview",
+      new URLSearchParams("startDate=bad&compare=bad"),
+      today,
+      selected,
+    ),
+    defaultDashboardFilters(today),
   );
 });

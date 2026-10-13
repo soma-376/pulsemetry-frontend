@@ -1,4 +1,4 @@
-# 설정 API — v1 제안
+# 설정 API — 화면 전용 조회 계약
 
 [공통 계약](README.md)을 따른다. 설정은 선택 기간이 아닌 현재 계약·정책을 다룬다.
 현 화면: SettingsContent, VendorTable, VendorDrawer. 운영·보안 화면 API는 제외하되 이 화면의 정책·알림 토글은 포함한다.
@@ -15,8 +15,8 @@
 | GET /installations      | policyStatus=outdated, limit=20, cursor, snapshotId → InstallationsResponse |
 
 설정 첫 조회에 벤더 첫 20개, 전체 벤더 요약, 정책, 정책 적용 수, 알림 규칙을 묶는다.
-드로어는 목록의 Vendor를 활용한다. 미적용 설치의 상세 목록은 모달을 열 때 조회한다.
-플랜 목록은 서버가 관리하는 catalog를 사용한다. 현재 코드의 상품명·플랜 설명·요금은 실제 공급자 계약을 보증하지 않는다.
+목록은 SettingsVendorRow만 받고, 드로어는 단건 Vendor를 따로 조회한다. 미적용 설치의 상세 목록은 모달을 열 때 조회한다.
+플랜 목록은 별도 vendor-catalog API를 사용한다. 현재 코드의 상품명·플랜 설명·요금은 실제 공급자 계약을 보증하지 않는다.
 
 ```ts
 type VendorContractDto = {
@@ -72,13 +72,8 @@ type CollectionPolicy = {
   collectRawContent: boolean;
   reclaimIdleDays: 7 | 14 | 30 | 60;
   aggregateRetentionMonths: 12 | 24 | 36 | null;
-  rawContentRetentionDays: number | null;
-  effectiveAt: string;
-  updatedBy: string;
   // 회수 기준·집계 보존은 manifest 와 따로 저장하고 판도 따로 센다
   settingsVersion: number; // 저장 전 0
-  settingsUpdatedAt: string | null;
-  settingsUpdatedBy: string | null;
   reclaimIdleDaysSource: "organization" | "default"; // default = 서버 기본 설정
   options: {
     reclaimIdleDays: number[];
@@ -96,38 +91,41 @@ type AlertRule = {
   evaluationWindow: string;
   comparisonWindow: string | null;
 };
+type Value<T> = {
+  value: T | null;
+  status: "complete" | "partial" | "unavailable";
+  reasons: string[];
+};
+type SettingsVendorRow = {
+  vendorId: string;
+  displayName: string;
+  kind: string;
+  source: string; // 온보딩 목록의 수동 등록 필터
+  version: number; // 삭제 명령의 충돌 확인
+  contractStatus: "missing" | "scheduled" | "active" | "expired";
+  contractInput: { status: "required" | "complete"; missingFields: string[] };
+  contractSeats: Value<number>;
+  monthlySeatFeeUsd: Value<string>;
+  assignedSeats: Value<number>;
+};
+type SettingsSummary = {
+  unconfiguredVendors: Value<number>;
+  monthlySeatFeeUsd: Value<string>;
+  contractedSeats: Value<number>;
+  activeSeats7d: Value<number>;
+  assignedSeats: Value<number>;
+  meteredMonthToDate: Value<string>;
+};
 type SettingsResponse = {
   meta: CurrentMeta;
-  ingest: OverviewResponse["ingest"];
   capabilities: {
     editContracts: boolean;
     editCollectionPolicy: boolean;
     editAlertRules: boolean;
     notifyInstallations: boolean;
   };
-  summary: {
-    configuredVendors: number;
-    unconfiguredVendors: number;
-    monthlySeatFeeUsd: Money | null;
-    contractedSeats: number | null;
-    activeSeats7d: number | null; // 지난 7일 그 제품을 쓴 배정 좌석(좌석 원장) — 판정할 수 없으면 null
-    assignedSeats?: number | null; // 서버 가산 — 배정 좌석 합(쓸 수 있는 원장만)
-    meteredMonthToDate: Section<{
-      equivalentCostUsd: Money | null;
-      actualBilledUsd: Money | null;
-    }>; // 모든 제품이 같은 기간 값을 가질 때만 합(아니면 사유)
-  };
-  catalog: {
-    kinds: { kind: string; displayName: string }[];
-    plans: {
-      planId: string;
-      kind: string;
-      displayName: string;
-      billing: "seat" | "metered";
-      separateUsageBilling: boolean;
-    }[];
-  };
-  vendors: Page<Vendor>;
+  summary: SettingsSummary;
+  vendors: Page<SettingsVendorRow>;
   collectionPolicy: CollectionPolicy;
   policyRollout: {
     desiredVersion: number;
@@ -135,12 +133,11 @@ type SettingsResponse = {
     appliedInstallations: number;
     outdatedInstallations: number;
     unknownInstallations: number;
-    /** 판정 근거별 설치 수(서버 가산). 합은 eligibleInstallations. 가산 전 서버는 보내지 않는다 */
     evidence?: { heartbeat: number; appliedConfirmation: number; none: number };
   };
   alertRules: AlertRule[];
 };
-type VendorsResponse = { meta: CurrentMeta; vendors: Page<Vendor> };
+type VendorsResponse = { meta: CurrentMeta; vendors: Page<SettingsVendorRow> };
 type VendorResponse = { meta: CurrentMeta; vendor: Vendor };
 type InstallationsResponse = {
   meta: CurrentMeta;
@@ -202,6 +199,15 @@ type NotifyInstallationsRequest = {
   expectedPolicyVersion: number;
 };
 ```
+
+## 화면 값과 상태
+
+설정의 카드·벤더 표만 조회한다. `ingest`·중복 카탈로그·감지 제품·미분류 관측은 포함하지 않는다.
+마지막 수집 시각은 공통 헤더와 `ingest-status` 쿼리를 공유한다.
+
+카드와 목록 수치는 `value/status/reasons`로 0·모름·부분 값을 구분한다. 유효 계약 합계에서 빠진 계약은
+`contract_missing`·`contract_expired`·`contract_scheduled`로 설명한다. 원장 누락·낡은 동기화·수집 불완전·청구 기간 불일치는 원천의 사유를 유지한다.
+CSV는 같은 카드와 표 값 및 상태/사유만 내보내며 계약 등급·단건 청구 상세는 포함하지 않는다.
 
 ## 벤더 계약 저장/삭제
 
@@ -332,7 +338,7 @@ PUT /api/v1/organizations/{organizationId}/collection-policy(enrollment 서비�
 - eligible=applied+outdated+unknown. 정책 ACK가 없으면 unknown이며 적용 완료로 추정하지 않는다.
 - 판정의 근거(`appliedEvidence`·`policyRollout.evidence`)를 구분해 말한다. 적용 확인 기록은 그 판을 적용한 **적이 있다**는 이력이고 최근 보고가 아니다.
   telemetryctl 기본 브랜치는 설치 보고를 보내지 않으므로 지금 배포된 설치는 대부분 적용 확인 기록이 근거다. "설치 보고 기준"처럼 한 근거로 뭉뚱그리지 않는다.
-- 원문 보존 기간과 집계 보존 기간은 별개다. rawContentRetentionDays는 조회 원천이 없어 서버가 null을 반환하며, 설정 화면에는 표시하지 않는다.
+- 원문 보존 기간과 집계 보존 기간은 별개다. 원문 보존 기간은 조회 원천이 없어 설정 응답에서 제공하지 않는다.
 - 집계 보존 단축(무기한 → 유한 포함)은 정리 작업을 만들고 cleanupOperationId로 돌려준다. 진행은 `GET /operations/{operationId}`를
   `Retry-After` 간격으로 조회한다(대기 → 진행 → 완료, 미완이면 진행 중인 채로 `retention.status=incomplete`, 정해진 횟수 안에 못 끝내면 실패).
   완료는 논리 삭제 완료다. 새로고침 뒤에는 설정의 `collectionPolicy.cleanupOperationId`(가장 최근 정리 작업)로 다시 조회한다.

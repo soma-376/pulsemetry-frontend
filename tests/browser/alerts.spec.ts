@@ -120,7 +120,7 @@ test("미등록 제품 규칙은 등록 여부에 따른 서버 가용성과 저
   await expect(toggle).toHaveAttribute("aria-pressed", "true");
 });
 
-test("개요의 알림 KPI 에서 목록을 열고 확인하면 미확인 수가 서버 값으로 줄어든다", async ({
+test("헤더의 알림 종에서 목록을 열고 확인하면 미확인 수가 서버 값으로 줄어든다", async ({
   page,
 }) => {
   await mockSession(page);
@@ -140,12 +140,7 @@ test("개요의 알림 KPI 에서 목록을 열고 확인하면 미확인 수가
       eventCount: 4,
       memberCount: 1,
       members: [{ memberId: "m1", account: "dana@example.test" }],
-      summary: {
-        productId: "openai_biz",
-        productName: "ChatGPT / Codex (OpenAI)",
-        events: 4,
-        threshold: 1,
-      },
+      evidence: { kind: "usage", targetName: "ChatGPT / Codex (OpenAI)" },
     },
     {
       alertId: "a2",
@@ -161,13 +156,13 @@ test("개요의 알림 KPI 에서 목록을 열고 확인하면 미확인 수가
       eventCount: null,
       memberCount: null,
       members: [],
-      summary: {
-        currentStartDate: "2026-09-05",
-        currentEndDate: "2026-09-11",
+      evidence: {
+        kind: "spend",
+        startDate: "2026-09-05",
+        endDate: "2026-09-11",
         currentCostUsd: "30.000000",
         previousCostUsd: "20.000000",
         increaseRatio: 0.5,
-        threshold: 0.4,
       },
     },
   ];
@@ -209,29 +204,9 @@ test("개요의 알림 KPI 에서 목록을 열고 확인하면 미확인 수가
         asOf: "2026-09-13T12:00:00Z",
       },
       evaluation: {
-        availability: "available",
-        reason: null,
+        status: "partial",
+        reasons: ["period_incomplete"],
         asOf: "2026-09-13T11:00:00Z",
-        rules: [
-          {
-            ruleId: "spend_spike",
-            enabled: true,
-            evaluatedAt: "2026-09-13T11:00:00Z",
-            status: "not_evaluated",
-            reason: "period_incomplete",
-            windowStart: null,
-            windowEnd: null,
-          },
-          {
-            ruleId: "product_not_registered",
-            enabled: true,
-            evaluatedAt: "2026-09-13T11:00:00Z",
-            status: "evaluated",
-            reason: null,
-            windowStart: null,
-            windowEnd: null,
-          },
-        ],
       },
       alerts: { items, totalCount: items.length, nextCursor: null },
     });
@@ -253,13 +228,9 @@ test("개요의 알림 KPI 에서 목록을 열고 확인하면 미확인 수가
     },
   );
   await page.goto("/overview");
-  const kpi = page.getByRole("region", {
-    name: "보안 경보 및 알림",
-    exact: true,
-  });
-  await expect(kpi).toContainText("2");
-  await expect(kpi).toContainText("현재 미확인 · 보안 1 · 비용 1");
-  await kpi.getByRole("button", { name: "알림 보기", exact: true }).click();
+  await page
+    .getByRole("button", { name: "알림, 미확인 2건", exact: true })
+    .click();
   const drawer = page.getByRole("dialog", { name: "알림", exact: true });
   const list = drawer.getByRole("list", { name: "알림 목록" });
   await expect(list.getByRole("listitem")).toHaveCount(2);
@@ -269,12 +240,10 @@ test("개요의 알림 KPI 에서 목록을 열고 확인하면 미확인 수가
   await expect(list).toContainText(
     "2026-09-05~2026-09-11 $30.00 · 앞 7일 $20.00 · +50%",
   );
-  // 평가하지 않은 규칙은 0건이 아니라 사유로 보인다.
   await expect(
-    drawer.getByRole("region", { name: "규칙별 평가" }),
-  ).toContainText(
-    "평가하지 않음 · 두 기간 중 완전히 관측되지 않은 날이 있어 평가하지 않았습니다",
-  );
+    drawer.getByText("2026년 9월 13일 21시 기준", { exact: true }),
+  ).toBeVisible();
+  await expect(drawer.getByText("검사 정보", { exact: true })).toHaveCount(0);
   await list
     .getByRole("listitem")
     .filter({ hasText: "미등록 제품" })
@@ -284,7 +253,9 @@ test("개요의 알림 KPI 에서 목록을 열고 확인하면 미확인 수가
     .poll(() => acks)
     .toEqual([{ id: "a1", body: { expectedVersion: 1 } }]);
   await expect(list.getByRole("listitem")).toHaveCount(1);
-  await expect(kpi).toContainText("현재 미확인 · 보안 0 · 비용 1");
+  await expect(
+    page.getByRole("button", { name: "알림, 미확인 1건", includeHidden: true }),
+  ).toHaveCount(1);
   await drawer
     .getByRole("group", { name: "알림 상태" })
     .getByRole("button", { name: "확인함" })

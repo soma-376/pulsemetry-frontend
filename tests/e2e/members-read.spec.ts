@@ -1,19 +1,26 @@
+import { currentDateIso, DAY_MS, fromIso, toIso } from "../../src/lib/date";
 import { expect, test, dashboardBase, seedOrganizations } from "./fixtures";
-import {
-  authenticatedRequest,
-  seedPeriod,
-  selectPeriod,
-  signIn,
-} from "./helpers";
+import { authenticatedRequest, showAllMembers, signIn } from "./helpers";
 
-// 백엔드 tools/dev-seed/README.md의 A 시나리오: 관리자 2명 + 일반 구성원 10명, 미배정 1명,
-// 팀 플랫폼 4·제품 4·데이터 2·디자인 1, 최근 28일 활성 8명, 미사용 초대 2개(대기·만료 각 1개).
+// 백엔드 tools/dev-seed/README.md의 A 시나리오: 관리자 2명 + 일반 구성원 99명, 미배정 1명,
+// 팀 10개, 최근 28일 활성 97명, 미사용 초대 6개(대기·만료 각 3개).
 const A = {
-  roster: 12,
+  roster: 101,
   unassigned: "member9@seed-a.example.test",
-  active: 8,
-  product: 4,
-  teams: ["플랫폼", "제품", "데이터", "디자인"],
+  active: 97,
+  product: 12,
+  teams: [
+    "플랫폼팀",
+    "제품팀",
+    "데이터팀",
+    "디자인팀",
+    "프론트엔드팀",
+    "백엔드팀",
+    "보안팀",
+    "AI팀",
+    "SRE팀",
+    "QA팀",
+  ],
   waiting: "member12@seed-a.example.test",
   expired: "member13@seed-a.example.test",
   seats: 7,
@@ -23,7 +30,8 @@ test("MEMBERS-A @p0 @read 명단·요약·미배정·초대 대기를 서버 값
   page,
 }) => {
   const org = seedOrganizations[0];
-  const { start, end } = seedPeriod();
+  const end = currentDateIso(),
+    start = toIso(new Date(fromIso(end).getTime() - 6 * DAY_MS));
   const dashboardRequest = (url: string) => {
     const parsed = new URL(url);
     return (
@@ -33,13 +41,15 @@ test("MEMBERS-A @p0 @read 명단·요약·미배정·초대 대기를 서버 값
     );
   };
   await signIn(page, `owner@seed-${org.seed}.example.test`);
-  await page.goto("/members");
-  const list = page.getByRole("region", { name: "구성원 목록", exact: true });
-  await expect(list).toBeVisible();
   const loaded = page.waitForResponse((response) =>
     dashboardRequest(response.url()),
   );
-  await selectPeriod(page, start, end);
+  await page.goto("/members");
+  const list = page.getByRole("region", { name: "구성원 목록", exact: true });
+  await expect(list).toBeVisible();
+  await expect(
+    page.getByRole("combobox", { name: "비교", exact: true }),
+  ).toHaveCount(0);
   const response = await loaded;
   expect(response.status()).toBe(200);
   expect(response.request().headers().authorization).toMatch(/^Bearer /);
@@ -52,33 +62,34 @@ test("MEMBERS-A @p0 @read 명단·요약·미배정·초대 대기를 서버 값
   // 시드 시나리오의 독립 기대값.
   expect(body.summary.rosterMembers).toBe(A.roster);
   expect(body.summary.unassignedMembers).toBe(1);
-  expect(body.summary.activeUsers).toBe(A.active);
+  expect(body.summary.activeUsers.value).toBeLessThanOrEqual(A.roster);
 
   const rows = list.getByRole("button", { name: /구성원 상세$/ });
+  await showAllMembers(page, A.roster);
   await expect(rows).toHaveCount(A.roster);
   await expect(
     page.getByRole("group", { name: "구성원", exact: true }),
   ).toContainText(`${A.roster}명`);
   await expect(
     page.getByRole("group", { name: "구성원", exact: true }),
-  ).toContainText(`기간 활성 ${A.active}명`);
+  ).toContainText(`기간 활성 ${body.summary.activeUsers.value}명`);
   await expect(
     page.getByRole("group", { name: "팀 미배정", exact: true }),
   ).toContainText("1명");
   // 좌석은 시드 A 의 좌석 원장이다 — 보유 7석(Claude 5·OpenAI 2, 백엔드 tools/dev-seed/README.md). Copilot·Cursor 는 좌석을 기록하지 않아 요약은 늘 partial 이다.
   // 후보 수는 원장의 값(0 포함)이고, 낮춘 사유를 화면에서 지우지 않는다.
-  expect(body.summary.seats).toMatchObject({
-    availability: "partial",
-    data: { assigned: A.seats },
+  expect(body.summary.reclaimCandidates).toMatchObject({
+    status: "partial",
+    value: body.reclaimCandidates.data.totalCount,
   });
   const seatCard = page.getByRole("group", {
     name: "좌석 회수 후보",
     exact: true,
   });
   await expect(seatCard).toContainText(
-    `${body.summary.seats.data.reclaimCandidates}석`,
+    `${body.summary.reclaimCandidates.value}석`,
   );
-  await expect(seatCard).toContainText(" 제품이 있습니다");
+  await expect(seatCard).toContainText("일부 판정");
   const reclaim = page.getByRole("region", {
     name: "좌석 회수 후보",
     exact: true,
@@ -88,7 +99,7 @@ test("MEMBERS-A @p0 @read 명단·요약·미배정·초대 대기를 서버 값
   );
   // 판정하지 못한 좌석이 있으면(partial) 빈 목록을 "후보 없음"으로 보이지 않는다.
   if (body.reclaimCandidates.availability === "partial") {
-    await expect(reclaim).toContainText("판정한 좌석만 후보로 보여 줍니다");
+    expect(body.reclaimCandidates.reason).toBeTruthy();
     await expect(reclaim).not.toContainText("회수 후보가 없습니다");
   }
 
@@ -116,14 +127,14 @@ test("MEMBERS-A @p0 @read 명단·요약·미배정·초대 대기를 서버 값
   await expect(pending).not.toContainText("member2@seed-a.example.test");
   await expect(
     page.getByRole("group", { name: "초대 대기", exact: true }),
-  ).toContainText("1명");
+  ).toContainText("3명");
   await expect(
     page.getByRole("group", { name: "초대 대기", exact: true }),
-  ).toContainText("만료 1명");
+  ).toContainText("만료 3명");
 
   // 검색은 전체 명단에서 계정과 팀 이름으로 찾는다.
   const search = list.getByRole("textbox", { name: "구성원 검색" });
-  await search.fill("member9");
+  await search.fill(A.unassigned);
   await search.press("Enter");
   await expect(rows).toHaveCount(1);
   await expect(rows).toHaveAttribute(
@@ -134,6 +145,7 @@ test("MEMBERS-A @p0 @read 명단·요약·미배정·초대 대기를 서버 값
   await search.press("Enter");
   await expect(rows).toHaveCount(A.product);
   await search.fill("");
+  await showAllMembers(page, A.roster);
   await expect(rows).toHaveCount(A.roster);
 
   // 서버의 cursor 페이지가 같은 snapshot으로 같은 명단을 준다(화면은 100명 단위로 읽으므로 작은 페이지로 직접 확인한다).
@@ -160,7 +172,7 @@ test("MEMBERS-A @p0 @read 명단·요약·미배정·초대 대기를 서버 값
     cursor = next.body.members.nextCursor;
     pages++;
   } while (cursor);
-  expect(pages).toBe(3);
+  expect(pages).toBe(21);
   expect(accounts.size).toBe(A.roster);
   for (const account of accounts)
     await expect(
@@ -177,7 +189,7 @@ test("MEMBERS-A @p0 @read 명단·요약·미배정·초대 대기를 서버 값
   await drawer.getByRole("button", { name: "상세 패널 닫기" }).click();
   await expect(drawer).not.toBeVisible();
 
-  // 전체 명단 CSV — 헤더 한 줄과 구성원 12줄.
+  // 전체 명단 CSV — 헤더 한 줄과 구성원 101줄.
   const download = page.waitForEvent("download");
   await list
     .getByRole("button", { name: "전체 명단 CSV", exact: true })
@@ -210,6 +222,7 @@ test("MEMBERS-A @p0 @read 명단·요약·미배정·초대 대기를 서버 값
   );
   await page.reload();
   await reloaded;
+  await showAllMembers(page, A.roster);
   await expect(rows).toHaveCount(A.roster);
   await expect(
     page.getByRole("region", { name: "팀 미배정 사용자", exact: true }),

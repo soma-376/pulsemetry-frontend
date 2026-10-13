@@ -7,9 +7,9 @@ import { PreparationError } from "./harness";
 const [A, B] = seedOrganizations;
 type AlertsBody = {
   evaluation: {
-    availability: string;
-    reason: string | null;
-    rules: { ruleId: string; enabled: boolean; evaluatedAt: string | null }[];
+    status: "complete" | "partial" | "unavailable";
+    reasons: string[];
+    asOf: string | null;
   };
   alerts: {
     totalCount: number;
@@ -39,10 +39,11 @@ test("OPS-A @p1 @write 운영 · 보안은 보안 범주 알림을 목록·상�
   await expect
     .poll(
       async () => {
-        const rules = (await alerts("unacknowledged")).evaluation.rules.filter(
-          (rule) => rule.enabled && rule.ruleId === "product_not_registered",
+        const evaluation = (await alerts("unacknowledged")).evaluation;
+        return (
+          !!evaluation.asOf &&
+          !evaluation.reasons.includes("evaluation_pending")
         );
-        return rules.every((rule) => rule.evaluatedAt !== null);
       },
       { timeout: 120_000, intervals: [2_000] },
     )
@@ -65,8 +66,8 @@ test("OPS-A @p1 @write 운영 · 보안은 보안 범주 알림을 목록·상�
     Math.min(before.alerts.totalCount, 20),
   );
   await expect(panel).toContainText(`${before.alerts.totalCount}건`);
-  await expect(page.getByRole("main")).toContainText(
-    "세션 조회와 감사 로그는 이 화면의 범위가 아닙니다",
+  await expect(page.getByRole("main")).not.toContainText(
+    "세션 조회와 감사 로그",
   );
   const first = list.getByRole("listitem").first();
   const alertId = (await first.getAttribute("data-alert-id"))!;
@@ -122,15 +123,16 @@ test("OPS-EMPTY-B @p1 @read 규칙을 켜지 않은 조직의 운영 · 보안�
   ).body as AlertsBody;
   // 대시보드 명세: 켠 규칙이 없으면 평가는 unavailable·evaluation_not_configured 이고 알림은 없다.
   expect(api.evaluation).toMatchObject({
-    availability: "unavailable",
-    reason: "evaluation_not_configured",
+    status: "unavailable",
+    reasons: ["evaluation_not_configured"],
   });
   await page.goto("/ops");
   const panel = page
     .getByRole("main")
     .getByRole("region", { name: "보안 알림" });
-  await expect(panel).toContainText("미확인 보안 알림이 없습니다");
-  await expect(
-    panel.getByRole("region", { name: "규칙별 평가" }),
-  ).toContainText("켜진 알림 규칙이 없습니다");
+  await expect(panel).toContainText("알림 평가 결과를 확인할 수 없습니다");
+  await expect(panel).toContainText("켜진 알림 규칙이 없습니다");
+  await expect(panel.getByRole("region", { name: "규칙별 평가" })).toHaveCount(
+    0,
+  );
 });

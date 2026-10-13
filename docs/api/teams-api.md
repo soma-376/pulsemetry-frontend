@@ -1,160 +1,55 @@
-# 팀 분석 API — v1 제안
+# 팀 분석 API
 
-공통 규칙은 [README](README.md), 기간/비교/금액/관측 의미는 [개요](overview-api.md)를 따른다.
-현 화면: TeamAxisPanel, ModelScatterCard, TeamVendorMixCard, UserUsageCard, TeamDetailDrawer.
-응답은 표시 문자열이 아닌 원시 수치다. 현재 buildTeams/buildRoster의 임의 사용자 생성·비용 비례 토큰 배분은 구현하지 않는다.
+단일 snapshot에서 팀 비교·추이·모델 분포를 읽고, 선택한 팀의 구성원은 별도 페이지로 읽는다. 서버가 값의 상태와 증감을 판정한다. 프론트는 단위를 표시하고 차트 좌표·정렬을 만든다.
 
-## 조회
+## 요청
 
-기본 경로: /api/v1/organizations/{organizationId}
+- `GET /api/v1/organizations/{organizationId}/analytics/teams`: `startDate`, `endDate`, `timeZone=Asia/Seoul`, `compare=none|prev_week|prev_period`, `sort=cost|token|session`, `limit`, `cursor`, `snapshotId`.
+- `GET .../analytics/teams/{teamId}`: 같은 기간·비교·snapshot. 미배정 경로는 `unassigned`.
+- `GET .../analytics/teams/{teamId}/users`: 같은 기간·snapshot, `limit`, `cursor`. 사용자 목록은 비용 내림차순·구성원 ID 순이다.
 
-| 요청                                | 쿼리/응답                                                                                                                         |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| GET /analytics/teams                | startDate, endDate, compare, timeZone + sort=cost/token/session(기본 cost), limit=20(최대 50), cursor, snapshotId → TeamsResponse |
-| GET /analytics/teams/{teamId}       | 같은 기간·비교·snapshotId → TeamDetailResponse                                                                                    |
-| GET /analytics/teams/{teamId}/users | startDate, endDate, timeZone, snapshotId, limit=12(최대 100), cursor → TeamUsersResponse                                          |
+현재 팀 관리 명단 `GET .../teams`와 생성·수정 명령은 별도 계약을 유지한다. 사용량 귀속은 관측 당시 대표 팀이다.
 
-첫 조회는 조직 합계·모델 산점도·팀 목록 첫 페이지·그 팀들의 추이/모델 믹스를 함께 반환한다.
-행에 드로어 데이터가 있으므로 동일 snapshot에서는 다시 조회하지 않는다. 직접 링크로 팀을 열 때만 상세 GET.
-사용자 표는 선택한 팀의 첫 페이지를 별도 요청한다. API 응답 캐시는 기간·snapshot·팀에 묶는다.
-팀이 많아지면 목록/팀 선택기를 페이지 또는 검색 UI로 전환한다. 모든 팀×날짜×사용자를 한 응답에 싣지 않는다.
-미배정은 teams.items에 섞지 않고 unassigned로 반환한다. 상세/사용자 경로에는 예약값 unassigned를 사용한다.
+## 팀 목록 응답
 
-```ts
-type TeamModelUsage = {
-  modelId: string;
-  displayName: string;
-  equivalentCostUsd: Money | null;
-  totalTokens: number | null;
-};
-type TeamAnalytics = TeamRef & {
-  current: Usage | null;
-  previous: Usage | null;
-  modelMix: Section<{
-    sessionMixAvailable: false;
-    sessionMixReason: "multi_model_sessions";
-    models: TeamModelUsage[];
-  }>;
-  trend: {
-    date: string;
-    observation: Observation;
-    equivalentCostUsd: Money | null;
-    totalTokens: number | null;
-    cumulativeSessionCount: number | null;
-  }[];
-  products: ProductUsage[]; // 팀의 제품별 사용(가산 필드). 타입은 개요 문서
-};
-type TeamsResponse = {
-  meta: AnalyticsMeta;
-  comparison: OverviewResponse["comparison"];
-  ingest: OverviewResponse["ingest"];
-  attributionBasis: "event_time";
-  totals: OverviewResponse["usage"];
-  sort: "cost" | "token" | "session";
-  teams: Page<TeamAnalytics>;
-  unassigned: TeamAnalytics;
-  modelScatter: Section<{
-    teamUsageCostShareThreshold: number;
-    models: (TeamModelUsage & { usingTeamCount: number | null })[];
-  }>;
-};
-type TeamDetailResponse = {
-  meta: AnalyticsMeta;
-  comparison: OverviewResponse["comparison"];
-  team: TeamAnalytics;
-};
-type TeamUser = {
-  memberId: string;
-  account: string;
-  usage: Usage;
-  mainModel: { modelId: string; displayName: string } | null;
-  cache: {
-    readTokens: number | null;
-    eligibleInputTokens: number | null;
-    hitRatio: number | null;
-  };
-  lastUsedAt: string | null;
-};
-type TeamUsersResponse = {
-  meta: AnalyticsMeta;
-  team: TeamRef;
-  summary: {
-    usage: Usage | null;
-    averageEquivalentCostUsd: Money | null;
-    cacheReadTokens: number | null;
-    cacheEligibleInputTokens: number | null;
-    cacheHitRatio: number | null;
-    unidentifiedEquivalentCostUsd: Money | null;
-  };
-  users: Page<TeamUser>;
-};
-```
+`meta`, `comparison`, `attributionBasis`, `totals`, `sort`, `teams`, `unassigned`, `modelScatter`를 반환한다. `meta`는 조직·기간·시간대·일수·확정 시각·데이터 상태·관측 일수·snapshot ID다. 헤더 수집 상태와 가격 판 상세는 포함하지 않는다.
 
-## 화면과 필드 대응
+`teams`는 `{items,totalCount,nextCursor}`다. 각 항목과 미배정은 `{teamId,teamName,metrics,modelMix,trend,products}`다. `current/previous` 범용 사용량은 반환하지 않는다.
 
-| UI                   | 데이터 / 계산                                                                                                                                          |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 비용 탭              | totals.current.equivalentCostUsd, 팀 current.equivalentCostUsd                                                                                         |
-| 토큰 탭              | totals.current.tokens.total, 팀 current.tokens.total                                                                                                   |
-| 세션 탭              | totals.current.sessionCount, 팀 current.sessionCount                                                                                                   |
-| 사용자당             | 팀 선택 지표 / 팀 activeUsers                                                                                                                          |
-| 비용 탭 세션당       | equivalentCostUsd / sessionCount                                                                                                                       |
-| 토큰 탭 백만당 비용  | equivalentCostUsd / tokens.total × 1,000,000                                                                                                           |
-| 세션 탭 세션당 토큰  | tokens.total / sessionCount                                                                                                                            |
-| 전주/이전 기간 증감  | 동일 팀 current/previous. 비교 비활성·미관측·이전 0의 처리는 개요 규칙                                                                                 |
-| 누적 추이            | 비용/토큰은 일별 값을 누적하고 값이 없는 날부터 선을 끊는다. 세션은 cumulativeSessionCount 직접 사용(null인 날부터 끊는다)                             |
-| 팀별 벤더(제품) 비중 | products의 선택 축 값(equivalentCostUsd·totalTokens·sessionCount) / 팀의 같은 축 값. 하나라도 null이면 비중을 그리지 않는다. kind null은 "미확인 제품" |
-| 모델 산점도          | x=totalTokens, y=equivalentCostUsd, 점 크기=usingTeamCount                                                                                             |
-| 팀별 모델 구성       | 비용이면 모델 금액 비중, 토큰이면 모델 토큰 비중                                                                                                       |
-| 사용자 표            | users.items + summary. 비용 내림차순, 동률 memberId                                                                                                    |
-| 평균 대비            | (개인 금액 / summary.averageEquivalentCostUsd) - 1                                                                                                     |
-| 드로어 증가 기여     | current.equivalentCostUsd - previous.equivalentCostUsd                                                                                                 |
-| 드로어 주요 모델     | 모델 금액 내림차순과 해당 팀 금액 대비 비중                                                                                                            |
+`metrics`의 값:
 
-분모 0이나 필요한 값이 null이면 파생값도 null이다. 미배정은 일반 팀과 같은 수치 구조지만 ID는 null이다.
-팀 체크박스는 차트의 선 표시만 바꾸며 전체 합계와 분모를 바꾸지 않는다.
+| 필드                             | 의미                | 비교 |
+| -------------------------------- | ------------------- | ---- |
+| activeUsers                      | 식별된 활성 사용자  | 없음 |
+| equivalentCostUsd                | 사용 환산액         | 있음 |
+| totalTokens                      | 합산 가능한 총 토큰 | 있음 |
+| sessionCount                     | 식별된 세션         | 있음 |
+| equivalentCostPerUserUsd         | 사용자당 환산액     | 있음 |
+| equivalentCostPerSessionUsd      | 세션당 환산액       | 없음 |
+| tokensPerUser                    | 사용자당 토큰       | 없음 |
+| sessionsPerUser                  | 사용자당 세션       | 없음 |
+| tokensPerSession                 | 세션당 토큰         | 없음 |
+| effectiveCostPerMillionTokensUsd | 백만 토큰당 환산액  | 없음 |
 
-## 집계 기준
+모든 값은 `{value,status,reasons}`다. `status`는 `complete|partial|unavailable`이다. 비교가 있으면 `comparison={status,reasons,previousValue,absoluteChange,percentChange,change}`를 포함한다. `change`는 `increase|decrease|unchanged|new`, 비교 상태는 `available|unavailable|disabled`다. 미식별 사용량을 식별된 인원으로 나누지 않는다. 분모 0이면 `zero_denominator`로 값을 비운다. 불완전한 현재·비교 기간은 증감을 만들지 않는다.
 
-- 조직 totals와 modelScatter는 현재 목록 페이지와 무관한 권한 범위 전체 집계다.
-- teams.totalCount는 해당 기간에 사용이 있는 실제 팀 수다. 미배정 제외.
-  무사용 기간에는 teams.items=[], 총계는 실제 0 또는 미관측 null로 구분한다.
-- 팀 비용·토큰은 이벤트 당시 대표 팀에 한 번만 귀속한다. 개요 상위 3팀과 같은 집계 서비스를 사용한다.
-- 사용자 고유 수, 세션 고유 수는 팀 이동/여러 모델 때문에 팀·날짜·모델 간 합산할 수 없다.
-  조직 sessionCount는 조직 범위 distinct로 계산한다.
-- 세션 추이는 요청 시작부터 각 날짜 끝까지 해당 팀 이벤트의 session ID distinct다.
-  단순 일별 distinct 합산을 누적 세션으로 쓰지 않는다.
-- 모델별 한 세션이 여러 모델을 사용하면 모델 세션 수 합이 팀 세션 수를 초과할 수 있다.
-  v1의 세션 축 모델 믹스는 미지원으로 명시한다. UI는 비용/토큰만 제공하거나 안내 상태를 표시한다.
-  비용 비중으로 세션·토큰 수를 임의 배분하지 않는다.
-- 산점도 usingTeamCount는 해당 모델 비용이 그 팀 비용의 5% 이상인 실제 팀 수(미배정 제외).
-  응답의 threshold=0.05로 명시하고 단가가 누락되면 null. 전체 조직 모델 수치에 미배정 사용은 포함한다.
-- 사용자 목록은 해당 기간·귀속 팀의 실제 사용자를 canonical member ID로 묶는다.
-  현재 로스터에서 팀을 이동했다고 과거 개인 사용 기록의 팀을 바꾸지 않는다.
-- mainModel은 해당 사용자 비용이 가장 큰 모델, 동률 modelId 순. 금액 산출 불가 시 null.
-- cacheHitRatio = cacheRead / cacheEligibleInput. eligibleInput은 정규화된 inputUncached+cacheRead+cacheWrite.
-  해당 공급자가 이 범주를 제공하지 않거나 분모 0이면 null. 사용자 비율 평균으로 팀 비율을 만들지 않는다.
-- lastUsedAt은 선택 기간 안 해당 팀의 마지막 유효 사용 시각. 구성원 페이지의 현재까지 마지막 사용과 다르다.
-- summary는 사용자 전체 페이지 기준이다. 평균 분모는 식별 가능한 활성 사용자 수,
-  분자는 식별 가능한 사용자 비용 합계다. 미식별 이벤트 비용은 unidentifiedEquivalentCostUsd에 별도 표시한다.
-- 비용 합계 = 모든 사용자 페이지 비용 합계 + 미식별 비용(완전 관측일 때).
-  세션이 여러 사용자를 포함하면 개인별 distinct 합은 팀 sessionCount와 다를 수 있다.
-- 추이에 모든 날짜를 포함한다. 관측 공백 이후 누적값을 확정 총액처럼 연결하지 않는다.
-  cumulativeSessionCount는 시작부터 해당일까지 관측이 불완전하면 null이다. 그 팀에 세션 없는 사용 행이 있는 날부터도 null이다.
-  여러 날에 걸친 세션은 처음 관측된 날에 한 번만 더하고, 두 팀에 귀속된 세션은 팀마다 센다. 한 번 null이 되면 그 뒤의 완전한 날도 null이다.
-- products는 현재 기간의 카탈로그 제품별 사용이다(개요의 productUsage와 같은 규칙). 목록·상세·미배정이 같은 snapshot의 같은 값을 낸다.
+`totals`는 동일한 `metrics` 구조로 전사 범위에서 계산한다. 페이지에 보이는 팀 합을 조직 합계로 대신하지 않는다.
 
-## 권한·빈 상태·수용 기준
+`trend`는 날짜·관측 상태·일별 비용·토큰·기간 시작일부터의 고유 누적 세션을 반환한다. 일별 고유 세션을 합산하지 않는다. 모델·날짜별 `status/reasons`로 수집 불완전·단가·토큰·누적 근거 부족을 보존한다. 비용·토큰 누적선은 값이 없는 날짜부터 끊는다.
 
-개인 사용 조회 권한이 없으면 사용자 endpoint는 403이며 집계 화면은 계속 표시할 수 있다.
-팀 자체 권한이 없으면 상세도 403/404. 다른 조직의 teamId/memberId가 섞이지 않아야 한다.
-no_data/never_observed에서도 팀 디렉터리와 실제 구성원 관리 기능은 별개로 유지한다.
+`products`는 화면의 제품별 비중에 필요한 제품 이름·비용·토큰·세션·활성 사용자다. `modelMix`와 `modelScatter`는 현재 선택 기간의 모델 값과 가용성을 제공한다. 값이 없는 모델은 점으로 그리지 않는다.
 
-- 같은 범위/버전의 totals는 개요 usage와 일치한다.
-- 3팀 초과·50팀 초과에서도 페이지 밖 팀의 비용이 합계/산점도에서 빠지지 않는다.
-- 정렬/기간 변경은 cursor를 초기화하고 같은 snapshot의 페이지 간 중복·누락이 없다.
-- 팀 이동, 하루를 넘는 세션, 여러 모델 세션, 미식별 사용자, 단가 누락을 검증한다.
-- 드로어는 선택한 팀의 ID와 동일 기간을 유지한다. 이전 요청이 늦게 끝나도 새 팀 내용을 덮지 않는다.
-- 비용/토큰 믹스는 각자의 실제 수치를 사용하며 sessionMixAvailable=false를 UI에 반영한다.
+## 선택 팀의 사용자
 
-예시: [팀 분석](teams-response.example.json), [선택 팀 사용자](team-users-response.example.json).
+`meta`, `team`, `summary`, `users`를 반환한다. `summary.usage`는 활성 사용자·세션·총 토큰·비용 Value다. 식별 사용자 평균 비용, 캐시 적중률 Value와 미식별 비용을 포함한다.
+
+사용자 행은 구성원 ID·계정·사용 값(세션·총 토큰·비용 Value)·주요 모델·캐시 적중률 Value·마지막 사용 시각만 반환한다. 캐시 읽기/분모 토큰과 사용하지 않는 토큰 세부는 제외한다.
+
+## 상태와 검증
+
+- 0은 확인된 0, null은 값 확인 불가다. 사용량이 없는 기간은 공통 기간 빈 상태를 사용한다.
+- 후속 페이지·상세·사용자 응답의 조직·기간·snapshot을 검사한다. 만료 snapshot은 첫 페이지부터 한 번 다시 읽고, 서로 다른 snapshot을 합치지 않는다.
+- 최초 조회 실패와 갱신 실패는 공통 조회 규칙을 따른다. 지표의 부분 관측은 네트워크 실패가 아니다.
+- CSV는 팀 지표·상태·사유·증감·추이·제품 비중·모델 및 선택한 팀의 사용자 값을 보존한다.
+
+[팀 목록 예시](teams-response.example.json) · [사용자 예시](team-users-response.example.json)

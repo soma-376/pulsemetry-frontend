@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
+import { valueSchema } from "./overview";
 import {
   apiJson,
   ManagementError,
@@ -11,16 +12,8 @@ import {
 const count = z.number().int().nonnegative();
 const money = z.string().regex(/^\d+(?:\.\d+)?$/);
 const usageSchema = z.object({
-  activeUsers: count.nullable(),
-  sessionCount: count.nullable(),
-  equivalentCostUsd: money.nullable(),
-  tokens: z.object({
-    inputUncached: count.nullable(),
-    output: count.nullable(),
-    cacheRead: count.nullable(),
-    cacheWrite: count.nullable(),
-    total: count.nullable(),
-  }),
+  sessionCount: valueSchema(count.nullable()),
+  equivalentCostUsd: valueSchema(money.nullable()),
 });
 const teamRefSchema = z.object({
   teamId: z.string().nullable(),
@@ -38,7 +31,6 @@ export const memberSchema = z.object({
   plannedVendorIds: z.array(z.string()).optional(),
   periodUsage: usageSchema.nullable(),
   lastUsedAt: z.iso.datetime({ offset: true }).nullable(),
-  observation: z.string(),
   seatState: z.string(),
 });
 export type Member = z.infer<typeof memberSchema>;
@@ -56,6 +48,7 @@ const section = <T extends z.ZodType>(data: T) =>
   });
 const metaSchema = z.object({
   organizationId: z.string(),
+  asOf: z.iso.datetime({ offset: true }),
   startDate: z.iso.date(),
   endDate: z.iso.date(),
   snapshotId: z.string(),
@@ -77,25 +70,15 @@ export const reclaimCandidateSchema = z.object({
   vendorAccount: z.string().optional(),
 });
 export type ReclaimCandidate = z.infer<typeof reclaimCandidateSchema>;
-const seatSummarySchema = z.object({
-  contracted: count,
-  assigned: count,
-  unallocated: count,
-  activeInPeriod: count.nullable(),
-  inactiveAssigned: count.nullable(),
-  reclaimCandidates: count.nullable(),
-  estimatedMonthlySavingsUsd: money.nullable(),
-});
 export const membersDashboardSchema = z.object({
   meta: metaSchema,
-  asOf: z.iso.datetime({ offset: true }),
   summary: z.object({
     rosterMembers: count,
-    activeUsers: count.nullable(),
+    activeUsers: valueSchema(count.nullable()),
     unassignedMembers: count,
-    periodUnassignedEquivalentCostUsd: money.nullable(),
-    periodTotalEquivalentCostUsd: money.nullable(),
-    seats: section(seatSummarySchema),
+    periodUnassignedEquivalentCostUsd: valueSchema(money.nullable()),
+    periodUnassignedCostShare: valueSchema(z.number().nonnegative().nullable()),
+    reclaimCandidates: valueSchema(count.nullable()),
   }),
   policy: z.object({ idleDays: count, version: z.number() }),
   capabilities: z.object({
@@ -162,7 +145,10 @@ async function restOfPages(
     );
     if (
       next.meta.organizationId !== organizationId ||
-      next.meta.snapshotId !== snapshotId
+      next.meta.snapshotId !== snapshotId ||
+      next.meta.startDate !== period.startDate ||
+      next.meta.endDate !== period.endDate ||
+      next.members.totalCount !== first.totalCount
     )
       throw invalid();
     items.push(...next.members.items);

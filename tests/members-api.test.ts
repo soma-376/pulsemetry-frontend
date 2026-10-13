@@ -16,17 +16,19 @@ import {
 
 const ORG = "11111111-1111-4111-8111-111111111111";
 const period = { startDate: "2026-09-01", endDate: "2026-09-28" };
+const value = <T>(value: T | null, reasons: string[] = []) => ({
+  value,
+  status:
+    value === null
+      ? ("unavailable" as const)
+      : reasons.length
+        ? ("partial" as const)
+        : ("complete" as const),
+  reasons: reasons.length ? reasons : value === null ? ["no_data"] : [],
+});
 const usage = (cost: string | null, sessions: number | null) => ({
-  activeUsers: 1,
-  sessionCount: sessions,
-  equivalentCostUsd: cost,
-  tokens: {
-    inputUncached: null,
-    output: null,
-    cacheRead: null,
-    cacheWrite: null,
-    total: null,
-  },
+  sessionCount: value(sessions),
+  equivalentCostUsd: value(cost),
 });
 const member = (index: number, extra: Partial<Member> = {}): Member => ({
   memberId: `member-${index}`,
@@ -38,7 +40,6 @@ const member = (index: number, extra: Partial<Member> = {}): Member => ({
   version: 1000 + index,
   periodUsage: usage(String(index), index),
   lastUsedAt: "2026-09-27T01:00:00Z",
-  observation: "partial",
   seatState: "unknown",
   ...extra,
 });
@@ -58,6 +59,7 @@ const notSent = {
 };
 const meta = (snapshotId = "snapshot-1") => ({
   organizationId: ORG,
+  asOf: "2026-09-29T00:00:00Z",
   startDate: period.startDate,
   endDate: period.endDate,
   snapshotId,
@@ -69,14 +71,13 @@ const dashboard = (
   unassigned: Member[] = [],
 ) => ({
   meta: meta(),
-  asOf: "2026-09-29T00:00:00Z",
   summary: {
     rosterMembers: total,
-    activeUsers: null,
+    activeUsers: value<number>(null),
     unassignedMembers: unassigned.length,
-    periodUnassignedEquivalentCostUsd: null,
-    periodTotalEquivalentCostUsd: null,
-    seats: unavailable,
+    periodUnassignedEquivalentCostUsd: value<string>(null),
+    periodUnassignedCostShare: value<number>(null),
+    reclaimCandidates: value<number>(null, ["not_applicable"]),
   },
   policy: { idleDays: 14, version: 0 },
   capabilities: {
@@ -458,22 +459,10 @@ test("reclaim candidates and seat totals come only from the server section", () 
     unassigned: [],
     summary: {
       ...base.summary,
-      activeUsers: 1,
-      periodUnassignedEquivalentCostUsd: "5",
-      periodTotalEquivalentCostUsd: "20",
-      seats: {
-        availability: "available" as const,
-        reason: null,
-        data: {
-          contracted: 10,
-          assigned: 8,
-          unallocated: 2,
-          activeInPeriod: null,
-          inactiveAssigned: null,
-          reclaimCandidates: 1,
-          estimatedMonthlySavingsUsd: null,
-        },
-      },
+      activeUsers: value(1),
+      periodUnassignedEquivalentCostUsd: value("5"),
+      periodUnassignedCostShare: value(0.25),
+      reclaimCandidates: value(1),
     },
     reclaimCandidates: {
       availability: "available" as const,
@@ -510,19 +499,7 @@ test("a partial seat ledger keeps its reason next to the counted candidates", ()
     unassigned: [],
     summary: {
       ...base.summary,
-      seats: {
-        availability: "partial" as const,
-        reason: "seat_sync_outdated",
-        data: {
-          contracted: 18,
-          assigned: 10,
-          unallocated: 11,
-          activeInPeriod: null,
-          inactiveAssigned: null,
-          reclaimCandidates: 0,
-          estimatedMonthlySavingsUsd: null,
-        },
-      },
+      reclaimCandidates: value(0, ["observation_incomplete"]),
     },
     reclaimCandidates: {
       availability: "partial" as const,
@@ -538,7 +515,7 @@ test("a partial seat ledger keeps its reason next to the counted candidates", ()
   assert.equal(cards["좌석 회수 후보"].value, "0");
   assert.equal(
     cards["좌석 회수 후보"].caption,
-    "14일 기준 · 좌석 동기화가 오래된 제품이 있습니다",
+    "14일 기준 · 관측이 부족한 좌석은 판정하지 않았습니다",
   );
   assert.ok(model.reclaim.available);
   assert.equal(
@@ -590,16 +567,72 @@ test("CSV exports the whole roster, leaves unknown values empty and neutralizes 
   const lines = membersCsv(model.memberRows).split("\r\n");
   assert.equal(
     lines[0],
-    "계정,이름,팀,역할,계정 상태,사용 관측,기간 환산 비용(USD),기간 세션,마지막 사용(UTC)",
+    "계정,이름,팀,역할,계정 상태,사용 관측,기간 환산 비용(USD),기간 세션,마지막 사용(UTC),비용 상태,비용 사유,세션 상태,세션 사유",
   );
   assert.equal(
     lines[1],
-    `'=cmd@example.test,"이름, ""별명""",플랫폼,구성원,활성 계정,활성,12.5,3,2026-09-27T01:00:00Z`,
+    `'=cmd@example.test,"이름, ""별명""",플랫폼,구성원,활성 계정,활성,12.5,3,2026-09-27T01:00:00Z,complete,,complete,`,
   );
   assert.equal(
     lines[2],
-    "member2@example.test,구성원 2,미배정,관리자,활성 계정,신호 대기,,,",
+    "member2@example.test,구성원 2,미배정,관리자,활성 계정,신호 대기,,,,unavailable,no_data,unavailable,no_data",
   );
   assert.equal(lines.length, 4);
   assert.equal(lines[3], "");
+});
+
+test("period values keep state and reasons in the screen and CSV, including confirmed zero", () => {
+  const row = member(1, {
+    periodUsage: {
+      equivalentCostUsd: value("0", [
+        "current_period_incomplete",
+        "collection_gap",
+      ]),
+      sessionCount: value(0),
+    },
+  });
+  const base = dashboard([row], 1, null);
+  const model = buildMembersView(
+    { ...base, members: [row], unassigned: [] },
+    [],
+  );
+  assert.equal(model.memberRows[0].costText, "$0.00");
+  assert.equal(model.memberRows[0].costStatus?.label, "관측 근거 부족");
+  assert.match(model.memberRows[0].costStatus?.reason ?? "", /보고 공백/);
+  assert.equal(model.memberRows[0].sessionCount, 0);
+  assert.match(
+    membersCsv(model.memberRows),
+    /partial,current_period_incomplete\|collection_gap,complete,/,
+  );
+});
+
+test("pagination rejects changed periods and total counts even when snapshot matches", async () => {
+  const original = global.fetch;
+  try {
+    for (const changed of ["period", "count"]) {
+      global.fetch = async (input) =>
+        new URL(String(input), "http://localhost").pathname.endsWith(
+          "/members/dashboard",
+        )
+          ? Response.json(dashboard([member(1)], 2, "c1"))
+          : Response.json({
+              meta: {
+                ...meta(),
+                ...(changed === "period" ? { startDate: "2026-09-02" } : {}),
+              },
+              members: {
+                items: [member(2)],
+                totalCount: changed === "count" ? 3 : 2,
+                nextCursor: null,
+              },
+            });
+      await assert.rejects(
+        fetchMembersView(ORG, period),
+        (error) =>
+          error instanceof ManagementError && error.code === "invalid_response",
+      );
+    }
+  } finally {
+    global.fetch = original;
+  }
 });

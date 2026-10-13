@@ -1,3 +1,5 @@
+import { valueSchema } from "./overview";
+import { contractInputSchema } from "./contract-input";
 import { contractStatusSchema } from "../contract-status";
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
@@ -8,7 +10,7 @@ import {
   orgPath,
   readOptions,
 } from "./management";
-import { overviewSchema } from "./overview";
+
 import { seatSourceSchema } from "./seats";
 import { alertRuleSchema } from "./alerts";
 
@@ -58,6 +60,7 @@ export const settingsVendorSchema = z.object({
   version: count,
   state: z.string(),
   contractStatus: contractStatusSchema,
+  contractInput: contractInputSchema.optional(),
   contract: contractSchema.nullable(),
   observation: z.string(),
   firstSeenAt: z.string().nullable(),
@@ -80,14 +83,27 @@ export const settingsVendorResponseSchema = z.object({
   meta,
   vendor: settingsVendorSchema,
 });
+/** 첫 화면·다음 목록은 편집 상세 없이 표에 표시하는 값만 받는다. */
+export const settingsVendorRowSchema = z.object({
+  vendorId: z.string(),
+  displayName: z.string(),
+  kind: z.string(),
+  source: z.string(),
+  version: count,
+  contractStatus: contractStatusSchema,
+  contractInput: contractInputSchema,
+  contractSeats: valueSchema(count.nullable()),
+  monthlySeatFeeUsd: valueSchema(money.nullable()),
+  assignedSeats: valueSchema(count.nullable()),
+});
+export type SettingsVendorRow = z.infer<typeof settingsVendorRowSchema>;
 const page = z.object({
-  items: z.array(settingsVendorSchema),
+  items: z.array(settingsVendorRowSchema),
   totalCount: count,
   nextCursor: z.string().nullable(),
 });
 export const settingsSchema = z.object({
   meta,
-  ingest: overviewSchema.shape.ingest,
   capabilities: z.object({
     editContracts: z.boolean(),
     editCollectionPolicy: z.boolean(),
@@ -95,22 +111,12 @@ export const settingsSchema = z.object({
     notifyInstallations: z.boolean(),
   }),
   summary: z.object({
-    configuredVendors: count,
-    unconfiguredVendors: count,
-    monthlySeatFeeUsd: money.nullable(),
-    contractedSeats: count.nullable(),
-    activeSeats7d: count.nullable(),
-    assignedSeats: count.nullable().optional(),
-    meteredMonthToDate: z.object({
-      availability: z.string(),
-      reason: z.string().nullable().optional(),
-      data: z
-        .object({
-          actualBilledUsd: money.nullable(),
-          equivalentCostUsd: money.nullable(),
-        })
-        .nullable(),
-    }),
+    unconfiguredVendors: valueSchema(count.nullable()),
+    monthlySeatFeeUsd: valueSchema(money.nullable()),
+    contractedSeats: valueSchema(count.nullable()),
+    activeSeats7d: valueSchema(count.nullable()),
+    assignedSeats: valueSchema(count.nullable()),
+    meteredMonthToDate: valueSchema(money.nullable()),
   }),
   vendors: page,
   // version 은 원문 선택이 실린 manifest 판이고, 회수 기준·집계 보존은 설정의 판(settingsVersion)으로 따로 저장한다(백엔드 ADR 0046).
@@ -120,7 +126,6 @@ export const settingsSchema = z.object({
     reclaimIdleDays: count,
     aggregateRetentionMonths: count.nullable(),
     settingsVersion: count,
-    settingsUpdatedAt: z.string().nullable(),
     reclaimIdleDaysSource: z.enum(["organization", "default"]),
     options: z.object({
       reclaimIdleDays: z.array(count),
@@ -128,8 +133,6 @@ export const settingsSchema = z.object({
     }),
     // 이 조직의 가장 최근 보존 정리 작업(ADR 0047). 새로고침 뒤에도 마지막 정리의 상태를 다시 조회한다.
     cleanupOperationId: z.string().nullable(),
-    // 원문 보존 일수. 서버는 null 을 준다 — 원본 아카이브의 수명은 인프라 저장소 규칙이고 이 서비스가 조회하지 않는다(백엔드 ADR 0046).
-    rawContentRetentionDays: count.nullable().optional(),
   }),
   // evidence: 판정 근거별 설치 수(서버 가산) — 최근 설치 보고 · 보고가 없어 쓴 적용 확인 기록 · 근거 없음.
   // 가산 전의 서버는 보내지 않는다 — 없으면 근거를 말하지 않는다("설치 보고 기준"처럼 꾸미지 않는다).

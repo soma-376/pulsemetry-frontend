@@ -1,4 +1,4 @@
-import type { Overview } from "./overview";
+import type { Overview, OverviewValue } from "./overview";
 
 export const numeric = (
   value: string | number | null | undefined,
@@ -18,7 +18,7 @@ export const moneyText = (value: string | null | undefined) =>
 export function changeText(
   current: number | null,
   previous: number | null,
-  status: Overview["comparison"]["status"],
+  status: "available" | "unavailable" | "disabled",
 ) {
   if (status === "disabled") return "비교 없음";
   if (status !== "available" || current === null || previous === null)
@@ -30,54 +30,90 @@ export function changeText(
     : `${delta > 0 ? "+" : ""}${delta.toFixed(1)}%`;
 }
 
-/** 미관측 날짜는 선을 끊는다. 좌석 배분액은 사용 관측과 별도로 제공될 수 있다. */
+/** 미관측 날짜는 선을 끊는다. */
 export function trendSegments(
-  points: Overview["trend"]["points"],
-  field: "equivalentCostUsd" | "allocatedSeatCostUsd",
+  points: NonNullable<Overview["trend"]>["points"],
+  field: "equivalentCostUsd",
 ) {
   const segments: { index: number; value: number }[][] = [];
   let segment: { index: number; value: number }[] = [];
-  points.forEach((point, index) => {
-    const value =
-      field === "equivalentCostUsd" && point.observation === "unobserved"
-        ? null
-        : numeric(point[field]);
-    if (value === null) {
+  points.forEach((p, index) => {
+    const v = p.observation === "unobserved" ? null : numeric(p[field].value);
+    if (v === null) {
       if (segment.length) segments.push(segment);
       segment = [];
-    } else segment.push({ index, value });
+    } else segment.push({ index, value: v });
   });
   if (segment.length) segments.push(segment);
   return segments;
 }
-
-/** 명세에 따라 상위 4개와 기타로 묶되 미수집 값은 합계로 확정하지 않는다. */
-export function groupModels(models: Overview["modelMix"]["models"]) {
+export function aggregateValues<T>(
+  values: OverviewValue<T>[],
+  sum: (items: T[]) => T,
+): OverviewValue<T> {
+  const available = values.every((v) => v.value !== null);
+  return {
+    value: available ? sum(values.map((v) => v.value!)) : null,
+    status: !available
+      ? "unavailable"
+      : values.every((v) => v.status === "complete")
+        ? "complete"
+        : "partial",
+    reasons: [...new Set(values.flatMap((v) => v.reasons))],
+  };
+}
+/** UI와 CSV가 같은 상위 4개+기타를 사용한다. 미확인 금액은 합계에 끼워 넣지 않는다. */
+export function groupModels(
+  models: NonNullable<Overview["modelMix"]>["models"],
+) {
   const sorted = [...models].sort(
     (a, b) =>
-      (numeric(b.equivalentCostUsd) ?? -1) -
-        (numeric(a.equivalentCostUsd) ?? -1) ||
+      (numeric(b.equivalentCostUsd.value) ?? -1) -
+        (numeric(a.equivalentCostUsd.value) ?? -1) ||
       a.modelId.localeCompare(b.modelId),
   );
   if (sorted.length <= 4) return sorted;
   const rest = sorted.slice(4);
-  const cost = rest.every((model) => model.equivalentCostUsd !== null)
-    ? rest.reduce((sum, model) => sum + Number(model.equivalentCostUsd), 0)
-    : null;
-  const tokens = rest.every((model) => model.totalTokens !== null)
-    ? rest.reduce((sum, model) => sum + model.totalTokens!, 0)
-    : null;
+  const cost = aggregateValues(
+    rest.map((m) => m.equivalentCostUsd),
+    (vs) => String(vs.reduce((s, v) => s + Number(v), 0)),
+  );
+  const tokens = aggregateValues(
+    rest.map((m) => m.totalTokens),
+    (vs) => vs.reduce((s, v) => s + v, 0),
+  );
+  const share = aggregateValues(
+    rest.map((m) => m.costShare),
+    (vs) => vs.reduce((s, v) => s + v, 0),
+  );
+  const perM: OverviewValue<string> = {
+    value:
+      cost.value !== null && tokens.value !== null && tokens.value > 0
+        ? String((Number(cost.value) / tokens.value) * 1e6)
+        : null,
+    status:
+      cost.value === null || tokens.value === null || tokens.value === 0
+        ? "unavailable"
+        : cost.status === "complete" && tokens.status === "complete"
+          ? "complete"
+          : "partial",
+    reasons: [
+      ...new Set([
+        ...cost.reasons,
+        ...tokens.reasons,
+        ...(tokens.value === 0 ? ["zero_denominator"] : []),
+      ]),
+    ],
+  };
   return [
     ...sorted.slice(0, 4),
     {
       modelId: "__overview_other_models__",
       displayName: `기타 ${rest.length}개 모델`,
-      equivalentCostUsd: cost === null ? null : String(cost),
+      equivalentCostUsd: cost,
       totalTokens: tokens,
-      effectiveCostPerMillionTokensUsd:
-        cost !== null && tokens !== null && tokens > 0
-          ? String((cost / tokens) * 1_000_000)
-          : null,
+      effectiveCostPerMillionTokensUsd: perM,
+      costShare: share,
     },
   ];
 }

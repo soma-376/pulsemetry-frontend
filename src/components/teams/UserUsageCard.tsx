@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { PeriodEmptyState } from "@/components/ui/PeriodEmptyState";
+import { MetricStatusBadge } from "@/components/overview/KpiCard";
 import { StatCard } from "@/components/ui/StatCard";
 import { SortHeader } from "@/components/ui/SortHeader";
+import {
+  Skeleton,
+  SkeletonRegion,
+  SkeletonRows,
+} from "@/components/ui/Skeleton";
 import { ManagementError } from "@/lib/api/management";
 import { TEAM_USERS_PAGE, teamUsersOptions } from "@/lib/api/teams";
 import {
@@ -65,6 +72,11 @@ export function UserUsageCard({
   const [team, setTeam] = useState(teams[0]?.key ?? "");
   const [visible, setVisible] = useState(TEAM_USERS_PAGE);
   const [sort, setSort] = useState<SortState<SortKey>>(SERVER_ORDER);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [pendingLayout, setPendingLayout] = useState<{
+    height: number;
+    rows: number;
+  } | null>(null);
   const serverOrder =
     sort.key === SERVER_ORDER.key && sort.direction === SERVER_ORDER.direction;
 
@@ -106,8 +118,20 @@ export function UserUsageCard({
   const rows = ordered.slice(0, visible);
   const hasMore = visible < data.totalCount;
   const gathering = !serverOrder && !complete && !query.isError;
+  const waitingForTeam =
+    !!team && (query.isPending || (!!pendingLayout && gathering));
+  // 성공·빈 결과·오류로 전환하면 다음 조회에 이전 높이가 재사용되지 않게 한다.
+  if (pendingLayout && !waitingForTeam) setPendingLayout(null);
 
   const pick = (next: string) => {
+    if (next === team) return;
+    // 팀을 바꾸기 전에 측정한다. 빠르게 다시 전환해도 현재 보이는 공간을 유지한다.
+    const height = contentRef.current?.getBoundingClientRect().height;
+    setPendingLayout(
+      height
+        ? { height, rows: pendingLayout?.rows ?? Math.max(rows.length, 4) }
+        : null,
+    );
     setTeam(next);
     setVisible(TEAM_USERS_PAGE);
   };
@@ -153,176 +177,223 @@ export function UserUsageCard({
         })}
       </div>
 
-      {query.isPending && team ? (
-        <LoadingState message="사용자별 사용량을 불러오는 중입니다…" />
-      ) : deniedAccess ? (
-        <p role="status" className="rounded-lg bg-sub p-3 text-xs text-text2">
-          개인별 사용량을 조회할 권한이 없습니다. 팀 합계는 위 표에서 확인할 수
-          있습니다.
-        </p>
-      ) : query.isError && !query.data ? (
-        <ErrorState
-          message={
-            expired
-              ? "목록이 갱신되었습니다. 처음부터 다시 불러옵니다."
-              : query.error.message
-          }
-          onRetry={
-            expired
-              ? undefined
-              : () => void query.refetch({ cancelRefetch: false })
-          }
-          retrying={query.isFetching}
-        />
-      ) : (
-        query.data && (
-          <>
+      <div
+        ref={contentRef}
+        className="relative min-w-0"
+        style={{
+          minHeight: waitingForTeam ? pendingLayout?.height : undefined,
+        }}
+        aria-busy={waitingForTeam}
+      >
+        {waitingForTeam ? (
+          <SkeletonRegion
+            message="사용자별 사용량을 불러오는 중입니다…"
+            className={pendingLayout ? "absolute inset-0 overflow-hidden" : ""}
+          >
             <div className="mb-[18px] grid grid-cols-5 gap-2 @max-[1100px]:grid-cols-3 @max-[620px]:grid-cols-2">
-              {data.stats.map((s) => (
-                <StatCard
-                  key={s.key}
-                  label={s.key}
-                  value={s.value}
-                  unit={s.sub}
-                  tone={s.tone}
-                  size="sm"
-                />
+              {Array.from({ length: 5 }, (_, index) => (
+                <div
+                  key={index}
+                  className="rounded-lg border border-border p-3"
+                >
+                  <Skeleton className="mb-3 h-3 w-16" />
+                  <Skeleton className="h-5 w-20" />
+                </div>
               ))}
             </div>
+            <SkeletonRows rows={pendingLayout?.rows ?? 4} />
+          </SkeletonRegion>
+        ) : deniedAccess ? (
+          <p role="status" className="rounded-lg bg-sub p-3 text-xs text-text2">
+            개인별 사용량을 조회할 권한이 없습니다. 팀 합계는 위 표에서 확인할
+            수 있습니다.
+          </p>
+        ) : query.isError && !query.data ? (
+          <ErrorState
+            message={
+              expired
+                ? "목록이 갱신되었습니다. 처음부터 다시 불러옵니다."
+                : query.error.message
+            }
+            onRetry={
+              expired
+                ? undefined
+                : () => void query.refetch({ cancelRefetch: false })
+            }
+            retrying={query.isFetching}
+          />
+        ) : query.data &&
+          !query.isError &&
+          !gathering &&
+          data.totalCount === 0 ? (
+          <PeriodEmptyState scope="team" />
+        ) : (
+          query.data && (
+            <>
+              <div className="mb-[18px] grid grid-cols-5 gap-2 @max-[1100px]:grid-cols-3 @max-[620px]:grid-cols-2">
+                {data.stats.map((s) => (
+                  <StatCard
+                    key={s.key}
+                    label={s.key}
+                    value={s.value}
+                    unit={s.sub}
+                    tone={s.tone}
+                    status={s.status}
+                    size="sm"
+                  />
+                ))}
+              </div>
 
-            <div
-              className={`${COLS} border-b border-border px-0.5 pb-2 text-[11px] text-text3`}
-            >
-              {(
-                [
-                  ["account", "계정"],
-                  ["sessionCount", "세션"],
-                  ["tokenValue", "총 토큰"],
-                  ["costValue", "환산 금액"],
-                ] as const
-              ).map(([key, label]) => (
-                <SortHeader
-                  key={key}
-                  label={label}
-                  align={key === "account" ? "left" : "right"}
-                  initial={key === "account" ? "asc" : "desc"}
-                  direction={sort.key === key ? sort.direction : undefined}
-                  onClick={() =>
-                    setSort(
-                      nextSort(sort, key, key === "account" ? "asc" : "desc"),
-                    )
-                  }
-                />
-              ))}
-              <span className="text-right">평균 대비</span>
-              <span>주 사용 모델</span>
-              <SortHeader
-                label="캐시 적중"
-                align="right"
-                initial="desc"
-                direction={
-                  sort.key === "cacheValue" ? sort.direction : undefined
-                }
-                onClick={() => setSort(nextSort(sort, "cacheValue", "desc"))}
-              />
-              <SortHeader
-                label="마지막 사용"
-                align="right"
-                initial="desc"
-                direction={
-                  sort.key === "lastValue" ? sort.direction : undefined
-                }
-                onClick={() => setSort(nextSort(sort, "lastValue", "desc"))}
-              />
-            </div>
-
-            {gathering && (
-              <LoadingState
-                variant="inline"
-                message={`전체 ${data.totalCount}명을 모아 정렬하는 중입니다…`}
-                className="py-3"
-              />
-            )}
-            {!gathering && data.totalCount === 0 && (
-              <p role="status" className="py-3 text-xs text-text3">
-                선택 기간에 이 팀에서 식별된 사용자가 없습니다.
-              </p>
-            )}
-
-            {rows.map((u) => (
               <div
-                key={u.key}
-                className={`${COLS} border-b border-border px-0.5 py-2.5`}
+                className={`${COLS} border-b border-border px-0.5 pb-2 text-[11px] text-text3`}
               >
-                <span className="overflow-hidden font-mono text-[12px] text-ellipsis whitespace-nowrap text-text2">
-                  {u.account}
-                </span>
-                <span className="tnum text-right text-[12px] text-text2">
-                  {u.sessions}
-                </span>
-                <span className="tnum text-right text-[12px] text-text2">
-                  {u.tokens}
-                </span>
-                <span className="tnum text-right text-[12px] font-semibold">
-                  {u.cost}
-                </span>
-                <span
-                  className="tnum text-right text-[12px] font-semibold"
-                  style={{ color: u.deviationColor }}
+                {(
+                  [
+                    ["account", "계정"],
+                    ["sessionCount", "세션"],
+                    ["tokenValue", "총 토큰"],
+                    ["costValue", "환산 금액"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <SortHeader
+                    key={key}
+                    label={label}
+                    align={key === "account" ? "left" : "right"}
+                    initial={key === "account" ? "asc" : "desc"}
+                    direction={sort.key === key ? sort.direction : undefined}
+                    onClick={() =>
+                      setSort(
+                        nextSort(sort, key, key === "account" ? "asc" : "desc"),
+                      )
+                    }
+                  />
+                ))}
+                <span className="text-right">평균 대비</span>
+                <span>주 사용 모델</span>
+                <SortHeader
+                  label="캐시 적중"
+                  align="right"
+                  initial="desc"
+                  direction={
+                    sort.key === "cacheValue" ? sort.direction : undefined
+                  }
+                  onClick={() => setSort(nextSort(sort, "cacheValue", "desc"))}
+                />
+                <SortHeader
+                  label="마지막 사용"
+                  align="right"
+                  initial="desc"
+                  direction={
+                    sort.key === "lastValue" ? sort.direction : undefined
+                  }
+                  onClick={() => setSort(nextSort(sort, "lastValue", "desc"))}
+                />
+              </div>
+
+              {gathering && (
+                <LoadingState
+                  variant="inline"
+                  message={`전체 ${data.totalCount}명을 모아 정렬하는 중입니다…`}
+                  className="py-3"
+                />
+              )}
+
+              {rows.map((u) => (
+                <div
+                  key={u.key}
+                  className={`${COLS} relative border-b border-border px-0.5 py-2.5`}
                 >
-                  {u.deviationText}
-                </span>
-                <span className="overflow-hidden text-[12px] text-ellipsis whitespace-nowrap text-text2">
-                  {u.model}
-                </span>
-                <span
-                  className="tnum text-right text-[12px]"
-                  style={{ color: u.cacheColor }}
-                >
-                  {u.cache}
-                </span>
-                <span
-                  className="tnum text-right text-[12px]"
-                  style={{ color: u.lastColor }}
-                >
-                  {u.last}
+                  <span className="overflow-hidden font-mono text-[12px] text-ellipsis whitespace-nowrap text-text2">
+                    {u.account}
+                  </span>
+                  <span className="tnum flex min-w-0 flex-col items-end gap-1 text-right text-[12px] text-text2">
+                    {u.sessions}
+                    {u.sessionStatus && (
+                      <MetricStatusBadge
+                        label={u.sessionCount === null ? "확인 불가" : "일부"}
+                        reason={u.sessionStatus.reason}
+                      />
+                    )}
+                  </span>
+                  <span className="tnum flex min-w-0 flex-col items-end gap-1 text-right text-[12px] text-text2">
+                    {u.tokens}
+                    {u.tokenStatus && (
+                      <MetricStatusBadge
+                        label={u.tokenValue === null ? "확인 불가" : "일부"}
+                        reason={u.tokenStatus.reason}
+                      />
+                    )}
+                  </span>
+                  <span className="tnum flex flex-col items-end gap-1 text-right text-[12px] font-semibold">
+                    {u.cost}
+                    {u.status && <MetricStatusBadge {...u.status} />}
+                  </span>
+                  <span
+                    className="tnum text-right text-[12px] font-semibold"
+                    style={{ color: u.deviationColor }}
+                  >
+                    {u.deviationText}
+                  </span>
+                  <span className="overflow-hidden text-[12px] text-ellipsis whitespace-nowrap text-text2">
+                    {u.model}
+                  </span>
+                  <span
+                    className="tnum flex min-w-0 flex-col items-end gap-1 text-right text-[12px]"
+                    style={{ color: u.cacheColor }}
+                  >
+                    {u.cache}
+                    {u.cacheStatus && (
+                      <MetricStatusBadge
+                        label={u.cacheValue === null ? "확인 불가" : "일부"}
+                        reason={u.cacheStatus.reason}
+                      />
+                    )}
+                  </span>
+                  <span
+                    className="tnum text-right text-[12px]"
+                    style={{ color: u.lastColor }}
+                  >
+                    {u.last}
+                  </span>
+                </div>
+              ))}
+
+              {query.isError && (
+                <ErrorState
+                  variant="inline"
+                  message={
+                    expired
+                      ? "목록이 갱신되었습니다. 처음부터 다시 불러옵니다."
+                      : query.error.message
+                  }
+                  onRetry={
+                    expired ? undefined : () => void query.fetchNextPage()
+                  }
+                  retrying={query.isFetchingNextPage}
+                  className="pt-3"
+                />
+              )}
+
+              <div className="flex flex-wrap items-center gap-3 pt-3">
+                {hasMore && (
+                  <Button
+                    onClick={() => setVisible((v) => v + TEAM_USERS_PAGE)}
+                    disabled={query.isFetchingNextPage || gathering}
+                  >
+                    {query.isFetchingNextPage && serverOrder
+                      ? "불러오는 중…"
+                      : `다음 ${Math.min(TEAM_USERS_PAGE, data.totalCount - visible)}명 더보기`}
+                  </Button>
+                )}
+                <div className="flex-1" />
+                <span className="tnum text-[11.5px] whitespace-nowrap text-text2">
+                  {data.sumNote(rows)}
                 </span>
               </div>
-            ))}
-
-            {query.isError && (
-              <ErrorState
-                variant="inline"
-                message={
-                  expired
-                    ? "목록이 갱신되었습니다. 처음부터 다시 불러옵니다."
-                    : query.error.message
-                }
-                onRetry={expired ? undefined : () => void query.fetchNextPage()}
-                retrying={query.isFetchingNextPage}
-                className="pt-3"
-              />
-            )}
-
-            <div className="flex flex-wrap items-center gap-3 pt-3">
-              {hasMore && (
-                <Button
-                  onClick={() => setVisible((v) => v + TEAM_USERS_PAGE)}
-                  disabled={query.isFetchingNextPage || gathering}
-                >
-                  {query.isFetchingNextPage && serverOrder
-                    ? "불러오는 중…"
-                    : `다음 ${Math.min(TEAM_USERS_PAGE, data.totalCount - visible)}명 더보기`}
-                </Button>
-              )}
-              <div className="flex-1" />
-              <span className="tnum text-[11.5px] whitespace-nowrap text-text2">
-                {data.sumNote(rows)}
-              </span>
-            </div>
-          </>
-        )
-      )}
+            </>
+          )
+        )}
+      </div>
     </section>
   );
 }

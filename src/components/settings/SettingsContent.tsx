@@ -1,8 +1,11 @@
 "use client";
 
+import { PageHeader } from "@/components/layout/PageHeader";
+
 import { contractSummaryNotice } from "@/lib/contract-status";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useDashboardPageExport,
@@ -14,13 +17,14 @@ import { ServerVendorDrawer } from "./ServerVendorDrawer";
 import { InstallationsModal } from "./InstallationsModal";
 import { AlertRulesSection } from "./AlertRulesSection";
 import { Button } from "@/components/ui/Button";
-import { LoadingState } from "@/components/ui/LoadingState";
+import { SettingsSkeleton } from "./SettingsSkeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { refreshFeedback } from "@/components/ui/RefreshNotice";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { StatCard } from "@/components/ui/StatCard";
-import { seatReasonText } from "@/lib/api/seats";
+import { settingsValueStatus } from "@/lib/metrics/settings-presentation";
 import { Toast, useToast } from "@/components/ui/Toast";
 import { Toggle } from "@/components/ui/Toggle";
 import { useBackendSession } from "@/lib/api/session";
@@ -30,7 +34,8 @@ import {
   orgPath,
   policySavedSchema,
 } from "@/lib/api/management";
-import { settingsOptions, settingsVendorOptions } from "@/lib/api/settings";
+import { ingestStatusOptions } from "@/lib/api/ingest-status";
+import { settingsOptions } from "@/lib/api/settings";
 import { operationOptions } from "@/lib/api/operations";
 import {
   cleanupView,
@@ -75,6 +80,7 @@ function OrganizationSettings({
   organizationId: string;
   initialVendorId?: string;
 }) {
+  const router = useRouter();
   const session = useBackendSession();
   const client = useQueryClient();
   const { autoRefresh } = useFilters();
@@ -83,35 +89,25 @@ function OrganizationSettings({
     refetchInterval: autoRefresh ? 300_000 : false,
   });
   const catalog = useQuery(catalogOptions(organizationId));
-  const [editor, setEditor] = useState<{ vendorId: string | null } | null>(
-    initialVendorId ? { vendorId: initialVendorId } : null,
-  );
+  const ingest = useQuery(ingestStatusOptions(organizationId));
+  const [editor, setEditor] = useState<{
+    vendorId: string | null;
+    vendorName?: string;
+  } | null>(initialVendorId ? { vendorId: initialVendorId } : null);
   const [open, setOpen] = useState(!!initialVendorId);
   const closeVendor = () => {
     setOpen(false);
     if (initialVendorId) {
       const url = new URL(window.location.href);
       url.searchParams.delete("vendor");
-      window.history.replaceState(
-        null,
-        "",
-        `${url.pathname}${url.search}${url.hash}`,
-      );
+      // 서버 페이지의 vendor prop도 비워야 같은 계약 링크를 다시 눌렀을 때 폼이 새로 열린다.
+      router.replace(`${url.pathname}${url.search}${url.hash}`, {
+        scroll: false,
+      });
     }
   };
   const { toast, showToast, dismissToast } = useToast();
   const [accessError, setAccessError] = useState<Error | null>(null);
-  const vendorQuery = useQuery({
-    ...settingsVendorOptions(organizationId, editor?.vendorId ?? null),
-    // 편집에 쓸 최초 응답만 조회한다. 편집 중 무효화로 폼을 교체하지 않는다.
-    enabled: (query) =>
-      !!editor?.vendorId && open && query.state.data === undefined,
-    // 닫고 다시 열면 최신 버전으로 편집을 시작한다.
-    gcTime: 0,
-  });
-  const openingVendorId = vendorQuery.isFetching
-    ? (editor?.vendorId ?? null)
-    : null;
   const [policyChoice, setPolicyChoice] = useState<boolean | null>(null);
   const [installOpen, setInstallOpen] = useState(false);
   const policy = useMutation({
@@ -187,7 +183,6 @@ function OrganizationSettings({
   const forbidden = [
     query.error,
     catalog.error,
-    vendorQuery.error,
     accessError,
     policy.error,
     settingsSave.error,
@@ -198,7 +193,11 @@ function OrganizationSettings({
   const data = forbidden ? undefined : query.data;
   const openVendor = (id: string) => {
     setAccessError(null);
-    setEditor({ vendorId: id });
+    setEditor({
+      vendorId: id,
+      vendorName: data?.vendors.items.find((vendor) => vendor.vendorId === id)
+        ?.displayName,
+    });
     setOpen(true);
   };
   const rollout = data?.policyRollout;
@@ -220,29 +219,36 @@ function OrganizationSettings({
   const cards = [
     {
       label: "좌석 지출",
-      value: amount(data?.summary.monthlySeatFeeUsd),
+      value: amount(data?.summary.monthlySeatFeeUsd.value),
+      status: settingsValueStatus(data?.summary.monthlySeatFeeUsd),
       caption:
-        data?.summary.monthlySeatFeeUsd == null
+        data?.summary.monthlySeatFeeUsd.value == null
           ? "유효 계약 금액 확인 불가"
           : "유효 계약 기준 월 합계",
     },
     // 종량 지출은 벤더 청구 누계의 조직 합계다 — 한 제품이라도 없거나 정산 기간이 다르면 서버가 더하지 않는다(사유를 보여 준다).
     {
       label: "종량 지출",
-      value: amount(data?.summary.meteredMonthToDate.data?.actualBilledUsd),
-      caption:
-        data?.summary.meteredMonthToDate.data?.actualBilledUsd != null
-          ? "벤더 청구 누계 합"
-          : seatReasonText(data?.summary.meteredMonthToDate.reason),
+      value: amount(data?.summary.meteredMonthToDate.value),
+      status: settingsValueStatus(data?.summary.meteredMonthToDate),
+      caption: "벤더 청구 누계 합",
     },
     {
       label: "활성 좌석",
-      value: `${number(data?.summary.activeSeats7d)} / ${number(data?.summary.assignedSeats ?? null)}`,
-      caption: `7일 사용 좌석 / 배정 좌석 · 유효 계약 ${number(data?.summary.contractedSeats)}석`,
+      value: `${number(data?.summary.activeSeats7d.value)} / ${number(data?.summary.assignedSeats.value)}`,
+      status: settingsValueStatus(
+        data?.summary.activeSeats7d,
+        data?.summary.assignedSeats,
+        data?.summary.contractedSeats,
+      ),
+      caption: `7일 사용 좌석 / 배정 좌석 · 유효 계약 ${number(data?.summary.contractedSeats.value)}석`,
     },
     {
       label: "미설정 벤더",
-      value: data ? `${int(data.summary.unconfiguredVendors)}곳` : "-",
+      value:
+        data?.summary.unconfiguredVendors.value != null
+          ? `${int(data.summary.unconfiguredVendors.value)}곳`
+          : "-",
       caption: "계약 정보 확인 필요",
     },
   ];
@@ -256,18 +262,25 @@ function OrganizationSettings({
   const contractNotice = data
     ? contractSummaryNotice(data.vendors.items)
     : null;
-  const errors = [query.error, catalog.error, accessError].filter(Boolean);
-  useDashboardPageRefresh(() => {
-    setAccessError(null);
-    void query.refetch({ cancelRefetch: false });
-  }, query.isFetching);
+  const errors = [
+    data ? null : query.error,
+    catalog.data && !forbidden ? null : catalog.error,
+    accessError,
+  ].filter(Boolean);
+  useDashboardPageRefresh(
+    () => {
+      setAccessError(null);
+      void query.refetch({ cancelRefetch: false });
+      void catalog.refetch({ cancelRefetch: false });
+    },
+    query.isFetching || catalog.isFetching,
+    forbidden ? undefined : refreshFeedback(query, catalog),
+  );
   return (
     <>
       <Toast toast={toast} onDismiss={dismissToast} />
-      <PageContainer className="flex flex-col gap-8 pt-5 pb-10">
-        <div className="flex min-h-7 flex-wrap items-center justify-between gap-2">
-          <h1 className="text-[18px] font-semibold tracking-[-0.01em]">설정</h1>
-        </div>
+      <PageContainer className="flex flex-col gap-6 pt-6 pb-10">
+        <PageHeader page="settings" />
         {errors.length > 0 && (
           <ErrorState
             message={
@@ -285,20 +298,7 @@ function OrganizationSettings({
             }}
           />
         )}
-        {vendorQuery.error && (
-          <ErrorState
-            message={vendorQuery.error.message}
-            retryLabel="상세 다시 조회"
-            retrying={vendorQuery.isFetching}
-            onRetry={() => void vendorQuery.refetch({ cancelRefetch: false })}
-          />
-        )}
-        {!data && !forbidden && query.isPending && (
-          <LoadingState
-            message="설정을 불러오는 중입니다…"
-            className="min-h-[480px]"
-          />
-        )}
+        {!data && !forbidden && query.isPending && <SettingsSkeleton />}
         {data && (
           <>
             <SettingSection id="vendors" title="계약 벤더">
@@ -312,12 +312,10 @@ function OrganizationSettings({
               )}
               <VendorTable
                 rows={rows}
-                loadingVendorId={openingVendorId}
                 addDisabled={
                   !data.capabilities.editContracts ||
                   catalog.isError ||
                   catalog.isPending ||
-                  openingVendorId !== null ||
                   catalog.data?.items.every((product) =>
                     data.vendors.items.some(
                       (vendor) => vendor.kind === product.id,
@@ -480,8 +478,8 @@ function OrganizationSettings({
                 )}
                 <SettingRow title="마지막 수집" note="최근 신호 수신 시각">
                   <span className="tnum text-xs">
-                    {data.ingest.lastReceivedAt
-                      ? new Date(data.ingest.lastReceivedAt).toLocaleString(
+                    {ingest.data?.lastReceivedAt
+                      ? new Date(ingest.data?.lastReceivedAt).toLocaleString(
                           "ko-KR",
                           { timeZone: "Asia/Seoul" },
                         )
@@ -499,11 +497,17 @@ function OrganizationSettings({
           </>
         )}
       </PageContainer>
-      {data && editor && (!editor.vendorId || vendorQuery.data) && (
+      {data && editor && (
         <ServerVendorDrawer
           key={editor.vendorId ?? "new"}
           organizationId={organizationId}
-          initial={editor.vendorId ? vendorQuery.data! : null}
+          vendorId={editor.vendorId}
+          vendorName={
+            editor.vendorName ??
+            data.vendors.items.find(
+              (vendor) => vendor.vendorId === editor.vendorId,
+            )?.displayName
+          }
           registeredKinds={data.vendors.items.map((vendor) => vendor.kind)}
           editable={data.capabilities.editContracts}
           open={open}
