@@ -1,3 +1,5 @@
+import { trendFeedback } from "./trend-feedback";
+import { currentDateIso } from "../date";
 import { moneyText, numberText, numeric } from "@/lib/api/overview-format";
 import {
   UNASSIGNED,
@@ -8,12 +10,16 @@ import {
 } from "@/lib/api/teams";
 import { int, pct, signedUsd, usd } from "@/lib/format";
 import { getVendorProduct } from "@/lib/vendor-catalog";
-import { comparisonReason } from "./overview-presentation";
+import {
+  valueStatus,
+  comparisonReason,
+  reasonsText,
+} from "./overview-presentation";
 
 /**
  * P2 팀 분석 — 서버 응답(`GET O/analytics/teams` 등)을 화면 입력으로 바꾼다.
  *
- * 값은 서버가 센 그대로 쓴다. 여기서 하는 계산은 표시용 파생값(사용자당·단가·증감·일별 값의 누적)뿐이고,
+ * 값·사용자당·단가·증감은 서버가 확정한 값을 쓴다. 클라이언트 계산은 일별 값의 누적과 표시용 비중뿐이고,
  * 필요한 값이 null이면 파생값도 null이다. 0으로 채우거나 다른 값으로 대신하지 않는다.
  *
  * 축이 셋인 이유: 비용만 보면 "인원이 많은 팀"이 항상 1등이라 아무것도 알 수 없다.
@@ -21,7 +27,7 @@ import { comparisonReason } from "./overview-presentation";
  */
 
 export type AxisKey = "cost" | "token" | "session";
-type Usage = NonNullable<TeamAnalytics["current"]>;
+type Usage = NonNullable<TeamAnalytics["metrics"]>;
 
 /** 팀 선 색 — 표의 체크박스 accent 와 추이 선이 같은 색을 쓴다. */
 const SERIES = [
@@ -74,33 +80,35 @@ export function metric(
 ): number | null {
   if (!usage) return null;
   return axis === "cost"
-    ? numeric(usage.equivalentCostUsd)
+    ? numeric(usage.equivalentCostUsd.value)
     : axis === "token"
-      ? usage.tokens.total
-      : usage.sessionCount;
+      ? usage.totalTokens.value
+      : usage.sessionCount.value;
 }
 
 /** 완전 관측된 기간에 사용이 없으면 서버가 0을 준다 — 미배정 행은 실제 사용이 있을 때만 그린다. */
 function hasUsage(usage: Usage | null) {
   if (!usage) return false;
+  const values = [
+    usage.activeUsers,
+    usage.sessionCount,
+    usage.totalTokens,
+    usage.equivalentCostUsd,
+  ];
+  if (
+    values.every(
+      (metric) => metric.value === null && metric.reasons.includes("no_data"),
+    )
+  )
+    return false;
   return !(
-    usage.activeUsers === 0 &&
-    usage.sessionCount === 0 &&
-    usage.tokens.total === 0 &&
-    numeric(usage.equivalentCostUsd) === 0
+    usage.activeUsers.value === 0 &&
+    usage.sessionCount.value === 0 &&
+    usage.totalTokens.value === 0 &&
+    numeric(usage.equivalentCostUsd.value) === 0
   );
 }
 
-/** 이전 값 대비 증감. 이전이 0이면 비율이 없다(신규·변화 없음). 값이 하나라도 없으면 null. */
-function change(now: number | null, before: number | null) {
-  if (now === null || before === null) return { value: null, text: "-" };
-  if (before === 0)
-    return now === 0
-      ? { value: 0, text: "변화 없음" }
-      : { value: NEW_USAGE, text: "신규" };
-  const value = (now - before) / before;
-  return { value, text: pct(value) };
-}
 const changeColor = (value: number | null) =>
   value === null
     ? "var(--text3)"
@@ -160,41 +168,89 @@ const AXES: Record<
 };
 
 /** 사용자당·단가 열. 분모가 0이거나 값이 없으면 null이다. */
-function derived(usage: Usage | null, axis: AxisKey) {
+function derived(usage: Usage, axis: AxisKey) {
   const total = metric(usage, axis);
-  const perUser = ratio(total, usage?.activeUsers);
-  const cost = numeric(usage?.equivalentCostUsd);
-  if (axis === "cost") {
-    const unit = ratio(cost, usage?.sessionCount);
-    return {
-      total,
-      perUser,
-      unit,
-      v1: usdText(total),
-      v2: usdText(perUser),
-      v3: usdText(unit),
-    };
-  }
-  if (axis === "token") {
-    const perMillion = ratio(cost, usage?.tokens.total);
-    const unit = perMillion === null ? null : perMillion * 1_000_000;
-    return {
-      total,
-      perUser,
-      unit,
-      v1: tokenText(total),
-      v2: tokenText(perUser === null ? null : Math.round(perUser)),
-      v3: usdText(unit),
-    };
-  }
-  const unit = ratio(usage?.tokens.total, usage?.sessionCount);
+  const perUser =
+    axis === "cost"
+      ? numeric(usage.equivalentCostPerUserUsd.value)
+      : axis === "token"
+        ? usage.tokensPerUser.value
+        : usage.sessionsPerUser.value;
+  const unit =
+    axis === "cost"
+      ? numeric(usage.equivalentCostPerSessionUsd.value)
+      : axis === "token"
+        ? numeric(usage.effectiveCostPerMillionTokensUsd.value)
+        : usage.tokensPerSession.value;
   return {
     total,
     perUser,
     unit,
-    v1: FORMAT.session(total),
-    v2: perUser === null ? "-" : perUser.toFixed(1),
-    v3: tokenText(unit === null ? null : Math.round(unit)),
+    v1: FORMAT[axis](total),
+    v2:
+      axis === "cost"
+        ? usdText(perUser)
+        : axis === "token"
+          ? tokenText(perUser === null ? null : Math.round(perUser))
+          : perUser === null
+            ? "-"
+            : perUser.toFixed(1),
+    v3:
+      axis === "session"
+        ? tokenText(unit === null ? null : Math.round(unit))
+        : usdText(unit),
+  };
+}
+function axisMetric(usage: Usage, axis: AxisKey) {
+  return axis === "cost"
+    ? usage.equivalentCostUsd
+    : axis === "token"
+      ? usage.totalTokens
+      : usage.sessionCount;
+}
+function serverChange(
+  metric: Usage["equivalentCostUsd"] | Usage["sessionCount"],
+) {
+  const c = metric.comparison;
+  if (c.status !== "available")
+    return { value: null, text: "-", reason: reasonsText(c.reasons) };
+  if (c.change === "new") return { value: NEW_USAGE, text: "신규", reason: "" };
+  const value = (c.percentChange ?? 0) / 100;
+  return {
+    value,
+    text:
+      c.change === "unchanged" && Number(c.previousValue) === 0
+        ? "변화 없음"
+        : pct(value),
+    reason: "",
+  };
+}
+
+/** 날짜별 응답의 사유는 세 축의 합집합이다. 현재 선택한 값에 적용되는 근거만 표시한다. */
+function trendPointState(point: TeamAnalytics["trend"][number], axis: AxisKey) {
+  const selectedValue =
+    axis === "cost"
+      ? point.equivalentCostUsd
+      : axis === "token"
+        ? point.totalTokens
+        : point.cumulativeSessionCount;
+  const reasons = point.reasons.filter((reason) => {
+    if (reason.startsWith("token_")) return axis === "token";
+    if (reason.startsWith("pricing_")) return axis === "cost";
+    if (
+      reason === "session_identity_missing" ||
+      reason === "cumulative_period_incomplete"
+    )
+      return axis === "session";
+    if (reason === "no_data") return selectedValue === null;
+    return true;
+  });
+  return {
+    observation:
+      selectedValue !== null && reasons.length > 0
+        ? ("partial" as const)
+        : point.observation,
+    reason: reasonsText(reasons),
   };
 }
 
@@ -258,7 +314,7 @@ function productMix(entries: TeamEntry[], axis: AxisKey) {
   );
   const rows = entries
     .map((entry) => {
-      const total = metric(entry.analytics.current, axis);
+      const total = metric(entry.analytics.metrics, axis);
       const values = entry.analytics.products.map((product) => ({
         product,
         value: productValue(product, axis),
@@ -321,25 +377,48 @@ function productMix(entries: TeamEntry[], axis: AxisKey) {
 /** 드로어 한 팀. 목록 행과 상세 조회가 같은 함수를 쓴다. */
 export function teamDetail(analytics: TeamAnalytics, comparable: boolean) {
   const entry = entryOf(analytics);
-  const current = analytics.current,
-    previous = comparable ? analytics.previous : null;
-  const cost = numeric(current?.equivalentCostUsd),
-    before = numeric(previous?.equivalentCostUsd);
-  const perUser = ratio(cost, current?.activeUsers),
-    perUserBefore = ratio(before, previous?.activeUsers);
+  const current = analytics.metrics;
+  const cost = numeric(current.equivalentCostUsd.value);
+  const perUser = numeric(current.equivalentCostPerUserUsd.value);
   const models = analytics.modelMix.data?.models ?? [];
   return {
     key: entry.key,
     team: entry.team,
     unmapped: entry.unmapped,
-    users: numberText(current?.activeUsers),
-    costText: moneyText(current?.equivalentCostUsd),
+    users: numberText(current.activeUsers.value),
+    costText: moneyText(current.equivalentCostUsd.value),
+    statuses: {
+      cost: valueStatus(current.equivalentCostUsd),
+      users: valueStatus(current.activeUsers),
+      perUser: valueStatus(current.equivalentCostPerUserUsd),
+      sessions: valueStatus(current.sessionCount),
+      tokens: valueStatus(current.totalTokens),
+    },
+    comparisons: {
+      perUser: {
+        status: current.equivalentCostPerUserUsd.comparison.status,
+        reason: reasonsText(
+          current.equivalentCostPerUserUsd.comparison.reasons,
+        ),
+      },
+      contribution: {
+        status: current.equivalentCostUsd.comparison.status,
+        reason: reasonsText(current.equivalentCostUsd.comparison.reasons),
+      },
+    },
     perUserText: usdText(perUser),
-    perUserDelta: change(perUser, perUserBefore).text,
-    sessions: numberText(current?.sessionCount),
-    tokens: tokenText(current?.tokens.total),
+    perUserDelta: comparable
+      ? serverChange(current.equivalentCostPerUserUsd).text
+      : "-",
+    sessions: numberText(current.sessionCount.value),
+    tokens: tokenText(current.totalTokens.value),
     contribText:
-      cost === null || before === null ? "-" : signedUsd(cost - before),
+      !comparable ||
+      current.equivalentCostUsd.comparison.absoluteChange === null
+        ? "-"
+        : signedUsd(
+            Number(current.equivalentCostUsd.comparison.absoluteChange),
+          ),
     models: models.map((model, index) => ({
       name: model.displayName,
       share: percent(numeric(model.equivalentCostUsd), cost),
@@ -357,7 +436,7 @@ export function teamDetail(analytics: TeamAnalytics, comparable: boolean) {
 }
 export type TeamDetail = ReturnType<typeof teamDetail>;
 
-export function presentTeams(view: TeamsView) {
+export function presentTeams(view: TeamsView, today = currentDateIso()) {
   const comparable = view.comparison.status === "available";
   const compareLabel =
     view.comparison.mode === "none"
@@ -368,14 +447,14 @@ export function presentTeams(view: TeamsView) {
   const reason = comparisonReason(view);
   const entries = [
     ...view.teams,
-    ...(hasUsage(view.unassigned.current) ? [view.unassigned] : []),
+    ...(hasUsage(view.unassigned.metrics) ? [view.unassigned] : []),
   ].map(entryOf);
 
   // 선 색은 비용 내림차순(값 없음은 뒤, 동률은 이름)으로 배정한다 — 축을 바꿔도 같은 팀은 같은 색이다.
   const byCost = [...entries].sort(
     (a, b) =>
-      (metric(b.analytics.current, "cost") ?? -1) -
-        (metric(a.analytics.current, "cost") ?? -1) ||
+      (metric(b.analytics.metrics, "cost") ?? -1) -
+        (metric(a.analytics.metrics, "cost") ?? -1) ||
       a.team.localeCompare(b.team, "ko"),
   );
   const colorOf = (key: string) =>
@@ -383,23 +462,24 @@ export function presentTeams(view: TeamsView) {
 
   const axisOf = (axis: AxisKey) => {
     const values = entries.map((entry) =>
-      derived(entry.analytics.current, axis),
+      derived(entry.analytics.metrics, axis),
     );
     const max = Math.max(0, ...values.map((value) => value.total ?? 0));
-    const totalNow = metric(view.totals.current, axis),
-      totalBefore = comparable ? metric(view.totals.previous, axis) : null;
-    const totalChange = change(totalNow, totalBefore);
+    const totalNow = metric(view.totals, axis);
+    const totalChange = serverChange(axisMetric(view.totals, axis));
     return {
       ...AXES[axis],
       total: FORMAT[axis](totalNow),
       delta: comparable ? totalChange.text : "",
       deltaColor: changeColor(totalChange.value),
+      status: valueStatus(axisMetric(view.totals, axis)),
+      deltaReason: totalChange.reason,
       format: FORMAT[axis],
       rows: entries.map((entry, index) => {
         const value = values[index];
         const delta = comparable
-          ? change(value.total, metric(entry.analytics.previous, axis))
-          : { value: null, text: "-" };
+          ? serverChange(axisMetric(entry.analytics.metrics, axis))
+          : { value: null, text: "-", reason };
         return {
           key: entry.key,
           team: entry.team,
@@ -419,6 +499,22 @@ export function presentTeams(view: TeamsView) {
           fill: entry.unmapped ? "var(--gray)" : AXES[axis].bar,
           series: colorOf(entry.key),
           delta: delta.text,
+          status: valueStatus(axisMetric(entry.analytics.metrics, axis)),
+          perUserStatus: valueStatus(
+            axis === "cost"
+              ? entry.analytics.metrics.equivalentCostPerUserUsd
+              : axis === "token"
+                ? entry.analytics.metrics.tokensPerUser
+                : entry.analytics.metrics.sessionsPerUser,
+          ),
+          unitStatus: valueStatus(
+            axis === "cost"
+              ? entry.analytics.metrics.equivalentCostPerSessionUsd
+              : axis === "token"
+                ? entry.analytics.metrics.effectiveCostPerMillionTokensUsd
+                : entry.analytics.metrics.tokensPerSession,
+          ),
+          deltaReason: delta.reason,
           deltaColor: changeColor(delta.value),
         };
       }),
@@ -438,7 +534,15 @@ export function presentTeams(view: TeamsView) {
       key: entry.key,
       team: entry.team,
       color: colorOf(entry.key),
-      values: cumulative(entry.analytics.trend, axis),
+      values: cumulative(entry.analytics.trend, axis).map((value, i) =>
+        dates[i] > today ? null : value,
+      ),
+      observations: entry.analytics.trend.map(
+        (point) => trendPointState(point, axis).observation,
+      ),
+      reasons: entry.analytics.trend.map(
+        (point) => trendPointState(point, axis).reason,
+      ),
     }));
   const trend = {
     cost: trendOf("cost"),
@@ -446,7 +550,9 @@ export function presentTeams(view: TeamsView) {
     session: trendOf("session"),
   };
   const broken = (axis: AxisKey) =>
-    trend[axis].some((series) => series.values.some((value) => value === null));
+    trend[axis].some((series) =>
+      series.values.some((value, i) => dates[i] <= today && value === null),
+    );
   const trendNote = (axis: AxisKey) =>
     !broken(axis)
       ? ""
@@ -477,15 +583,26 @@ export function presentTeams(view: TeamsView) {
       color: MODEL_SERIES[index % MODEL_SERIES.length],
       label: model.displayName,
       sub: `${usd(perM)}/M`,
-      tip: `${model.displayName} · 토큰 ${tokenText(model.totalTokens)} · 비용 ${usd(cost)} · 백만당 ${usd(perM)} · 사용 팀 ${numberText(model.usingTeamCount)}`,
+      tip: `${model.displayName} · 토큰 ${tokenText(model.totalTokens)} · 비용 ${usd(cost)} · 백만당 ${usd(perM)} · 사용 팀 ${numberText(model.usingTeamCount)}${model.reasons.length ? ` · ${reasonsText(model.reasons)}` : ""}`,
     };
   });
-  const orgCost = numeric(view.totals.current?.equivalentCostUsd),
-    orgTokens = view.totals.current?.tokens.total ?? null;
+  const orgCost = numeric(view.totals.equivalentCostUsd.value),
+    orgTokens = view.totals.totalTokens.value;
   const excluded = scatterModels.filter(
     (model) => model.equivalentCostUsd === null || model.totalTokens === null,
   ).length;
+  const scatterReasons = [
+    ...new Set(scatterModels.flatMap((model) => model.reasons)),
+  ];
   const scatter = {
+    status: scatterReasons.length
+      ? {
+          label: scatterModels.some((m) => m.status === "unavailable")
+            ? "일부 값 확인 불가"
+            : "일부 집계",
+          reason: reasonsText(scatterReasons),
+        }
+      : undefined,
     points,
     xMax: Math.max(...points.map((point) => point.x), 0) * 1.15 || 1,
     yMax: Math.max(...points.map((point) => point.y), 0) * 1.15 || 1,
@@ -507,7 +624,10 @@ export function presentTeams(view: TeamsView) {
       : `선택 ${dayCount}일 중 ${view.meta.currentCoverage.observedDays}일 관측`;
   return {
     snapshotId: view.meta.snapshotId,
-    isEmpty: entries.length === 0,
+    isEmpty:
+      view.meta.dataState === "no_data" ||
+      view.meta.dataState === "never_observed" ||
+      entries.length === 0,
     neverObserved: view.meta.dataState === "never_observed",
     periodLabel: `${view.meta.startDate} ~ ${view.meta.endDate}`,
     headerNote: [
@@ -530,6 +650,16 @@ export function presentTeams(view: TeamsView) {
       (date) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`,
     ),
     trend,
+    trendFeedback: Object.fromEntries(
+      (Object.keys(trend) as AxisKey[]).map((axis) => [
+        axis,
+        trendFeedback(
+          dates,
+          trend[axis].map((s) => ({ ...s, id: s.key, name: s.team })),
+          { today, cumulative: true },
+        ),
+      ]),
+    ) as Record<AxisKey, ReturnType<typeof trendFeedback>>,
     trendNote,
     scatter,
     productMix: (axis: AxisKey) => productMix(entries, axis),
@@ -550,7 +680,7 @@ export function presentUsers(pages: TeamUsersPage[]) {
   const rows = pages
     .flatMap((page) => page.users.items)
     .map((user) => userRow(user, average, endDate));
-  const teamCost = numeric(summary?.usage?.equivalentCostUsd),
+  const teamCost = numeric(summary?.usage.equivalentCostUsd.value),
     unidentified = numeric(summary?.unidentifiedEquivalentCostUsd);
   return {
     team: first?.team.teamId === null ? "미배정" : (first?.team.teamName ?? ""),
@@ -563,37 +693,45 @@ export function presentUsers(pages: TeamUsersPage[]) {
     stats: [
       {
         key: "사용자",
-        value: numberText(summary?.usage?.activeUsers),
+        value: numberText(summary?.usage.activeUsers.value),
+        status: summary ? valueStatus(summary.usage.activeUsers) : undefined,
         sub: "명",
         tone: "var(--text)",
       },
       {
         key: "세션",
-        value: numberText(summary?.usage?.sessionCount),
-        sub: "건",
+        value: numberText(summary?.usage.sessionCount.value),
+        status: summary ? valueStatus(summary.usage.sessionCount) : undefined,
+        sub: "개",
         tone: "var(--text)",
       },
       {
         key: "총 토큰",
-        value: tokenText(summary?.usage?.tokens.total),
+        value: tokenText(summary?.usage.totalTokens.value),
+        status: summary ? valueStatus(summary.usage.totalTokens) : undefined,
         sub: "",
         tone: "var(--text)",
       },
       {
         key: "환산 금액",
-        value: moneyText(summary?.usage?.equivalentCostUsd),
+        value: moneyText(summary?.usage.equivalentCostUsd.value),
+        status: summary
+          ? valueStatus(summary.usage.equivalentCostUsd)
+          : undefined,
         sub: "",
         tone: "var(--text)",
       },
       {
         key: "캐시 적중 (팀 전체)",
+        status: summary ? valueStatus(summary.cacheHitRatio) : undefined,
         value:
-          summary?.cacheHitRatio == null
+          summary?.cacheHitRatio.value == null
             ? "-"
-            : `${(summary.cacheHitRatio * 100).toFixed(0)}%`,
+            : `${(summary.cacheHitRatio.value * 100).toFixed(0)}%`,
         sub: "",
         tone:
-          summary?.cacheHitRatio != null && summary.cacheHitRatio < 0.6
+          summary?.cacheHitRatio.value != null &&
+          summary.cacheHitRatio.value < 0.6
             ? "var(--orange-ink)"
             : "var(--text)",
       },
@@ -618,7 +756,7 @@ function userRow(
   average: number | null,
   endDate: string | undefined,
 ) {
-  const cost = numeric(user.usage.equivalentCostUsd);
+  const cost = numeric(user.usage.equivalentCostUsd.value);
   const deviation =
     cost === null || average === null || average === 0
       ? null
@@ -638,21 +776,25 @@ function userRow(
   return {
     key: user.memberId,
     account: user.account,
-    sessionCount: user.usage.sessionCount,
-    tokenValue: user.usage.tokens.total,
+    sessionCount: user.usage.sessionCount.value,
+    tokenValue: user.usage.totalTokens.value,
     costValue: cost,
-    cacheValue: user.cache.hitRatio,
+    cacheValue: user.cacheHitRatio.value,
     lastValue: last,
-    sessions: numberText(user.usage.sessionCount),
-    tokens: tokenText(user.usage.tokens.total),
-    cost: moneyText(user.usage.equivalentCostUsd),
+    sessions: numberText(user.usage.sessionCount.value),
+    tokens: tokenText(user.usage.totalTokens.value),
+    cost: moneyText(user.usage.equivalentCostUsd.value),
+    status: valueStatus(user.usage.equivalentCostUsd),
+    sessionStatus: valueStatus(user.usage.sessionCount),
+    tokenStatus: valueStatus(user.usage.totalTokens),
+    cacheStatus: valueStatus(user.cacheHitRatio),
     cache:
-      user.cache.hitRatio === null
+      user.cacheHitRatio.value === null
         ? "-"
-        : `${(user.cache.hitRatio * 100).toFixed(0)}%`,
+        : `${(user.cacheHitRatio.value * 100).toFixed(0)}%`,
     // 캐시 적중이 낮으면 같은 작업에 토큰을 두 번 내고 있다는 뜻이다.
     cacheColor:
-      user.cache.hitRatio !== null && user.cache.hitRatio < 0.6
+      user.cacheHitRatio.value !== null && user.cacheHitRatio.value < 0.6
         ? "var(--orange-ink)"
         : "var(--text2)",
     deviationText:

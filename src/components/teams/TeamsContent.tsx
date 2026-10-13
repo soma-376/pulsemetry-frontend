@@ -1,5 +1,8 @@
 "use client";
 
+import { PageContainer } from "@/components/layout/PageContainer";
+import { PageHeader } from "@/components/layout/PageHeader";
+
 import { useCallback, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -14,7 +17,10 @@ import { UserUsageCard } from "@/components/teams/UserUsageCard";
 import { TeamManagement } from "@/components/teams/TeamManagement";
 import { ButtonLink } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingState } from "@/components/ui/LoadingState";
+import { refreshFeedback } from "@/components/ui/RefreshNotice";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PeriodEmptyState } from "@/components/ui/PeriodEmptyState";
+import { TeamsSkeleton } from "./TeamsSkeleton";
 import { ManagementError } from "@/lib/api/management";
 import { useBackendSession } from "@/lib/api/session";
 import {
@@ -109,6 +115,7 @@ function OrganizationTeams({
   useDashboardPageRefresh(
     () => void query.refetch({ cancelRefetch: false }),
     query.isFetching,
+    data ? refreshFeedback(query) : undefined,
   );
   const session = useBackendSession();
   // 사용자 표에서 고른 팀(공통 헤더의 CSV 가 그 팀의 사용자를 내보낸다).
@@ -176,38 +183,16 @@ function OrganizationTeams({
 
   return (
     <>
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-6 pt-5 pb-10">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <div className="order-last">
-            <TeamManagement />
-          </div>
-          <div className="flex items-baseline gap-2.5">
-            <h1 className="text-[18px] font-semibold tracking-[-0.01em]">
-              팀 분석
-            </h1>
-            {model && (
-              <span role="status" className="text-[12px] text-text3">
-                {model.headerNote}
-              </span>
-            )}
-          </div>
-        </div>
+      <PageContainer className="flex flex-col gap-6 pt-6 pb-10">
+        <PageHeader page="teams" actions={<TeamManagement />} />
 
-        {query.isPending && !data && (
-          <LoadingState
-            message="팀 분석을 불러오는 중입니다…"
-            className="min-h-[480px]"
-          />
-        )}
-        {query.error && (
+        {query.isPending && !data && <TeamsSkeleton />}
+        {!data && query.error && (
           <ErrorState
             message={
-              <>
-                {denied(query.error)
-                  ? "이 조직의 팀 분석을 조회할 권한이 없습니다."
-                  : query.error.message}
-                {data && " 마지막으로 조회한 데이터를 표시합니다."}
-              </>
+              denied(query.error)
+                ? "이 조직의 팀 분석을 조회할 권한이 없습니다."
+                : query.error.message
             }
             onRetry={
               denied(query.error)
@@ -221,30 +206,23 @@ function OrganizationTeams({
 
         {model &&
           (model.isEmpty ? (
-            <div
-              role="status"
-              className="flex max-w-[620px] flex-col gap-3.5 rounded-[10px] border border-border bg-card p-[22px]"
-            >
-              <div className="flex flex-col gap-[5px]">
-                <span className="text-[15px] font-semibold">
-                  팀별로 비교할 데이터가 없습니다
-                </span>
-                <span className="pretty text-[12.5px] text-text2">
-                  {model.neverObserved
-                    ? "데몬 신호가 아직 들어오지 않아 팀 귀속·사용량을 계산할 수 없습니다 · 값을 0으로 표시하지 않습니다"
-                    : "선택 기간에 팀에 귀속된 사용이 관측되지 않았습니다 · 기간을 바꿔 확인하세요"}
-                </span>
-              </div>
-              {model.neverObserved && (
-                <ButtonLink
-                  href={dashboardHref("/overview")}
-                  variant="primary"
-                  className="h-8 self-start px-[13px]"
-                >
-                  개요에서 설치 시작
-                </ButtonLink>
-              )}
-            </div>
+            model.neverObserved ? (
+              <EmptyState
+                message="아직 수집된 신호가 없습니다"
+                description="첫 데이터가 수집되면 팀별 사용량을 확인할 수 있습니다."
+                className="min-h-[240px] w-full"
+                action={
+                  <ButtonLink
+                    href={dashboardHref("/overview")}
+                    variant="primary"
+                  >
+                    개요에서 설치 시작
+                  </ButtonLink>
+                }
+              />
+            ) : (
+              <PeriodEmptyState />
+            )
           ) : (
             <div className="flex flex-col gap-4">
               <TeamAxisPanel
@@ -278,7 +256,7 @@ function OrganizationTeams({
               />
             </div>
           ))}
-      </div>
+      </PageContainer>
       <TeamDetailDrawer
         team={detail}
         open={detailOpen && !!model && !!selected && (!!detail || !listed)}

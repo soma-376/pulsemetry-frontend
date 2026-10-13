@@ -29,7 +29,7 @@ const item = (overrides: Record<string, unknown>) => ({
     { memberId: "m1", account: "a@example.test" },
     { memberId: "m2", account: null },
   ],
-  summary: { model: "claude-opus-4", events: 3, threshold: 1 },
+  evidence: { kind: "usage", targetName: "claude-opus-4" },
   acknowledgement: null,
   ...overrides,
 });
@@ -42,20 +42,9 @@ test("알림 목록 응답을 읽고 요약은 서버 값만 쓴다", () => {
       asOf: "2026-09-14T00:00:00Z",
     },
     evaluation: {
-      availability: "available",
-      reason: null,
+      status: "partial",
+      reasons: ["period_incomplete"],
       asOf: "2026-09-14T00:00:00Z",
-      rules: [
-        {
-          ruleId: "spend_spike",
-          enabled: true,
-          evaluatedAt: "2026-09-14T00:00:00Z",
-          status: "not_evaluated",
-          reason: "period_incomplete",
-          windowStart: null,
-          windowEnd: null,
-        },
-      ],
     },
     alerts: {
       items: [
@@ -69,13 +58,13 @@ test("알림 목록 응답을 읽고 요약은 서버 값만 쓴다", () => {
           eventCount: null,
           memberCount: null,
           members: [],
-          summary: {
-            currentStartDate: "2026-09-07",
-            currentEndDate: "2026-09-13",
+          evidence: {
+            kind: "spend",
+            startDate: "2026-09-07",
+            endDate: "2026-09-13",
             currentCostUsd: "14.000000",
             previousCostUsd: "10.000000",
             increaseRatio: 0.4,
-            threshold: 0.4,
           },
         }),
       ],
@@ -92,8 +81,8 @@ test("알림 목록 응답을 읽고 요약은 서버 값만 쓴다", () => {
     "2026-09-07~2026-09-13 $14.00 · 앞 7일 $10.00 · +40%",
   );
   assert.equal(
-    alertReasonText(page.evaluation.rules[0].reason),
-    "두 기간 중 완전히 관측되지 않은 날이 있어 평가하지 않았습니다",
+    alertReasonText(page.evaluation.reasons[0]),
+    "비교 기간 데이터 부족",
   );
   assert.equal(alertReasonText("new_reason"), "new_reason");
   assert.throws(() =>
@@ -109,10 +98,7 @@ test("미등록 제품 알림은 서버의 제품명을 표시하고 제품명�
     ...item({}),
     ruleId: "product_not_registered",
     subject: "openai_biz",
-    summary: {
-      productId: "openai_biz",
-      productName: "ChatGPT / Codex (OpenAI)",
-    },
+    evidence: { kind: "usage", targetName: "ChatGPT / Codex (OpenAI)" },
   };
   const parsed = alertsResponseSchema.parse({
     meta: {
@@ -121,10 +107,9 @@ test("미등록 제품 알림은 서버의 제품명을 표시하고 제품명�
       asOf: "2026-10-04T00:00:00Z",
     },
     evaluation: {
-      availability: "available",
-      reason: null,
+      status: "complete",
+      reasons: [],
       asOf: "2026-10-04T00:00:00Z",
-      rules: [],
     },
     alerts: { items: [product], totalCount: 1, nextCursor: null },
   }).alerts.items[0];
@@ -133,7 +118,7 @@ test("미등록 제품 알림은 서버의 제품명을 표시하고 제품명�
     "제품 ChatGPT / Codex (OpenAI) · 3건 · 구성원 2명",
   );
   assert.equal(
-    alertSummary({ ...parsed, summary: {} }),
+    alertSummary({ ...parsed, evidence: null }),
     "제품 openai_biz · 3건 · 구성원 2명",
   );
   assert.equal(
@@ -159,33 +144,71 @@ test("설정은 현재 규칙의 판·가용성·사유를 읽는다", () => {
   assert.equal("alertLists" in data, false);
 });
 
-test("개요 알림 KPI — 평가 전이면 서버 사유, 평가 뒤면 미확인 수·분류·평가 시각", () => {
+test("현재 알림 건수는 기간별 개요 KPI에 섞지 않는다", () => {
   const data = overviewSchema.parse(example);
-  data.alerts = {
-    availability: "unavailable",
-    reason: "evaluation_pending",
-    asOf: "2026-09-14T00:00:00Z",
-    unacknowledgedTotal: null,
-    security: null,
-    cost: null,
+  const before = presentOverview(data).kpis;
+  const responseWithExtra = {
+    ...data,
+    alerts: {
+      availability: "available",
+      reason: null,
+      asOf: "2026-09-14T00:30:00Z",
+      unacknowledgedTotal: 3,
+      security: 2,
+      cost: 1,
+    },
   };
-  const pending = presentOverview(data).kpis[4];
-  assert.equal(pending.value, "-");
-  assert.equal(pending.caption, "규칙을 켰지만 아직 평가 전입니다");
-  assert.equal(pending.bad, false);
-  data.alerts = {
-    availability: "available",
-    reason: null,
-    asOf: "2026-09-14T00:30:00Z",
-    unacknowledgedTotal: 3,
-    security: 2,
-    cost: 1,
-  };
-  const counted = presentOverview(data).kpis[4];
-  assert.equal(counted.value, "3");
-  assert.match(
-    counted.caption,
-    /^현재 미확인 · 보안 2 · 비용 1 · 평가 2026\. 9\. 14\. 오전 9:30:00$/,
+  assert.deepEqual(
+    presentOverview(overviewSchema.parse(responseWithExtra)).kpis,
+    before,
   );
-  assert.equal(counted.bad, true);
+  assert.equal("alerts" in overviewSchema.parse(responseWithExtra), false);
+});
+
+test("알림은 임의 summary 없이 화면용 근거를 검증하고 누락된 비용을 0으로 표시하지 않는다", () => {
+  const page = {
+    meta: {
+      organizationId: "o",
+      snapshotId: "s",
+      asOf: "2026-10-04T00:00:00Z",
+    },
+    evaluation: {
+      status: "unavailable",
+      reasons: ["evaluation_pending"],
+      asOf: null,
+    },
+    alerts: {
+      items: [
+        item({ ruleId: "spend_spike", category: "cost", evidence: null }),
+      ],
+      totalCount: 1,
+      nextCursor: null,
+    },
+  };
+  const parsed = alertsResponseSchema.parse(page);
+  assert.equal(
+    alertSummary(parsed.alerts.items[0]),
+    "비용 정보를 확인할 수 없습니다",
+  );
+  assert.throws(() =>
+    alertsResponseSchema.parse({
+      ...page,
+      alerts: {
+        ...page.alerts,
+        items: [
+          item({
+            evidence: {
+              kind: "spend",
+              startDate: "2026-10-01",
+              endDate: "2026-10-02",
+              currentCostUsd: "NaN",
+              previousCostUsd: "10",
+              increaseRatio: 0.4,
+            },
+          }),
+        ],
+      },
+    }),
+  );
+  assert.equal("summary" in parsed.alerts.items[0], false);
 });

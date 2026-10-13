@@ -88,7 +88,7 @@ test("single model shows name and usage, without a 100 percent donut or selectio
   assert.equal(empty.mix.count, 0);
   assert.match(
     renderToStaticMarkup(createElement(ModelMixCard, { model: empty })),
-    /관측된 모델이 없습니다/,
+    /사용이 확인된 모델이 없습니다/,
   );
 });
 

@@ -305,11 +305,22 @@ async function directory<T>(
   } while (cursor);
   return items;
 }
+const managedVendorListSchema = managedVendorSchema
+  .pick({
+    vendorId: true,
+    displayName: true,
+    kind: true,
+    source: true,
+    version: true,
+  })
+  .extend({
+    contractStatus: z.enum(["missing", "scheduled", "active", "expired"]),
+  });
 export const vendorsOptions = (org: string) =>
   queryOptions({
     queryKey: managementKey(org, "vendors"),
     queryFn: ({ signal }) =>
-      directory(org, "/vendors", "vendors", managedVendorSchema, signal),
+      directory(org, "/vendors", "vendors", managedVendorListSchema, signal),
     ...readOptions,
   });
 export const teamsOptions = (org: string) =>

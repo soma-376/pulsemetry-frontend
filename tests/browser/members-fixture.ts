@@ -8,17 +8,14 @@ export const fixtureTeams = [
   { teamId: "team-data", teamName: "데이터", version: 1 },
 ];
 const pad = (value: number) => String(value).padStart(2, "0");
+const value = <T>(value: T | null) => ({
+  value,
+  status: value === null ? "unavailable" : "complete",
+  reasons: value === null ? ["no_data"] : [],
+});
 const usage = (cost: number, sessions: number) => ({
-  activeUsers: 1,
-  sessionCount: sessions,
-  equivalentCostUsd: cost.toFixed(2),
-  tokens: {
-    inputUncached: null,
-    output: null,
-    cacheRead: null,
-    cacheWrite: null,
-    total: null,
-  },
+  sessionCount: value(sessions),
+  equivalentCostUsd: value(cost.toFixed(2)),
 });
 
 export type FixtureMember = ReturnType<typeof fixtureMembers>[number];
@@ -48,14 +45,13 @@ export function fixtureMembers(count = 45) {
         kind === "unobserved"
           ? null
           : `2026-09-${pad((n % 20) + 1)}T0${n % 10}:00:00Z`,
-      observation: "partial",
       seatState: "unknown",
       plannedVendorIds: [] as string[],
     };
   }).sort(
     (a, b) =>
-      Number(b.periodUsage?.equivalentCostUsd ?? -1) -
-        Number(a.periodUsage?.equivalentCostUsd ?? -1) ||
+      Number(b.periodUsage?.equivalentCostUsd.value ?? -1) -
+        Number(a.periodUsage?.equivalentCostUsd.value ?? -1) ||
       a.memberId.localeCompare(b.memberId),
   );
 }
@@ -210,6 +206,7 @@ export async function mockMembers(
     startDate: url.searchParams.get("startDate"),
     endDate: url.searchParams.get("endDate"),
     snapshotId: "fixture-members",
+    asOf: "2026-09-22T00:00:00Z",
   });
   const pageOf = (items: FixtureMember[], url: URL, first: number) => {
     const offset = Number(url.searchParams.get("cursor") ?? 0);
@@ -347,33 +344,17 @@ export async function mockMembers(
       if (method === "GET" && path === "members/dashboard") {
         return json(route, {
           meta: meta(url),
-          asOf: "2026-09-22T00:00:00Z",
           summary: {
             rosterMembers: state.members.length,
-            activeUsers: state.members.filter((member) => member.periodUsage)
-              .length,
+            activeUsers: value(
+              state.members.filter((member) => member.periodUsage).length,
+            ),
             unassignedMembers: unassigned.length,
-            periodUnassignedEquivalentCostUsd: null,
-            periodTotalEquivalentCostUsd: null,
-            seats: candidates.length
-              ? {
-                  availability: "available",
-                  reason: null,
-                  data: {
-                    contracted: 50,
-                    assigned: 45,
-                    unallocated: 5,
-                    activeInPeriod: null,
-                    inactiveAssigned: null,
-                    reclaimCandidates: candidates.length,
-                    estimatedMonthlySavingsUsd: null,
-                  },
-                }
-              : {
-                  availability: "unavailable",
-                  reason: "not_applicable",
-                  data: null,
-                },
+            periodUnassignedEquivalentCostUsd: value(null),
+            periodUnassignedCostShare: value(null),
+            reclaimCandidates: value(
+              candidates.length ? candidates.length : null,
+            ),
           },
           policy: { idleDays: 14, version: 0 },
           capabilities: {

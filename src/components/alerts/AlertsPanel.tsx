@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import {
   useInfiniteQuery,
   useMutation,
@@ -14,10 +15,9 @@ import {
   acknowledgeAlert,
   ALERT_RULE_TEXT,
   alertQueryKeys,
-  alertReasonText,
   alertsOptions,
   alertSummary,
-  RULE_CATEGORY,
+  alertReasonText,
   type Alert,
   type AlertCategory,
   type AlertStatus,
@@ -41,7 +41,7 @@ const CATEGORY_TEXT: Record<AlertCategory, string> = {
 
 /**
  * 알림 목록·상세·확인(서버 ADR 0051 §6). 개요의 알림 창과 운영 · 보안 화면이 같이 쓴다. 목록·건수는 서버 값이고, 확인하면 목록과 개요의 미확인 수를 다시 읽는다.
- * 규칙마다 마지막 평가를 함께 보여 준다 — "평가하지 않음"은 0건이 아니다. 확인을 되돌리는 명령은 없다.
+ * 확인을 되돌리는 명령은 없다.
  */
 export function AlertsPanel({
   organizationId,
@@ -50,6 +50,10 @@ export function AlertsPanel({
   status,
   onStatusChange,
   onAcknowledged,
+  showCount = true,
+  refreshInHeader = false,
+  hideEmptyState = false,
+  children,
 }: {
   organizationId: string;
   enabled: boolean;
@@ -58,6 +62,10 @@ export function AlertsPanel({
   status: AlertStatus;
   onStatusChange: (status: AlertStatus) => void;
   onAcknowledged: (message: string) => void;
+  showCount?: boolean;
+  refreshInHeader?: boolean;
+  hideEmptyState?: boolean;
+  children?: ReactNode;
 }) {
   const client = useQueryClient();
   const query = useInfiniteQuery({
@@ -83,14 +91,12 @@ export function AlertsPanel({
         void refresh();
     },
   });
-  const pages = query.data?.pages ?? [];
+  const denied =
+    query.error instanceof ManagementError &&
+    [401, 403, 404].includes(query.error.status);
+  const pages = denied ? [] : (query.data?.pages ?? []);
   const first = pages[0];
   const items = pages.flatMap((page) => page.alerts.items);
-  const rules =
-    first?.evaluation.rules.filter(
-      (rule) =>
-        rule.enabled && (!category || RULE_CATEGORY[rule.ruleId] === category),
-    ) ?? [];
   const label = category ? `${CATEGORY_TEXT[category]} ` : "";
   return (
     <div className="flex flex-col gap-4">
@@ -103,52 +109,13 @@ export function AlertsPanel({
           acknowledge.reset();
         }}
       />
-      {first && (
-        <section
-          aria-label="규칙별 평가"
-          className="rounded-lg bg-sub p-3 text-xs"
-        >
-          {first.evaluation.availability === "unavailable" && (
-            <p className="mb-2 text-orange-ink">
-              {alertReasonText(first.evaluation.reason)}
-            </p>
-          )}
-          {first.evaluation.availability === "available" && !rules.length && (
-            <p className="text-text3">
-              켜진 {label}규칙이 없습니다 — 설정의 알림 규칙에서 켤 수 있습니다.
-            </p>
-          )}
-          <ul className="flex flex-col gap-1">
-            {rules.map((rule) => (
-              <li
-                key={rule.ruleId}
-                className="flex flex-wrap justify-between gap-2"
-              >
-                <span>
-                  {ALERT_RULE_TEXT[rule.ruleId]?.title ?? rule.ruleId}
-                </span>
-                <span
-                  className={
-                    rule.status === "evaluated"
-                      ? "text-text3"
-                      : "text-orange-ink"
-                  }
-                >
-                  {rule.status === null
-                    ? "평가 전"
-                    : rule.status === "evaluated"
-                      ? `평가함 · ${alertTime(rule.evaluatedAt)}`
-                      : `평가하지 않음 · ${alertReasonText(rule.reason)}`}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+
+      {children}
+
       {!first && query.isPending && (
         <LoadingState variant="inline" message="알림을 불러오는 중입니다…" />
       )}
-      {query.error && (
+      {query.error && (!first || !refreshInHeader) && (
         <ErrorState
           variant="inline"
           message={query.error.message}
@@ -159,16 +126,27 @@ export function AlertsPanel({
       {acknowledge.error && (
         <ErrorState variant="inline" message={acknowledge.error.message} />
       )}
-      {first && !items.length && (
-        <EmptyState
-          message={
-            status === "unacknowledged"
-              ? `미확인 ${label}알림이 없습니다`
-              : `${label}알림이 없습니다`
-          }
-          description="켜진 규칙의 평가 결과만 알림이 됩니다."
-        />
-      )}
+      {first &&
+        !items.length &&
+        (!hideEmptyState ||
+          (first.evaluation.status === "unavailable" &&
+            status === "unacknowledged")) && (
+          <EmptyState
+            message={
+              first.evaluation.status === "unavailable" &&
+              status === "unacknowledged"
+                ? "알림 평가 결과를 확인할 수 없습니다"
+                : status === "unacknowledged"
+                  ? `미확인 ${label}알림이 없습니다`
+                  : `${label}알림이 없습니다`
+            }
+            description={
+              first.evaluation.reasons.length > 0
+                ? first.evaluation.reasons.map(alertReasonText).join(" · ")
+                : undefined
+            }
+          />
+        )}
       {items.length > 0 && (
         <ul aria-label="알림 목록" className="flex flex-col gap-2">
           {items.map((alert) => {
@@ -190,8 +168,10 @@ export function AlertsPanel({
                     </span>
                   </span>
                 </div>
-                <p className="mt-1.5 text-text2">{alertSummary(alert)}</p>
-                <p className="mt-1 text-[11px] text-text3">
+                <p className="mt-1.5 break-words text-text2 [overflow-wrap:anywhere]">
+                  {alertSummary(alert)}
+                </p>
+                <p className="mt-1 break-words text-[11px] text-text3 [overflow-wrap:anywhere]">
                   발생 {alertTime(alert.occurredAt)}
                   {alert.lastSeenAt !== alert.occurredAt
                     ? ` · 마지막 ${alertTime(alert.lastSeenAt)}`
@@ -204,7 +184,7 @@ export function AlertsPanel({
                   <summary className="cursor-pointer text-text3">상세</summary>
                   <dl
                     aria-label={`${title} 상세`}
-                    className="mt-1.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5"
+                    className="mt-1.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 break-words [overflow-wrap:anywhere]"
                   >
                     <dt className="text-text3">규칙</dt>
                     <dd>{alert.ruleId}</dd>
@@ -265,7 +245,7 @@ export function AlertsPanel({
           })}
         </ul>
       )}
-      {first && (
+      {showCount && first && (
         <p className="text-[11px] text-text3">
           {int(first.alerts.totalCount)}건
         </p>

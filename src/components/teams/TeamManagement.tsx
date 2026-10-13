@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { DetailDrawer } from "@/components/ui/DetailDrawer";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { Toast, useToast } from "@/components/ui/Toast";
 import { waitingInvitationsOptions } from "@/lib/api/invitations";
 import {
   createCommands,
@@ -40,6 +41,7 @@ export function TeamManagement() {
   );
   const [confirming, setConfirming] = useState(false);
   const [notice, setNotice] = useState("");
+  const { toast, showToast, dismissToast } = useToast();
   // 이름 변경이 다른 곳의 변경과 충돌했다 — 최신 내용을 읽기 전에는 다시 보내지 않게 안내한다.
   const [renameStale, setRenameStale] = useState(false);
   const [post] = useState(createCommands);
@@ -132,6 +134,7 @@ export function TeamManagement() {
         onClick={() => {
           list();
           setNotice("");
+          if (toast) dismissToast(toast.id);
           remove.reset();
           reload.reset();
           setRenameStale(false);
@@ -191,8 +194,16 @@ export function TeamManagement() {
                 }}
                 onDone={(name) => {
                   list();
-                  setNotice(`${name} 팀을 저장했습니다`);
+                  showToast(`${name} 팀을 저장했습니다`);
                 }}
+                onSaveError={(error) =>
+                  showToast(
+                    error instanceof Error
+                      ? error.message
+                      : "팀을 저장하지 못했습니다",
+                    "error",
+                  )
+                }
                 recovery={
                   renameStale ? (
                     <div className="flex justify-end">{reloadButton}</div>
@@ -318,6 +329,8 @@ export function TeamManagement() {
             </>
           )
         )}
+        {/* 모달 dialog 안에 두어 토스트도 최상위 레이어에서 읽고 닫을 수 있게 한다. */}
+        <Toast toast={toast} onDismiss={dismissToast} />
       </DetailDrawer>
     </>
   );

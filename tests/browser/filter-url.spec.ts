@@ -98,7 +98,7 @@ test("기본값과 잘못된 URL은 이번 주·전주로 복구하고 잘못된
   );
 });
 
-test("기간은 적용할 때만 URL에 저장하고 계약 이동 링크에도 전달한다", async ({
+test("기간은 적용할 때만 URL에 저장하고 팀 분석 이동 링크에도 전달한다", async ({
   page,
 }) => {
   await page.goto(
@@ -115,14 +115,10 @@ test("기간은 적용할 때만 URL에 저장하고 계약 이동 링크에도 
       url.searchParams.get("startDate") === currentDateIso() &&
       url.searchParams.get("endDate") === currentDateIso(),
   );
-  const link = page.getByRole("link", {
-    name: "Claude 계약 설정 열기",
-    exact: true,
-  });
+  const link = page.getByRole("link", { name: "전체 4팀 보기 →", exact: true });
   await expect(link).toBeVisible();
   const target = new URL((await link.getAttribute("href"))!, page.url());
-  expect(target.pathname).toBe("/settings");
-  expect(target.searchParams.get("vendor")).toBe("claude-contract");
+  expect(target.pathname).toBe("/teams");
   expect(target.searchParams.get("compare")).toBe("none");
   expect(target.searchParams.get("startDate")).toBe(currentDateIso());
 });
@@ -150,4 +146,97 @@ test("로그아웃 버튼은 역할 배지와 같은 줄에 있고 사이드바�
       .getByRole("navigation")
       .getByRole("button", { name: "로그아웃", exact: true }),
   ).toBeVisible();
+});
+
+test("관리 페이지에서는 기간·비교를 숨기고 구성원 사용량은 최근 7일을 조회한다", async ({
+  page,
+}) => {
+  const { mockMembers } = await import("./members-fixture");
+  await mockMembers(page, { invitations: [] });
+  const requests: URL[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/members/dashboard?"))
+      requests.push(new URL(request.url()));
+  });
+  await page.goto(
+    "/members?startDate=2026-01-01&endDate=2026-01-28&compare=prev_week",
+  );
+  await expect(
+    page.getByRole("heading", { name: "구성원", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("toolbar").getByRole("combobox", { name: "비교" }),
+  ).toHaveCount(0);
+  await expect(
+    page
+      .getByRole("toolbar")
+      .getByRole("button", { name: /^\d{4}\.\d{2}\.\d{2} ~ / }),
+  ).toHaveCount(0);
+  await expect(page).toHaveURL(
+    (url) =>
+      url.pathname === "/members" &&
+      !url.searchParams.has("startDate") &&
+      !url.searchParams.has("endDate") &&
+      !url.searchParams.has("compare"),
+  );
+  await expect.poll(() => requests.length).toBeGreaterThan(0);
+  expect(requests[0].searchParams.get("endDate")).toBe(currentDateIso());
+  expect(
+    (Date.parse(requests[0].searchParams.get("endDate")!) -
+      Date.parse(requests[0].searchParams.get("startDate")!)) /
+      86400000,
+  ).toBe(6);
+});
+
+test("관리 페이지는 깨끗한 URL을 사용하고 분석 페이지로 복귀하면 마지막 조건을 복원한다", async ({
+  page,
+}) => {
+  const { mockMembers } = await import("./members-fixture");
+  const { serveSettings } = await import("./onboarding-fixture");
+  await mockMembers(page, { invitations: [] });
+  serveSettings(page);
+  await page.goto(
+    "/overview?startDate=2026-09-01&endDate=2026-09-13&compare=none",
+  );
+  const nav = page.getByRole("navigation", { name: "주 내비게이션" });
+  await expect(
+    page.getByRole("button", { name: "2026.09.01 ~ 2026.09.13", exact: true }),
+  ).toBeVisible();
+  for (const [name, path] of [
+    ["구성원", "/members"],
+    ["운영 · 보안", "/ops"],
+    ["설정", "/settings"],
+  ]) {
+    await expect(nav.getByRole("link", { name, exact: true })).toHaveAttribute(
+      "href",
+      path,
+    );
+    await nav.getByRole("link", { name, exact: true }).click();
+    await expect(page).toHaveURL(
+      (url) =>
+        url.pathname === path &&
+        !url.searchParams.has("startDate") &&
+        !url.searchParams.has("endDate") &&
+        !url.searchParams.has("compare"),
+    );
+  }
+  await nav.getByRole("link", { name: "팀 분석", exact: true }).click();
+  await expect(page).toHaveURL(
+    (url) =>
+      url.pathname === "/teams" &&
+      url.searchParams.get("startDate") === "2026-09-01" &&
+      url.searchParams.get("endDate") === "2026-09-13" &&
+      url.searchParams.get("compare") === "none",
+  );
+  await page.goBack();
+  await expect(page).toHaveURL(
+    (url) => url.pathname === "/settings" && url.search === "",
+  );
+  await nav.getByRole("link", { name: "개요", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "2026.09.01 ~ 2026.09.13", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("combobox", { name: "비교", exact: true }),
+  ).toHaveValue("none");
 });

@@ -53,7 +53,7 @@ test("members sort the whole roster, keep sorting through more and put missing v
   await cost.click();
   await expect(cost).toHaveAccessibleDescription(/^내림차순 정렬 중/);
   const value = (row: (typeof roster)[number]) =>
-    row.periodUsage ? Number(row.periodUsage.equivalentCostUsd) : null;
+    row.periodUsage ? Number(row.periodUsage.equivalentCostUsd.value) : null;
   const byCost = (direction: 1 | -1) =>
     [...roster].sort((a, b) => {
       const left = value(a),
@@ -225,12 +225,13 @@ test("user usage sorts before pagination and totals the actual visible rows", as
   // 서버가 비용 내림차순으로 12명씩 준다. 다른 열 정렬은 30명 전체를 모은 뒤에 한다.
   const users = fixtureTeamUsers("platform", 30);
   const cost = (row: (typeof users)[number]) =>
-    Number(row.usage.equivalentCostUsd);
+    Number(row.usage.equivalentCostUsd.value);
   const values = {
-    sessionCount: (row: (typeof users)[number]) => row.usage.sessionCount,
-    tokenValue: (row: (typeof users)[number]) => row.usage.tokens.total,
-    cacheValue: (row: (typeof users)[number]) => row.cache.hitRatio,
-    lastValue: (row: (typeof users)[number]) => Date.parse(row.lastUsedAt),
+    sessionCount: (row: (typeof users)[number]) =>
+      row.usage.sessionCount.value!,
+    tokenValue: (row: (typeof users)[number]) => row.usage.totalTokens.value!,
+    cacheValue: (row: (typeof users)[number]) => row.cacheHitRatio.value!,
+    lastValue: (row: (typeof users)[number]) => Date.parse(row.lastUsedAt!),
   };
   const by = (key: keyof typeof values) =>
     [...users].sort(

@@ -16,6 +16,7 @@ export function TeamForm({
   onDone,
   onCancel,
   onSave,
+  onSaveError,
   draftName,
   onDraftChange,
   recovery,
@@ -26,6 +27,8 @@ export function TeamForm({
   draftName?: string;
   onDraftChange?: (name: string) => void;
   onSave: (name: string) => Promise<void>;
+  /** 팀 관리처럼 요청 실패를 토스트로 안내하는 화면에서 사용한다. */
+  onSaveError?: (error: unknown) => void;
   /** 저장 실패 뒤의 복구 동작 (예: 최신 내용 불러오기) */
   recovery?: ReactNode;
 }) {
@@ -51,6 +54,10 @@ export function TeamForm({
           reset({ name: "" });
           onDone(values.name);
         } catch (error) {
+          if (onSaveError) {
+            onSaveError(error);
+            return;
+          }
           setError(
             "name",
             {

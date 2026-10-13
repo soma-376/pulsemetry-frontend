@@ -1,5 +1,6 @@
 "use client";
 
+import { MetricStatusBadge } from "@/components/overview/KpiCard";
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import { DetailDrawer } from "@/components/ui/DetailDrawer";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -88,16 +89,77 @@ export function TeamDetailDrawer({
           )}
           <div className="grid grid-cols-2 gap-3">
             {[
-              ["환산가치", team.costText],
-              ["활성 사용자", team.users === "-" ? "-" : `${team.users}명`],
-              ["사용자당", team.perUserText],
-              ["세션", team.sessions],
-              ["토큰", team.tokens],
-              ["증가 기여", team.contribText],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-lg border border-border p-3">
-                <p className="text-[11px] text-text3">{label}</p>
+              {
+                label: "환산가치",
+                value: team.costText,
+                status: team.statuses.cost,
+              },
+              {
+                label: "활성 사용자",
+                value: team.users === "-" ? "-" : `${team.users}명`,
+                status: team.statuses.users,
+              },
+              {
+                label: "사용자당",
+                value: team.perUserText,
+                status: team.statuses.perUser,
+                comparison: team.comparisons.perUser,
+                change: team.perUserDelta,
+              },
+              {
+                label: "세션",
+                value: team.sessions === "-" ? "-" : `${team.sessions}개`,
+                status: team.statuses.sessions,
+              },
+              {
+                label: "토큰",
+                value: team.tokens,
+                status: team.statuses.tokens,
+              },
+              {
+                label: "증가 기여",
+                value: team.contribText,
+                status:
+                  team.comparisons.contribution.status === "disabled"
+                    ? {
+                        label: "비교 꺼짐",
+                        reason: "비교 기간을 선택하지 않았습니다.",
+                      }
+                    : team.comparisons.contribution.status !== "available" ||
+                        !showDelta
+                      ? {
+                          label: "비교 불가",
+                          reason:
+                            team.comparisons.contribution.reason ||
+                            comparisonReason,
+                        }
+                      : undefined,
+              },
+            ].map(({ label, value, status, comparison, change }) => (
+              <div
+                key={label}
+                className="relative min-w-0 rounded-lg border border-border p-3 [overflow-wrap:anywhere]"
+              >
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <p className="text-[11px] text-text3">{label}</p>
+                  {status && <MetricStatusBadge {...status} />}
+                </div>
                 <p className="tnum mt-1 text-xl font-semibold">{value}</p>
+                {comparison &&
+                  value !== "-" &&
+                  comparison.status !== "disabled" && (
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-text3">
+                      {showDelta && comparison.status === "available" ? (
+                        <span className="tnum">{change}</span>
+                      ) : (
+                        <MetricStatusBadge
+                          label="비교 불가"
+                          reason={comparison.reason || comparisonReason}
+                        />
+                      )}
+                      {compareLabel && <span>{compareLabel}</span>}
+                    </div>
+                  )}
               </div>
             ))}
           </div>
@@ -128,12 +190,6 @@ export function TeamDetailDrawer({
               }))}
             />
           </section>
-          <p className="rounded-lg bg-sub p-3 text-[11px] leading-relaxed text-text2">
-            {showDelta
-              ? `${compareLabel} 사용자당 환산가치 ${team.perUserDelta}. 증가 기여는 조직 전체의 환산가치 변화 중 이 팀의 변화액입니다.`
-              : comparisonReason ||
-                "비교 기간을 선택하면 두 기간이 모두 완전하게 수집됐을 때 증감을 표시합니다."}
-          </p>
         </div>
       )}
     </DetailDrawer>

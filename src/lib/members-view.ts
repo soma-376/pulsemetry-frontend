@@ -2,6 +2,7 @@ import type { Delivery, Invitation, InvitationResult } from "./api/invitations";
 import type { Member, MembersView } from "./api/members";
 import { DAY_MS } from "./date";
 import { int, usd } from "./format";
+import { reasonsText, valueStatus } from "./metrics/overview-presentation";
 
 /** 서버의 역할 어휘. 모르는 값은 원문을 그대로 보여 준다. */
 export const ROLE_LABEL: Record<string, string> = {
@@ -91,7 +92,7 @@ const countText = (value: number | null | undefined) =>
   value == null ? "-" : int(value);
 
 export function memberRow(member: Member, candidates: ReadonlySet<string>) {
-  const costValue = moneyValue(member.periodUsage?.equivalentCostUsd);
+  const costValue = moneyValue(member.periodUsage?.equivalentCostUsd.value);
   return {
     memberId: member.memberId,
     account: member.account,
@@ -108,8 +109,19 @@ export function memberRow(member: Member, candidates: ReadonlySet<string>) {
     seatStateLabel: SEAT_STATE_LABEL[member.seatState] ?? member.seatState,
     costValue,
     costText: moneyText(costValue),
-    sessionCount: member.periodUsage?.sessionCount ?? null,
-    sessionText: countText(member.periodUsage?.sessionCount),
+    costStatus: valueStatus(
+      member.periodUsage?.equivalentCostUsd ?? {
+        value: null,
+        status: "unavailable",
+        reasons: ["no_data"],
+      },
+    ),
+    costState: member.periodUsage?.equivalentCostUsd.status ?? "unavailable",
+    costReasons: member.periodUsage?.equivalentCostUsd.reasons ?? ["no_data"],
+    sessionState: member.periodUsage?.sessionCount.status ?? "unavailable",
+    sessionReasons: member.periodUsage?.sessionCount.reasons ?? ["no_data"],
+    sessionCount: member.periodUsage?.sessionCount.value ?? null,
+    sessionText: countText(member.periodUsage?.sessionCount.value),
     lastUsedAt: member.lastUsedAt,
     lastUsedTime: member.lastUsedAt ? Date.parse(member.lastUsedAt) : null,
     lastSeen: formatKst(member.lastUsedAt),
@@ -276,19 +288,20 @@ export function buildMembersView(
   const liveInvites = inviteRows?.filter((row) => !row.expired).length;
   const expiredInvites = inviteRows?.filter((row) => row.expired).length;
 
-  const seats = summary.seats.data;
-  const seatsUnavailable =
-    summary.seats.availability === "unavailable" || !seats;
   const reclaimUnavailable =
     reclaim.availability === "unavailable" || !reclaim.data;
   const reasonText = (reason: string | null) =>
     SECTION_REASON[reason ?? ""] ?? "좌석 정보를 확인할 수 없습니다";
-  const unassignedCost = moneyValue(summary.periodUnassignedEquivalentCostUsd);
-  const totalCost = moneyValue(summary.periodTotalEquivalentCostUsd);
+  const reclaimCount = summary.reclaimCandidates;
+  const reclaimReason = reclaimCount.reasons
+    .map((reason) => SECTION_REASON[reason] ?? reasonsText([reason]))
+    .join(" · ");
+  const unassignedCost = moneyValue(
+    summary.periodUnassignedEquivalentCostUsd.value,
+  );
+  const shareValue = summary.periodUnassignedCostShare.value;
   const share =
-    unassignedCost !== null && totalCost
-      ? ` (${((unassignedCost / totalCost) * 100).toFixed(1)}%)`
-      : "";
+    shareValue === null ? "" : ` (${(shareValue * 100).toFixed(1)}%)`;
 
   return {
     snapshotId: view.meta.snapshotId,
@@ -299,22 +312,38 @@ export function buildMembersView(
         label: "구성원",
         value: int(summary.rosterMembers),
         unit: "명",
-        caption: `기간 활성 ${countText(summary.activeUsers)}명 · 초대 대기 제외`,
+        caption: `기간 활성 ${countText(summary.activeUsers.value)}명 · 초대 대기 제외`,
+        status:
+          summary.activeUsers.status === "complete"
+            ? undefined
+            : {
+                label:
+                  summary.activeUsers.status === "unavailable"
+                    ? "활성 수 확인 불가"
+                    : "활성 수 일부 집계",
+                reason: reasonsText(summary.activeUsers.reasons),
+              },
         tone: "var(--text)",
       },
       {
         label: "좌석 회수 후보",
-        value: seatsUnavailable ? "-" : countText(seats.reclaimCandidates),
+        value: countText(reclaimCount.value),
         unit: "석",
-        caption: seatsUnavailable
-          ? reasonText(summary.seats.reason)
-          : summary.seats.availability === "partial"
-            ? `${policy.idleDays}일 기준 · ${reasonText(summary.seats.reason)}`
-            : `${policy.idleDays}일 이상 사용 미관측`,
-        tone:
-          !seatsUnavailable && seats.reclaimCandidates
-            ? "var(--orange-ink)"
-            : "var(--text)",
+        caption:
+          reclaimCount.status === "complete"
+            ? `${policy.idleDays}일 이상 사용 미관측`
+            : `${policy.idleDays}일 기준 · ${reclaimReason}`,
+        tone: reclaimCount.value ? "var(--orange-ink)" : "var(--text)",
+        status:
+          reclaimCount.status === "complete"
+            ? undefined
+            : {
+                label:
+                  reclaimCount.status === "partial"
+                    ? "일부 판정"
+                    : "값 확인 불가",
+                reason: reclaimReason,
+              },
       },
       {
         label: "초대 대기",
@@ -328,6 +357,19 @@ export function buildMembersView(
         value: int(summary.unassignedMembers),
         unit: "명",
         caption: `기간 미배분 비용 ${moneyText(unassignedCost)}${share}`,
+        status:
+          summary.periodUnassignedEquivalentCostUsd.status === "complete"
+            ? undefined
+            : {
+                label:
+                  summary.periodUnassignedEquivalentCostUsd.status ===
+                  "unavailable"
+                    ? "비용 확인 불가"
+                    : "비용 일부 집계",
+                reason: reasonsText(
+                  summary.periodUnassignedEquivalentCostUsd.reasons,
+                ),
+              },
         tone: summary.unassignedMembers ? "var(--orange-ink)" : "var(--text)",
       },
     ],
@@ -411,6 +453,10 @@ export function membersCsv(rows: readonly MemberRow[]) {
     "기간 환산 비용(USD)",
     "기간 세션",
     "마지막 사용(UTC)",
+    "비용 상태",
+    "비용 사유",
+    "세션 상태",
+    "세션 사유",
   ];
   const lines = rows.map((row) =>
     [
@@ -423,6 +469,10 @@ export function membersCsv(rows: readonly MemberRow[]) {
       row.costValue,
       row.sessionCount,
       row.lastUsedAt,
+      row.costState,
+      row.costReasons.join("|"),
+      row.sessionState,
+      row.sessionReasons.join("|"),
     ]
       .map(csvCell)
       .join(","),

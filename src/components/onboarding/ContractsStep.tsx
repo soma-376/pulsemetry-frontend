@@ -165,7 +165,9 @@ export function ContractsStep({
                   <span className="min-w-0 flex-1 break-words text-sm">
                     {vendor.displayName}
                     <span className="ml-2 text-xs text-text3">
-                      {vendor.contract ? "계약 등록됨" : "벤더 등록됨"}
+                      {vendor.contractStatus !== "missing"
+                        ? "계약 등록됨"
+                        : "벤더 등록됨"}
                     </span>
                   </span>
                   <Button

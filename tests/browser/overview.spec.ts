@@ -52,7 +52,7 @@ test("BFF를 통해 조회하고 기간·비교 변경과 수동 새로고침을
   });
   await page.goto("/overview");
   await expect(
-    page.getByRole("region", { name: "토큰 비용", exact: true }),
+    page.getByRole("region", { name: "사용 환산액", exact: true }),
   ).toContainText("$5,000.00");
   expect(requests[0].origin).toBe(new URL(page.url()).origin);
   expect(requests[0].pathname).toMatch(/^\/api\/bff\/dashboard\//);
@@ -63,7 +63,7 @@ test("BFF를 통해 조회하고 기간·비교 변경과 수동 새로고침을
     .getByRole("combobox", { name: "비교", exact: true })
     .selectOption("none");
   await expect(
-    page.getByRole("region", { name: "토큰 비용", exact: true }),
+    page.getByRole("region", { name: "사용 환산액", exact: true }),
   ).not.toContainText("전주 대비");
   expect(requests.at(-1)!.searchParams.get("compare")).toBe("none");
   await page.getByRole("button", { name: period.label, exact: true }).click();
@@ -102,7 +102,7 @@ test("날짜 탐색·모델 선택·팀 정렬이 실제 응답을 사용한다"
   await mockOverview(page);
   await page.goto("/overview");
   const slider = page.getByRole("slider", {
-    name: "날짜별 환산가치. 좌우 방향키로 날짜를 이동하세요",
+    name: "날짜별 사용 환산액. 좌우 방향키로 날짜를 이동하세요",
   });
   await expect(slider).toBeVisible();
   await slider.focus();
@@ -119,9 +119,9 @@ test("날짜 탐색·모델 선택·팀 정렬이 실제 응답을 사용한다"
   const model = page.getByRole("button", { name: /Model Pro/ });
   await model.click();
   await expect(model).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("region", { name: "모델 구성" })).toContainText(
-    "/M",
-  );
+  await expect(
+    page.getByRole("region", { name: "모델별 사용 환산액 비중" }),
+  ).toContainText("/M");
   const table = page.getByRole("table", { name: "팀별 요약" });
   await expect(table.locator("tbody tr")).toHaveCount(4);
   await expect(table.locator("tbody tr").first()).toContainText("플랫폼");
@@ -134,26 +134,32 @@ test("부분 관측과 알 수 없는 비용을 0으로 만들지 않는다", as
   await mockOverview(page, (data) => {
     data.meta.dataState = "partial";
     data.meta.currentCoverage.status = "partial";
-    Object.assign(data.usage.current, { equivalentCostUsd: null });
-    data.usage.current.tokens.total = 0;
-    data.modelMix.availability = "partial";
-    Object.assign(data.modelMix.models[0], { equivalentCostUsd: null });
+    Object.assign(data.summary!.equivalentCostUsd, {
+      value: null,
+      status: "unavailable",
+      reasons: ["pricing_missing"],
+    });
+    data.summary!.totalTokens.value = 0;
+
+    Object.assign(data.modelMix!.models[0].equivalentCostUsd, {
+      value: null,
+      status: "unavailable",
+      reasons: ["pricing_missing"],
+    });
   });
   await page.goto("/overview");
   // 선택 기간이 완전하지 않으면 비교하지 않고 그 이유를 보여 준다(0%로 그리지 않는다).
+  await expect(page.getByRole("note", { name: "데이터 안내" })).toHaveCount(0);
   await expect(
-    page
-      .getByText("선택 기간에 수집 근거가 완전하지 않은 날이 있습니다")
-      .first(),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("region", { name: "토큰 비용", exact: true }),
+    page.getByRole("region", { name: "사용 환산액", exact: true }),
   ).toContainText("-");
   await expect(
-    page.getByRole("region", { name: "토큰 비용", exact: true }),
-  ).toContainText("/ 0M");
+    page.getByRole("region", { name: "총 토큰 수", exact: true }),
+  ).toContainText("0");
   await expect(
-    page.getByRole("region", { name: "모델 구성", exact: true }).locator("svg"),
+    page
+      .getByRole("region", { name: "모델별 사용 환산액 비중", exact: true })
+      .locator("svg"),
   ).toHaveCount(0);
 });
 
@@ -183,7 +189,7 @@ test("업무 API 401 뒤 로그인으로 이동하고 조직 데이터를 숨긴
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByLabel("회사 이메일", { exact: true })).toBeVisible();
   await expect(
-    page.getByRole("region", { name: "토큰 비용", exact: true }),
+    page.getByRole("region", { name: "사용 환산액", exact: true }),
   ).toHaveCount(0);
   await expect(page.getByLabel("로그인한 계정")).toHaveCount(0);
   expect(calls).toBe(1);
@@ -221,12 +227,12 @@ for (const status of [403, 503]) {
     ).toBeVisible({ timeout: 15_000 });
     expect(calls).toBe(status >= 500 ? 3 : 1);
     await expect(
-      page.getByRole("region", { name: "토큰 비용", exact: true }),
+      page.getByRole("region", { name: "사용 환산액", exact: true }),
     ).toHaveCount(0);
     fail = false;
     await page.getByRole("button", { name: "다시 시도", exact: true }).click();
     await expect(
-      page.getByRole("region", { name: "토큰 비용", exact: true }),
+      page.getByRole("region", { name: "사용 환산액", exact: true }),
     ).toContainText("$5,000.00");
   });
 }
@@ -236,7 +242,7 @@ test("API 403은 기존 데이터를 숨기고 권한 오류를 표시한다", a
 }) => {
   await mockOverview(page);
   await page.goto("/overview");
-  const cost = page.getByRole("region", { name: "토큰 비용", exact: true });
+  const cost = page.getByRole("region", { name: "사용 환산액", exact: true });
   await expect(cost).toBeVisible();
   await page.route(overviewUrl, (route) =>
     route.fulfill({ status: 403, json: {}, headers: corsHeaders(page) }),
@@ -253,7 +259,7 @@ test("세션이 끝나면 재조회 이전의 데이터도 숨기고 공통 로�
 }) => {
   await mockOverview(page);
   await page.goto("/overview");
-  const cost = page.getByRole("region", { name: "토큰 비용", exact: true });
+  const cost = page.getByRole("region", { name: "사용 환산액", exact: true });
   await expect(cost).toBeVisible();
   await page.route(overviewUrl, (route) =>
     route.fulfill({ status: 401, json: {}, headers: corsHeaders(page) }),
@@ -290,26 +296,19 @@ test("조회 중 상태와 잘못된 응답을 명확히 표시한다", async ({
 });
 
 for (const state of ["no_data", "never_observed"]) {
-  test(`${state}에서도 계약 정보는 유지하고 사용량은 비어 있음을 표시한다`, async ({
+  test(`${state}에서는 빈 상태만 표시하고 지표·차트·팀별 요약을 숨긴다`, async ({
     page,
   }) => {
     await mockOverview(page, (data) => {
-      data.meta.dataState = state;
+      data.meta.dataState = state === "no_data" ? "no_data" : "never_observed";
       data.meta.currentCoverage = { status: "none", observedDays: 0 };
-      Object.assign(data.usage, { current: null, previous: null });
-      data.modelMix.models = [];
-      data.teamUsage.topTeams = [];
-      Object.assign(data.teamUsage.unassigned.current, {
-        activeUsers: null,
-        equivalentCostUsd: null,
+      Object.assign(data, {
+        summary: null,
+        trend: null,
+        modelMix: null,
+        teamUsage: null,
+        errors: [],
       });
-      data.trend.points.forEach((point) =>
-        Object.assign(point, {
-          observation: "unobserved",
-          equivalentCostUsd: null,
-          totalTokens: null,
-        }),
-      );
     });
     await page.goto("/overview");
     await expect(
@@ -340,11 +339,23 @@ for (const state of ["no_data", "never_observed"]) {
       await expect(page.getByText(/자동 갱신이 꺼져 있습니다/)).toBeVisible();
     }
     await expect(
-      page.getByRole("region", { name: "토큰 비용", exact: true }),
+      page.getByRole("region", { name: "사용 환산액", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("region", { name: "팀별 요약", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("region", { name: "사용 환산액 추이", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("region", {
+        name: "모델별 사용 환산액 비중",
+        exact: true,
+      }),
     ).toHaveCount(0);
     await expect(
       page.getByRole("region", { name: "계약·좌석 현황" }),
-    ).toContainText("100석");
+    ).toHaveCount(0);
   });
 }
 
@@ -357,7 +368,7 @@ test("5분 자동 갱신과 작은 화면이 동작한다", async ({ page }) => 
   });
   await page.goto("/overview");
   await expect(
-    page.getByRole("region", { name: "토큰 비용", exact: true }),
+    page.getByRole("region", { name: "사용 환산액", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: /자동 갱신/ }).click();
   const before = calls;

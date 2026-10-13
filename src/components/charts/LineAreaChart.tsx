@@ -74,6 +74,7 @@ export function LineAreaChart({
       className={className}
       style={{
         position: "absolute",
+        zIndex: 1,
         inset: 0,
         width: "100%",
         height: "100%",

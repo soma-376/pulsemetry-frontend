@@ -23,7 +23,7 @@ const security = {
   eventCount: 4,
   memberCount: 1,
   members: [{ memberId: "m1", account: "dana@example.test" }],
-  summary: { model: "claude-opus-4", events: 4, threshold: 1 },
+  evidence: { kind: "usage", targetName: "claude-opus-4" },
 };
 
 async function serve(page: Page, options: { configured: boolean }) {
@@ -65,45 +65,11 @@ async function serve(page: Page, options: { configured: boolean }) {
           asOf: "2026-09-13T12:00:00Z",
         },
         evaluation: options.configured
-          ? {
-              availability: "available",
-              reason: null,
-              asOf: "2026-09-13T11:00:00Z",
-              rules: [
-                {
-                  ruleId: "spend_spike",
-                  enabled: true,
-                  evaluatedAt: "2026-09-13T11:00:00Z",
-                  status: "evaluated",
-                  reason: null,
-                  windowStart: null,
-                  windowEnd: null,
-                },
-                {
-                  ruleId: "model_not_allowed",
-                  enabled: true,
-                  evaluatedAt: "2026-09-13T11:00:00Z",
-                  status: "evaluated",
-                  reason: null,
-                  windowStart: null,
-                  windowEnd: null,
-                },
-                {
-                  ruleId: "tool_unapproved",
-                  enabled: true,
-                  evaluatedAt: "2026-09-13T11:00:00Z",
-                  status: "not_evaluated",
-                  reason: "approved_tools_not_configured",
-                  windowStart: null,
-                  windowEnd: null,
-                },
-              ],
-            }
+          ? { status: "complete", reasons: [], asOf: "2026-09-13T11:00:00Z" }
           : {
-              availability: "unavailable",
-              reason: "evaluation_not_configured",
+              status: "unavailable",
+              reasons: ["evaluation_not_configured"],
               asOf: null,
-              rules: [],
             },
         alerts: { items, totalCount: items.length, nextCursor: null },
       },
@@ -130,7 +96,7 @@ async function serve(page: Page, options: { configured: boolean }) {
   return state;
 }
 
-test("운영 · 보안은 보안 범주 알림만 목록·상세·확인으로 보이고 범위 밖(세션 조회·감사 로그)을 말한다", async ({
+test("운영 · 보안은 보안 범주 알림만 목록·상세·확인으로 보인다", async ({
   page,
 }) => {
   await mockSession(page);
@@ -138,18 +104,12 @@ test("운영 · 보안은 보안 범주 알림만 목록·상세·확인으로 �
   const state = await serve(page, { configured: true });
   await page.goto("/ops");
   const main = page.getByRole("main");
-  await expect(main).toContainText(
-    "세션 조회와 감사 로그는 이 화면의 범위가 아닙니다",
-  );
+  await expect(main).not.toContainText("세션 조회와 감사 로그");
   await expect(main).not.toContainText(
     /Pulsemetry P3 Ops|사유 필수|아직 구현 전/,
   );
   const panel = main.getByRole("region", { name: "보안 알림" });
-  // 규칙별 평가도 보안 규칙만 — 평가하지 않은 규칙은 사유를 말한다.
-  const rules = panel.getByRole("region", { name: "규칙별 평가" });
-  await expect(rules).toContainText("미승인 도구");
-  await expect(rules).not.toContainText("비용 급증");
-  await expect(rules).toContainText("평가하지 않음");
+  await expect(panel.getByText("검사 정보", { exact: true })).toHaveCount(0);
   const item = panel
     .getByRole("list", { name: "알림 목록" })
     .getByRole("listitem");
@@ -181,9 +141,7 @@ test("운영 · 보안은 보안 범주 알림만 목록·상세·확인으로 �
   );
 });
 
-test("규칙을 켜지 않은 조직은 빈 상태와 평가 전제 사유를 보인다", async ({
-  page,
-}) => {
+test("규칙을 켜지 않은 조직은 빈 상태를 보인다", async ({ page }) => {
   await mockSession(page);
   await mockOverview(page);
   await serve(page, { configured: false });
@@ -191,8 +149,6 @@ test("규칙을 켜지 않은 조직은 빈 상태와 평가 전제 사유를 �
   const panel = page
     .getByRole("main")
     .getByRole("region", { name: "보안 알림" });
-  await expect(panel).toContainText("미확인 보안 알림이 없습니다");
-  await expect(
-    panel.getByRole("region", { name: "규칙별 평가" }),
-  ).not.toBeEmpty();
+  await expect(panel).toContainText("알림 평가 결과를 확인할 수 없습니다");
+  await expect(panel.getByText("검사 정보", { exact: true })).toHaveCount(0);
 });

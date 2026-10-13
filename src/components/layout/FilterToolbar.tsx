@@ -1,20 +1,17 @@
 "use client";
 
 import { DateRangePicker } from "@/components/layout/DateRangePicker";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { useFilters } from "@/lib/filters";
 import type { CompareKey } from "@/types/domain";
 
-/** 공통 대시보드 헤더에서 한 번 렌더링하는 기간·조회 도구. */
+/** 공통 헤더 오른쪽의 새로고침·자동 갱신·CSV 도구. */
 export function FilterToolbar({
-  todayIso,
   onRefresh,
   refreshing = false,
   csv,
 }: {
-  todayIso?: string;
   onRefresh?: () => void;
   refreshing?: boolean;
   /** 화면이 등록한 CSV 내보내기. 사유가 있으면 끈다. */
@@ -24,20 +21,72 @@ export function FilterToolbar({
     onExport: () => void;
   };
 }) {
-  const {
-    compare,
-    setCompare,
-    dates,
-    setDates,
-    autoRefresh,
-    toggleAutoRefresh,
-  } = useFilters();
+  const { autoRefresh, toggleAutoRefresh } = useFilters();
 
   return (
     <div
       role="toolbar"
-      aria-label="전역 필터"
-      className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border bg-card px-4 py-2 @min-[1180px]:h-14 @min-[1180px]:flex-nowrap @min-[1180px]:py-0"
+      aria-label="공통 조회 도구"
+      className="flex min-w-0 flex-wrap items-center justify-between gap-x-6 gap-y-3"
+    >
+      <div
+        role="group"
+        aria-label="페이지 도구"
+        className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2"
+      >
+        {onRefresh && (
+          <Button
+            onClick={onRefresh}
+            loading={refreshing}
+            loadingLabel="조회 중…"
+          >
+            새로고침
+          </Button>
+        )}
+        <Button
+          onClick={toggleAutoRefresh}
+          aria-pressed={autoRefresh}
+          title="자동 갱신 5분"
+        >
+          {onRefresh ? "자동 갱신" : "새로고침"}
+          <span className="flex items-center gap-1 text-[11px] text-text3">
+            <span
+              className="relative h-3 w-[22px] rounded-full transition-colors"
+              style={{
+                background: autoRefresh ? "var(--blue)" : "var(--gray)",
+              }}
+            >
+              <span
+                className="absolute top-0.5 h-2 w-2 rounded-full bg-white transition-[left]"
+                style={{ left: autoRefresh ? 12 : 2 }}
+              />
+            </span>
+            5분
+          </span>
+        </Button>
+
+        <Button
+          disabled={!csv || !!csv.disabledReason}
+          title={csv?.disabledReason ?? "이 화면의 조건으로 CSV를 내려받습니다"}
+          loading={csv?.exporting}
+          loadingLabel="CSV 만드는 중…"
+          onClick={() => csv?.onExport()}
+        >
+          CSV
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** 개요·팀 분석의 제목 옆에 표시하는 조회 조건. */
+export function PeriodFilters({ todayIso }: { todayIso?: string }) {
+  const { compare, setCompare, dates, setDates } = useFilters();
+  return (
+    <div
+      className="flex min-w-0 flex-wrap items-center gap-2"
+      role="group"
+      aria-label="조회 기간"
     >
       <DateRangePicker value={dates} onChange={setDates} todayIso={todayIso} />
 
@@ -59,51 +108,6 @@ export function FilterToolbar({
       >
         KST
       </span>
-
-      <div className="hidden flex-1 @min-[1180px]:block" />
-
-      {onRefresh && (
-        <Button
-          onClick={onRefresh}
-          loading={refreshing}
-          loadingLabel="조회 중…"
-        >
-          새로고침
-        </Button>
-      )}
-      <Button
-        onClick={toggleAutoRefresh}
-        aria-pressed={autoRefresh}
-        title="자동 갱신 5분"
-      >
-        {onRefresh ? "자동 갱신" : "새로고침"}
-        <span className="flex items-center gap-1 text-[11px] text-text3">
-          <span
-            className="relative h-3 w-[22px] rounded-full transition-colors"
-            style={{
-              background: autoRefresh ? "var(--blue)" : "var(--gray)",
-            }}
-          >
-            <span
-              className="absolute top-0.5 h-2 w-2 rounded-full bg-white transition-[left]"
-              style={{ left: autoRefresh ? 12 : 2 }}
-            />
-          </span>
-          5분
-        </span>
-      </Button>
-
-      <Button
-        disabled={!csv || !!csv.disabledReason}
-        title={csv?.disabledReason ?? "이 화면의 조건으로 CSV를 내려받습니다"}
-        loading={csv?.exporting}
-        loadingLabel="CSV 만드는 중…"
-        onClick={() => csv?.onExport()}
-      >
-        CSV
-      </Button>
-
-      <ThemeToggle />
     </div>
   );
 }

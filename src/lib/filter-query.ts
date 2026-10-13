@@ -5,6 +5,11 @@ export type DashboardFilters = {
   dates: { start: string; end: string };
   compare: CompareKey;
 };
+const FILTER_KEYS = ["startDate", "endDate", "compare"] as const;
+
+export function hasPeriodFilters(pathname: string): boolean {
+  return pathname === "/overview" || pathname === "/teams";
+}
 
 export function defaultDashboardFilters(todayIso: string): DashboardFilters {
   const today = fromIso(todayIso);
@@ -49,14 +54,31 @@ export function readFilterQuery(
   };
 }
 
-/** 현재 조건만 옮기고 목적지의 vendor·team·invite와 해시는 유지한다. */
+/** 분석 페이지의 명시된 URL이 우선하며, 조건 없는 이동에서는 마지막 선택을 복원한다. */
+export function resolveDashboardFilters(
+  pathname: string,
+  params: Pick<URLSearchParams, "getAll">,
+  todayIso: string,
+  remembered: DashboardFilters,
+): DashboardFilters {
+  return hasPeriodFilters(pathname) &&
+    FILTER_KEYS.some((key) => params.getAll(key).length > 0)
+    ? readFilterQuery(params, todayIso)
+    : remembered;
+}
+
+/** 분석 페이지에만 조건을 옮긴다. 목적지의 vendor·team·invite와 해시는 유지한다. */
 export function withFilterQuery(
   href: string,
   filters: DashboardFilters,
 ): string {
   const url = new URL(href, "http://dashboard.local");
-  url.searchParams.set("startDate", filters.dates.start);
-  url.searchParams.set("endDate", filters.dates.end);
-  url.searchParams.set("compare", filters.compare);
+  if (hasPeriodFilters(url.pathname)) {
+    url.searchParams.set("startDate", filters.dates.start);
+    url.searchParams.set("endDate", filters.dates.end);
+    url.searchParams.set("compare", filters.compare);
+  } else {
+    FILTER_KEYS.forEach((key) => url.searchParams.delete(key));
+  }
   return `${url.pathname}${url.search}${url.hash}`;
 }

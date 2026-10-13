@@ -17,14 +17,14 @@ export function TeamVendorMixCard({
   model: TeamsModel;
   axis: AxisKey;
 }) {
-  const { yTop, yMid, columns, legend, incomplete } = model.productMix(axis);
+  const { yTop, yMid, columns, legend } = model.productMix(axis);
 
   return (
     <section
       aria-label="팀별 벤더 비중"
       className="col-span-3 flex min-w-0 flex-col rounded-[10px] border border-border bg-card p-4 @max-[1100px]:col-span-full"
     >
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <span className="min-w-0 text-[12px] font-semibold">
           팀별 벤더 비중
         </span>
@@ -44,12 +44,6 @@ export function TeamVendorMixCard({
         </div>
       </div>
 
-      <p className="mb-3 text-[11px] leading-5 text-text3">
-        관측된 사용량의{" "}
-        {axis === "cost" ? "환산 비용" : axis === "token" ? "토큰" : "세션"}{" "}
-        비중 · 사용량 미수집 벤더 제외
-        {incomplete && " · 값을 확인할 수 없는 팀은 비중을 그리지 않습니다"}
-      </p>
       <div className="grid grid-cols-[64px_minmax(0,1fr)] gap-2">
         {/* y축 — 기둥 위 총액 라벨이 들어갈 20px 을 비워두고 시작합니다 */}
         <div className="tnum relative h-[226px] text-[11px] text-text3">

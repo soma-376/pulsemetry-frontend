@@ -128,7 +128,17 @@ export function onboardingHandlers(scenario: OnboardingScenario) {
     http.get(`${api}/vendors`, () =>
       HttpResponse.json({
         meta,
-        vendors: { items: vendors, nextCursor: null },
+        vendors: {
+          items: vendors.map((vendor) => ({
+            vendorId: vendor.vendorId,
+            displayName: vendor.displayName,
+            kind: vendor.kind,
+            source: vendor.source,
+            version: vendor.version,
+            contractStatus: vendor.contract ? "active" : "missing",
+          })),
+          nextCursor: null,
+        },
       }),
     ),
     http.post(`${api}/vendors`, async ({ request }) => {

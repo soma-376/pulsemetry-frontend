@@ -118,24 +118,19 @@ test("ALERTS-ACK @p0 @write 개요의 알림 건수는 서버의 미확인 수�
 }) => {
   test.setTimeout(180_000);
   await signIn(page, `owner@seed-${A.seed}.example.test`);
-  // 선행 조건: 서버의 주기 평가(로컬 1분)가 켜진 규칙을 모두 한 번은 평가했다 — 규칙별 평가 시각(알림 목록의 evaluation.rules)으로 본다.
-  // 개요의 availability 는 첫 평가 회차 도중에도 available 이 될 수 있어(규칙 하나라도 기록되면) 그것만으로는 기다리지 않는다.
+  // 선행 조건: 현재 켜진 규칙의 평가 대기가 끝났다. 미평가 사유는 정상적인 평가 결과로 유지한다.
   const rulesEvaluated = async () => {
     const response = await authenticatedRequest(
       page,
       dashboardBase(),
       `/api/v1/organizations/${A.id}/alerts?limit=1`,
     );
-    const rules = (response.body?.evaluation?.rules ?? []) as {
-      enabled: boolean;
-      evaluatedAt: string | null;
-    }[];
+    const evaluation = response.body?.evaluation as
+      { asOf: string | null; reasons: string[] } | undefined;
     return (
       response.status === 200 &&
-      rules.some((rule) => rule.enabled) &&
-      rules
-        .filter((rule) => rule.enabled)
-        .every((rule) => rule.evaluatedAt !== null)
+      !!evaluation?.asOf &&
+      !evaluation.reasons.includes("evaluation_pending")
     );
   };
   await expect
@@ -152,15 +147,11 @@ test("ALERTS-ACK @p0 @write 개요의 알림 건수는 서버의 미확인 수�
   const { start, end } = seedPeriod();
   await page.goto("/overview");
   await selectPeriod(page, start, end);
-  const kpi = page.getByRole("region", {
-    name: "보안 경보 및 알림",
+  const bell = page.getByRole("button", {
+    name: `알림, 미확인 ${before.unacknowledgedTotal.toLocaleString("ko-KR")}건`,
     exact: true,
   });
-  await expect(kpi).toContainText(
-    `현재 미확인 · 보안 ${before.security} · 비용 ${before.cost}`,
-  );
-  await expect(kpi).toContainText(String(before.unacknowledgedTotal));
-  await kpi.getByRole("button", { name: "알림 보기", exact: true }).click();
+  await bell.click();
   const drawer = page.getByRole("dialog", { name: "알림", exact: true });
   const list = drawer.getByRole("list", { name: "알림 목록" });
   await expect(list.getByRole("listitem")).toHaveCount(
@@ -179,19 +170,21 @@ test("ALERTS-ACK @p0 @write 개요의 알림 건수는 서버의 미확인 수�
   // 서버의 미확인 수가 하나 줄었고 화면은 그 값이다(화면이 세지 않는다).
   const after = await overviewAlerts(page);
   expect(after.unacknowledgedTotal).toBe(before.unacknowledgedTotal - 1);
-  await expect(kpi).toContainText(
-    `현재 미확인 · 보안 ${after.security} · 비용 ${after.cost}`,
-  );
+  await expect(
+    page.getByRole("button", {
+      name: `알림, 미확인 ${after.unacknowledgedTotal!.toLocaleString("ko-KR")}건`,
+      includeHidden: true,
+    }),
+  ).toHaveCount(1);
 
   // 새로고침 뒤에도 서버의 확인 기록이 남아 있다.
   await page.reload();
   await selectPeriod(page, start, end);
-  await expect(
-    page.getByRole("region", { name: "보안 경보 및 알림", exact: true }),
-  ).toContainText(`현재 미확인 · 보안 ${after.security} · 비용 ${after.cost}`);
   await page
-    .getByRole("region", { name: "보안 경보 및 알림", exact: true })
-    .getByRole("button", { name: "알림 보기", exact: true })
+    .getByRole("button", {
+      name: `알림, 미확인 ${after.unacknowledgedTotal!.toLocaleString("ko-KR")}건`,
+      exact: true,
+    })
     .click();
   await drawer
     .getByRole("group", { name: "알림 상태" })

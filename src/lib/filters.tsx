@@ -8,8 +8,10 @@ import {
   type DashboardFilters,
 } from "@/lib/filter-query";
 import type { CompareKey, RangeKey } from "@/types/domain";
+import { useAutoRefresh } from "@/lib/use-auto-refresh";
 
 type FiltersValue = {
+  todayIso: string;
   range: RangeKey | null;
   setRange: (r: RangeKey) => void;
   compare: CompareKey;
@@ -27,7 +29,7 @@ const RANGE_DAYS: Record<RangeKey, number> = {
   "90d": 90,
 };
 
-/** 대시보드에서는 URL이 값을 소유한다. Storybook 등 독립 화면에서는 메모리 상태로 사용할 수 있다. */
+/** 대시보드에서는 분석 페이지의 URL과 공통 레이아웃의 마지막 선택을 사용한다. 독립 화면에서는 로컬 상태로 동작한다. */
 export function FiltersProvider({
   children,
   todayIso = "2026-09-13",
@@ -40,12 +42,13 @@ export function FiltersProvider({
   onChange?: (next: DashboardFilters) => void;
 }) {
   const [local, setLocal] = useState(() => defaultDashboardFilters(todayIso));
-  const [autoRefresh, setAutoRefresh] = useState(false);
+  const { autoRefresh, toggleAutoRefresh } = useAutoRefresh();
   const filters = controlled ?? local;
   const change = onChange ?? setLocal;
   const value = useMemo<FiltersValue>(
     () => ({
       ...filters,
+      todayIso,
       range:
         filters.dates.end === todayIso
           ? ((Object.entries(RANGE_DAYS).find(
@@ -73,9 +76,9 @@ export function FiltersProvider({
           change({ ...filters, dates: { start: dates.start, end: dates.end } });
       },
       autoRefresh,
-      toggleAutoRefresh: () => setAutoRefresh((value) => !value),
+      toggleAutoRefresh,
     }),
-    [filters, change, autoRefresh, todayIso],
+    [filters, change, autoRefresh, toggleAutoRefresh, todayIso],
   );
   return (
     <FiltersContext.Provider value={value}>{children}</FiltersContext.Provider>

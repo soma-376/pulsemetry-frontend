@@ -39,12 +39,16 @@ test("금액 null과 0을 구분하고 이전 0과 비교 불가를 표시한다
 
 test("차트는 중간 미관측을 연결하거나 0으로 채우지 않는다", () => {
   const data = overviewSchema.parse(example);
-  const points = data.trend.points.slice(0, 3);
+  const points = data.trend!.points.slice(0, 3);
   points[1] = {
     ...points[1],
     observation: "unobserved",
-    equivalentCostUsd: null,
-    totalTokens: null,
+    equivalentCostUsd: {
+      value: null,
+      status: "unavailable",
+      reasons: ["no_data"],
+    },
+    totalTokens: { value: null, status: "unavailable", reasons: ["no_data"] },
   };
   assert.deepEqual(
     trendSegments(points, "equivalentCostUsd").map((segment) =>
@@ -52,23 +56,31 @@ test("차트는 중간 미관측을 연결하거나 0으로 채우지 않는다"
     ),
     [[0], [2]],
   );
-  assert.equal(trendSegments(points, "allocatedSeatCostUsd").length, 1);
-  points[1] = { ...points[1], observation: "complete", equivalentCostUsd: "0" };
+  assert.equal(points[1].equivalentCostUsd.status, "unavailable");
+  points[1] = {
+    ...points[1],
+    observation: "complete",
+    equivalentCostUsd: { value: "0", status: "complete", reasons: [] },
+  };
   assert.equal(trendSegments(points, "equivalentCostUsd")[0][1].value, 0);
 });
 
 test("모델 기타 합계에도 모르는 비용과 토큰은 null을 유지한다", () => {
-  const models = overviewSchema.parse(example).modelMix.models;
+  const models = overviewSchema.parse(example).modelMix!.models;
   models.push({
     ...models[4],
     modelId: "unknown",
-    equivalentCostUsd: null,
-    totalTokens: null,
+    equivalentCostUsd: {
+      value: null,
+      status: "unavailable",
+      reasons: ["no_data"],
+    },
+    totalTokens: { value: null, status: "unavailable", reasons: ["no_data"] },
   });
   const grouped = groupModels(models);
   assert.equal(grouped.length, 5);
-  assert.equal(grouped[4].equivalentCostUsd, null);
-  assert.equal(grouped[4].totalTokens, null);
+  assert.equal(grouped[4].equivalentCostUsd.value, null);
+  assert.equal(grouped[4].totalTokens.value, null);
   assert.equal(grouped[4].displayName, "기타 2개 모델");
 });
 
@@ -112,7 +124,7 @@ test("직접 호출에 필터와 취소 신호를 전달하고 응답 범위를 
     },
   );
   assert.equal(
-    (await fetchOverview(params, controller.signal)).usage.current?.activeUsers,
+    (await fetchOverview(params, controller.signal)).summary?.activeUsers.value,
     100,
   );
 });

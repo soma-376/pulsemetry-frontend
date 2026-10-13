@@ -1,4 +1,4 @@
-# 구성원 API — v1 제안
+# 구성원 API — 화면 전용 응답
 
 [공통 계약](README.md)과 [개요의 기간·단위 규칙](overview-api.md)을 따른다.
 현 화면: MembersContent, MemberListCard, UnassignedCard, SeatReclaimCard, InviteModal.
@@ -33,9 +33,11 @@ type Member = {
   role: Role;
   status: "active" | "suspended";
   version: number;
-  periodUsage: Usage | null;
+  periodUsage: {
+    equivalentCostUsd: Value<string>;
+    sessionCount: Value<number>;
+  } | null;
   lastUsedAt: string | null;
-  observation: Observation;
   seatState: "assigned" | "unassigned" | "reclaimed" | "unknown";
 };
 type ReclaimCandidate = {
@@ -53,26 +55,28 @@ type ReclaimCandidate = {
   reason: string | null; // vendor_control_unavailable
   vendorAccount?: string; // 좌석의 벤더 계정(가산). account 는 구성원의 계정
 };
+type Value<T> = {
+  value: T | null;
+  status: "complete" | "partial" | "unavailable";
+  reasons: string[];
+};
+type MembersMeta = {
+  organizationId: string;
+  asOf: string;
+  startDate: string;
+  endDate: string;
+  snapshotId: string;
+};
 type MemberSummary = {
   rosterMembers: number;
-  activeUsers: number | null;
+  activeUsers: Value<number>;
   unassignedMembers: number;
-  periodUnassignedEquivalentCostUsd: Money | null;
-  periodTotalEquivalentCostUsd: Money | null;
-  seats: Section<{
-    contracted: number;
-    assigned: number;
-    unallocated: number;
-    activeInPeriod: number | null;
-    inactiveAssigned: number | null;
-    reclaimCandidates: number | null;
-    estimatedMonthlySavingsUsd: Money | null;
-  }>;
+  periodUnassignedEquivalentCostUsd: Value<string>;
+  periodUnassignedCostShare: Value<number>; // 0~1 비율, 분모가 0이거나 확인 불가이면 null
+  reclaimCandidates: Value<number>;
 };
 type MembersResponse = {
-  meta: AnalyticsMeta;
-  asOf: string;
-  ingest: OverviewResponse["ingest"];
+  meta: MembersMeta;
   summary: MemberSummary;
   policy: { idleDays: 7 | 14 | 30 | 60; version: number };
   capabilities: {
@@ -85,7 +89,7 @@ type MembersResponse = {
   unassigned: Page<Member>;
   reclaimCandidates: Section<Page<ReclaimCandidate>>;
 };
-type MemberListResponse = { meta: AnalyticsMeta; members: Page<Member> };
+type MemberListResponse = { meta: MembersMeta; members: Page<Member> };
 type ReclaimCandidatesResponse = {
   meta: CurrentMeta;
   idleDays: number;
@@ -274,3 +278,13 @@ capabilities.reclaimSeats·restoreSeats는 관리 기능이 켜진 서버면 tru
 초대 목록·구성원 조회의 `plannedVendorIds`를 구성원 상세에서 복원한다. `PATCH /members/{memberId}`는 변경된 제품 목록과 `expectedVersion`을 보내며 빈 배열은 전체 해제다.
 제품은 `settings`의 등록 벤더 목록에서 읽는다. 로딩·조회 실패·등록 제품 없음은 구분한다. 등록 해제된 기존 선택은 유지·제거할 수 있고 새로 선택할 수 없다.
 백엔드 enrollment V30·dashboard cache V6 마이그레이션과 API 변경을 먼저 배포한다. 프론트의 선택은 실제 좌석 집계에 사용하지 않는다.
+
+## 화면 응답과 상태
+
+명단·팀·좌석은 snapshot의 현재 기준 시각에 고정한다. 사용량은 프론트가 요청하는 최근 7일이며 비교는 사용하지 않는다. 사용량이 없어도 명단과 관리 기능을 숨기지 않는다. 첫 페이지 이후에는 같은 기간·조직·snapshot의 페이지를 끝까지 확인해 검색과 CSV를 만든다.
+
+본문 응답에서 헤더의 수집 현황, 중복 asOf, 비교·가격 버전 메타, 구성원별 토큰 상세·활성 사용자 수, 사용하지 않는 좌석 집계를 제거했다. 비용 비중은 서버가 같은 snapshot의 미배분 비용과 전체 비용으로 계산한다. 현재 팀 미배정 인원과 이벤트 당시 미배분 비용은 다른 범위다.
+
+`Value`는 개요와 같은 의미이며 0과 확인 불가를 구분한다. 미완료 기간·식별 누락·가격 누락 사유를 보존하고, 회수 후보 수는 후보 목록의 판정 가용성과 같은 사유를 갖는다. 관측이 부족한 좌석을 후보 0으로 확정하지 않는다. 본문 조회 실패는 HTTP 오류이고 초대·팀 목록·좌석 상세의 독립 조회와 쓰기 경로는 유지한다.
+
+CSV는 명단에 보이는 비용·세션·마지막 사용에 비용/세션 상태와 사유를 함께 내보낸다. 미확정 값은 빈 칸이다. 기존 응답과 호환되지 않으므로 프론트와 백엔드를 함께 적용한다.

@@ -14,10 +14,26 @@ export type IconName =
   | "members"
   | "settings"
   | "calendar"
+  | "alert"
+  | "bell"
+  | "inbox"
+  | "link"
   | "sun"
   | "moon";
 
 const PARTS: Record<IconName, Part[]> = {
+  bell: ["M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9", "M10 21h4"],
+  alert: [[12, 12, 9], "M12 7.5v5", "M12 16h.01"],
+  inbox: [
+    "M4 4.5h16l2 10v5H2v-5z",
+    "M2 14.5h6l2 3h4l2-3h6",
+    "M8 8.5h8",
+    "M10 11.5h4",
+  ],
+  link: [
+    "M10 13a5 5 0 0 0 7 .1l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7",
+    "M14 11a5 5 0 0 0-7-.1l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7",
+  ],
   overview: [
     "M4.5 15.5a7.5 7.5 0 0 1 15 0",
     "M12 15.5l3.6-4.2",

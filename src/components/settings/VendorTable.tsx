@@ -1,5 +1,6 @@
 "use client";
 
+import { MetricStatusBadge } from "@/components/overview/KpiCard";
 import { Button } from "@/components/ui/Button";
 import type { VendorRow } from "@/lib/settings";
 
@@ -19,17 +20,15 @@ export function VendorTable({
   onOpen,
   onAdd,
   addDisabled = false,
-  loadingVendorId = null,
 }: {
   rows: VendorRow[];
   addDisabled?: boolean;
-  loadingVendorId?: string | null;
   onOpen: (id: string) => void;
   onAdd: () => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card">
-      <div className="flex flex-wrap items-center gap-2.5 border-b border-border bg-sub px-3.5 py-2.5">
+    <div className="rounded-lg border border-border bg-card">
+      <div className="flex flex-wrap items-center gap-2.5 rounded-t-lg border-b border-border bg-sub px-3.5 py-2.5">
         <span className="text-[12px] font-semibold whitespace-nowrap">
           연동 벤더 {rows.length}
         </span>
@@ -45,18 +44,14 @@ export function VendorTable({
           role="button"
           tabIndex={0}
           aria-label={v.openLabel}
-          aria-busy={loadingVendorId === v.id || undefined}
-          aria-disabled={loadingVendorId === v.id || undefined}
-          onClick={() => {
-            if (loadingVendorId !== v.id) onOpen(v.id);
-          }}
+          onClick={() => onOpen(v.id)}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              if (loadingVendorId !== v.id) onOpen(v.id);
+              onOpen(v.id);
             }
           }}
-          className={`${COLS} cursor-pointer px-3.5 py-3 hover:bg-hover ${i === 0 ? "" : "border-t border-border"}`}
+          className={`relative ${COLS} cursor-pointer px-3.5 py-3 hover:bg-hover ${i === 0 ? "" : "border-t border-border"}`}
         >
           <div className="flex min-w-0 items-center gap-2.5">
             {/* 점 하나가 설정 여부를 요약합니다 — 회색 미설정, 주황 확인 필요, 초록 설정됨 */}
@@ -71,6 +66,11 @@ export function VendorTable({
               <span className="overflow-hidden text-[11.5px] text-ellipsis whitespace-nowrap text-text2">
                 {v.product}
               </span>
+              {v.inputNotice && (
+                <span className="mt-1 text-[11.5px] text-orange-ink [overflow-wrap:anywhere]">
+                  {v.inputNotice}
+                </span>
+              )}
             </div>
           </div>
 
@@ -80,30 +80,24 @@ export function VendorTable({
           >
             {v.statusLabel}
           </span>
-          <span className="tnum text-[12px] whitespace-nowrap text-text2">
-            {v.seatsText}
+          <span className="flex min-w-0 flex-col items-start gap-1 text-text2">
+            <span className="tnum text-[12px] [overflow-wrap:anywhere]">
+              {v.seatsText}
+            </span>
+            {v.seatsStatus && <MetricStatusBadge {...v.seatsStatus} />}
           </span>
           <span
-            className="tnum text-right text-[13px] font-semibold whitespace-nowrap"
+            className="tnum min-w-0 text-right text-[13px] leading-5 font-semibold [overflow-wrap:anywhere]"
             style={{ color: v.spendFg }}
           >
             {v.spendText}
-          </span>
-          <span className="flex items-center justify-center text-text3">
-            {loadingVendorId === v.id ? (
-              <>
-                <span
-                  aria-hidden="true"
-                  className="size-3.5 rounded-full border-2 border-current border-r-transparent motion-safe:animate-spin"
-                />
-                <span role="status" className="sr-only">
-                  {v.short} 상세 정보를 불러오는 중입니다…
-                </span>
-              </>
-            ) : (
-              "›"
+            {v.spendStatus && (
+              <span className="mt-1 flex justify-end">
+                <MetricStatusBadge {...v.spendStatus} />
+              </span>
             )}
           </span>
+          <span className="flex items-center justify-center text-text3">›</span>
         </div>
       ))}
     </div>

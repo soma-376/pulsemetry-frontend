@@ -7,6 +7,7 @@ export type KpiCardProps = {
   unit: string;
   def: string;
   caption: string;
+  captionTitle?: string;
   delta: string;
   up: boolean;
   good: boolean;
@@ -21,8 +22,8 @@ export type KpiCardProps = {
   compareLabel: string;
   /** 비교가 불가능한 이유 */
   noDeltaReason: string;
-  /** 수집이 끊긴 경우 기준 시각을 각주로 답니다 */
-  staleAt?: string;
+  /** 현재 값의 누락·부분 관측 상태. 비교 상태와 별개다. */
+  valueStatus?: { label: string; reason: string };
   /** 카드에서 여는 상세(예: 알림 목록) */
   action?: { label: string; onClick: () => void };
 };
@@ -33,6 +34,7 @@ export function KpiCard({
   unit,
   def,
   caption,
+  captionTitle,
   delta,
   up,
   good,
@@ -43,22 +45,25 @@ export function KpiCard({
   noDelta,
   compareLabel,
   noDeltaReason,
-  staleAt,
+  valueStatus,
   action,
 }: KpiCardProps) {
   return (
     <div
       role="region"
       aria-label={label}
-      className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-border bg-card p-4"
+      className="relative flex min-w-0 flex-col gap-1.5 rounded-lg border border-border bg-card p-4 [overflow-wrap:anywhere]"
     >
-      <div className="flex items-center justify-between gap-1.5">
-        <span
-          title={def}
-          className="overflow-hidden text-[12px] text-ellipsis whitespace-nowrap text-text2"
-        >
+      <div className="flex flex-wrap items-center justify-between gap-1.5">
+        <span title={def} className="min-w-0 text-[12px] text-text2">
           {label}
         </span>
+        {valueStatus && (
+          <MetricStatusBadge
+            label={valueStatus.label}
+            reason={valueStatus.reason}
+          />
+        )}
         {action && (
           <button
             type="button"
@@ -72,7 +77,7 @@ export function KpiCard({
 
       <div className="tnum flex flex-wrap items-baseline gap-[3px] leading-[1.1] tracking-[-0.02em]">
         <span
-          className="text-[30px] font-semibold"
+          className="min-w-0 max-w-full text-[30px] font-semibold"
           style={{ color: bad ? "var(--red)" : "var(--text)" }}
         >
           {value}
@@ -83,7 +88,7 @@ export function KpiCard({
       </div>
 
       {showDelta && (
-        <div className="tnum flex items-center gap-1.5 text-[12px]">
+        <div className="tnum flex flex-wrap items-center gap-1.5 text-[12px]">
           <span
             className="font-semibold"
             style={{
@@ -102,24 +107,44 @@ export function KpiCard({
         </div>
       )}
 
-      {noDelta && (
-        <div className="flex items-center gap-1.5 text-[11.5px]">
-          <span className="inline-flex h-[18px] items-center rounded-[3px] bg-gray-tint px-1.5 text-[10.5px] font-semibold whitespace-nowrap text-text2">
-            비교 불가
-          </span>
-          <span className="whitespace-nowrap text-text3">{noDeltaReason}</span>
+      {noDelta && value !== "-" && (
+        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+          <MetricStatusBadge label="비교 불가" reason={noDeltaReason} />
+          {compareLabel && <span className="text-text3">{compareLabel}</span>}
         </div>
       )}
 
-      {staleAt && (
-        <div className="text-[11px] font-semibold whitespace-nowrap text-orange-ink">
-          기준 {staleAt} · 이후 신호 없음
-        </div>
-      )}
-
-      <div className="pretty text-[11px] leading-[1.45] text-text3">
+      <div
+        title={captionTitle}
+        className="pretty text-[11px] leading-[1.45] text-text3"
+      >
         {caption}
       </div>
     </div>
+  );
+}
+
+/** 짧은 상태를 항상 표시하고, 사유는 포인터·키보드 초점에서 확인한다. */
+export function MetricStatusBadge({
+  label,
+  reason,
+}: {
+  label: string;
+  reason: string;
+}) {
+  return (
+    <span
+      tabIndex={0}
+      aria-label={`${label}: ${reason}`}
+      className="group inline-flex shrink-0 cursor-help rounded-[3px] bg-gray-tint px-1.5 py-0.5 text-[10.5px] leading-[14px] font-semibold whitespace-nowrap text-text2 outline-offset-2"
+    >
+      {label}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute top-full right-0 left-0 z-20 mt-1 hidden rounded-md border border-border bg-card p-2.5 text-left text-xs leading-5 font-normal whitespace-normal text-text2 shadow-lg group-hover:block group-focus-visible:block"
+      >
+        {reason}
+      </span>
+    </span>
   );
 }

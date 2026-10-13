@@ -1,3 +1,4 @@
+import { overviewSchema } from "../../src/lib/api/overview";
 import type { Page } from "@playwright/test";
 import example from "../../docs/api/overview-response.example.json";
 
@@ -11,31 +12,46 @@ export const corsHeaders = (page: Page) => ({
 /** 일자와 조직은 실제 브라우저 요청을 따른다. 운영 코드에는 fixture를 주입하지 않는다. */
 export function overviewFixture(url: string) {
   const request = new URL(url);
-  const data = structuredClone(example);
+  const data = overviewSchema.parse(example);
   data.meta.organizationId = request.pathname
     .split("/organizations/")[1]
     .split("/")[0];
   data.meta.startDate = request.searchParams.get("startDate")!;
   data.meta.endDate = request.searchParams.get("endDate")!;
-  data.comparison.mode = request.searchParams.get("compare")!;
+  data.comparison.mode =
+    request.searchParams.get("compare") === "none"
+      ? "none"
+      : request.searchParams.get("compare") === "prev_period"
+        ? "prev_period"
+        : "prev_week";
   data.meta.dayCount =
     (Date.parse(data.meta.endDate) - Date.parse(data.meta.startDate)) /
       86_400_000 +
     1;
-  data.trend.points = Array.from(
+  data.trend!.points = Array.from(
     { length: data.meta.dayCount },
     (_, index) => ({
-      ...example.trend.points[index % 7],
+      ...overviewSchema.parse(example).trend!.points[index % 7],
       date: new Date(Date.parse(data.meta.startDate) + index * 86_400_000)
         .toISOString()
         .slice(0, 10),
     }),
   );
   if (data.comparison.mode === "none") {
-    data.comparison.status = "disabled";
-    // JSON fixture의 구체 타입 대신 실제 계약이 허용하는 null을 사용한다.
-    Object.assign(data.usage, { previous: null });
-    Object.assign(data.seats, { previous: null });
+    const disabled = {
+      status: "disabled" as const,
+      reasons: [],
+      previousValue: null,
+      absoluteChange: null,
+      percentChange: null,
+      change: null,
+    };
+    for (const m of Object.values(data.summary!))
+      if ("comparison" in m) m.comparison = disabled;
+    for (const t of data.teamUsage!.topTeams)
+      t.equivalentCostUsd.comparison = disabled;
+    if (data.teamUsage!.unassigned)
+      data.teamUsage!.unassigned.equivalentCostUsd.comparison = disabled;
   }
   return data;
 }

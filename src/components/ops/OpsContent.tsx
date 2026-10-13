@@ -1,7 +1,9 @@
 "use client";
 
+import { PageHeader } from "@/components/layout/PageHeader";
+
 import { useState } from "react";
-import { useIsFetching, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { AlertsPanel } from "@/components/alerts/AlertsPanel";
 import {
   useDashboardPageExport,
@@ -17,6 +19,7 @@ import {
   type AlertStatus,
 } from "@/lib/api/alerts";
 import { ManagementError } from "@/lib/api/management";
+import { refreshFeedback } from "@/components/ui/RefreshNotice";
 import { useBackendSession } from "@/lib/api/session";
 import { alertsCsv, downloadCsv } from "@/lib/csv-export";
 
@@ -46,16 +49,20 @@ function OrganizationOps({
 }) {
   const [status, setStatus] = useState<AlertStatus>("unacknowledged");
   const { toast, showToast, dismissToast } = useToast();
-  const client = useQueryClient();
   // AlertsPanel이 조회하는 현재 필터의 캐시를 그대로 사용한다.
-  const queryKey = alertsOptions(organizationId, status, "security").queryKey;
-  const fetching = useIsFetching({ queryKey, exact: true });
-  useDashboardPageRefresh(() => {
-    void client.refetchQueries(
-      { queryKey, exact: true, type: "active" },
-      { cancelRefetch: false },
-    );
-  }, fetching > 0);
+  const query = useInfiniteQuery(
+    alertsOptions(organizationId, status, "security"),
+  );
+  const denied =
+    query.error instanceof ManagementError &&
+    [401, 403, 404].includes(query.error.status);
+  useDashboardPageRefresh(
+    () => {
+      void query.refetch({ cancelRefetch: false });
+    },
+    query.isFetching,
+    denied ? undefined : refreshFeedback(query),
+  );
   // 화면의 상태 필터와 같은 조건의 보안 알림 전부 — 같은 snapshot 으로 끝까지 읽고, 만료되면 처음부터 한 번 다시 읽는다.
   const exportAlerts = async () => {
     for (let attempt = 0; ; attempt++) {
@@ -101,19 +108,8 @@ function OrganizationOps({
   };
   useDashboardPageExport(exportAlerts, "");
   return (
-    <PageContainer className="flex flex-col gap-4 pt-5 pb-10">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-[18px] font-semibold tracking-[-0.01em]">
-          운영 · 보안
-        </h1>
-        <p className="text-xs text-text2">
-          보안 범주 알림 — 허용 목록 밖 모델 호출과 승인하지 않은 도구 사용 — 을
-          확인합니다. 알림은 설정에서 켠 규칙의 주기 평가 결과입니다.
-        </p>
-        <p className="text-xs text-text3">
-          세션 조회와 감사 로그는 이 화면의 범위가 아닙니다.
-        </p>
-      </div>
+    <PageContainer className="flex flex-col gap-6 pt-6 pb-10">
+      <PageHeader page="ops" />
       <section
         aria-label="보안 알림"
         className="max-w-[760px] rounded-lg border border-border bg-card p-4"
@@ -125,6 +121,7 @@ function OrganizationOps({
           status={status}
           onStatusChange={setStatus}
           onAcknowledged={showToast}
+          refreshInHeader
         />
       </section>
       <Toast toast={toast} onDismiss={dismissToast} />

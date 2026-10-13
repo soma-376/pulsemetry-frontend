@@ -3,7 +3,11 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, waitFor, within } from "storybook/test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FiltersProvider } from "@/lib/filters";
-import { clearBackendSession, exchangeLogin } from "@/lib/api/session";
+import {
+  clearBackendSession,
+  exchangeLogin,
+  getSessionState,
+} from "@/lib/api/session";
 import { COMPANY_A } from "@/mocks/company-a";
 import {
   settingsHandlers,
@@ -26,7 +30,8 @@ function Providers({ children }: { children: ReactNode }) {
   );
 }
 const meta = {
-  title: "Pages/Settings",
+  id: "pages-settings-details",
+  title: "Pages/설정/세부 사례",
   component: SettingsContent,
   tags: ["!autodocs"],
   parameters: {
@@ -52,33 +57,64 @@ const meta = {
       "v".repeat(43),
       COMPANY_A.organization.organizationId,
     );
-    return () => clearBackendSession();
+    const ownSession = getSessionState();
+    return () => {
+      if (getSessionState() === ownSession) clearBackendSession();
+    };
   },
 } satisfies Meta<typeof SettingsContent>;
 export default meta;
 type Story = StoryObj<typeof meta>;
-export const RegisteredProducts: Story = { name: "등록 제품·계약 일부 미입력" };
 export const Empty: Story = {
   name: "등록 제품 없음",
   parameters: { scenario: "empty" },
 };
-export const Loading: Story = {
-  name: "최초 조회·설정 본문 전체 로딩",
-  parameters: { scenario: "loading" },
-  async play({ canvas }) {
-    await canvas.findByText("설정을 불러오는 중입니다…");
+export const ExpiredContractRenewal: Story = {
+  name: "만료 계약 갱신 · 알림 해소",
+  parameters: { scenario: "expired" },
+  async play({ canvas, canvasElement, userEvent }) {
+    const bell = await canvas.findByRole("button", {
+      name: "알림, 미확인 2건",
+    });
+    await userEvent.click(bell);
+    const notifications = within(
+      await canvas.findByRole("dialog", { name: "알림" }),
+    );
+    const expired = within(
+      await notifications.findByRole("list", { name: "만료된 계약 목록" }),
+    );
     await expect(
-      canvas.queryByRole("region", { name: "계약 벤더" }),
-    ).not.toBeInTheDocument();
+      expired.getAllByRole("link", { name: "계약 갱신" }),
+    ).toHaveLength(2);
+    await expect(expired.getByText("Claude (Anthropic)")).toBeVisible();
+    await expect(expired.getByText("GitHub Copilot")).toBeVisible();
+    await userEvent.keyboard("{Escape}");
+    await userEvent.click(
+      await canvas.findByRole("button", { name: /Claude.*계약 설정 열기/ }),
+    );
+    const screen = within(canvasElement.ownerDocument.body);
+    const endDate = await screen.findByRole("textbox", {
+      name: "계약 종료일",
+    });
+    await userEvent.clear(endDate);
+    await userEvent.type(endDate, "20271231");
+    await userEvent.click(
+      screen.getByRole("button", { name: "변경사항 저장" }),
+    );
+    await canvas.findByRole("button", { name: "알림, 미확인 1건" });
+    await userEvent.click(bell);
+    const remaining = within(
+      await within(
+        await canvas.findByRole("dialog", { name: "알림" }),
+      ).findByRole("list", { name: "만료된 계약 목록" }),
+    );
     await expect(
-      canvas.queryByRole("region", { name: "수집 정책" }),
-    ).not.toBeInTheDocument();
+      remaining.getAllByRole("link", { name: "계약 갱신" }),
+    ).toHaveLength(1);
     await expect(
-      canvas.queryByRole("region", { name: "알림 규칙" }),
+      remaining.queryByText("Claude (Anthropic)"),
     ).not.toBeInTheDocument();
-    await expect(
-      canvas.queryByText("유효 계약 기준 월 합계"),
-    ).not.toBeInTheDocument();
+    await expect(remaining.getByText("GitHub Copilot")).toBeVisible();
   },
 };
 export const LoadingThenLoaded: Story = {
@@ -125,70 +161,108 @@ export const Refreshing: Story = {
   },
 };
 export const VendorLoading: Story = {
-  name: "벤더 상세·선택한 행만 로딩",
+  name: "벤더 상세·즉시 열린 드로어 스켈레톤",
   parameters: { scenario: "detail-loading" },
-  async play({ canvas, canvasElement, userEvent }) {
+  async play({ canvas, userEvent }) {
+    await userEvent.click(
+      await canvas.findByRole("button", { name: /Claude.*계약 설정 열기/ }),
+    );
+    const drawer = await canvas.findByRole("dialog", {
+      name: /Claude.*계약 설정/,
+    });
+    await expect(
+      within(drawer).getByText("계약 정보를 불러오는 중입니다…"),
+    ).toBeInTheDocument();
+    await expect(
+      within(drawer).queryByRole("textbox", { name: "표시 이름" }),
+    ).not.toBeInTheDocument();
+    await expect(
+      within(drawer).getByRole("button", { name: "닫기" }),
+    ).toBeEnabled();
+  },
+};
+export const VendorLoadingThenLoaded: Story = {
+  name: "벤더 상세·같은 드로어에서 로딩 완료",
+  parameters: { scenario: "detail-slow" },
+  async play({ canvas, userEvent }) {
+    await userEvent.click(
+      await canvas.findByRole("button", { name: /Claude.*계약 설정 열기/ }),
+    );
+    const drawer = await canvas.findByRole("dialog", {
+      name: /Claude.*계약 설정/,
+    });
+    await expect(
+      within(drawer).getByText("계약 정보를 불러오는 중입니다…"),
+    ).toBeInTheDocument();
+    await within(drawer).findByRole(
+      "textbox",
+      { name: "표시 이름" },
+      { timeout: 10000 },
+    );
+    await expect(
+      canvas.getByRole("dialog", { name: /Claude.*계약 설정/ }),
+    ).toBe(drawer);
+    await expect(
+      within(drawer).queryByText("계약 정보를 불러오는 중입니다…"),
+    ).not.toBeInTheDocument();
+    await expect(
+      within(drawer).getByRole("button", { name: "상세 패널 닫기" }),
+    ).toHaveFocus();
+  },
+};
+export const VendorLoadingSwitch: Story = {
+  name: "벤더 상세·로딩 중 닫기와 다른 벤더 열기",
+  parameters: { scenario: "detail-loading" },
+  async play({ canvas, userEvent }) {
     const row = await canvas.findByRole("button", {
       name: /Claude.*계약 설정 열기/,
     });
     await userEvent.click(row);
-    await waitFor(() => expect(row).toHaveAttribute("aria-busy", "true"));
-    await expect(
-      canvas.getByRole("button", { name: /ChatGPT.*계약 설정 열기/ }),
-    ).not.toHaveAttribute("aria-busy");
-    await expect(
-      canvas.getByRole("region", { name: "수집 정책" }),
-    ).toBeVisible();
-    await expect(
-      canvas.queryByText("설정을 불러오는 중입니다…"),
-    ).not.toBeInTheDocument();
-    await expect(
-      within(canvasElement.ownerDocument.body).queryByRole("dialog"),
-    ).not.toBeInTheDocument();
-    const other = canvas.getByRole("button", {
-      name: /ChatGPT.*계약 설정 열기/,
+    const firstDrawer = await canvas.findByRole("dialog", {
+      name: /Claude.*계약 설정/,
     });
-    await userEvent.click(other);
-    await waitFor(() => expect(other).toHaveAttribute("aria-busy", "true"));
-    await expect(row).not.toHaveAttribute("aria-busy");
+    await userEvent.click(
+      within(firstDrawer).getByRole("button", { name: "닫기" }),
+    );
+    await waitFor(() =>
+      expect(canvas.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    await expect(row).toHaveFocus();
+    await userEvent.click(
+      canvas.getByRole("button", { name: /ChatGPT.*계약 설정 열기/ }),
+    );
+    const drawer = await canvas.findByRole("dialog", {
+      name: /ChatGPT.*계약 설정/,
+    });
+    await expect(
+      within(drawer).getByText("계약 정보를 불러오는 중입니다…"),
+    ).toBeInTheDocument();
   },
 };
 export const VendorLoadError: Story = {
-  name: "벤더 상세·조회 실패 후 재시도",
+  name: "벤더 상세·드로어 안에서 조회 실패와 재시도",
   parameters: { scenario: "detail-error" },
-  async play({ canvas, canvasElement, userEvent }) {
+  async play({ canvas, userEvent }) {
     await userEvent.click(
       await canvas.findByRole("button", { name: /Claude.*계약 설정 열기/ }),
     );
-    const retry = await canvas.findByRole(
+    const drawer = await canvas.findByRole("dialog", {
+      name: /Claude.*계약 설정/,
+    });
+    const retry = await within(drawer).findByRole(
       "button",
       { name: "상세 다시 조회" },
       { timeout: 10000 },
     );
     await expect(
-      canvas.getByRole("region", { name: "수집 정책" }),
-    ).toBeVisible();
+      within(drawer).queryByRole("textbox", { name: "표시 이름" }),
+    ).not.toBeInTheDocument();
     await userEvent.click(retry);
-    await within(canvasElement.ownerDocument.body).findByRole("dialog", {
-      name: /Claude.*계약 설정/,
-    });
-    await expect(canvas.queryByRole("alert")).not.toBeInTheDocument();
-  },
-};
-export const LoadError: Story = {
-  name: "조회 실패·로딩 종료",
-  parameters: { scenario: "load-error" },
-  async play({ canvas }) {
-    await canvas.findByRole("alert", {}, { timeout: 10000 });
+    await within(drawer).findByRole("textbox", { name: "표시 이름" });
     await expect(
-      canvas.queryByText("설정을 불러오는 중입니다…"),
-    ).not.toBeInTheDocument();
-    await expect(
-      canvas.queryByRole("region", { name: "계약 벤더" }),
-    ).not.toBeInTheDocument();
-    await expect(
-      canvas.getByRole("button", { name: "다시 조회" }),
-    ).toBeEnabled();
+      canvas.getByRole("dialog", { name: /Claude.*계약 설정/ }),
+    ).toBe(drawer);
+    await expect(within(drawer).queryByRole("alert")).not.toBeInTheDocument();
   },
 };
 export const SaveError: Story = {
@@ -353,7 +427,7 @@ export const ExpiredCopilot: Story = {
       "dialog",
     );
     await expect(
-      within(dialog).getByText("계약 만료", { exact: true }),
+      await within(dialog).findByText("계약 만료", { exact: true }),
     ).toBeVisible();
     await expect(within(dialog).getByText("마지막 계약 금액")).toBeVisible();
   },

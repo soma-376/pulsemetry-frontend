@@ -47,133 +47,187 @@ export const productUsage = productRef.extend({
   totalTokens: count,
   equivalentCostUsd: money,
 });
-const seatPeriod = z.object({
-  contractedSeats: count,
-  activeSeats: count,
-  monthlyFeeUsd: money,
-  allocatedFeeUsd: money,
-  equivalentCostUsd: money,
-  efficiency: z.number().nonnegative().nullable(),
-});
-
-/** 화면에서 소비하는 필드를 검증한다. 모르는 값과 실제 0은 구분한다. */
-export const overviewSchema = z.object({
-  meta: z.object({
-    organizationId: z.string(),
-    generatedAt: z.iso.datetime({ offset: true }),
-    dataThrough: z.iso.datetime({ offset: true }).nullable(),
-    currency: z.literal("USD"),
-    startDate: z.iso.date(),
-    endDate: z.iso.date(),
-    timeZone: z.literal("Asia/Seoul"),
-    dayCount: z.number().int().min(1).max(366),
-    dataState: z.enum(["ready", "partial", "no_data", "never_observed"]),
-    currentCoverage: coverage,
-  }),
-  comparison,
-  ingest: z.object({
-    status: z.enum(["healthy", "delayed", "down", "empty", "unknown"]),
-    reason,
-    asOf: z.iso.datetime({ offset: true }),
-    lastReceivedAt: z.iso.datetime({ offset: true }).nullable(),
-    windowMinutes: z.number().positive(),
-    activeInstallations: count,
-    observedMembers: count,
-    eligibleMembers: count,
-    coverageRatio: z.number().min(0).max(1).nullable(),
-  }),
-  usage: z.object({ current: usage.nullable(), previous: usage.nullable() }),
-  seats: z.object({
-    availability,
-    reason,
-    allocationMethod: z
-      .enum(["contract_proration", "estimated_30_day"])
-      .nullable(),
-    current: seatPeriod.nullable(),
-    previous: seatPeriod.nullable(),
-    reclaimEstimate: z
+/** 값과 비교의 상태는 서버가 판정한다. 0은 유효한 값이고 null은 산출 불가다. */
+const signedMoney = z
+  .string()
+  .regex(/^-?\d+(?:\.\d+)?$/)
+  .refine((v) => Number.isFinite(Number(v)))
+  .nullable();
+export const valueSchema = <T extends z.ZodType>(schema: T) =>
+  z
+    .object({
+      value: schema,
+      status: z.enum(["complete", "partial", "unavailable"]),
+      reasons: z.array(z.string()),
+    })
+    .superRefine((v, ctx) => {
+      if (
+        ("value" in v && v.value === null) !== (v.status === "unavailable") ||
+        (v.status === "complete" && v.reasons.length > 0) ||
+        (v.status !== "complete" && !v.reasons.length)
+      )
+        ctx.addIssue({
+          code: "custom",
+          message: "값과 상태/사유가 일치하지 않습니다",
+        });
+    });
+export const metricSchema = <T extends z.ZodType, D extends z.ZodType>(
+  schema: T,
+  delta: D,
+) =>
+  valueSchema(schema).safeExtend({
+    comparison: z
       .object({
-        idleSeats: count,
-        monthlySavingsUsd: money,
-        efficiencyAfterReclaim: z.number().nonnegative().nullable(),
+        status: z.enum(["available", "unavailable", "disabled"]),
+        reasons: z.array(z.string()),
+        previousValue: schema,
+        absoluteChange: delta,
+        percentChange: z.number().nullable(),
+        change: z.enum(["increase", "decrease", "unchanged", "new"]).nullable(),
+      })
+      .superRefine((v, ctx) => {
+        if (
+          v.status === "available"
+            ? ("previousValue" in v && v.previousValue === null) ||
+              ("absoluteChange" in v && v.absoluteChange === null) ||
+              v.change === null ||
+              v.reasons.length > 0
+            : ("previousValue" in v && v.previousValue !== null) ||
+              ("absoluteChange" in v && v.absoluteChange !== null) ||
+              v.percentChange !== null ||
+              v.change !== null ||
+              (v.status === "unavailable" && !v.reasons.length)
+        )
+          ctx.addIssue({
+            code: "custom",
+            message: "비교 상태와 값이 일치하지 않습니다",
+          });
+      }),
+  });
+const countMetric = metricSchema(count, z.number().int().nullable());
+const moneyMetric = metricSchema(money, signedMoney);
+const teamValues = {
+  products: z.array(productRef),
+  activeUsers: valueSchema(count),
+  equivalentCostUsd: moneyMetric,
+};
+export const overviewSchema = z
+  .object({
+    meta: z.object({
+      organizationId: z.string(),
+      generatedAt: z.iso.datetime({ offset: true }),
+      dataThrough: z.iso.datetime({ offset: true }).nullable(),
+      currency: z.literal("USD"),
+      startDate: z.iso.date(),
+      endDate: z.iso.date(),
+      timeZone: z.literal("Asia/Seoul"),
+      dayCount: z.number().int().min(1).max(366),
+      dataState: z.enum(["ready", "partial", "no_data", "never_observed"]),
+      currentCoverage: coverage,
+    }),
+    comparison: z.object({
+      mode: z.enum(["none", "prev_week", "prev_period"]),
+      startDate: z.iso.date().nullable(),
+      endDate: z.iso.date().nullable(),
+      coverage: coverage.nullable(),
+    }),
+    summary: z
+      .object({
+        activeUsers: countMetric,
+        equivalentCostUsd: moneyMetric,
+        sessionCount: countMetric,
+        equivalentCostPerUserUsd: moneyMetric,
+        totalTokens: countMetric,
+        sessionsPerUser: valueSchema(z.number().nonnegative().nullable()),
+        equivalentCostPerSessionUsd: valueSchema(money),
       })
       .nullable(),
-    /** 범위 제품의 회수 후보 수(서버 가산 — ADR 0048). 판정할 수 없으면 null. */
-    reclaimCandidates: count.optional(),
-  }),
-  // 지금의 미확인 알림(서버 ADR 0051) — 조회 기간과 무관하다. asOf 는 마지막 평가 시각(평가 전이면 응답 시각).
-  alerts: z.object({
-    availability,
-    reason,
-    asOf: z.string().optional(),
-    unacknowledgedTotal: count,
-    security: count,
-    cost: count,
-  }),
-  trend: z.object({
-    bucket: z.literal("day"),
-    points: z.array(
-      z.object({
-        date: z.iso.date(),
-        observation: z.enum(["complete", "partial", "unobserved"]),
-        equivalentCostUsd: money,
-        allocatedSeatCostUsd: money,
-        totalTokens: count,
-      }),
-    ),
-  }),
-  modelMix: z.object({
-    availability,
-    reason,
-    models: z.array(
-      z.object({
-        modelId: z.string(),
-        displayName: z.string(),
-        equivalentCostUsd: money,
-        totalTokens: count,
-        effectiveCostPerMillionTokensUsd: money,
-      }),
-    ),
-  }),
-  teamUsage: z.object({
-    availability,
-    reason,
-    attributionBasis: z.literal("event_time"),
-    totalTeamCount: z.number().int().nonnegative(),
-    topTeams: z.array(
-      z.object({
-        teamId: z.string(),
-        teamName: z.string(),
-        current: teamPeriod,
-        previous: teamPeriod.nullable(),
-        topModel: z
-          .object({
+    trend: z
+      .object({
+        bucket: z.literal("day"),
+        points: z.array(
+          z.object({
+            date: z.iso.date(),
+            observation: z.enum(["complete", "partial", "unobserved"]),
+            equivalentCostUsd: valueSchema(money),
+            totalTokens: valueSchema(count),
+          }),
+        ),
+      })
+      .nullable(),
+    modelMix: z
+      .object({
+        models: z.array(
+          z.object({
             modelId: z.string(),
             displayName: z.string(),
-            share: z.number().min(0).max(1),
-          })
-          .nullable(),
-        products: z.array(productRef),
+            equivalentCostUsd: valueSchema(money),
+            totalTokens: valueSchema(count),
+            effectiveCostPerMillionTokensUsd: valueSchema(money),
+            costShare: valueSchema(z.number().min(0).max(1).nullable()),
+          }),
+        ),
+      })
+      .nullable(),
+    teamUsage: z
+      .object({
+        attributionBasis: z.literal("event_time"),
+        totalTeamCount: z.number().int().nonnegative(),
+        topTeams: z.array(
+          z.object({ teamId: z.string(), teamName: z.string(), ...teamValues }),
+        ),
+        unassigned: z.object(teamValues).nullable(),
+      })
+      .nullable(),
+    errors: z.array(
+      z.object({
+        section: z.enum(["summary", "trend", "modelMix", "teamUsage"]),
+        code: z.string(),
+        retryable: z.boolean(),
       }),
     ),
-    otherTeams: z.object({
-      count: z.number().int().nonnegative(),
-      currentEquivalentCostUsd: money,
-      previousEquivalentCostUsd: money,
-    }),
-    unassigned: z.object({
-      current: teamPeriod,
-      previous: teamPeriod.nullable(),
-      products: z.array(productRef),
-    }),
-  }),
-  // 선택 기간의 카탈로그 제품별 관측(가산 필드). 제품의 관측 인원은 좌석 수가 아니다.
-  productUsage: z.object({
-    availability,
-    reason,
-    products: z.array(productUsage),
-  }),
-});
+  })
+  .superRefine((v, ctx) => {
+    const empty =
+      v.meta.dataState === "no_data" || v.meta.dataState === "never_observed";
+    const failed = v.errors.map((e) => e.section);
+    if (new Set(failed).size !== failed.length || (empty && failed.length))
+      ctx.addIssue({
+        code: "custom",
+        message: "중복되거나 빈 기간의 오류입니다",
+      });
+    for (const section of [
+      "summary",
+      "trend",
+      "modelMix",
+      "teamUsage",
+    ] as const) {
+      if (
+        empty
+          ? v[section] !== null
+          : (v[section] === null) !== failed.includes(section)
+      )
+        ctx.addIssue({
+          code: "custom",
+          message: "영역과 오류 상태가 일치하지 않습니다",
+        });
+    }
+  });
+export type OverviewValue<T> = {
+  value: T | null;
+  status: "complete" | "partial" | "unavailable";
+  reasons: string[];
+};
+export type OverviewMetric<T> = OverviewValue<T> & {
+  comparison: {
+    status: "available" | "unavailable" | "disabled";
+    reasons: string[];
+    previousValue: T | null;
+    absoluteChange: T | null;
+    percentChange: number | null;
+    change: "increase" | "decrease" | "unchanged" | "new" | null;
+  };
+};
 
 export type Overview = z.infer<typeof overviewSchema>;
 export type OverviewParams = {
@@ -249,10 +303,12 @@ export async function fetchOverview(
   const days = (Date.parse(params.endDate) - start) / 86_400_000 + 1;
   if (
     data.meta.dayCount !== days ||
-    data.trend.points.length !== days ||
-    data.trend.points.some(
-      (point, index) => Date.parse(point.date) !== start + index * 86_400_000,
-    )
+    (data.trend !== null &&
+      (data.trend.points.length !== days ||
+        data.trend.points.some(
+          (point, index) =>
+            Date.parse(point.date) !== start + index * 86_400_000,
+        )))
   ) {
     throw new DashboardError(
       "서버 응답의 일별 데이터에 누락 또는 중복이 있습니다.",

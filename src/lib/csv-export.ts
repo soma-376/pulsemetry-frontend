@@ -1,11 +1,13 @@
 import {
-  RULE_CATEGORY,
+  alertSummary,
   type Alert,
   type AlertCategory,
   type AlertsPage,
   type AlertStatus,
 } from "./api/alerts";
-import type { Overview } from "./api/overview";
+import { groupModels } from "./api/overview-format";
+import { presentOverview } from "./metrics/overview-presentation";
+import type { Overview, OverviewValue, OverviewMetric } from "./api/overview";
 import type { Settings } from "./api/settings";
 import type { TeamAnalytics, TeamsView, TeamUser } from "./api/teams";
 
@@ -52,11 +54,6 @@ export function reasonOf(values: CsvValue[], serverReason?: string | null) {
     ? "unknown"
     : "";
 }
-const sectionReason = (
-  availability: string,
-  reason: string | null | undefined,
-) => (availability === "available" ? null : (reason ?? availability));
-
 const COMPARE_LABEL: Record<string, string> = {
   none: "비교 없음",
   prev_week: "직전 주",
@@ -74,271 +71,282 @@ export function overviewCsv(
   organization: string,
   exportedAt: string,
 ) {
-  const { current, previous } = data.usage;
-  const metric = (
-    name: string,
-    pick: (usage: NonNullable<typeof current>) => CsvValue,
-  ): CsvValue[] => {
-    const now = current ? pick(current) : null,
-      before = previous ? pick(previous) : null;
-    return [name, now, before, current ? reasonOf([now]) : data.meta.dataState];
-  };
-  const modelReason = sectionReason(
-    data.modelMix.availability,
-    data.modelMix.reason,
-  );
-  const teamReason = sectionReason(
-    data.teamUsage.availability,
-    data.teamUsage.reason,
-  );
-  const productReason = sectionReason(
-    data.productUsage.availability,
-    data.productUsage.reason,
-  );
-  const team = (
-    id: string,
-    name: string,
-    now: {
-      activeUsers: number | null;
-      equivalentCostUsd: string | null;
-    } | null,
-    before: {
-      activeUsers: number | null;
-      equivalentCostUsd: string | null;
-    } | null,
-  ): CsvValue[] => {
-    const values = [now?.activeUsers ?? null, now?.equivalentCostUsd ?? null];
-    return [
+  const values = (v: OverviewValue<string | number>): CsvValue[] => [
+    v.value,
+    v.status,
+    v.reasons.join("|"),
+  ];
+  const change = (v: OverviewMetric<string | number>): CsvValue[] => [
+    v.comparison.status,
+    v.comparison.reasons.join("|"),
+    v.comparison.previousValue,
+    v.comparison.absoluteChange,
+    v.comparison.percentChange,
+    v.comparison.change,
+  ];
+  const valueColumns = (name: string) => [
+    name,
+    `${name}Status`,
+    `${name}Reasons`,
+  ];
+  const changeColumns = [
+    "comparisonStatus",
+    "comparisonReasons",
+    "previousValue",
+    "absoluteChange",
+    "percentChange",
+    "change",
+  ];
+  const sections: CsvSection[] = [];
+  if (data.summary)
+    sections.push({
+      name: "summary",
+      columns: ["metric", ...valueColumns("value"), ...changeColumns],
+      rows: Object.entries(data.summary).map(([key, v]) => [
+        key,
+        ...values(v),
+        ...("comparison" in v ? change(v) : Array(6).fill(null)),
+      ]),
+    });
+  if (data.trend)
+    sections.push({
+      name: "trend",
+      columns: [
+        "date",
+        "observation",
+        ...valueColumns("equivalentCostUsd"),
+        ...valueColumns("totalTokens"),
+      ],
+      rows: data.trend.points.map((p) => [
+        p.date,
+        p.observation,
+        ...values(p.equivalentCostUsd),
+        ...values(p.totalTokens),
+      ]),
+    });
+  if (data.modelMix)
+    sections.push({
+      name: "modelMix",
+      columns: [
+        "model",
+        "displayName",
+        ...valueColumns("equivalentCostUsd"),
+        ...valueColumns("totalTokens"),
+        ...valueColumns("effectiveCostPerMillionTokensUsd"),
+        ...valueColumns("costShare"),
+      ],
+      rows: groupModels(data.modelMix.models).map((m) => [
+        m.modelId,
+        m.displayName,
+        ...values(m.equivalentCostUsd),
+        ...values(m.totalTokens),
+        ...values(m.effectiveCostPerMillionTokensUsd),
+        ...values(m.costShare),
+      ]),
+    });
+  if (data.teamUsage && presentOverview(data).attribution.show) {
+    const teams = data.teamUsage;
+    const row = (
+      id: string,
+      name: string,
+      t: (typeof teams.topTeams)[number] | NonNullable<typeof teams.unassigned>,
+    ) => [
       id,
       name,
-      ...values,
-      before?.activeUsers ?? null,
-      before?.equivalentCostUsd ?? null,
-      data.teamUsage.availability,
-      reasonOf(values, teamReason),
+      t.products
+        .map((p) => p.displayName ?? p.kind ?? "미확인 제품")
+        .join(" · "),
+      ...values(t.activeUsers),
+      ...values(t.equivalentCostUsd),
+      ...change(t.equivalentCostUsd),
     ];
-  };
+    sections.push({
+      name: "teamUsage",
+      columns: [
+        "teamId",
+        "teamName",
+        "products",
+        ...valueColumns("activeUsers"),
+        ...valueColumns("equivalentCostUsd"),
+        ...changeColumns,
+      ],
+      rows: [
+        ...teams.topTeams.map((t) => row(t.teamId, t.teamName, t)),
+        ...(teams.unassigned
+          ? [row("unassigned", "미배정", teams.unassigned)]
+          : []),
+      ],
+    });
+  }
+  if (data.errors.length)
+    sections.push({
+      name: "errors",
+      columns: ["failedSection", "code", "retryable"],
+      rows: data.errors.map((e) => [e.section, e.code, e.retryable]),
+    });
   return buildCsv(
     [
-      ["화면", "개요"],
-      ["조직", organization],
+      ["organization", organization],
+      ["organizationId", data.meta.organizationId],
+      ["period", `${data.meta.startDate} ~ ${data.meta.endDate}`],
+      ["timeZone", data.meta.timeZone],
+      ["comparison", COMPARE_LABEL[data.comparison.mode]],
       [
-        "기간",
-        `${data.meta.startDate} ~ ${data.meta.endDate} (${data.meta.timeZone})`,
+        "comparisonPeriod",
+        data.comparison.startDate
+          ? `${data.comparison.startDate} ~ ${data.comparison.endDate}`
+          : null,
       ],
-      ["비교", compareText(data.comparison)],
-      ["데이터 상태", data.meta.dataState],
-      ["데이터 확정 시각", data.meta.dataThrough],
-      ["통화", data.meta.currency],
-      ["응답 시각", data.meta.generatedAt],
-      ["내보낸 시각", exportedAt],
+      ["currency", data.meta.currency],
+      ["dataState", data.meta.dataState],
+      ["generatedAt", data.meta.generatedAt],
+      ["exportedAt", exportedAt],
     ],
-    [
-      {
-        name: "summary",
-        columns: ["metric", "current", "previous", "reason"],
-        rows: [
-          metric("activeUsers", (usage) => usage.activeUsers),
-          metric("sessionCount", (usage) => usage.sessionCount),
-          metric("totalTokens", (usage) => usage.tokens.total),
-          metric("equivalentCostUsd", (usage) => usage.equivalentCostUsd),
-        ],
-      },
-      {
-        name: "trend",
-        columns: [
-          "date",
-          "observation",
-          "equivalentCostUsd",
-          "allocatedSeatCostUsd",
-          "totalTokens",
-          "reason",
-        ],
-        rows: data.trend.points.map((point) => {
-          const values = [
-            point.equivalentCostUsd,
-            point.allocatedSeatCostUsd,
-            point.totalTokens,
-          ];
-          return [
-            point.date,
-            point.observation,
-            ...values,
-            point.observation === "complete"
-              ? reasonOf(values)
-              : point.observation,
-          ];
-        }),
-      },
-      {
-        name: "model_mix",
-        columns: [
-          "modelId",
-          "displayName",
-          "equivalentCostUsd",
-          "totalTokens",
-          "effectiveCostPerMillionTokensUsd",
-          "availability",
-          "reason",
-        ],
-        rows: data.modelMix.models.length
-          ? data.modelMix.models.map((model) => {
-              const values = [
-                model.equivalentCostUsd,
-                model.totalTokens,
-                model.effectiveCostPerMillionTokensUsd,
-              ];
-              return [
-                model.modelId,
-                model.displayName,
-                ...values,
-                data.modelMix.availability,
-                reasonOf(values, modelReason),
-              ];
-            })
-          : [
-              [
-                null,
-                null,
-                null,
-                null,
-                null,
-                data.modelMix.availability,
-                modelReason ?? "no_models",
-              ],
-            ],
-      },
-      {
-        name: "team_usage",
-        columns: [
-          "teamId",
-          "teamName",
-          "activeUsers",
-          "equivalentCostUsd",
-          "previousActiveUsers",
-          "previousEquivalentCostUsd",
-          "availability",
-          "reason",
-        ],
-        rows: [
-          ...data.teamUsage.topTeams.map((item) =>
-            team(item.teamId, item.teamName, item.current, item.previous),
-          ),
-          ...(data.teamUsage.otherTeams.count
-            ? [
-                [
-                  "other_teams",
-                  `그 밖의 팀 ${data.teamUsage.otherTeams.count}개`,
-                  null,
-                  data.teamUsage.otherTeams.currentEquivalentCostUsd,
-                  null,
-                  data.teamUsage.otherTeams.previousEquivalentCostUsd,
-                  data.teamUsage.availability,
-                  reasonOf(
-                    [data.teamUsage.otherTeams.currentEquivalentCostUsd],
-                    teamReason,
-                  ) || "aggregated",
-                ] as CsvValue[],
-              ]
-            : []),
-          team(
-            "unassigned",
-            "미배정",
-            data.teamUsage.unassigned.current,
-            data.teamUsage.unassigned.previous,
-          ),
-        ],
-      },
-      {
-        name: "product_usage",
-        columns: [
-          "kind",
-          "displayName",
-          "activeUsers",
-          "sessionCount",
-          "totalTokens",
-          "equivalentCostUsd",
-          "availability",
-          "reason",
-        ],
-        rows: data.productUsage.products.map((product) => {
-          const values = [
-            product.activeUsers,
-            product.sessionCount,
-            product.totalTokens,
-            product.equivalentCostUsd,
-          ];
-          return [
-            product.kind ?? "unmapped",
-            product.displayName,
-            ...values,
-            data.productUsage.availability,
-            reasonOf(values, productReason),
-          ];
-        }),
-      },
-    ],
+    sections,
   );
 }
 
-const usageColumns = [
+const teamMetricNames = [
   "activeUsers",
-  "sessionCount",
-  "totalTokens",
   "equivalentCostUsd",
-];
-const usageValues = (usage: TeamAnalytics["current"]): CsvValue[] => [
-  usage?.activeUsers ?? null,
-  usage?.sessionCount ?? null,
-  usage?.tokens.total ?? null,
-  usage?.equivalentCostUsd ?? null,
-];
-
-/** 팀 목록 전 페이지(같은 snapshot)와, 고른 팀이 있으면 그 팀의 사용자 전부. */
+  "totalTokens",
+  "sessionCount",
+  "equivalentCostPerUserUsd",
+  "equivalentCostPerSessionUsd",
+  "tokensPerUser",
+  "sessionsPerUser",
+  "tokensPerSession",
+  "effectiveCostPerMillionTokensUsd",
+] as const;
 export function teamsCsv(
   view: TeamsView,
   organization: string,
   exportedAt: string,
   selected: { teamId: string; teamName: string; users: TeamUser[] } | null,
 ) {
-  const team = (item: TeamAnalytics, id: string): CsvValue[] => {
-    const values = usageValues(item.current);
-    return [
-      id,
-      item.teamName,
-      ...values,
-      ...usageValues(item.previous),
-      item.current ? reasonOf(values) : "no_usage",
-    ];
-  };
+  const comparedMetrics = new Set<string>([
+    "equivalentCostUsd",
+    "totalTokens",
+    "sessionCount",
+    "equivalentCostPerUserUsd",
+  ]);
+  const comparisonColumns = (name: string) => [
+    `${name}_comparisonStatus`,
+    `${name}_comparisonReasons`,
+    `${name}_previous`,
+    `${name}_change`,
+    `${name}_percentChange`,
+  ];
+  const valueColumns = (name: string) => [
+    name,
+    `${name}_status`,
+    `${name}_reasons`,
+  ];
+  const valueCells = (value: OverviewValue<string | number>): CsvValue[] => [
+    value.value,
+    value.status,
+    value.reasons.join("|"),
+  ];
+  const columns = teamMetricNames.flatMap((name) => [
+    ...valueColumns(name),
+    ...(comparedMetrics.has(name) ? comparisonColumns(name) : []),
+  ]);
+  const values = (metrics: TeamAnalytics["metrics"]): CsvValue[] =>
+    teamMetricNames.flatMap((name) => {
+      const m = metrics[name];
+      if (!("comparison" in m)) return valueCells(m);
+      const c = m.comparison;
+      return [
+        ...valueCells(m),
+        c.status,
+        c.reasons.join("|"),
+        c.previousValue,
+        c.absoluteChange,
+        c.percentChange,
+      ];
+    });
+  const teams = [...view.teams, view.unassigned];
   const sections: CsvSection[] = [
-    {
-      name: "totals",
-      columns: ["metric", "current", "previous", "reason"],
-      rows: usageColumns.map((name, index) => {
-        const now = usageValues(view.totals.current)[index],
-          before = usageValues(view.totals.previous)[index];
-        return [
-          name,
-          now,
-          before,
-          view.totals.current ? reasonOf([now]) : view.meta.dataState,
-        ];
-      }),
-    },
+    { name: "totals", columns, rows: [values(view.totals)] },
     {
       name: "teams",
+      columns: ["teamId", "teamName", ...columns],
+      rows: teams.map((t) => [
+        t.teamId ?? "unassigned",
+        t.teamName,
+        ...values(t.metrics),
+      ]),
+    },
+    {
+      name: "trend",
       columns: [
         "teamId",
         "teamName",
-        ...usageColumns,
-        ...usageColumns.map((name) => `previous_${name}`),
-        "reason",
+        "date",
+        "observation",
+        "equivalentCostUsd",
+        "totalTokens",
+        "cumulativeSessionCount",
+        "status",
+        "reasons",
       ],
-      rows: [
-        ...view.teams.map((item) => team(item, item.teamId ?? "")),
-        team(view.unassigned, "unassigned"),
+      rows: teams.flatMap((t) =>
+        t.trend.map((p) => [
+          t.teamId ?? "unassigned",
+          t.teamName,
+          p.date,
+          p.observation,
+          p.equivalentCostUsd,
+          p.totalTokens,
+          p.cumulativeSessionCount,
+          p.status,
+          p.reasons.join("|"),
+        ]),
+      ),
+    },
+    {
+      name: "products",
+      columns: [
+        "teamId",
+        "teamName",
+        "kind",
+        "displayName",
+        "equivalentCostUsd",
+        "totalTokens",
+        "sessionCount",
       ],
+      rows: teams.flatMap((t) =>
+        t.products.map((p) => [
+          t.teamId ?? "unassigned",
+          t.teamName,
+          p.kind,
+          p.displayName,
+          p.equivalentCostUsd,
+          p.totalTokens,
+          p.sessionCount,
+        ]),
+      ),
+    },
+    {
+      name: "models",
+      columns: [
+        "modelId",
+        "displayName",
+        "equivalentCostUsd",
+        "totalTokens",
+        "usingTeamCount",
+        "status",
+        "reasons",
+      ],
+      rows: (view.modelScatter.data?.models ?? []).map((m) => [
+        m.modelId,
+        m.displayName,
+        m.equivalentCostUsd,
+        m.totalTokens,
+        m.usingTeamCount,
+        m.status,
+        m.reasons.join("|"),
+      ]),
     },
   ];
   if (selected)
@@ -349,32 +357,52 @@ export function teamsCsv(
         "teamName",
         "memberId",
         "account",
-        "sessionCount",
-        "totalTokens",
-        "equivalentCostUsd",
+        ...valueColumns("sessionCount"),
+        ...valueColumns("totalTokens"),
+        ...valueColumns("equivalentCostUsd"),
         "lastUsedAt",
         "mainModel",
-        "cacheHitRatio",
-        "reason",
+        ...valueColumns("cacheHitRatio"),
       ],
-      rows: selected.users.map((user) => {
-        const values = [
-          user.usage.sessionCount,
-          user.usage.tokens.total,
-          user.usage.equivalentCostUsd,
-        ];
-        return [
-          selected.teamId,
-          selected.teamName,
-          user.memberId,
-          user.account,
-          ...values,
-          user.lastUsedAt,
-          user.mainModel?.displayName ?? null,
-          user.cache.hitRatio,
-          reasonOf(values),
-        ];
-      }),
+      rows: selected.users.map((u) => [
+        selected.teamId,
+        selected.teamName,
+        u.memberId,
+        u.account,
+        ...valueCells(u.usage.sessionCount),
+        ...valueCells(u.usage.totalTokens),
+        ...valueCells(u.usage.equivalentCostUsd),
+        u.lastUsedAt,
+        u.mainModel?.displayName ?? null,
+        ...valueCells(u.cacheHitRatio),
+      ]),
+    });
+  const selectedTeam = selected
+    ? teams.find((team) => (team.teamId ?? "unassigned") === selected.teamId)
+    : undefined;
+  if (selectedTeam)
+    sections.push({
+      name: "team_models",
+      columns: [
+        "teamId",
+        "teamName",
+        "modelId",
+        "displayName",
+        "equivalentCostUsd",
+        "totalTokens",
+        "status",
+        "reasons",
+      ],
+      rows: (selectedTeam.modelMix.data?.models ?? []).map((model) => [
+        selectedTeam.teamId ?? "unassigned",
+        selectedTeam.teamName,
+        model.modelId,
+        model.displayName,
+        model.equivalentCostUsd,
+        model.totalTokens,
+        model.status,
+        model.reasons.join("|"),
+      ]),
     });
   return buildCsv(
     [
@@ -396,14 +424,11 @@ export function teamsCsv(
   );
 }
 
-/** 등록 제품·계약·좌석 요약·종량 지출(벤더 청구 누계 — 원천·기간 포함). 설정 응답의 전 페이지(같은 snapshot)다. */
 export function settingsCsv(
   data: Settings,
   organization: string,
   exportedAt: string,
 ) {
-  const summary = data.summary;
-  const metered = summary.meteredMonthToDate;
   return buildCsv(
     [
       ["화면", "설정"],
@@ -414,37 +439,13 @@ export function settingsCsv(
     [
       {
         name: "summary",
-        columns: ["metric", "value", "reason"],
-        rows: [
-          [
-            "configuredVendors",
-            summary.configuredVendors,
-            reasonOf([summary.configuredVendors]),
-          ],
-          [
-            "monthlySeatFeeUsd",
-            summary.monthlySeatFeeUsd,
-            reasonOf([summary.monthlySeatFeeUsd]),
-          ],
-          [
-            "contractedSeats",
-            summary.contractedSeats,
-            reasonOf([summary.contractedSeats]),
-          ],
-          [
-            "assignedSeats",
-            summary.assignedSeats ?? null,
-            reasonOf([summary.assignedSeats ?? null]),
-          ],
-          [
-            "meteredActualBilledUsd",
-            metered.data?.actualBilledUsd ?? null,
-            reasonOf(
-              [metered.data?.actualBilledUsd ?? null],
-              sectionReason(metered.availability, metered.reason),
-            ),
-          ],
-        ],
+        columns: ["metric", "value", "status", "reasons"],
+        rows: Object.entries(data.summary).map(([name, metric]) => [
+          name,
+          metric.value,
+          metric.status,
+          metric.reasons.join(";"),
+        ]),
       },
       {
         name: "vendors",
@@ -452,75 +453,36 @@ export function settingsCsv(
           "vendorId",
           "displayName",
           "kind",
-          "state",
           "contractStatus",
-          "planId",
-          "effectiveFrom",
-          "effectiveTo",
+          "contractInput",
+          "missingFields",
+          "contractSeats",
+          "contractSeatsStatus",
+          "contractSeatsReasons",
           "monthlySeatFeeUsd",
-          "seatsAssigned",
-          "seatsContracted",
-          "seatsAvailability",
-          "seatsReason",
-          "meteredActualBilledUsd",
-          "meteredStartDate",
-          "meteredEndDate",
-          "billingKind",
-          "finalized",
-          "meteredSource",
-          "meteredAvailability",
-          "meteredReason",
+          "monthlySeatFeeStatus",
+          "monthlySeatFeeReasons",
+          "assignedSeats",
+          "assignedSeatsStatus",
+          "assignedSeatsReasons",
         ],
-        rows: data.vendors.items.map((vendor) => {
-          const seats = vendor.seats,
-            billing = vendor.meteredMonthToDate;
-          return [
-            vendor.vendorId,
-            vendor.displayName,
-            vendor.kind,
-            vendor.state,
-            vendor.contractStatus,
-            vendor.contract?.planId ?? null,
-            vendor.contract?.effectiveFrom ?? null,
-            vendor.contract?.effectiveTo ?? null,
-            vendor.contract?.monthlySeatFeeUsd ?? null,
-            seats?.data?.assigned ?? null,
-            seats?.data?.contracted ?? null,
-            seats?.availability ?? null,
-            seats
-              ? sectionReason(seats.availability, seats.reason)
-              : "not_provided",
-            billing?.data?.actualBilledUsd ?? null,
-            billing?.data?.startDate ?? null,
-            billing?.data?.endDate ?? null,
-            billing?.data?.billingKind ?? null,
-            billing?.data?.finalized ?? null,
-            billing?.data?.source ?? null,
-            billing?.availability ?? null,
-            billing
-              ? sectionReason(billing.availability, billing.reason)
-              : "not_provided",
-          ];
-        }),
-      },
-      {
-        name: "contract_tiers",
-        columns: [
-          "vendorId",
-          "tierId",
-          "label",
-          "seats",
-          "monthlyFeePerSeatUsd",
-        ],
-        rows: data.vendors.items.flatMap((vendor) =>
-          (vendor.contract?.tiers ?? []).map((tier) => [
-            vendor.vendorId,
-            tier.tierId,
-            tier.label,
-            tier.seats,
-            tier.monthlyFeePerSeatUsd,
-          ]),
-        ),
+        rows: data.vendors.items.map((vendor) => [
+          vendor.vendorId,
+          vendor.displayName,
+          vendor.kind,
+          vendor.contractStatus,
+          vendor.contractInput.status,
+          vendor.contractInput.missingFields.join(";"),
+          vendor.contractSeats.value,
+          vendor.contractSeats.status,
+          vendor.contractSeats.reasons.join(";"),
+          vendor.monthlySeatFeeUsd.value,
+          vendor.monthlySeatFeeUsd.status,
+          vendor.monthlySeatFeeUsd.reasons.join(";"),
+          vendor.assignedSeats.value,
+          vendor.assignedSeats.status,
+          vendor.assignedSeats.reasons.join(";"),
+        ]),
       },
     ],
   );
@@ -538,7 +500,7 @@ export function downloadCsv(filename: string, text: string) {
   URL.revokeObjectURL(url);
 }
 
-/** 운영 · 보안의 알림 목록(화면의 상태·범주와 같은 조건, 같은 snapshot 의 전 페이지)과 규칙별 평가. 확인 기록이 없으면 빈 칸이다. */
+/** 운영 · 보안의 같은 필터·snapshot 알림과 화면에 표시하는 근거만 내보낸다. */
 export function alertsCsv(
   first: AlertsPage,
   items: Alert[],
@@ -547,35 +509,20 @@ export function alertsCsv(
   category: AlertCategory,
   exportedAt: string,
 ) {
-  const rules = first.evaluation.rules.filter(
-    (rule) => RULE_CATEGORY[rule.ruleId] === category,
-  );
   return buildCsv(
     [
       ["화면", "운영 · 보안"],
       ["조직", organization],
       ["범주", category],
       ["상태", status],
-      ["평가 가용성", first.evaluation.availability],
-      ["평가 사유", first.evaluation.reason],
+      ["평가 상태", first.evaluation.status],
+      ["평가 사유", first.evaluation.reasons.join(" ")],
       ["평가 시각", first.evaluation.asOf],
       ["snapshot", first.meta.snapshotId],
       ["알림 수", items.length],
       ["내보낸 시각", exportedAt],
     ],
     [
-      {
-        name: "rules",
-        columns: ["ruleId", "enabled", "status", "evaluatedAt", "reason"],
-        rows: rules.map((rule) => [
-          rule.ruleId,
-          rule.enabled,
-          rule.status,
-          rule.evaluatedAt,
-          rule.reason ??
-            (rule.status === null && rule.enabled ? "not_evaluated_yet" : ""),
-        ]),
-      },
       {
         name: "alerts",
         columns: [
@@ -592,6 +539,7 @@ export function alertsCsv(
           "windowStart",
           "windowEnd",
           "acknowledgedAt",
+          "summary",
           "reason",
         ],
         rows: items.map((alert) => [
@@ -610,6 +558,7 @@ export function alertsCsv(
           alert.windowStart,
           alert.windowEnd,
           alert.acknowledgement?.acknowledgedAt ?? null,
+          alertSummary(alert),
           reasonOf([alert.subject, alert.eventCount, alert.memberCount]),
         ]),
       },

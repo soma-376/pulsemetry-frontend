@@ -1,6 +1,12 @@
 import { delay, http, HttpResponse } from "msw";
 import { COMPANY_A, SEED_CATALOG } from "@/mocks/company-a";
-import { settingsVendorSchema, type Settings } from "@/lib/api/settings";
+import {
+  settingsSchema,
+  settingsVendorSchema,
+  type Settings,
+  type SettingsVendor,
+  type SettingsVendorRow,
+} from "@/lib/api/settings";
 import { onboardingHandlers } from "./onboarding";
 
 export type SettingsScenario =
@@ -12,29 +18,64 @@ export type SettingsScenario =
   | "loading"
   | "refreshing"
   | "detail-loading"
+  | "detail-slow"
   | "slow-response"
   | "detail-error"
-  | "scheduled";
+  | "scheduled"
+  | "expired";
 const org = COMPANY_A.organization.organizationId;
 const api = `*/api/v1/organizations/${org}`;
 const failure = (code: string, status: number) =>
   HttpResponse.json({ error: { code, message: code } }, { status });
 
 /** A의 등록 제품을 복제한다. 미입력 계약과 알 수 없는 사용 지표는 null 그대로 둔다. */
-export function settingsFixture(): Settings {
-  const data: Settings = {
+type SettingsFixture = Omit<Settings, "vendors"> & {
+  vendors: {
+    items: (SettingsVendor & SettingsVendorRow)[];
+    totalCount: number;
+    nextCursor: string | null;
+  };
+};
+const value = <T>(value: T | null, reasons: string[] = []) => ({
+  value,
+  status:
+    value === null
+      ? ("unavailable" as const)
+      : reasons.length
+        ? ("partial" as const)
+        : ("complete" as const),
+  reasons: value === null && !reasons.length ? ["value_unavailable"] : reasons,
+});
+const rowValue = (
+  vendor: SettingsVendor,
+): SettingsVendor & SettingsVendorRow => ({
+  ...vendor,
+  contractInput: vendor.contract
+    ? { status: "complete", missingFields: [] }
+    : {
+        status: "required",
+        missingFields: ["planId", "seats", "monthlyFeePerSeatUsd"],
+      },
+  contractSeats: value(
+    vendor.contract?.tiers.reduce((n, tier) => n + tier.seats, 0) ?? null,
+    vendor.contract ? [] : ["contract_missing"],
+  ),
+  monthlySeatFeeUsd: value(
+    vendor.contract?.monthlySeatFeeUsd ?? null,
+    vendor.contract ? [] : ["contract_missing"],
+  ),
+  assignedSeats: value(
+    vendor.seats?.data?.assigned ?? null,
+    vendor.seats?.reason
+      ? [vendor.seats.reason]
+      : vendor.seats?.data
+        ? []
+        : ["seat_source_not_recorded"],
+  ),
+});
+export function settingsFixture(): SettingsFixture {
+  const data: SettingsFixture = {
     meta: { organizationId: org, snapshotId: "storybook-settings" },
-    ingest: {
-      status: "unknown",
-      reason: "source_not_available",
-      asOf: `${COMPANY_A.asOf}T00:00:00Z`,
-      lastReceivedAt: null,
-      windowMinutes: 15,
-      activeInstallations: null,
-      observedMembers: null,
-      eligibleMembers: 12,
-      coverageRatio: null,
-    },
     capabilities: {
       editContracts: true,
       editCollectionPolicy: true,
@@ -42,23 +83,25 @@ export function settingsFixture(): Settings {
       notifyInstallations: true,
     },
     summary: {
-      configuredVendors: 1,
-      unconfiguredVendors: 1,
-      monthlySeatFeeUsd: null,
-      contractedSeats: null,
-      activeSeats7d: null,
-      meteredMonthToDate: { availability: "unavailable", data: null },
+      unconfiguredVendors: value(1),
+      monthlySeatFeeUsd: value<string>(null),
+      contractedSeats: value<number>(null),
+      activeSeats7d: value<number>(null, ["observation_incomplete"]),
+      assignedSeats: value<number>(null, ["seat_source_not_recorded"]),
+      meteredMonthToDate: value<string>(null, ["billing_not_supported"]),
     },
     vendors: {
       items: COMPANY_A.managedVendors.map((v) =>
-        settingsVendorSchema.parse({
-          ...v,
-          firstSeenAt: null,
-          lastSeenAt: null,
-          activeUsers7d: null,
-          activeUsers30d: null,
-          observation: "unobserved",
-        }),
+        rowValue(
+          settingsVendorSchema.parse({
+            ...v,
+            firstSeenAt: null,
+            lastSeenAt: null,
+            activeUsers7d: null,
+            activeUsers30d: null,
+            observation: "unobserved",
+          }),
+        ),
       ),
       totalCount: COMPANY_A.managedVendors.length,
       nextCursor: null,
@@ -69,7 +112,6 @@ export function settingsFixture(): Settings {
       reclaimIdleDays: 14,
       aggregateRetentionMonths: null,
       settingsVersion: 0,
-      settingsUpdatedAt: null,
       reclaimIdleDaysSource: "default",
       options: {
         reclaimIdleDays: [7, 14, 30, 60],
@@ -77,7 +119,7 @@ export function settingsFixture(): Settings {
       },
       cleanupOperationId: null,
     },
-    // 시드 A의 적용 현황(판 2: 적용 7 · 미적용 3 · 미확인 1).
+    // 공개 시드 fixture의 현재 정책 적용 현황을 그대로 쓴다.
     policyRollout: {
       desiredVersion: COMPANY_A.policyRollout.desiredVersion,
       eligibleInstallations: COMPANY_A.policyRollout.eligible,
@@ -122,29 +164,40 @@ export function settingsFixture(): Settings {
   return syncSettingsSummary(data);
 }
 
-export function syncSettingsSummary(data: Settings): Settings {
+export function syncSettingsSummary(data: SettingsFixture): SettingsFixture {
+  data.vendors.items = data.vendors.items.map(rowValue);
   const rows = data.vendors.items;
   const active = rows.filter((row) => row.contractStatus === "active");
+  const excluded = [
+    ...new Set(
+      rows
+        .filter((row) => row.contractStatus !== "active")
+        .map((row) => `contract_${row.contractStatus}`),
+    ),
+  ];
   data.vendors.totalCount = rows.length;
-  data.summary.configuredVendors = active.length;
-  data.summary.unconfiguredVendors = rows.length - active.length;
-  data.summary.monthlySeatFeeUsd = active.every(
-    (row) => row.contract?.monthlySeatFeeUsd != null,
-  )
-    ? String(
-        active.reduce(
-          (sum, row) => sum + Number(row.contract!.monthlySeatFeeUsd),
+  data.summary.unconfiguredVendors = value(rows.length - active.length);
+  data.summary.monthlySeatFeeUsd = value(
+    active.every((row) => row.contract?.monthlySeatFeeUsd != null)
+      ? String(
+          active.reduce(
+            (sum, row) => sum + Number(row.contract!.monthlySeatFeeUsd),
+            0,
+          ),
+        )
+      : null,
+    excluded,
+  );
+  data.summary.contractedSeats = value(
+    active.every((row) => row.contract != null)
+      ? active.reduce(
+          (sum, row) =>
+            sum + row.contract!.tiers.reduce((n, tier) => n + tier.seats, 0),
           0,
-        ),
-      )
-    : null;
-  data.summary.contractedSeats = active.every((row) => row.contract != null)
-    ? active.reduce(
-        (sum, row) =>
-          sum + row.contract!.tiers.reduce((n, tier) => n + tier.seats, 0),
-        0,
-      )
-    : null;
+        )
+      : null,
+    excluded,
+  );
   return data;
 }
 export function settingsHandlers(scenario: SettingsScenario) {
@@ -156,6 +209,12 @@ export function settingsHandlers(scenario: SettingsScenario) {
     )!;
     vendor.contract!.effectiveFrom = "2026-10-01";
     vendor.contract!.effectiveTo = "2027-09-30";
+  }
+  if (scenario === "expired") {
+    const vendor = data.vendors.items.find(
+      (row) => row.kind === "claude_team",
+    )!;
+    vendor.contract!.effectiveTo = "2026-09-30";
   }
   let settingsRequests = 0;
   let detailRequests = 0;
@@ -224,6 +283,12 @@ export function settingsHandlers(scenario: SettingsScenario) {
     const rows = data.vendors.items;
     for (const row of rows) {
       const c = row.contract;
+      row.contractInput = c
+        ? { status: "complete", missingFields: [] }
+        : {
+            status: "required",
+            missingFields: ["planId", "seats", "monthlyFeePerSeatUsd"],
+          };
       row.contractStatus = !c
         ? "missing"
         : c.effectiveFrom > COMPANY_A.asOf
@@ -237,6 +302,31 @@ export function settingsHandlers(scenario: SettingsScenario) {
     return syncSettingsSummary(data);
   };
   return [
+    http.get(`${api}/contract-input-status`, () => {
+      const rows = sync().vendors.items;
+      const vendors = rows
+        .filter((v) => v.contractInput?.status === "required")
+        .map((v) => ({
+          vendorId: v.vendorId,
+          displayName: v.displayName,
+          missingFields: v.contractInput!.missingFields,
+        }));
+      const expiredContracts = rows
+        .filter((v) => v.contractStatus === "expired")
+        .map((v) => ({
+          vendorId: v.vendorId,
+          displayName: v.displayName,
+          endDate: v.contract!.effectiveTo!,
+        }));
+      return HttpResponse.json({
+        organizationId: org,
+        asOf: new Date().toISOString(),
+        requiredCount: vendors.length,
+        vendors,
+        expiredCount: expiredContracts.length,
+        expiredContracts,
+      });
+    }),
     http.get(`${api}/ingest-status`, () =>
       HttpResponse.json({
         organizationId: org,
@@ -256,10 +346,11 @@ export function settingsHandlers(scenario: SettingsScenario) {
       if (scenario === "slow-response") await delay(1500);
       return scenario === "load-error"
         ? failure("unavailable", 503)
-        : HttpResponse.json(sync());
+        : HttpResponse.json(settingsSchema.parse(sync()));
     }),
     http.get(`${api}/vendors/:id`, async ({ params }) => {
       if (scenario === "detail-loading") await delay("infinite");
+      if (scenario === "detail-slow") await delay(1500);
       if (scenario === "detail-error" && ++detailRequests <= 3)
         return failure("unavailable", 503);
       const vendor = data.vendors.items.find(
@@ -336,46 +427,46 @@ export function settingsHandlers(scenario: SettingsScenario) {
       const body = (await request.json()) as {
         kind: string;
         displayName: string;
-        contract?: NonNullable<
-          Settings["vendors"]["items"][number]["contract"]
-        >;
+        contract?: NonNullable<SettingsVendor["contract"]>;
       };
       if (data.vendors.items.some((vendor) => vendor.kind === body.kind))
         return failure("vendor_already_registered", 409);
       if (!SEED_CATALOG.items.some((product) => product.id === body.kind))
         return failure("invalid_vendor", 422);
-      const vendor = settingsVendorSchema.parse({
-        ...body,
-        contractStatus: body.contract ? "active" : "missing",
-        vendorId: crypto.randomUUID(),
-        version: 1,
-        source: "manual",
-        contract: body.contract
-          ? {
-              ...body.contract,
-              version: 1,
-              tiers: body.contract.tiers.map((tier, index) => ({
-                ...tier,
-                tierId: `tier-${index}`,
-              })),
-              monthlySeatFeeUsd: String(
-                body.contract.tiers.reduce(
-                  (sum, tier) =>
-                    sum + tier.seats * Number(tier.monthlyFeePerSeatUsd),
-                  0,
+      const vendor = rowValue(
+        settingsVendorSchema.parse({
+          ...body,
+          contractStatus: body.contract ? "active" : "missing",
+          vendorId: crypto.randomUUID(),
+          version: 1,
+          source: "manual",
+          contract: body.contract
+            ? {
+                ...body.contract,
+                version: 1,
+                tiers: body.contract.tiers.map((tier, index) => ({
+                  ...tier,
+                  tierId: `tier-${index}`,
+                })),
+                monthlySeatFeeUsd: String(
+                  body.contract.tiers.reduce(
+                    (sum, tier) =>
+                      sum + tier.seats * Number(tier.monthlyFeePerSeatUsd),
+                    0,
+                  ),
                 ),
-              ),
-              confirmedAt: new Date().toISOString(),
-              confirmedBy: COMPANY_A.members[0].memberId,
-            }
-          : null,
-        state: body.contract ? "configured" : "needs_review",
-        observation: "unobserved",
-        firstSeenAt: null,
-        lastSeenAt: null,
-        activeUsers7d: null,
-        activeUsers30d: null,
-      });
+                confirmedAt: new Date().toISOString(),
+                confirmedBy: COMPANY_A.members[0].memberId,
+              }
+            : null,
+          state: body.contract ? "configured" : "needs_review",
+          observation: "unobserved",
+          firstSeenAt: null,
+          lastSeenAt: null,
+          activeUsers7d: null,
+          activeUsers30d: null,
+        }),
+      );
       data.vendors.items.push(vendor);
       return HttpResponse.json({ meta: data.meta, vendor }, { status: 201 });
     }),
@@ -415,7 +506,6 @@ export function settingsHandlers(scenario: SettingsScenario) {
         }
         policy.aggregateRetentionMonths = next;
         policy.settingsVersion++;
-        policy.settingsUpdatedAt = new Date().toISOString();
         // 서버처럼 줄였을 때만 정리 작업을 만든다. Storybook 에서는 대기에 머문다.
         if (next !== null && (before === null || next < before)) {
           cleanupOperationId = crypto.randomUUID();
@@ -435,7 +525,7 @@ export function settingsHandlers(scenario: SettingsScenario) {
             : null,
         aggregateRetentionMonths: policy.aggregateRetentionMonths,
         settingsVersion: policy.settingsVersion,
-        settingsUpdatedAt: policy.settingsUpdatedAt,
+        settingsUpdatedAt: new Date().toISOString(),
         cleanupOperationId,
       });
     }),

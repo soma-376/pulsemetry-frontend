@@ -1,5 +1,8 @@
+import { MetricStatusBadge } from "@/components/overview/KpiCard";
+
 export type StatCardProps = {
   label: string;
+  status?: { label: string; reason: string };
   value: string;
   /** 값 뒤에 붙는 단위 — "명", "석", "건" */
   unit?: string;
@@ -28,6 +31,7 @@ export function StatCard({
   tone = "var(--text)",
   size = "md",
   badge,
+  status,
 }: StatCardProps) {
   const big = size === "md";
 
@@ -36,19 +40,20 @@ export function StatCard({
       role="group"
       aria-label={label}
       className={[
-        "flex min-w-0 flex-col rounded-lg border border-border bg-card",
+        "relative flex min-w-0 flex-col rounded-lg border border-border bg-card",
         big ? "gap-1.5 px-4 py-3.5" : "gap-1 px-3.5 py-3",
       ].join(" ")}
     >
-      <span className="flex items-center gap-1.5">
+      <span className="flex flex-wrap items-center gap-1.5">
         <span
           className={[
-            "overflow-hidden text-ellipsis whitespace-nowrap",
+            "min-w-0 [overflow-wrap:anywhere]",
             big ? "text-[12px] text-text2" : "text-[11.5px] text-text3",
           ].join(" ")}
         >
           {label}
         </span>
+        {status && <MetricStatusBadge {...status} />}
         {badge && (
           <span
             className="rounded-[3px] px-1 text-[10px] leading-[15px] font-semibold whitespace-nowrap"

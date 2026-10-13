@@ -1,3 +1,4 @@
+import { MetricStatusBadge } from "./KpiCard";
 import { LineAreaChart } from "@/components/charts/LineAreaChart";
 import { ChartInspector } from "@/components/charts/ChartInspector";
 import { Widget } from "@/components/ui/Card";
@@ -13,15 +14,21 @@ export function UsageValueCard({
       "firstObservedIndex" | "hasGap" | "chartNote"
     >;
     defs: Pick<OverviewModel["defs"], "w12">;
+    chartStatus?: { label: string; reason: string };
   } & { chart: OverviewChart };
 }) {
-  const { chart, observation, defs } = model;
+  const { chart, defs } = model;
   return (
     <Widget
       id="w12"
       label="사용 환산액 추이"
       title="사용 환산액 추이"
       note="일별 · 포인터 또는 방향키로 탐색"
+      action={
+        model.chartStatus ? (
+          <MetricStatusBadge {...model.chartStatus} />
+        ) : undefined
+      }
       def={defs.w12}
       className="col-span-3 @max-[1023px]:col-span-full"
     >
@@ -51,7 +58,6 @@ export function UsageValueCard({
           <div className="absolute inset-x-0 bottom-0 border-t border-border" />
           <LineAreaChart
             domain={{ max: chart.yMax }}
-            observedFrom={observation.firstObservedIndex}
             series={[
               ...(chart.series.length > 1
                 ? [
@@ -96,11 +102,6 @@ export function UsageValueCard({
           )}
         </div>
       </div>
-      {observation.hasGap && (
-        <p className="mt-3 text-[11px] leading-5 text-text2">
-          {observation.chartNote}
-        </p>
-      )}
     </Widget>
   );
 }

@@ -3,15 +3,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-type Notification = { id: number; message: string };
+type ToastTone = "success" | "error";
+type Notification = { id: number; message: string; tone?: ToastTone };
 
-/** 같은 문구로 연속 성공해도 별개의 알림으로 표시한다. */
+/** 같은 문구가 연속으로 와도 별개의 알림으로 표시한다. */
 export function useToast() {
   const sequence = useRef(0);
   const [toast, setToast] = useState<Notification | null>(null);
-  const showToast = useCallback((message: string) => {
-    setToast({ id: ++sequence.current, message });
-  }, []);
+  const showToast = useCallback(
+    (message: string, tone: ToastTone = "success") => {
+      setToast({ id: ++sequence.current, message, tone });
+    },
+    [],
+  );
   const dismissToast = useCallback((id: number) => {
     setToast((current) => (current?.id === id ? null : current));
   }, []);
@@ -29,8 +33,8 @@ export function Toast({
     <div className="pointer-events-none fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-[80] flex justify-end sm:left-auto sm:w-[380px]">
       {/* 알림 영역을 먼저 마운트해 이후 메시지 변경을 읽도록 한다. */}
       <div
-        role="status"
-        aria-live="polite"
+        role={toast?.tone === "error" ? "alert" : "status"}
+        aria-live={toast?.tone === "error" ? "assertive" : "polite"}
         aria-atomic="true"
         className="w-full"
       >
@@ -60,7 +64,7 @@ function ToastMessage({
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const paused = hovered || focused;
-  const { id, message } = notification;
+  const { id, message, tone = "success" } = notification;
 
   useEffect(() => {
     if (paused) return;
@@ -96,10 +100,19 @@ function ToastMessage({
         aria-hidden="true"
         viewBox="0 0 20 20"
         fill="none"
-        className="size-4 shrink-0 text-green"
+        className={`size-4 shrink-0 ${tone === "error" ? "text-red" : "text-green"}`}
       >
+        {tone === "error" && (
+          <circle
+            cx="10"
+            cy="10"
+            r="8"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          />
+        )}
         <path
-          d="m4 10 4 4 8-8"
+          d={tone === "error" ? "M10 5.5v5M10 14v.5" : "m4 10 4 4 8-8"}
           stroke="currentColor"
           strokeWidth="1.8"
           strokeLinecap="round"

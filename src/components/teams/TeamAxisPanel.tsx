@@ -4,6 +4,10 @@ import { useState } from "react";
 import { SortHeader } from "@/components/ui/SortHeader";
 import { nextSort, sortRows, type SortState } from "@/lib/sort";
 import { LineAreaChart } from "@/components/charts/LineAreaChart";
+import { TrendFeedback } from "@/components/charts/TrendFeedback";
+import { MetricStatusBadge } from "@/components/overview/KpiCard";
+import { trendBadge } from "@/lib/metrics/trend-feedback";
+import { xAt } from "@/components/charts/scale";
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import type { AxisKey, TeamsModel } from "@/lib/metrics/teams-presentation";
 
@@ -56,18 +60,22 @@ export function TeamAxisPanel({
     (row) => row.team,
   );
   const shown = model.trend[axis].filter((s) => !hidden[s.key]);
+  const feedback = {
+    ...model.trendFeedback[axis],
+    series: model.trendFeedback[axis].series.filter((s) => !hidden[s.id]),
+  };
+  const status = trendBadge(feedback);
   const isEmpty = shown.length === 0;
   // 누적선의 값은 서버 값의 합이라 0보다 작지 않다. 값이 하나도 없으면(모든 날이 확인 불가) 선을 그리지 않는다.
   const known = shown
     .flatMap((s) => s.values)
     .filter((value): value is number => value !== null);
   const max = Math.max(...known, 0) * 1.08 || 1;
-  const trendNote = model.trendNote(axis);
 
   return (
     <section
       aria-label="팀별 사용량 비교"
-      className="flex min-w-0 flex-col rounded-[10px] border border-border bg-card p-6"
+      className="relative flex min-w-0 flex-col rounded-[10px] border border-border bg-card p-6"
     >
       <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
         <div
@@ -101,7 +109,7 @@ export function TeamAxisPanel({
           })}
         </div>
 
-        <div className="flex items-baseline gap-2">
+        <div className="flex flex-wrap items-baseline gap-2">
           <span className="text-[11px] text-text2">전사</span>
           <span className="tnum text-[24px] font-semibold tracking-[-0.02em]">
             {ax.total}
@@ -112,14 +120,16 @@ export function TeamAxisPanel({
           >
             {ax.delta}
           </span>
+          {ax.status && <MetricStatusBadge {...ax.status} />}
+          {model.compareLabel && ax.delta === "-" && ax.deltaReason && (
+            <MetricStatusBadge label="비교 불가" reason={ax.deltaReason} />
+          )}
         </div>
       </div>
 
-      <div className="mb-2.5 flex flex-wrap items-baseline justify-between gap-3">
+      <div className="relative mb-6 flex flex-wrap items-baseline justify-between gap-3">
         <span className="text-[13px] font-semibold">팀별 누적 추이</span>
-        {trendNote && (
-          <span className="text-[11px] text-text3">{trendNote}</span>
-        )}
+        {status && <MetricStatusBadge {...status} />}
       </div>
 
       <div className="mb-[18px] grid grid-cols-[56px_minmax(0,1fr)] gap-2">
@@ -135,10 +145,22 @@ export function TeamAxisPanel({
           <div className="absolute right-0 bottom-0 left-0 border-t border-text3" />
 
           {!isEmpty && (
-            <LineAreaChart
-              domain={{ max }}
-              series={shown.map((s) => ({ values: s.values, color: s.color }))}
-            />
+            <>
+              <LineAreaChart
+                domain={{ max }}
+                series={shown.map((s) => ({
+                  values: s.values,
+                  color: s.color,
+                }))}
+              />
+              <TrendFeedback
+                key={axis}
+                model={feedback}
+                max={max}
+                format={ax.format}
+                label="날짜별 팀 누적 사용량. 좌우 방향키로 날짜를 이동하세요"
+              />
+            </>
           )}
 
           {isEmpty && (
@@ -149,12 +171,31 @@ export function TeamAxisPanel({
         </div>
 
         <div />
-        <div className="tnum flex justify-between text-[11px] text-text3">
-          {model.dayLabels
-            .filter((_, i) => i % 2 === 0 || i === model.dayLabels.length - 1)
-            .map((label) => (
-              <span key={label}>{label}</span>
-            ))}
+        <div className="tnum relative h-5 text-[11px] text-text3">
+          {model.dayLabels.map(
+            (label, i) =>
+              (i % Math.max(1, Math.ceil((model.dayLabels.length - 1) / 6)) ===
+                0 ||
+                i === model.dayLabels.length - 1) && (
+                <span
+                  key={i}
+                  className="absolute whitespace-nowrap"
+                  style={{
+                    left: `${xAt(i, model.dayLabels.length)}%`,
+                    transform:
+                      model.dayLabels.length === 1
+                        ? "translateX(-50%)"
+                        : i === 0
+                          ? undefined
+                          : i === model.dayLabels.length - 1
+                            ? "translateX(-100%)"
+                            : "translateX(-50%)",
+                  }}
+                >
+                  {label}
+                </span>
+              ),
+          )}
         </div>
       </div>
 
@@ -164,11 +205,6 @@ export function TeamAxisPanel({
           체크박스로 추이 표시 · 행을 눌러 상세 보기
         </span>
       </div>
-      {!model.showDelta && model.comparisonReason && (
-        <p role="note" className="mb-2 text-[11px] text-text3">
-          증감을 표시하지 않습니다 · {model.comparisonReason}
-        </p>
-      )}
 
       <div
         className={`${COLS} border-b border-border px-0.5 pb-2 text-[11px] text-text3`}
@@ -225,7 +261,7 @@ export function TeamAxisPanel({
                 checked={on}
                 onChange={() => onToggleTeam(r.key)}
                 aria-label={`${r.team} 추이 선 표시`}
-                className="pointer-events-auto relative z-10 h-[14px] w-[14px] shrink-0 cursor-pointer"
+                className="pointer-events-auto z-10 h-[14px] w-[14px] shrink-0 cursor-pointer"
                 style={{ accentColor: r.series }}
               />
               <span
@@ -246,22 +282,53 @@ export function TeamAxisPanel({
                 height={9}
                 className="min-w-0 flex-1"
               />
-              <span className="tnum min-w-[70px] shrink-0 text-right text-[12px] font-semibold whitespace-nowrap">
+              <span className="tnum flex min-w-[70px] shrink-0 flex-col items-end gap-1 text-right text-[12px] font-semibold">
                 {r.v1}
+                {r.status && (
+                  <span className="pointer-events-auto z-10">
+                    <MetricStatusBadge {...r.status} />
+                  </span>
+                )}
               </span>
             </div>
 
-            <span className="pointer-events-none tnum text-right text-[12px] text-text2">
+            <span className="pointer-events-none tnum flex min-w-0 flex-col items-end gap-1 text-right text-[12px] text-text2">
               {r.v2}
+              {r.perUserStatus && (
+                <span className="pointer-events-auto z-10">
+                  <MetricStatusBadge
+                    label={r.perUserValue === null ? "확인 불가" : "일부"}
+                    reason={r.perUserStatus.reason}
+                  />
+                </span>
+              )}
             </span>
-            <span className="pointer-events-none tnum text-right text-[12px] text-text2">
+            <span className="pointer-events-none tnum flex min-w-0 flex-col items-end gap-1 text-right text-[12px] text-text2">
               {r.v3}
+              {r.unitStatus && (
+                <span className="pointer-events-auto z-10">
+                  <MetricStatusBadge
+                    label={r.unitValue === null ? "확인 불가" : "일부"}
+                    reason={r.unitStatus.reason}
+                  />
+                </span>
+              )}
             </span>
             <span
-              className="pointer-events-none tnum text-right text-[12px] font-semibold whitespace-nowrap"
+              title={r.deltaReason}
+              className="pointer-events-none tnum inline-flex justify-end text-right text-[12px] font-semibold whitespace-nowrap"
               style={{ color: r.deltaColor }}
             >
-              {r.delta}
+              {model.compareLabel &&
+              r.totalValue !== null &&
+              r.delta === "-" &&
+              r.deltaReason ? (
+                <span className="pointer-events-auto z-10">
+                  <MetricStatusBadge label="비교 불가" reason={r.deltaReason} />
+                </span>
+              ) : (
+                r.delta
+              )}
             </span>
             <span
               aria-hidden="true"
