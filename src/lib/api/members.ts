@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 import { valueSchema } from "./overview";
 import {
@@ -32,6 +32,7 @@ export const memberSchema = z.object({
   periodUsage: usageSchema.nullable(),
   lastUsedAt: z.iso.datetime({ offset: true }).nullable(),
   seatState: z.string(),
+  activity: z.enum(["active", "candidate", "idle", "unobserved"]).optional(),
 });
 export type Member = z.infer<typeof memberSchema>;
 const page = <T extends z.ZodType>(item: T) =>
@@ -39,6 +40,12 @@ const page = <T extends z.ZodType>(item: T) =>
     items: z.array(item),
     totalCount: count,
     nextCursor: z.string().nullable(),
+  });
+const offsetPage = <T extends z.ZodType>(item: T) =>
+  z.object({
+    items: z.array(item),
+    totalCount: count,
+    nextOffset: count.nullable(),
   });
 const section = <T extends z.ZodType>(data: T) =>
   z.object({
@@ -87,18 +94,19 @@ export const membersDashboardSchema = z.object({
     reclaimSeats: z.boolean(),
     restoreSeats: z.boolean(),
   }),
-  members: page(memberSchema),
-  unassigned: page(memberSchema),
+  members: offsetPage(memberSchema),
+  unassigned: offsetPage(memberSchema),
   reclaimCandidates: section(page(reclaimCandidateSchema)),
 });
 const memberListSchema = z.object({
   meta: metaSchema,
-  members: page(memberSchema),
+  members: offsetPage(memberSchema),
 });
 type Dashboard = z.infer<typeof membersDashboardSchema>;
-/** 요약·명단·미배정이 같은 snapshot이다. 명단과 미배정은 모든 페이지를 담는다. */
+/** 요약·명단·미배정이 같은 snapshot이다. 명단은 첫 페이지이며 미배정은 배정 작업을 위해 모든 페이지를 담는다. */
 export type MembersView = Omit<Dashboard, "members" | "unassigned"> & {
   members: Member[];
+  initialMembers?: Dashboard["members"];
   unassigned: Member[];
 };
 export type MembersPeriod = { startDate: string; endDate: string };
@@ -115,52 +123,147 @@ type Fetcher = <T>(
 const dashboardApi: Fetcher = (path, schema, signal) =>
   apiJson("dashboard", path, schema, { signal });
 
-/** 첫 페이지 뒤의 모든 페이지를 같은 snapshot으로 읽는다. 첫 페이지만으로 검색·필터·합계를 만들지 않는다. */
+export type MemberListFilters = {
+  q?: string;
+  status?: "all" | "active" | "candidate" | "idle" | "unobserved";
+  sort?: "account" | "team" | "cost" | "activity";
+  order?: "asc" | "desc";
+  memberId?: string;
+};
+export async function fetchMemberPage(
+  organizationId: string,
+  period: MembersPeriod,
+  snapshotId: string,
+  offset: number,
+  filters: MemberListFilters = {},
+  signal?: AbortSignal,
+  fetcher: Fetcher = dashboardApi,
+  limit = 20,
+  path = "/members",
+) {
+  const params = new URLSearchParams({
+    ...period,
+    timeZone: "Asia/Seoul",
+    snapshotId,
+    offset: String(offset),
+    limit: String(limit),
+    ...filters,
+  });
+  const result = await fetcher(
+    orgPath(organizationId, `${path}?${params}`),
+    memberListSchema,
+    signal,
+  );
+  if (
+    result.meta.organizationId !== organizationId ||
+    result.meta.snapshotId !== snapshotId ||
+    result.meta.startDate !== period.startDate ||
+    result.meta.endDate !== period.endDate
+  )
+    throw invalid();
+  const p = result.members;
+  const end = offset + p.items.length;
+  if (
+    p.items.length > limit ||
+    new Set(p.items.map((m) => m.memberId)).size !== p.items.length ||
+    (p.nextOffset !== null &&
+      (p.items.length === 0 || p.nextOffset !== end || end >= p.totalCount)) ||
+    (p.nextOffset === null && end < p.totalCount)
+  )
+    throw invalid();
+  return result;
+}
+
+/** 전체 명단은 CSV 등 명시적인 전체 조회 동작에서만 읽는다. */
+export async function fetchAllMembers(
+  organizationId: string,
+  period: MembersPeriod,
+  snapshotId: string,
+  signal?: AbortSignal,
+  fetcher: Fetcher = dashboardApi,
+) {
+  const first = await fetchMemberPage(
+    organizationId,
+    period,
+    snapshotId,
+    0,
+    {},
+    signal,
+    fetcher,
+    MEMBERS_PAGE_LIMIT,
+  );
+  return restOfPages(
+    fetcher,
+    organizationId,
+    "/members",
+    period,
+    snapshotId,
+    first.members,
+    signal,
+  );
+}
 async function restOfPages(
   fetcher: Fetcher,
   organizationId: string,
   path: string,
   period: MembersPeriod,
   snapshotId: string,
-  first: { items: Member[]; totalCount: number; nextCursor: string | null },
+  first: { items: Member[]; totalCount: number; nextOffset: number | null },
   signal?: AbortSignal,
 ) {
-  const items = [...first.items],
-    cursors = new Set<string>();
-  let cursor = first.nextCursor;
-  while (cursor) {
-    if (cursors.has(cursor)) throw invalid();
-    cursors.add(cursor);
-    const query = new URLSearchParams({
-      ...period,
-      timeZone: "Asia/Seoul",
-      limit: String(MEMBERS_PAGE_LIMIT),
-      cursor,
+  const items = [...first.items];
+  let offset = first.nextOffset;
+  while (offset !== null) {
+    if (offset !== items.length || offset >= first.totalCount) throw invalid();
+    const next = await fetchMemberPage(
+      organizationId,
+      period,
       snapshotId,
-    });
-    const next = await fetcher(
-      orgPath(organizationId, `${path}?${query}`),
-      memberListSchema,
+      offset,
+      {},
       signal,
+      fetcher,
+      MEMBERS_PAGE_LIMIT,
+      path,
     );
-    if (
-      next.meta.organizationId !== organizationId ||
-      next.meta.snapshotId !== snapshotId ||
-      next.meta.startDate !== period.startDate ||
-      next.meta.endDate !== period.endDate ||
-      next.members.totalCount !== first.totalCount
-    )
-      throw invalid();
+    if (next.members.totalCount !== first.totalCount) throw invalid();
     items.push(...next.members.items);
-    cursor = next.members.nextCursor;
+    offset = next.members.nextOffset;
   }
   if (
-    new Set(items.map((member) => member.memberId)).size !== items.length ||
-    items.length !== first.totalCount
+    items.length !== first.totalCount ||
+    new Set(items.map((m) => m.memberId)).size !== items.length
   )
     throw invalid();
   return items;
 }
+export const memberPagesOptions = (
+  organizationId: string,
+  period: MembersPeriod,
+  snapshotId: string,
+  filters: MemberListFilters,
+) =>
+  infiniteQueryOptions({
+    queryKey: [
+      ...managementKey(organizationId, "member-pages"),
+      period.startDate,
+      period.endDate,
+      snapshotId,
+      filters,
+    ],
+    queryFn: ({ signal, pageParam }) =>
+      fetchMemberPage(
+        organizationId,
+        period,
+        snapshotId,
+        pageParam,
+        filters,
+        signal,
+      ),
+    initialPageParam: 0,
+    getNextPageParam: (last) => last.members.nextOffset,
+    ...readOptions,
+  });
 
 export async function fetchMembersView(
   organizationId: string,
@@ -183,15 +286,17 @@ export async function fetchMembersView(
         meta.endDate !== period.endDate
       )
         throw invalid();
-      const members = await restOfPages(
-        fetcher,
-        organizationId,
-        "/members",
-        period,
-        meta.snapshotId,
-        dashboard.members,
-        signal,
-      );
+      const first = dashboard.members;
+      if (
+        new Set(first.items.map((m) => m.memberId)).size !==
+          first.items.length ||
+        (first.nextOffset === null
+          ? first.items.length !== first.totalCount
+          : first.nextOffset !== first.items.length ||
+            first.items.length === 0 ||
+            first.nextOffset >= first.totalCount)
+      )
+        throw invalid();
       const unassigned = await restOfPages(
         fetcher,
         organizationId,
@@ -201,7 +306,12 @@ export async function fetchMembersView(
         dashboard.unassigned,
         signal,
       );
-      return { ...dashboard, members, unassigned };
+      return {
+        ...dashboard,
+        members: dashboard.members.items,
+        initialMembers: dashboard.members,
+        unassigned,
+      };
     } catch (error) {
       // snapshot이 만료되면 섞어 쓰지 않고 첫 페이지부터 한 번 다시 읽는다.
       if (

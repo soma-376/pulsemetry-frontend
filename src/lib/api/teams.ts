@@ -107,7 +107,7 @@ const page = <T extends z.ZodType>(item: T) =>
   z.object({
     items: z.array(item),
     totalCount: z.number().int().nonnegative(),
-    nextCursor: z.string().nullable(),
+    nextOffset: z.number().int().nonnegative().nullable(),
   });
 export const teamsResponseSchema = z.object({
   meta: metaSchema,
@@ -239,15 +239,15 @@ export async function fetchTeams(
       if (first.comparison.mode !== period.compare || first.sort !== sort)
         throw invalid();
       const items = [...first.teams.items],
-        cursors = new Set<string>();
-      let cursor = first.teams.nextCursor;
-      while (cursor) {
-        if (cursors.has(cursor)) throw invalid();
-        cursors.add(cursor);
+        offsets = new Set<number>();
+      let offset = first.teams.nextOffset;
+      while (offset !== null) {
+        if (offsets.has(offset)) throw invalid();
+        offsets.add(offset);
         const next = await fetcher(
           orgPath(
             organizationId,
-            `/analytics/teams?${query({ ...base, cursor, snapshotId: first.meta.snapshotId })}`,
+            `/analytics/teams?${query({ ...base, offset: String(offset), snapshotId: first.meta.snapshotId })}`,
           ),
           teamsResponseSchema,
           signal,
@@ -255,7 +255,7 @@ export async function fetchTeams(
         if (next.meta.snapshotId !== first.meta.snapshotId) throw invalid();
         checkMeta(next.meta, organizationId, period);
         items.push(...next.teams.items);
-        cursor = next.teams.nextCursor;
+        offset = next.teams.nextOffset;
       }
       if (
         items.length !== first.teams.totalCount ||
@@ -304,17 +304,31 @@ export async function fetchTeamDetail(
   return detail.team;
 }
 
-/** 선택한 팀의 사용자 한 페이지. 비용 내림차순(동률 구성원 ID)이 서버 순서다. */
+export type TeamUsersOrder = {
+  sort:
+    | "cost"
+    | "averageDeviation"
+    | "account"
+    | "session"
+    | "token"
+    | "cache"
+    | "lastUsed";
+  order: "asc" | "desc";
+};
+const DEFAULT_USERS_ORDER: TeamUsersOrder = { sort: "cost", order: "desc" };
+
+/** 선택한 팀의 사용자 한 페이지. 정렬 조건과 snapshot을 유지하며 offset으로 이어 읽는다. */
 export async function fetchTeamUsers(
   organizationId: string,
   teamId: string,
   period: { startDate: string; endDate: string },
   snapshotId: string,
-  cursor: string | null,
+  offset: number,
   signal?: AbortSignal,
   fetcher: Fetcher = dashboardApi,
+  ordering: TeamUsersOrder = DEFAULT_USERS_ORDER,
 ) {
-  const path = `/analytics/teams/${encodeURIComponent(teamId)}/users?${query({ ...period, timeZone: "Asia/Seoul", snapshotId, limit: String(TEAM_USERS_PAGE), cursor })}`;
+  const path = `/analytics/teams/${encodeURIComponent(teamId)}/users?${query({ ...period, timeZone: "Asia/Seoul", snapshotId, limit: String(TEAM_USERS_PAGE), offset: String(offset), ...ordering })}`;
   const data = await fetcher(
     orgPath(organizationId, path),
     teamUsersSchema,
@@ -372,6 +386,7 @@ export const teamUsersOptions = (
   teamId: string,
   period: { startDate: string; endDate: string },
   snapshotId: string,
+  ordering: TeamUsersOrder = DEFAULT_USERS_ORDER,
 ) =>
   infiniteQueryOptions({
     queryKey: [
@@ -381,6 +396,8 @@ export const teamUsersOptions = (
       teamId,
       period.startDate,
       period.endDate,
+      ordering.sort,
+      ordering.order,
     ],
     queryFn: ({ signal, pageParam }) =>
       fetchTeamUsers(
@@ -390,8 +407,10 @@ export const teamUsersOptions = (
         snapshotId,
         pageParam,
         signal,
+        dashboardApi,
+        ordering,
       ),
-    initialPageParam: null as string | null,
-    getNextPageParam: (last) => last.users.nextCursor,
+    initialPageParam: 0,
+    getNextPageParam: (last) => last.users.nextOffset,
     ...readOptions,
   });

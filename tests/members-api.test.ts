@@ -4,6 +4,8 @@ import { ManagementError } from "../src/lib/api/management";
 import { fetchWaitingInvitations } from "../src/lib/api/invitations";
 import {
   fetchMembersView,
+  fetchAllMembers,
+  fetchMemberPage,
   membersOptions,
   reclaimCandidateSchema,
   type Member,
@@ -67,7 +69,7 @@ const meta = (snapshotId = "snapshot-1") => ({
 const dashboard = (
   members: Member[],
   total: number,
-  nextCursor: string | null,
+  nextOffset: number | null,
   unassigned: Member[] = [],
 ) => ({
   meta: meta(),
@@ -86,55 +88,61 @@ const dashboard = (
     reclaimSeats: false,
     restoreSeats: false,
   },
-  members: { items: members, totalCount: total, nextCursor },
+  members: { items: members, totalCount: total, nextOffset },
   unassigned: {
     items: unassigned,
     totalCount: unassigned.length,
-    nextCursor: null,
+    nextOffset: null,
   },
   reclaimCandidates: unavailable,
 });
 
-test("members read the dashboard, then every page of the roster from the same snapshot", async () => {
+test("members load only the first roster page; later pages and CSV use the same snapshot", async () => {
   const original = global.fetch,
     urls: URL[] = [];
   global.fetch = async (input) => {
     const url = new URL(String(input), "http://localhost");
     urls.push(url);
     if (url.pathname.endsWith("/members/dashboard"))
-      return Response.json(dashboard([member(1), member(2)], 5, "c1"));
-    const cursor = url.searchParams.get("cursor");
+      return Response.json(dashboard([member(1), member(2)], 5, 2));
+    const offset = Number(url.searchParams.get("offset") ?? 0);
     return Response.json({
       meta: meta(),
       members:
-        cursor === "c1"
-          ? { items: [member(3), member(4)], totalCount: 5, nextCursor: "c2" }
-          : { items: [member(5)], totalCount: 5, nextCursor: null },
+        offset === 0
+          ? { items: [member(1), member(2)], totalCount: 5, nextOffset: 2 }
+          : offset === 2
+            ? { items: [member(3), member(4)], totalCount: 5, nextOffset: 4 }
+            : { items: [member(5)], totalCount: 5, nextOffset: null },
     });
   };
   try {
     const view = await fetchMembersView(ORG, period);
     assert.deepEqual(
-      view.members.map((item) => item.memberId),
-      ["member-1", "member-2", "member-3", "member-4", "member-5"],
+      view.members.map((m) => m.memberId),
+      ["member-1", "member-2"],
     );
-    assert.equal(urls.length, 3);
-    assert.equal(urls[0].searchParams.get("startDate"), "2026-09-01");
-    assert.equal(urls[0].searchParams.get("endDate"), "2026-09-28");
-    assert.equal(urls[0].searchParams.get("timeZone"), "Asia/Seoul");
-    for (const url of urls.slice(1)) {
-      assert.match(url.pathname, /\/organizations\/[^/]+\/members$/);
-      assert.equal(url.searchParams.get("snapshotId"), "snapshot-1");
-      assert.equal(url.searchParams.get("startDate"), "2026-09-01");
-      assert.equal(url.searchParams.get("limit"), "100");
-    }
+    assert.equal(view.initialMembers?.nextOffset, 2);
+    assert.equal(urls.length, 1, "first render does not fetch every member");
+    const next = await fetchMemberPage(ORG, period, view.meta.snapshotId, 2, {
+      q: "사용자",
+      status: "active",
+      sort: "cost",
+      order: "desc",
+    });
+    assert.equal(next.members.nextOffset, 4);
+    assert.equal(urls[1].searchParams.get("q"), "사용자");
+    assert.equal(urls[1].searchParams.get("order"), "desc");
+    const all = await fetchAllMembers(ORG, period, view.meta.snapshotId);
+    assert.equal(all.length, 5);
     assert.deepEqual(
-      urls.slice(1).map((url) => url.searchParams.get("cursor")),
-      ["c1", "c2"],
+      urls.slice(2).map((u) => u.searchParams.get("offset")),
+      ["0", "2", "4"],
     );
-    assert.notDeepEqual(
-      membersOptions(ORG, period).queryKey,
-      membersOptions(ORG, { ...period, endDate: "2026-09-27" }).queryKey,
+    assert.ok(
+      urls
+        .slice(1)
+        .every((u) => u.searchParams.get("snapshotId") === "snapshot-1"),
     );
     assert.notDeepEqual(
       membersOptions(ORG, period).queryKey,
@@ -145,66 +153,62 @@ test("members read the dashboard, then every page of the roster from the same sn
   }
 });
 
-test("an expired snapshot restarts once from the first page; mixed snapshots and wrong totals are rejected", async () => {
+test("invalid pages and mixed snapshots are rejected; dashboard expiration retries once", async () => {
   const original = global.fetch;
-  let calls = 0;
-  global.fetch = async (input) => {
-    calls++;
-    if (calls === 2)
-      return Response.json(
-        { error: { code: "snapshot_expired", message: "expired" } },
-        { status: 409 },
-      );
-    if (
-      new URL(String(input), "http://localhost").pathname.endsWith(
-        "/members/dashboard",
-      )
-    )
-      return Response.json(
-        dashboard([member(1)], calls === 1 ? 2 : 1, calls === 1 ? "c1" : null),
-      );
-    throw new Error("unexpected request");
-  };
+  const invalid = (e: unknown) =>
+    e instanceof ManagementError && e.code === "invalid_response";
   try {
-    const view = await fetchMembersView(ORG, period);
-    assert.equal(calls, 3);
-    assert.equal(view.members.length, 1);
-
-    const invalid = (error: unknown) =>
-      error instanceof ManagementError && error.code === "invalid_response";
-    global.fetch = async (input) =>
-      new URL(String(input), "http://localhost").pathname.endsWith(
-        "/members/dashboard",
-      )
-        ? Response.json(dashboard([member(1)], 2, "c1"))
-        : Response.json({
-            meta: meta("snapshot-2"),
-            members: { items: [member(2)], totalCount: 2, nextCursor: null },
-          });
-    await assert.rejects(fetchMembersView(ORG, period), invalid);
-    global.fetch = async () => Response.json(dashboard([member(1)], 2, null));
-    await assert.rejects(
-      fetchMembersView(ORG, period),
-      invalid,
-      "totalCount보다 적게 받은 명단을 전체로 취급하지 않는다",
-    );
+    let calls = 0;
     global.fetch = async () =>
-      Response.json({
+      ++calls === 1
+        ? Response.json(
+            { error: { code: "snapshot_expired", message: "expired" } },
+            { status: 409 },
+          )
+        : Response.json(dashboard([member(1)], 1, null));
+    assert.equal((await fetchMembersView(ORG, period)).members.length, 1);
+    assert.equal(calls, 2);
+    for (const body of [
+      dashboard([member(1)], 2, null),
+      {
         ...dashboard([member(1)], 1, null),
         meta: { ...meta(), organizationId: "another-org" },
-      });
-    await assert.rejects(fetchMembersView(ORG, period), invalid);
-    global.fetch = async () =>
-      Response.json({
+      },
+      {
         ...dashboard([member(1)], 1, null),
         meta: { ...meta(), endDate: "2026-09-27" },
-      });
-    await assert.rejects(fetchMembersView(ORG, period), invalid);
+      },
+    ]) {
+      global.fetch = async () => Response.json(body);
+      await assert.rejects(fetchMembersView(ORG, period), invalid);
+    }
+    for (const body of [
+      {
+        meta: meta("another-snapshot"),
+        members: { items: [member(1)], totalCount: 1, nextOffset: null },
+      },
+      {
+        meta: meta(),
+        members: { items: [member(1)], totalCount: 2, nextOffset: 0 },
+      },
+      { meta: meta(), members: { items: [], totalCount: 2, nextOffset: 1 } },
+      {
+        meta: meta(),
+        members: {
+          items: [member(1), member(1)],
+          totalCount: 2,
+          nextOffset: null,
+        },
+      },
+    ]) {
+      global.fetch = async () => Response.json(body);
+      await assert.rejects(fetchAllMembers(ORG, period, "snapshot-1"), invalid);
+    }
     global.fetch = async () =>
       Response.json({ error: { code: "forbidden" } }, { status: 403 });
     await assert.rejects(
       fetchMembersView(ORG, period),
-      (error) => error instanceof ManagementError && error.status === 403,
+      (e: unknown) => e instanceof ManagementError && e.status === 403,
     );
   } finally {
     global.fetch = original;
@@ -610,24 +614,31 @@ test("pagination rejects changed periods and total counts even when snapshot mat
   const original = global.fetch;
   try {
     for (const changed of ["period", "count"]) {
-      global.fetch = async (input) =>
-        new URL(String(input), "http://localhost").pathname.endsWith(
-          "/members/dashboard",
-        )
-          ? Response.json(dashboard([member(1)], 2, "c1"))
-          : Response.json({
-              meta: {
-                ...meta(),
-                ...(changed === "period" ? { startDate: "2026-09-02" } : {}),
+      global.fetch = async (input) => {
+        const offset = Number(
+          new URL(String(input), "http://localhost").searchParams.get("offset"),
+        );
+        return Response.json(
+          offset === 0
+            ? {
+                meta: meta(),
+                members: { items: [member(1)], totalCount: 2, nextOffset: 1 },
+              }
+            : {
+                meta: {
+                  ...meta(),
+                  ...(changed === "period" ? { startDate: "2026-09-02" } : {}),
+                },
+                members: {
+                  items: [member(2)],
+                  totalCount: changed === "count" ? 3 : 2,
+                  nextOffset: null,
+                },
               },
-              members: {
-                items: [member(2)],
-                totalCount: changed === "count" ? 3 : 2,
-                nextCursor: null,
-              },
-            });
+        );
+      };
       await assert.rejects(
-        fetchMembersView(ORG, period),
+        fetchAllMembers(ORG, period, "snapshot-1"),
         (error) =>
           error instanceof ManagementError && error.code === "invalid_response",
       );

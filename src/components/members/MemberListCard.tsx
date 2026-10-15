@@ -1,5 +1,10 @@
 "use client";
 
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { memberPagesOptions } from "@/lib/api/members";
+import { ManagementError } from "@/lib/api/management";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { LoadingState } from "@/components/ui/LoadingState";
 import { useEffect, useRef, useState } from "react";
 import { MetricStatusBadge } from "@/components/overview/KpiCard";
 import { MemberStatusBadges } from "./MemberStatusBadges";
@@ -8,9 +13,10 @@ import { Widget } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { SortHeader } from "@/components/ui/SortHeader";
 import { FilterMenu } from "@/components/ui/FilterMenu";
-import { nextSort, sortRows, type SortState } from "@/lib/sort";
+import { nextSort, type SortState } from "@/lib/sort";
 import {
   MEMBER_STATUS_LABELS,
+  memberRow,
   type MemberRow,
   type MembersModel,
 } from "@/lib/members-view";
@@ -41,15 +47,20 @@ export function MemberListCard({
   model,
   onOpen,
   onExport,
+  onSnapshotExpired,
+  exporting = false,
+  exportError,
 }: {
   model: MembersModel;
   onOpen: (member: MemberRow) => void;
   onExport: () => void;
+  onSnapshotExpired: () => void;
+  exporting?: boolean;
+  exportError?: Error | null;
 }) {
   const [query, setQuery] = useState("");
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
-  const [limit, setLimit] = useState(PAGE);
   const [sort, setSort] = useState<SortState<SortKey>>({
     key: "account",
     direction: "asc",
@@ -97,27 +108,65 @@ export function MemberListCard({
     [],
   );
 
-  const matched = model.memberRows.filter(
-    (m) =>
-      (status === "all" || m.activity === status) &&
-      (!keyword ||
-        m.account.toLowerCase().includes(keyword) ||
-        m.displayName.toLowerCase().includes(keyword) ||
-        m.team.toLowerCase().includes(keyword)),
-  );
-  // 검색 중에는 결과를 전부 보여줍니다 — 찾는 사람이 잘려 있으면 검색이 무의미합니다
-  const ordered = sortRows(
-    matched,
-    (member) => {
-      if (sort.key === "cost") return member.costValue;
-      if (sort.key === "activity") return member.lastUsedTime;
-      return member[sort.key];
-    },
-    sort.direction,
-    (member) => member.account,
-  );
-  const rows = keyword ? ordered : ordered.slice(0, limit);
-  const hasMore = !keyword && matched.length > rows.length;
+  const filters = { q: keyword, status, sort: sort.key, order: sort.direction };
+  const resultKey = JSON.stringify([model.snapshotId, filters]);
+  const [display, setDisplay] = useState({ key: resultKey, count: PAGE });
+  const visible = display.key === resultKey ? display.count : PAGE;
+  if (display.key !== resultKey) setDisplay({ key: resultKey, count: PAGE });
+  const list = useInfiniteQuery({
+    ...memberPagesOptions(
+      model.organizationId,
+      model.period,
+      model.snapshotId,
+      filters,
+    ),
+    initialData:
+      !keyword &&
+      status === "all" &&
+      sort.key === "account" &&
+      sort.direction === "asc" &&
+      model.initialMembers
+        ? {
+            pages: [
+              {
+                meta: {
+                  organizationId: model.organizationId,
+                  snapshotId: model.snapshotId,
+                  ...model.period,
+                  asOf: "",
+                },
+                members: model.initialMembers,
+              },
+            ],
+            pageParams: [0],
+          }
+        : undefined,
+  });
+  const expired =
+    list.error instanceof ManagementError &&
+    list.error.code === "snapshot_expired";
+  useEffect(() => {
+    if (expired) onSnapshotExpired();
+  }, [expired, onSnapshotExpired]);
+  const forbidden =
+    list.error instanceof ManagementError &&
+    [401, 403].includes(list.error.status);
+  const loadedRows = forbidden
+    ? []
+    : (list.data?.pages ?? [])
+        .flatMap((p) => p.members.items)
+        .map((m) => memberRow(m, new Set<string>()));
+  const total = list.data?.pages[0]?.members.totalCount ?? 0;
+  const rows = loadedRows.slice(0, visible);
+  const hasMore =
+    !forbidden && (loadedRows.length > visible || list.hasNextPage);
+  const loadMore = async () => {
+    if (loadedRows.length < visible + PAGE && list.hasNextPage) {
+      const result = await list.fetchNextPage();
+      if (result.isError) return;
+    }
+    setDisplay({ key: resultKey, count: visible + PAGE });
+  };
 
   return (
     <Widget
@@ -125,8 +174,10 @@ export function MemberListCard({
       title="구성원"
       note={
         status === "all"
-          ? model.memberNote(rows.length, keyword)
-          : `${MEMBER_STATUS_LABELS[status]} ${matched.length}명 · ${rows.length}명 표시${keyword ? " · 검색 결과" : ""}`
+          ? keyword
+            ? `검색 결과 ${total}명 · ${rows.length}명 표시 · 전체 ${model.totalMembers}명 내 검색`
+            : model.memberNote(rows.length, "")
+          : `${MEMBER_STATUS_LABELS[status]} ${total}명 · ${rows.length}명 표시${keyword ? " · 검색 결과" : ""}`
       }
       className="col-span-full @max-[620px]:[&>div:first-child]:flex-col @max-[620px]:[&>div:first-child]:items-stretch [&>div:first-child>div>span:first-child]:shrink-0"
       action={
@@ -214,7 +265,6 @@ export function MemberListCard({
                           : Math.max(previous ?? 0, height),
                       );
                       setStatus(next);
-                      setLimit(PAGE);
                     }}
                   />
                 </div>
@@ -256,7 +306,23 @@ export function MemberListCard({
             </div>
           </div>
 
-          {rows.length === 0 && (
+          {list.isPending && (
+            <LoadingState message="구성원 목록을 불러오는 중입니다…" />
+          )}
+          {list.error && (
+            <ErrorState
+              message={list.error.message}
+              retrying={list.isFetching}
+              onRetry={() =>
+                void (expired
+                  ? onSnapshotExpired()
+                  : list.isFetchNextPageError
+                    ? loadMore()
+                    : list.refetch({ cancelRefetch: false }))
+              }
+            />
+          )}
+          {!list.isPending && !list.error && rows.length === 0 && (
             <p className="py-6 text-center text-[12px] text-text3">
               {keyword
                 ? "검색 결과가 없습니다"
@@ -269,18 +335,31 @@ export function MemberListCard({
 
         <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-border pt-3">
           {hasMore && (
-            <Button onClick={() => setLimit((v) => v + PAGE)}>
-              다음 {Math.min(PAGE, matched.length - rows.length)}명 더보기
+            <Button
+              disabled={list.isFetchingNextPage}
+              onClick={() => void loadMore()}
+            >
+              다음 {Math.min(PAGE, total - rows.length)}명 더보기
             </Button>
           )}
           <span className="pretty min-w-0 flex-1 basis-70 text-[11px] text-text3">
             개인별 비용은 좌석 정합·오남용 확인 목적으로만 표시되며 순위를
             매기지 않습니다 · 전체 명단은 내보내기로 확인하세요
           </span>
-          <Button onClick={onExport} disabled={model.memberRows.length === 0}>
-            전체 명단 CSV
+          <Button
+            onClick={onExport}
+            disabled={exporting || model.totalMembers === 0}
+          >
+            {exporting ? "내보내는 중…" : "전체 명단 CSV"}
           </Button>
         </div>
+        {exportError && (
+          <ErrorState
+            message={exportError.message}
+            onRetry={onExport}
+            retrying={exporting}
+          />
+        )}
       </div>
     </Widget>
   );

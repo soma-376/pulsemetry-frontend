@@ -33,19 +33,21 @@ test("members sort the whole roster, keep sorting through more and put missing v
   await expect(members).toBeVisible();
   // 서버의 첫 페이지는 20명이지만 정렬은 45명 전체에 적용한다.
   const alphabetical = roster.map((row) => row.account).sort(collator.compare);
-  expect(await memberAccounts(members)).toEqual(alphabetical.slice(0, 20));
+  await expect
+    .poll(() => memberAccounts(members))
+    .toEqual(alphabetical.slice(0, 20));
   await members
     .getByRole("button", { name: "사용자 정렬", exact: true })
     .click();
-  expect(await memberAccounts(members)).toEqual(
-    [...alphabetical].reverse().slice(0, 20),
-  );
+  await expect
+    .poll(() => memberAccounts(members))
+    .toEqual([...alphabetical].reverse().slice(0, 20));
   await members
     .getByRole("button", { name: "다음 20명 더보기", exact: true })
     .click();
-  expect(await memberAccounts(members)).toEqual(
-    [...alphabetical].reverse().slice(0, 40),
-  );
+  await expect
+    .poll(() => memberAccounts(members))
+    .toEqual([...alphabetical].reverse().slice(0, 40));
   const cost = members.getByRole("button", {
     name: "사용 환산액 정렬",
     exact: true,
@@ -64,32 +66,55 @@ test("members sort the whole roster, keep sorting through more and put missing v
         collator.compare(a.account, b.account)
       );
     });
-  expect(await memberAccounts(members)).toEqual(
-    byCost(-1)
-      .slice(0, 40)
-      .map((row) => row.account),
-  );
+  await expect
+    .poll(() => memberAccounts(members))
+    .toEqual(
+      byCost(-1)
+        .slice(0, 20)
+        .map((row) => row.account),
+    );
   const search = members.getByRole("textbox", { name: "구성원 검색" });
   await search.fill("플랫폼");
   await search.press("Enter");
-  expect(await memberAccounts(members)).toEqual(
-    byCost(-1)
-      .filter((row) => row.team.teamName === "플랫폼")
-      .map((row) => row.account),
-  );
+  await expect
+    .poll(() => memberAccounts(members))
+    .toEqual(
+      byCost(-1)
+        .filter((row) => row.team.teamName === "플랫폼")
+        .map((row) => row.account),
+    );
   await search.fill("@codeworks.io");
   await search.press("Enter");
-  // 검색 중에는 전부 보여 준다. 비용이 없는 구성원은 양방향 모두 마지막이다.
+  // 검색·정렬을 바꾸면 첫 20명부터 다시 읽는다.
+  const expandAll = async () => {
+    await expect
+      .poll(() => memberAccounts(members).then((rows) => rows.length))
+      .toBe(20);
+    await members
+      .getByRole("button", { name: "다음 20명 더보기", exact: true })
+      .click();
+    await expect
+      .poll(() => memberAccounts(members).then((rows) => rows.length))
+      .toBe(40);
+    await members
+      .getByRole("button", { name: "다음 5명 더보기", exact: true })
+      .click();
+    await expect
+      .poll(() => memberAccounts(members).then((rows) => rows.length))
+      .toBe(45);
+  };
+  await expandAll();
   const missing = roster.filter((row) => value(row) === null).length;
   expect(missing).toBeGreaterThan(0);
-  expect(await memberAccounts(members)).toEqual(
-    byCost(-1).map((row) => row.account),
-  );
+  await expect
+    .poll(() => memberAccounts(members))
+    .toEqual(byCost(-1).map((row) => row.account));
   await cost.click();
   await expect(cost).toHaveAccessibleDescription(/^오름차순 정렬 중/);
-  expect(await memberAccounts(members)).toEqual(
-    byCost(1).map((row) => row.account),
-  );
+  await expandAll();
+  await expect
+    .poll(() => memberAccounts(members))
+    .toEqual(byCost(1).map((row) => row.account));
   expect((await memberAccounts(members)).slice(-missing).sort()).toEqual(
     roster
       .filter((row) => value(row) === null)
@@ -101,6 +126,7 @@ test("members sort the whole roster, keep sorting through more and put missing v
     exact: true,
   });
   await activity.click();
+  await expandAll();
   const latest = [...roster].sort((a, b) => {
     if ((a.lastUsedAt === null) !== (b.lastUsedAt === null))
       return a.lastUsedAt === null ? 1 : -1;
@@ -111,9 +137,9 @@ test("members sort the whole roster, keep sorting through more and put missing v
       collator.compare(a.account, b.account)
     );
   });
-  expect(await memberAccounts(members)).toEqual(
-    latest.map((row) => row.account),
-  );
+  await expect
+    .poll(() => memberAccounts(members))
+    .toEqual(latest.map((row) => row.account));
   await members.screenshot({ path: "test-results/member-sorting.png" });
 });
 
@@ -222,7 +248,7 @@ test("user usage sorts before pagination and totals the actual visible rows", as
       .locator("span")
       .filter({ hasText: /^[\w.]+@codeworks\.io$/ })
       .allTextContents();
-  // 서버가 비용 내림차순으로 12명씩 준다. 다른 열 정렬은 30명 전체를 모은 뒤에 한다.
+  // 서버가 비용 내림차순으로 12명씩 준다. 모든 열 정렬은 서버에서 30명 전체에 적용한다.
   const users = fixtureTeamUsers("platform", 30);
   const cost = (row: (typeof users)[number]) =>
     Number(row.usage.equivalentCostUsd.value);
@@ -248,7 +274,7 @@ test("user usage sorts before pagination and totals the actual visible rows", as
   await expect
     .poll(accounts)
     .toEqual(users.slice(0, 24).map((row) => row.account));
-  const count = 24;
+  const count = 12;
   for (const [label, key] of [
     ["세션", "sessionCount"],
     ["총 토큰", "tokenValue"],
@@ -270,16 +296,20 @@ test("user usage sorts before pagination and totals the actual visible rows", as
   const alphabetical = [...users]
     .sort((a, b) => collator.compare(a.account, b.account))
     .slice(0, count);
-  expect(await accounts()).toEqual(alphabetical.map((row) => row.account));
+  await expect.poll(accounts).toEqual(alphabetical.map((row) => row.account));
   await expect(usage).toContainText(
     `${count}명 합계 ${usd(alphabetical.reduce((sum, row) => sum + cost(row), 0))}`,
   );
   await usage.getByRole("button", { name: /다음 \d+명 더보기/ }).click();
-  expect(await accounts()).toEqual(
-    [...users]
-      .sort((a, b) => collator.compare(a.account, b.account))
-      .map((row) => row.account),
-  );
+  await expect.poll(accounts).toHaveLength(24);
+  await usage.getByRole("button", { name: /다음 \d+명 더보기/ }).click();
+  await expect
+    .poll(accounts)
+    .toEqual(
+      [...users]
+        .sort((a, b) => collator.compare(a.account, b.account))
+        .map((row) => row.account),
+    );
   await expect(usage.getByRole("button", { name: /더보기/ })).toHaveCount(0);
   await usage.screenshot({ path: "test-results/user-sorting.png" });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -291,4 +321,67 @@ test("user usage sorts before pagination and totals the actual visible rows", as
     usage.getByRole("button", { name: "환산 금액 정렬", exact: true }),
   ).toHaveAccessibleDescription(/^내림차순 정렬 중/);
   await usage.screenshot({ path: "test-results/user-sorting-mobile.png" });
+});
+
+test("average deviation sorts on the server and loads only requested pages", async ({
+  page,
+}) => {
+  const requests: URL[] = [];
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (
+      url.pathname.endsWith("/users") &&
+      url.searchParams.get("sort") === "averageDeviation"
+    )
+      requests.push(url);
+  });
+  await openDashboard(page, "/teams");
+  const usage = page.getByRole("region", {
+    name: "사용자별 사용량",
+    exact: true,
+  });
+  const accounts = () =>
+    usage
+      .locator("span")
+      .filter({ hasText: /^[\w.]+@codeworks\.io$/ })
+      .allTextContents();
+  const users = fixtureTeamUsers("platform", 30);
+  const header = () =>
+    usage.getByRole("button", { name: "평균 대비 정렬", exact: true });
+  await expect
+    .poll(accounts)
+    .toEqual(users.slice(0, 12).map((row) => row.account));
+  await header().click();
+  await expect(header()).toHaveAccessibleDescription(/^내림차순 정렬 중/);
+  await expect
+    .poll(accounts)
+    .toEqual(users.slice(0, 12).map((row) => row.account));
+  expect(
+    requests.map((url) => [
+      url.searchParams.get("order"),
+      url.searchParams.get("offset"),
+    ]),
+  ).toEqual([["desc", "0"]]);
+  await usage.getByRole("button", { name: /다음 \d+명 더보기/ }).click();
+  await expect
+    .poll(accounts)
+    .toEqual(users.slice(0, 24).map((row) => row.account));
+  expect(requests).toHaveLength(2);
+  expect(requests[1].searchParams.get("offset")).toBe("12");
+  await header().click();
+  const ascending = [...users].reverse();
+  await expect(header()).toHaveAccessibleDescription(/^오름차순 정렬 중/);
+  await expect
+    .poll(accounts)
+    .toEqual(ascending.slice(0, 12).map((row) => row.account));
+  expect(requests).toHaveLength(3);
+  expect(requests[2].searchParams.get("offset")).toBe("0");
+  expect(requests[2].searchParams.get("order")).toBe("asc");
+  await usage.getByRole("button", { name: /다음 \d+명 더보기/ }).click();
+  await expect
+    .poll(accounts)
+    .toEqual(ascending.slice(0, 24).map((row) => row.account));
+  expect(requests).toHaveLength(4);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(header()).toBeVisible();
 });

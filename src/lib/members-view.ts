@@ -125,7 +125,7 @@ export function memberRow(member: Member, candidates: ReadonlySet<string>) {
     lastUsedAt: member.lastUsedAt,
     lastUsedTime: member.lastUsedAt ? Date.parse(member.lastUsedAt) : null,
     lastSeen: formatKst(member.lastUsedAt),
-    activity: memberActivity(member, candidates),
+    activity: member.activity ?? memberActivity(member, candidates),
   };
 }
 export type MemberRow = ReturnType<typeof memberRow>;
@@ -227,7 +227,6 @@ export function deliveryView(delivery: Delivery) {
       };
   }
 }
-export type DeliveryView = ReturnType<typeof deliveryView>;
 
 function inviteRow(invitation: Invitation, now: number) {
   const expired = invitation.status === "expired";
@@ -305,6 +304,9 @@ export function buildMembersView(
 
   return {
     snapshotId: view.meta.snapshotId,
+    organizationId: view.meta.organizationId,
+    initialMembers: view.initialMembers,
+    totalMembers: summary.rosterMembers,
     period: { startDate: view.meta.startDate, endDate: view.meta.endDate },
     capabilities: view.capabilities,
     memberCards: [
@@ -422,7 +424,7 @@ export function buildMembersView(
         ? "대기 중인 초대가 없습니다"
         : `${int(liveInvites!)}명 대기${expiredInvites ? ` · 만료 ${int(expiredInvites)}명` : ""} · 벤더 좌석은 별도 배정`,
     memberNote: (shown: number, query: string) => {
-      const members = memberRows.length;
+      const members = summary.rosterMembers;
       if (query)
         return `검색 결과 ${int(shown)}명 · 전체 ${int(members)}명 내 검색`;
       return `${int(shown)}명 표시 · 구성원 ${int(members)}명 · 행을 눌러 상세 확인`;

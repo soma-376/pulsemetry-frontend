@@ -11,8 +11,8 @@
 | 요청                          | 파라미터 / 결과                                                                                      |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------- |
 | GET /members/dashboard        | startDate, endDate, timeZone → MembersResponse                                                       |
-| GET /members                  | 같은 날짜 + q, limit=20, cursor, snapshotId → MemberListResponse                                     |
-| GET /members/unassigned       | 같은 날짜 + limit=20, cursor, snapshotId → MemberListResponse                                        |
+| GET /members                  | 같은 날짜 + q, memberId, status, sort, order, limit=20, offset=0, snapshotId → MemberListResponse    |
+| GET /members/unassigned       | 같은 날짜 + limit=20, offset=0, snapshotId → MemberListResponse                                      |
 | GET /seat-reclaim-candidates  | limit=20, cursor, snapshotId → ReclaimCandidatesResponse                                             |
 | GET /members/{memberId}/seats | snapshotId(선택) → MemberSeatsResponse — 구성원의 벤더 좌석과 판정(서버 원장)                        |
 | GET /vendors/{vendorId}/seats | limit=50(최대 200), cursor, snapshotId → VendorSeatsResponse — 등록 제품 하나의 좌석 전부(설정 권한) |
@@ -20,11 +20,16 @@
 
 dashboard는 목록·미배정·회수 후보 각각 첫 20개를 포함한다.
 q는 최대 200자, 계정/이름 검색이다. 검색은 첫 페이지 클라이언트 배열이 아니라 권한 범위 전체 로스터에 적용한다.
-구성원/미배정 목록은 선택 기간 비용 내림차순, 동률 memberId. 미수집 사용자는 null로 마지막.
+구성원/미배정 목록은 계정 오름차순이 기본이며 동률은 memberId 오름차순이다. 선택한 정렬 값이 null이면 양방향 마지막이다.
 회수 후보는 idleDays 내림차순, 동률 seatAssignmentId.
 비교 필터는 이 화면에 적용하지 않는다.
 
 ```ts
+type OffsetPage<T> = {
+  items: T[];
+  totalCount: number;
+  nextOffset: number | null;
+};
 type Member = {
   memberId: string;
   account: string;
@@ -38,6 +43,7 @@ type Member = {
     sessionCount: Value<number>;
   } | null;
   lastUsedAt: string | null;
+  activity: "active" | "candidate" | "idle" | "unobserved";
   seatState: "assigned" | "unassigned" | "reclaimed" | "unknown";
 };
 type ReclaimCandidate = {
@@ -85,11 +91,11 @@ type MembersResponse = {
     reclaimSeats: boolean;
     restoreSeats: boolean;
   };
-  members: Page<Member>;
-  unassigned: Page<Member>;
+  members: OffsetPage<Member>;
+  unassigned: OffsetPage<Member>;
   reclaimCandidates: Section<Page<ReclaimCandidate>>;
 };
-type MemberListResponse = { meta: MembersMeta; members: Page<Member> };
+type MemberListResponse = { meta: MembersMeta; members: OffsetPage<Member> };
 type ReclaimCandidatesResponse = {
   meta: CurrentMeta;
   idleDays: number;
@@ -288,3 +294,12 @@ capabilities.reclaimSeats·restoreSeats는 관리 기능이 켜진 서버면 tru
 `Value`는 개요와 같은 의미이며 0과 확인 불가를 구분한다. 미완료 기간·식별 누락·가격 누락 사유를 보존하고, 회수 후보 수는 후보 목록의 판정 가용성과 같은 사유를 갖는다. 관측이 부족한 좌석을 후보 0으로 확정하지 않는다. 본문 조회 실패는 HTTP 오류이고 초대·팀 목록·좌석 상세의 독립 조회와 쓰기 경로는 유지한다.
 
 CSV는 명단에 보이는 비용·세션·마지막 사용에 비용/세션 상태와 사유를 함께 내보낸다. 미확정 값은 빈 칸이다. 기존 응답과 호환되지 않으므로 프론트와 백엔드를 함께 적용한다.
+
+## 구성원 서버 페이지네이션
+
+`members`·`unassigned`는 `{items,totalCount,nextOffset}`이다. 첫 화면은 구성원 20명만 받고 더보기에서 다음 offset을 요청한다.
+후속 페이지는 동일 snapshotId를 유지한다. 정렬·검색·상태 변경 시 offset=0부터 읽고 snapshot 만료 시 새 snapshot으로 다시 시작한다.
+`sort=account|team|cost|activity`(기본 account), `order=asc|desc`(기본 asc)이며 activity 정렬 값은 lastUsedAt이다.
+동률은 memberId 오름차순이고 null은 양방향 마지막이다. `q`는 계정·표시 이름·현재 팀 이름을 검색한다.
+`status=all|active|candidate|idle|unobserved`는 응답 activity를 기준으로 필터링한다(계정 상태 status와 구별).
+`memberId` UUID로 첫 페이지 밖의 구성원을 정확히 조회할 수 있다. CSV 버튼을 누를 때만 전체 구성원 페이지를 읽는다.

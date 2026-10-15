@@ -135,18 +135,18 @@ function OrganizationTeams({
         } | null = null;
         if (usersTeam) {
           const users: TeamUser[] = [];
-          let cursor: string | null = null;
+          let offset: number | null = 0;
           do {
             const page = await fetchTeamUsers(
               organizationId,
               usersTeam,
               period,
               view.meta.snapshotId,
-              cursor,
+              offset,
             );
             users.push(...page.users.items);
-            cursor = page.users.nextCursor;
-          } while (cursor);
+            offset = page.users.nextOffset;
+          } while (offset !== null);
           const teamName =
             view.teams.find((team) => team.teamId === usersTeam)?.teamName ??
             (usersTeam === UNASSIGNED ? view.unassigned.teamName : usersTeam);
