@@ -70,7 +70,6 @@ const memberSeatsSchema = z.object({
   policy: z.object({ idleDays: count, version: z.number() }),
   seats: z.array(memberSeatSchema),
 });
-export type MemberSeats = z.infer<typeof memberSeatsSchema>;
 
 export const vendorSeatSchema = z.object({
   seatAssignmentId: z.string(),
@@ -94,19 +93,6 @@ export const vendorSeatSchema = z.object({
   reclaimMethod: method.nullable(),
   lastControl: controlRef.nullable(),
 });
-export type VendorSeat = z.infer<typeof vendorSeatSchema>;
-const vendorSeatsSchema = z.object({
-  meta: currentMeta,
-  vendorId: z.string(),
-  ledgerAvailability: availability,
-  ledgerReason: z.string().nullable(),
-  seats: z.object({
-    items: z.array(vendorSeatSchema),
-    totalCount: count,
-    nextCursor: z.string().nullable(),
-  }),
-});
-export type VendorSeatsPage = z.infer<typeof vendorSeatsSchema>;
 
 const candidatesSchema = z.object({
   meta: currentMeta,
@@ -123,7 +109,6 @@ const candidatesSchema = z.object({
       .nullable(),
   }),
 });
-export type CandidatesPage = z.infer<typeof candidatesSchema>;
 
 export const reclaimPreviewSchema = z.object({
   previewId: z.string(),
@@ -142,7 +127,6 @@ export const reclaimPreviewSchema = z.object({
     )
     .optional(),
 });
-export type ReclaimPreview = z.infer<typeof reclaimPreviewSchema>;
 
 const dashboard = <T>(
   path: string,
@@ -197,39 +181,6 @@ export const candidatePagesOptions = (
     initialPageParam: startCursor ?? "",
     getNextPageParam: (last) => last.candidates.data?.nextCursor ?? null,
     enabled: false,
-    ...readOptions,
-  });
-
-/** 등록 제품 하나의 좌석 — 구성원에 잇지 않은 좌석까지(설정 권한). */
-export const vendorSeatsOptions = (
-  org: string,
-  vendorId: string | null,
-  limit = 50,
-) =>
-  infiniteQueryOptions({
-    queryKey: [...managementKey(org, "vendor-seats"), vendorId, limit],
-    queryFn: async ({ pageParam, signal }) => {
-      if (!vendorId) throw new Error("조회할 제품이 없습니다.");
-      const query = new URLSearchParams({ limit: String(limit) });
-      if (pageParam) {
-        query.set("cursor", pageParam.cursor);
-        query.set("snapshotId", pageParam.snapshotId);
-      }
-      const data = await dashboard(
-        orgPath(org, `/vendors/${encodeURIComponent(vendorId)}/seats?${query}`),
-        vendorSeatsSchema,
-        signal,
-      );
-      if (data.meta.organizationId !== org || data.vendorId !== vendorId)
-        throw invalid();
-      return data;
-    },
-    initialPageParam: null as { cursor: string; snapshotId: string } | null,
-    getNextPageParam: (last) =>
-      last.seats.nextCursor
-        ? { cursor: last.seats.nextCursor, snapshotId: last.meta.snapshotId }
-        : null,
-    enabled: !!org && !!vendorId,
     ...readOptions,
   });
 
@@ -408,185 +359,3 @@ export const seatSourceSchema = z.object({
     })
     .nullable(),
 });
-export type SeatSource = z.infer<typeof seatSourceSchema>;
-const connectionResponse = z.object({ seatSource: seatSourceSchema });
-
-const enrollment = <T>(path: string, schema: z.ZodType<T>, init: RequestInit) =>
-  apiJson("enrollment", path, schema, init);
-/** 연결 추가·교체 — 자격증명은 이 요청에만 싣고 화면·저장소에 남기지 않는다. 응답에도 없다. */
-export const saveConnection = (
-  org: string,
-  vendorId: string,
-  expectedVersion: number,
-  settings: Record<string, string>,
-  credential: string,
-) =>
-  enrollment(
-    orgPath(org, `/vendors/${encodeURIComponent(vendorId)}/connection`),
-    connectionResponse,
-    {
-      method: "PUT",
-      body: JSON.stringify({ expectedVersion, settings, credential }),
-    },
-  );
-export const deleteConnection = (
-  org: string,
-  vendorId: string,
-  version: number,
-) =>
-  enrollment(
-    orgPath(org, `/vendors/${encodeURIComponent(vendorId)}/connection`),
-    z.undefined(),
-    { method: "DELETE", headers: { "If-Match": `"connection-${version}"` } },
-  );
-export const verifyConnection = (org: string, vendorId: string) =>
-  enrollment(
-    orgPath(org, `/vendors/${encodeURIComponent(vendorId)}/connection/verify`),
-    connectionResponse,
-    { method: "POST" },
-  );
-/** 지금 동기화 — 다음 주기 실행이 가져간다(작업 `seat_sync`). */
-export const requestSync = (
-  post: Post,
-  org: string,
-  vendorId: string,
-): Promise<Operation> =>
-  post(
-    org,
-    `/vendors/${encodeURIComponent(vendorId)}/connection/sync`,
-    {},
-    operationSchema,
-  );
-
-const savedSeatSchema = z.object({
-  seat: z
-    .object({
-      seatAssignmentId: z.string(),
-      version: z.number(),
-      account: z.string(),
-      state: seatState,
-    })
-    .passthrough(),
-  warnings: z.array(z.string()),
-  provisional: z.boolean(),
-});
-export type SavedSeat = z.infer<typeof savedSeatSchema>;
-/** 수동 배정(커넥터가 없거나 연결 전인 제품만 — 연결이 있으면 409 connector_managed). 해제된 좌석을 다시 배정하면 그 판을 보낸다. */
-export const assignSeat = (
-  post: Post,
-  org: string,
-  vendorId: string,
-  body: {
-    account: string;
-    tierId?: string | null;
-    note?: string | null;
-    expectedVersion?: number;
-  },
-) =>
-  post(
-    org,
-    `/vendors/${encodeURIComponent(vendorId)}/seats`,
-    body,
-    savedSeatSchema,
-  );
-export const releaseSeat = (
-  post: Post,
-  org: string,
-  vendorId: string,
-  seatId: string,
-  expectedVersion: number,
-) =>
-  post(
-    org,
-    `/vendors/${encodeURIComponent(vendorId)}/seats/${encodeURIComponent(seatId)}/release`,
-    { expectedVersion },
-    savedSeatSchema,
-  );
-/** 보정 — 구성원 연결·계약 등급·메모. 권위와 무관하게 된다. */
-export const correctSeat = (
-  org: string,
-  vendorId: string,
-  seatId: string,
-  body: {
-    expectedVersion: number;
-    tierId?: string | null;
-    note?: string | null;
-    memberId?: string | null;
-    memberLink?: "automatic";
-  },
-) =>
-  enrollment(
-    orgPath(
-      org,
-      `/vendors/${encodeURIComponent(vendorId)}/seats/${encodeURIComponent(seatId)}`,
-    ),
-    savedSeatSchema,
-    { method: "PATCH", body: JSON.stringify(body) },
-  );
-
-export const seatImportSchema = z.object({
-  mode: z.enum(["preview", "apply"]),
-  applied: z.boolean(),
-  digest: z.string(),
-  summary: z.record(z.string(), z.number()),
-  rows: z.array(
-    z.object({
-      line: z.number(),
-      account: z.string(),
-      action: z.string().nullable(),
-      seatAssignmentId: z.string().nullable(),
-      errors: z.array(z.object({ field: z.string(), code: z.string() })),
-    }),
-  ),
-  warnings: z.array(z.string()),
-});
-export type SeatImport = z.infer<typeof seatImportSchema>;
-/** CSV 가져오기 — 미리보기는 쓰지 않고, 적용은 오류가 하나도 없을 때만 한 번에 한다(오류면 422 + 행별 오류). 파일의 행만 바꾼다. */
-export const importSeats = (
-  post: Post,
-  org: string,
-  vendorId: string,
-  mode: "preview" | "apply",
-  csv: string,
-) =>
-  post(
-    org,
-    `/vendors/${encodeURIComponent(vendorId)}/seats/import`,
-    { mode, csv },
-    z.object({ import: seatImportSchema, provisional: z.boolean() }),
-  );
-
-export const IMPORT_ACTION_TEXT: Record<string, string> = {
-  create: "새 배정",
-  reassign: "다시 배정",
-  update: "변경",
-  release: "해제",
-  unchanged: "그대로",
-};
-export const IMPORT_ERROR_TEXT: Record<string, string> = {
-  required: "필수",
-  invalid_account: "계정 형식이 틀림",
-  duplicate_account: "같은 계정이 두 번",
-  not_found: "없는 좌석",
-  invalid_status: "상태는 assigned·released",
-  seat_not_changeable: "해제 예정·배정 대기는 벤더 제어의 몫",
-  invalid_tier: "지금 계약에 없는 유형",
-  ambiguous_tier: "유형 이름이 여럿과 맞음",
-  not_applicable: "해제 행에 쓸 수 없음",
-  invalid_email: "이메일 형식이 틀림",
-  member_not_found: "구성원이 없음",
-  member_ambiguous: "같은 이메일의 구성원이 여럿",
-  column_count: "열 수가 머리글과 다름",
-};
-export const CHECK_TEXT: Record<string, string> = {
-  unverified: "확인 전",
-  verified: "확인됨",
-  invalid_credentials: "자격증명 거절",
-  insufficient_permission: "권한 부족",
-  unavailable: "확인하지 못함(일시 장애)",
-};
-export const SYNC_TEXT: Record<z.infer<typeof syncState>["status"], string> = {
-  pending: "아직 성공 없음",
-  succeeded: "성공",
-  failing: "실패 중",
-};

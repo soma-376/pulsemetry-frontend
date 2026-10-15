@@ -1,12 +1,5 @@
 // 기존 Codeworks UI 데모. A회사 백엔드 시드는 ./company-a.ts 참조 (README.md).
-import { getVendorProduct } from "@/lib/vendor-catalog";
 import type { VendorUsage } from "@/types/domain";
-
-/** Explicit demo product attribution, never inferred from model names. */
-export const USAGE_VENDORS = ["claude_team", "openai_biz"].map((id) => {
-  const product = getVendorProduct(id)!;
-  return { id, name: product.short, color: product.color };
-});
 
 // Claude's shares per metric; Codex receives the remainder. Cursor usage is not collected.
 const CLAUDE_SHARE: Record<

@@ -19,17 +19,6 @@ export type SeatTier = {
   fee: number;
 };
 
-export type Vendor = {
-  id: string;
-  name: string;
-  product: string;
-  family: "anthropic" | "openai" | "generic";
-  plan: string;
-  /** 좌석제 계약만 tiers 를 가집니다 */
-  tiers?: SeatTier[];
-  configured: boolean;
-};
-
 /** 수집 상태 — 값을 0으로 내리지 않고 마지막 확정값을 유지하기 위한 입력 */
 export type IngestState = {
   /** 마지막 적재로부터 경과 분 */
@@ -70,13 +59,4 @@ export type WasteSource = {
   cost: number;
   /** 비교 기간 값 */
   prev: number;
-};
-
-export type Finding = {
-  sev: "이상" | "주의" | "정보";
-  widget: string;
-  href: string;
-  title: string;
-  evidence: { k: string; v: string }[];
-  action: string;
 };

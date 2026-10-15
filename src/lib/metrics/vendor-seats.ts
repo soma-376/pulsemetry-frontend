@@ -54,5 +54,3 @@ export function buildVendorSeats(vendors: VendorRow[]) {
     pendingContracts: vendors.filter((vendor) => !vendor.confirmed).length,
   };
 }
-
-export type VendorSeatsModel = ReturnType<typeof buildVendorSeats>;

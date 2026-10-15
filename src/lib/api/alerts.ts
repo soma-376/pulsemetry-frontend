@@ -93,14 +93,6 @@ export const alertsResponseSchema = z.object({
 export type AlertsPage = z.infer<typeof alertsResponseSchema>;
 export type AlertStatus = "unacknowledged" | "acknowledged" | "all";
 export type AlertCategory = "security" | "cost";
-/** 현재 규칙과 과거 이력의 범주. */
-export const RULE_CATEGORY: Record<string, AlertCategory> = {
-  product_not_registered: "security",
-  model_not_allowed: "security",
-  tool_unapproved: "security",
-  spend_spike: "cost",
-  quota_exceeded: "cost",
-};
 
 /** 알림 목록 한 페이지(`GET O/alerts`). 범주를 주면 서버가 그 범주만 준다. */
 export async function fetchAlerts(

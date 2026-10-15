@@ -1,11 +1,6 @@
 import { loginSchema } from "./schemas/auth";
 import { AUTH_SEED } from "@/mocks/auth";
 
-export type LoginView = "form" | "unknown" | "redirect" | "denied" | "error";
-export type DemoLoginResult =
-  "success" | "cancelled" | "configuration" | "denied" | "network";
-export const ownerMailto = `mailto:${AUTH_SEED.admins[0].email}?subject=${encodeURIComponent("Pulsemetry 로그인 문의")}`;
-
 /** 조직 조회 목. 실제 이메일 확인과 조직 권한 검증은 서버·IdP 연동 시 대체합니다. */
 export function resolveDemoLogin(input: unknown) {
   const parsed = loginSchema.safeParse(input);

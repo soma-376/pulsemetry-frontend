@@ -16,17 +16,6 @@ export const coverage = z.object({
   status: z.enum(["complete", "partial", "none"]),
   observedDays: z.number().int().nonnegative(),
 });
-const teamPeriod = z.object({ activeUsers: count, equivalentCostUsd: money });
-export const usage = teamPeriod.extend({
-  sessionCount: count,
-  tokens: z.object({
-    inputUncached: count,
-    output: count,
-    cacheRead: count,
-    cacheWrite: count,
-    total: count,
-  }),
-});
 // 비교 기간과 그 관측은 서버가 비교를 켰을 때만 싣는다(비교 없음이면 null).
 export const comparison = z.object({
   mode: z.enum(["none", "prev_week", "prev_period"]),

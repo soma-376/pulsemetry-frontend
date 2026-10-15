@@ -17,10 +17,7 @@ async function fitsWidth(page: Page) {
   );
 }
 /** 드로어 본문을 끝까지 내려 마지막 요소가 보이고, 닫기 버튼으로 닫힌다. */
-async function scrollAndClose(
-  page: Page,
-  dialog: ReturnType<Page["getByRole"]>,
-) {
+async function scrollAndClose(dialog: ReturnType<Page["getByRole"]>) {
   await expect(dialog).toBeVisible();
   const box = await dialog.boundingBox();
   expect(box!.width).toBeLessThanOrEqual(390);
@@ -76,7 +73,6 @@ test("MOBILE-MEMBERS-A @p1 @read @mobile 구성원 명단과 상세 드로어는
     .first()
     .click();
   await scrollAndClose(
-    page,
     page.getByRole("dialog", { name: "구성원 상세", exact: true }),
   );
 });
@@ -97,7 +93,6 @@ test("MOBILE-SETTINGS-A @p1 @read @mobile 설정과 계약 드로어는 작은 �
   );
   await open.click();
   await scrollAndClose(
-    page,
     page.getByRole("dialog", { name: `${name} 계약 설정`, exact: true }),
   );
 });

@@ -4,5 +4,3 @@ import { z } from "zod";
 export const memberRoleSchema = z.enum(["member", "admin"], {
   error: "역할을 선택하세요",
 });
-
-export type MemberRole = z.infer<typeof memberRoleSchema>;

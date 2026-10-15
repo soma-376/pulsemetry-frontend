@@ -4,7 +4,6 @@ import {
   validateServerTiers,
 } from "@/lib/schemas/server-contract";
 import type { CatalogVendor, CatalogPlan } from "@/lib/api/vendor-catalog";
-import { allowsSeatTiers } from "@/lib/vendor-catalog";
 import { useId } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -13,11 +12,8 @@ import { currentDateIso } from "@/lib/date";
 import { Select } from "@/components/ui/Select";
 import { int, usd } from "@/lib/format";
 import {
-  ADD_KINDS,
   EMPTY_TIER,
   MAX_TIERS,
-  getVendorPlans,
-  validateTiers,
   type DraftTier,
   type VendorDraft,
   type VendorRow,
@@ -35,7 +31,7 @@ export function ContractForm({
   existingContract,
 }: {
   existingContract?: { effectiveFrom: string; effectiveTo: string | null };
-  catalog?: {
+  catalog: {
     vendors: CatalogVendor[];
     plans: CatalogPlan[];
     loading: boolean;
@@ -46,28 +42,20 @@ export function ContractForm({
   onChange: (patch: VendorDraft) => void;
 }) {
   const validationId = useId();
-  const kind = isNew ? (draft.kind ?? (catalog ? "" : "copilot")) : row.kind;
-  const serverVendor = catalog?.vendors.find((v) => v.id === kind);
-  const kinds = catalog
-    ? catalog.vendors.map((v) => ({ v: v.id, label: v.displayName }))
-    : ADD_KINDS;
-  const plans = catalog
-    ? catalog.plans.map((p) => ({
-        v: p.id,
-        label: p.displayName,
-        bill: p.billing,
-      }))
-    : getVendorPlans(kind, row.family);
-  const allowsTiers = catalog
-    ? serverVendor?.allowsSeatTiers === true
-    : allowsSeatTiers(kind);
+  const kind = isNew ? (draft.kind ?? "") : row.kind;
+  const serverVendor = catalog.vendors.find((v) => v.id === kind);
+  const kinds = catalog.vendors.map((v) => ({ v: v.id, label: v.displayName }));
+  const plans = catalog.plans.map((p) => ({
+    v: p.id,
+    label: p.displayName,
+    bill: p.billing,
+  }));
+  const allowsTiers = serverVendor?.allowsSeatTiers === true;
   const plan = draft.plan !== undefined ? draft.plan : row.plan;
   const planDef = plans.find((p) => p.v === plan) ?? null;
   const isSeat = planDef?.bill === "seat";
   const tiers = draft.tiers?.length ? draft.tiers : [EMPTY_TIER];
-  const validation = catalog
-    ? validateServerTiers(tiers, allowsTiers)
-    : validateTiers(tiers);
+  const validation = validateServerTiers(tiers, allowsTiers);
   const seats = validation.seats;
   const seatSpend = validation.spend;
   const term = draft.term ?? row.contract.term ?? "";
@@ -93,12 +81,12 @@ export function ContractForm({
                   name: "",
                   planName: "",
                   tiers: [{ ...EMPTY_TIER }],
-                  ...(catalog ? { term: "" } : {}),
+                  term: "",
                 })
               }
               aria-label="제품"
             >
-              {catalog && <option value="">제품을 선택하세요</option>}
+              <option value="">제품을 선택하세요</option>
               {kinds.map((item) => (
                 <option key={item.v} value={item.v}>
                   {item.label}
@@ -111,42 +99,36 @@ export function ContractForm({
         </label>
         {kind === "other" && (
           <label className="flex flex-col gap-1 text-[11.5px] text-text2">
-            {catalog ? "계약 메모 (선택)" : "플랜명 (선택)"}
+            계약 메모 (선택)
             <Input
               value={draft.planName ?? row.contract.planName ?? ""}
               onChange={(event) => onChange({ planName: event.target.value })}
               maxLength={100}
-              aria-label={catalog ? "계약 메모" : "플랜명"}
-              placeholder={
-                catalog ? "계약서의 플랜명 등 참고 사항" : "계약서의 플랜명"
-              }
+              aria-label="계약 메모"
+              placeholder="계약서의 플랜명 등 참고 사항"
             />
           </label>
         )}
 
         <div className="grid grid-cols-2 gap-2 @max-[700px]:grid-cols-1">
           <label className="flex flex-col gap-1 text-[11.5px] text-text2">
-            {`${kind === "other" ? "과금 방식" : "플랜"}${catalog ? "(선택)" : ""}`}
+            {`${kind === "other" ? "과금 방식" : "플랜"}(선택)`}
             <Select
               value={planDef ? (plan ?? "") : ""}
               onChange={(e) =>
                 onChange({
                   plan: e.target.value || null,
-                  ...(catalog && !e.target.value
+                  ...(!e.target.value
                     ? { tiers: [{ ...EMPTY_TIER }], term: "", planName: "" }
                     : {}),
                 })
               }
               aria-label={kind === "other" ? "과금 방식" : "플랜"}
-              disabled={catalog ? !serverVendor || catalog.loading : false}
+              disabled={!serverVendor || catalog.loading}
             >
-              {catalog ? (
-                <option value="">
-                  {catalog.loading ? "불러오는 중…" : "선택 안 함"}
-                </option>
-              ) : (
-                !planDef && <option value="">선택하세요</option>
-              )}
+              <option value="">
+                {catalog.loading ? "불러오는 중…" : "선택 안 함"}
+              </option>
               {plans.map((p) => (
                 <option key={p.v} value={p.v}>
                   {p.label}
@@ -191,9 +173,7 @@ export function ContractForm({
 
           {tiers.map((t, i) => {
             const error = t.seats || t.fee ? validation.errors[i] : {};
-            const rowValidation = catalog
-              ? validateServerTiers([t], allowsTiers)
-              : validateTiers([t]);
+            const rowValidation = validateServerTiers([t], allowsTiers);
             return (
               <div key={i} className="flex flex-col gap-1">
                 <div className={TIER_COLS}>

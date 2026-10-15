@@ -112,5 +112,3 @@ export function buildVendorTrend(activity: Activity) {
     };
   });
 }
-
-export type OverviewVendorsModel = ReturnType<typeof buildOverviewVendors>;

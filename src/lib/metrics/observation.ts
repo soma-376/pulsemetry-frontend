@@ -1,5 +1,5 @@
 import { lagText } from "@/lib/format";
-import type { CompareKey, IngestState } from "@/types/domain";
+import type { IngestState } from "@/types/domain";
 
 /**
  * 관측·적재 규칙.
@@ -60,66 +60,5 @@ export function ingestDownCopy(ingest: IngestState) {
   return {
     title: `데몬 신호가 ${lagText(ingest.lagMinutes)}부터 들어오지 않습니다`,
     detail: `아래 수치는 ${ingest.lastIngestAt} 기준 마지막 확정값입니다 · 사용량이 0이 된 것이 아니라 수집이 멈춘 상태이므로 좌석 회수 판단에 쓰지 마세요`,
-  };
-}
-
-/** 비교 창이 관측 범위 안에 들어오는지 */
-export function compareability(
-  ingest: IngestState,
-  compare: CompareKey,
-  rangeDays: number,
-) {
-  const status = ingestStatus(ingest);
-  const compareDays =
-    compare === "prev_week" ? 7 : compare === "prev_period" ? rangeDays : 0;
-
-  const canCompare =
-    compare !== "none" && ingest.observedDays >= rangeDays + compareDays;
-
-  const reason =
-    compare === "none"
-      ? ""
-      : status === "down"
-        ? `수집 중단 · ${ingest.lastIngestAt} 기준`
-        : `관측 ${ingest.observedDays}일 · ${ingest.observedFrom}부터`;
-
-  return {
-    showCompare: compare !== "none",
-    canCompare,
-    reason,
-    label:
-      compare === "prev_week"
-        ? "전주 대비"
-        : compare === "prev_period"
-          ? "이전 기간 대비"
-          : "",
-  };
-}
-
-/**
- * 주간 차트에서 신호가 존재하지 않는 선행 구간을 계산합니다.
- * 이 구간은 선을 그리지 않고 해칭으로 남깁니다 — 0 으로 찍으면 거짓말이 됩니다.
- */
-export function observationWindow(ingest: IngestState, weekCount: number) {
-  const observedWeeks = Math.max(
-    1,
-    Math.min(weekCount, Math.ceil(ingest.observedDays / 7)),
-  );
-  const firstObservedIndex = weekCount - observedWeeks;
-  const hasGap = firstObservedIndex > 0 && ingest.observedDays > 0;
-
-  return {
-    observedWeeks,
-    firstObservedIndex,
-    hasGap,
-    /** 해칭 경계의 x 좌표 (0~100 뷰박스 기준) */
-    boundaryX: (firstObservedIndex / (weekCount - 1)) * 100,
-    rangeLabel: hasGap ? `관측 ${observedWeeks}주` : `최근 ${weekCount}주`,
-    chartNote: hasGap
-      ? `${ingest.observedFrom} 데몬 설치 · 이전 ${firstObservedIndex}주는 신호가 없습니다(백필 불가)`
-      : "",
-    coverageNote: hasGap
-      ? `관측 ${ingest.observedDays}일(${ingest.observedFrom}부터)`
-      : "",
   };
 }

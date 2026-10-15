@@ -11,7 +11,6 @@ import {
   sessionRole,
   useBackendSession,
 } from "@/lib/api/session";
-import { useHydrated } from "@/lib/use-hydrated";
 import { useRateLimit } from "@/lib/use-rate-limit";
 import { Icon, type IconName } from "@/components/ui/Icon";
 
@@ -32,7 +31,6 @@ const ROLE_LABEL = {
 export function Sidebar() {
   const dashboardHref = useDashboardHref();
   const { update } = useOrganization();
-  const hydrated = useHydrated();
   const pathname = usePathname();
   const session = useBackendSession();
   const router = useRouter();
@@ -142,8 +140,8 @@ export function Sidebar() {
       <div className="flex-1" />
 
       <div className="flex shrink-0 flex-col gap-2.5 border-t border-border pt-3">
-        {/* 계정 표시는 세션에서만 온다. 세션이 없으면 조직·역할·로그아웃 대신 로그인 링크다(서버 렌더·첫 hydration 에는 그리지 않는다). */}
-        {hydrated && session && (
+        {/* 계정 표시는 세션을 따른다. 대시보드의 인증 확인과 접근 제어는 RouteGuard가 담당한다. */}
+        {session && (
           <>
             {!collapsed && (
               <div
@@ -172,7 +170,7 @@ export function Sidebar() {
             )}
           </>
         )}
-        {hydrated && !session && (
+        {!session && (
           <Link
             href="/login"
             className="rounded-md px-2 py-1 text-xs text-text2 hover:bg-hover"
