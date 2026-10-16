@@ -18,7 +18,7 @@ export function ModelScatterCard({ model }: { model: TeamsModel }) {
       aria-label="모델별 토큰 대비 비용"
       className="col-span-2 flex min-w-0 flex-col rounded-[10px] border border-border bg-card p-4 @max-[1100px]:col-span-full"
     >
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
+      <div className="relative mb-6 flex flex-wrap items-center justify-between gap-2">
         <span className="text-[12px] font-semibold">모델별 토큰 대비 비용</span>
         {scatter.status && <MetricStatusBadge {...scatter.status} />}
       </div>

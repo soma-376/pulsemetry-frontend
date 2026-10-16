@@ -16,12 +16,15 @@ export function ModelMixCard({
   };
 }) {
   const { mix, defs } = model;
-  const [hovered, setHovered] = useState<number | null>(null);
-  const [selected, setSelected] = useState<number | null>(null);
-  const active = hovered ?? selected;
-  const activeModel = active === null ? null : mix.rows[active];
-  const select = (index: number) =>
-    setSelected((value) => (value === index ? null : index));
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  // Refreshes can reorder or remove rows without changing the selected period.
+  const selectedModel = mix.rows.find((row) => row.id === selected);
+  const hoveredModel = mix.rows.find((row) => row.id === hovered);
+  const activeModel = hoveredModel ?? selectedModel;
+  const activeIndex = activeModel ? mix.rows.indexOf(activeModel) : null;
+  const select = (id: string) =>
+    setSelected((value) => (value === id ? null : id));
 
   if (mix.count <= 1) {
     const only = mix.rows[0];
@@ -95,9 +98,14 @@ export function ModelMixCard({
         <div className="relative h-[168px] w-[168px] justify-self-center">
           <Donut
             slices={mix.slices}
-            activeIndex={active}
-            onHover={setHovered}
-            onSelect={select}
+            activeIndex={activeIndex}
+            onHover={(index) =>
+              setHovered(index === null ? null : (mix.rows[index]?.id ?? null))
+            }
+            onSelect={(index) => {
+              const row = mix.rows[index];
+              if (row) select(row.id);
+            }}
           />
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-px">
             <span className="tnum text-[20px] font-semibold tracking-[-0.02em]">
@@ -110,17 +118,17 @@ export function ModelMixCard({
         </div>
 
         <div className="flex min-w-0 flex-col gap-0.5">
-          {mix.rows.map((m, index) => (
+          {mix.rows.map((m) => (
             <button
               type="button"
-              key={m.name}
+              key={m.id}
               title={m.tip}
-              aria-pressed={selected === index}
-              onPointerEnter={() => setHovered(index)}
+              aria-pressed={selectedModel?.id === m.id}
+              onPointerEnter={() => setHovered(m.id)}
               onPointerLeave={() => setHovered(null)}
-              onFocus={() => setHovered(index)}
+              onFocus={() => setHovered(m.id)}
               onBlur={() => setHovered(null)}
-              onClick={() => select(index)}
+              onClick={() => select(m.id)}
               onKeyDown={(event) => {
                 if (event.key === "Escape") {
                   setSelected(null);
@@ -129,7 +137,7 @@ export function ModelMixCard({
               }}
               className="grid cursor-pointer grid-cols-[10px_minmax(0,1fr)_62px] items-center gap-2.5 rounded-md border-b border-border px-2 py-[7px] text-left transition-colors hover:bg-hover"
               style={{
-                background: active === index ? "var(--sub)" : undefined,
+                background: activeModel?.id === m.id ? "var(--sub)" : undefined,
               }}
             >
               <span
@@ -153,11 +161,11 @@ export function ModelMixCard({
       </div>
       <div className="mt-3 flex min-h-5 items-center justify-between gap-2 text-[11px] text-text3">
         <span>
-          {selected === null
+          {!selectedModel
             ? "모델을 클릭하면 선택이 유지됩니다"
-            : `${mix.rows[selected].name} 선택됨`}
+            : `${selectedModel.name} 선택됨`}
         </span>
-        {selected !== null && (
+        {selectedModel && (
           <button
             type="button"
             onClick={() => {

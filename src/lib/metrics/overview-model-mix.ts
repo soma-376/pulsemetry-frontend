@@ -45,6 +45,7 @@ export function buildOverviewModelMix(
     share: (model.cost / total) * 100,
   }));
   const rows = slices.map((model) => ({
+    id: model.v,
     name: model.name,
     shareText: `${model.share.toFixed(1)}%`,
     perMText: model.sub,

@@ -71,7 +71,9 @@ test("status menu uses theme tokens and remains inside a narrow viewport", async
 }) => {
   await openDashboard(page, "/members");
   await page.setViewportSize({ width: 390, height: 800 });
-  await page.getByRole("button", { name: "내비게이션 접기/펼치기" }).click();
+  await expect(
+    page.getByRole("navigation", { name: "주 내비게이션" }),
+  ).toHaveCSS("width", "56px");
   const trigger = page.getByRole("button", { name: "상태 필터", exact: true });
   const menu = page.getByRole("menu", { name: "상태 필터" });
   for (const theme of ["light", "dark"]) {

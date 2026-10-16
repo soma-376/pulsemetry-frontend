@@ -71,6 +71,14 @@ export function UserUsageCard({
   const [team, setTeam] = useState(teams[0]?.key ?? "");
   const [visible, setVisible] = useState(TEAM_USERS_PAGE);
   const [sort, setSort] = useState<SortState<SortKey>>(SERVER_ORDER);
+  // 새 snapshot은 데이터만 바꾼다. 선택한 팀이 목록에서 사라진 경우에만 첫 팀으로 이동한다.
+  if (
+    !teams.some((candidate) => candidate.key === team) &&
+    team !== (teams[0]?.key ?? "")
+  ) {
+    setTeam(teams[0]?.key ?? "");
+    setVisible(TEAM_USERS_PAGE);
+  }
   const contentRef = useRef<HTMLDivElement>(null);
   const [pendingLayout, setPendingLayout] = useState<{
     height: number;
@@ -389,7 +397,7 @@ export function UserUsageCard({
                 )}
                 <div className="flex-1" />
                 <span className="tnum text-[11.5px] whitespace-nowrap text-text2">
-                  {data.sumNote(rows)}
+                  {!serverOrder && !complete ? "-" : data.sumNote(rows)}
                 </span>
               </div>
             </>

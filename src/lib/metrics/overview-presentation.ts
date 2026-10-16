@@ -276,9 +276,12 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
           label: "총 토큰 수",
           metric: summary.totalTokens,
           format: (v: string | number | null) => tokenText(numeric(v)),
-          unit: "토큰",
+          unit: summary.totalTokens.value === null ? "" : "토큰",
           def: `선택 기간 전체 ${numberText(summary.totalTokens.value)} 토큰`,
-          caption: "기간 내 사용한 전체 토큰",
+          caption:
+            summary.totalTokens.value === null
+              ? "전체 토큰 수를 확인할 수 없습니다"
+              : "기간 내 사용한 전체 토큰",
           good: false,
         },
       ]
@@ -372,6 +375,7 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
         }))
       : [],
     rows: models.map((m, i) => ({
+      id: m.modelId,
       name: m.displayName,
       color: colors[i % colors.length],
       shareText: shareText(m.costShare.value),
@@ -389,7 +393,9 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
       : models.length
         ? "사용 환산액 비중을 확인할 수 없습니다"
         : "사용이 확인된 모델이 없습니다",
-    detail: "모델을 선택하면 사용 환산액 비중을 확인할 수 있습니다",
+    detail: sharesAvailable
+      ? "모델을 선택하면 사용 환산액 비중을 확인할 수 있습니다"
+      : "모델별 사용 정보만 확인할 수 있습니다",
   };
   const teams = data.teamUsage;
   const unmapped = teams?.unassigned;
