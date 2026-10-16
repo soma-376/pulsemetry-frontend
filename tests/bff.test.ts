@@ -599,7 +599,9 @@ test("upstream 401은 한 번만 갱신하고 재시도하며 작업 타임아�
     f.clock,
   );
   const saved = cookie(await f.login());
-  assert.equal((await bff.handle(request(api, saved))).status, 200);
+  const refreshed = await bff.handle(request(api, saved));
+  assert.equal(refreshed.status, 200);
+  const current = cookie(refreshed);
   assert.equal(sends, 2);
   assert.equal(f.counts().refreshCount, 1);
   f.advance(300000);
@@ -607,12 +609,12 @@ test("upstream 401은 한 번만 갱신하고 재시도하며 작업 타임아�
   // AbortSignal.timeout 타이머는 unref되므로 테스트 동안 이벤트 루프를 유지한다.
   const keepAlive = setTimeout(() => {}, 500);
   try {
-    assert.equal((await bff.handle(request(api, saved))).status, 503);
+    assert.equal((await bff.handle(request(api, current))).status, 503);
   } finally {
     clearTimeout(keepAlive);
   }
   stall = false;
-  assert.equal((await bff.handle(request(api, saved))).status, 200);
+  assert.equal((await bff.handle(request(api, current))).status, 200);
 });
 
 // 서버 갱신 요청은 브라우저 목으로 관찰할 수 없으므로 실제 BFF 경계를 검사한다.
