@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -22,6 +22,7 @@ type Inquiry = { company: string; email: string };
  */
 export function InquiryCard() {
   const [confirming, setConfirming] = useState<Inquiry | null>(null);
+  const submitting = useRef(false);
   const {
     register,
     handleSubmit,
@@ -41,7 +42,14 @@ export function InquiryCard() {
     setConfirming(null);
   };
   const submit = () => {
-    if (confirming && !inquiry.isPending) inquiry.mutate(confirming);
+    // 연속 클릭은 pending 상태가 렌더되기 전에도 들어올 수 있다.
+    if (!confirming || submitting.current) return;
+    submitting.current = true;
+    inquiry.mutate(confirming, {
+      onSettled: () => {
+        submitting.current = false;
+      },
+    });
   };
 
   return (

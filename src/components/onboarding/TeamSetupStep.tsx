@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { TeamForm } from "@/components/teams/TeamForm";
@@ -33,6 +33,15 @@ export function TeamSetupStep({
   const teams = useQuery(teamsOptions(organizationId));
   const [post] = useState(createCommands);
   const [notice, setNotice] = useState("");
+  const pendingCommands = useRef(0);
+  const beginCommand = () => {
+    pendingCommands.current += 1;
+    onBusy(true);
+  };
+  const finishCommand = () => {
+    pendingCommands.current -= 1;
+    onBusy(pendingCommands.current > 0);
+  };
   const refresh = () =>
     client.invalidateQueries({ queryKey: organizationKey(organizationId) });
   const create = useMutation({
@@ -40,9 +49,9 @@ export function TeamSetupStep({
     retryDelay: readOptions.retryDelay,
     mutationFn: (name: string) =>
       post(organizationId, "/teams", { teamName: name }, teamSchema),
-    onMutate: () => onBusy(true),
+    onMutate: beginCommand,
     onSuccess: refresh,
-    onSettled: () => onBusy(false),
+    onSettled: finishCommand,
   });
   const remove = useMutation({
     retry: readOptions.retry,
@@ -54,13 +63,13 @@ export function TeamSetupStep({
         z.undefined(),
         { method: "DELETE", headers: { "If-Match": `"team-${team.version}"` } },
       ),
-    onMutate: () => onBusy(true),
+    onMutate: beginCommand,
     onSuccess: async () => {
       setNotice("팀을 삭제했습니다.");
       await refresh();
     },
     onError: refresh,
-    onSettled: () => onBusy(false),
+    onSettled: finishCommand,
   });
   return (
     <div className="flex flex-col gap-5">
@@ -142,7 +151,7 @@ export function TeamSetupStep({
           inline
           teams={teams.data}
           onInvite={async (entries) => {
-            onBusy(true);
+            beginCommand();
             try {
               const results = await issueInvitations(
                 post,
@@ -152,7 +161,7 @@ export function TeamSetupStep({
               await refresh();
               return results;
             } finally {
-              onBusy(false);
+              finishCommand();
             }
           }}
         />

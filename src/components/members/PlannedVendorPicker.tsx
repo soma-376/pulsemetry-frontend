@@ -37,10 +37,11 @@ export function PlannedVendorPicker({
         {options.map((option) => (
           <label
             key={option.vendorId}
-            className="flex cursor-pointer items-center gap-2 rounded-md border border-border px-2.5 py-1.5 text-xs has-disabled:cursor-not-allowed"
+            className="flex min-w-0 max-w-full cursor-pointer items-center gap-2 rounded-md border border-border px-2.5 py-1.5 text-xs has-disabled:cursor-not-allowed"
           >
             <input
               type="checkbox"
+              className="shrink-0"
               checked={value.includes(option.vendorId)}
               disabled={!value.includes(option.vendorId) && value.length >= 100}
               onChange={(event) =>
@@ -51,7 +52,7 @@ export function PlannedVendorPicker({
                 )
               }
             />
-            {option.displayName}
+            <span className="min-w-0 break-words">{option.displayName}</span>
           </label>
         ))}
         {missing.map((id) => (

@@ -264,12 +264,14 @@ function OnboardingSteps({
             onBusy={setChildBusy}
           />
         ) : (
-          <TeamSetupStep
-            organizationId={organizationId}
-            onBusy={setChildBusy}
-            draft={teamDraft}
-            onDraftChange={setTeamDraft}
-          />
+          <fieldset disabled={complete.isPending} className="min-w-0">
+            <TeamSetupStep
+              organizationId={organizationId}
+              onBusy={setChildBusy}
+              draft={teamDraft}
+              onDraftChange={setTeamDraft}
+            />
+          </fieldset>
         )}
         {(policy.error || complete.error) && (
           <p role="alert" className="text-sm text-red">

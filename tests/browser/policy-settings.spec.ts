@@ -28,7 +28,12 @@ async function mockPolicy(page: Page) {
     policy: structuredClone(example.collectionPolicy) as Policy,
     saves: [] as Record<string, unknown>[],
     conflict: false,
+    settingsReadGate: null as Promise<void> | null,
+    pendingSettingsReads: 0,
     cleanup: "pending" as "pending" | "succeeded",
+    cleanupError: false,
+    cleanupReads: 0,
+    cleanupReadGate: null as Promise<void> | null,
   };
   const json = (
     route: Route,
@@ -36,18 +41,35 @@ async function mockPolicy(page: Page) {
     status = 200,
     headers: Record<string, string> = {},
   ) => route.fulfill({ status, headers: { ...cors, ...headers }, json: value });
-  await page.route("**/api/v1/organizations/*/settings", (route) => {
+  await page.route("**/api/v1/organizations/*/settings", async (route) => {
     if (route.request().method() === "OPTIONS")
       return route.fulfill({ status: 204, headers: cors });
+    if (state.settingsReadGate) {
+      state.pendingSettingsReads++;
+      await state.settingsReadGate;
+    }
     const data = structuredClone(example);
     data.meta.organizationId = new URL(route.request().url()).pathname
       .split("/organizations/")[1]
       .split("/")[0];
     return json(route, { ...data, collectionPolicy: state.policy });
   });
-  await page.route("**/api/v1/organizations/*/operations/*", (route) => {
+  await page.route("**/api/v1/organizations/*/operations/*", async (route) => {
     if (route.request().method() === "OPTIONS")
       return route.fulfill({ status: 204, headers: cors });
+    state.cleanupReads++;
+    if (state.cleanupReadGate) await state.cleanupReadGate;
+    if (state.cleanupError)
+      return json(
+        route,
+        {
+          error: {
+            code: "source_unavailable",
+            message: "isolated unavailable",
+          },
+        },
+        503,
+      );
     const done = state.cleanup === "succeeded";
     return json(
       route,
@@ -144,6 +166,64 @@ async function mockPolicy(page: Page) {
   };
 }
 
+test("common refresh retries an initially failed retention operation query", async ({
+  page,
+}) => {
+  const api = await mockPolicy(page);
+  api.state.policy.cleanupOperationId = "cleanup-1";
+  api.state.cleanup = "succeeded";
+  api.state.cleanupError = true;
+  await openDashboard(page, "/settings");
+  const status = page.getByRole("status", {
+    name: "보존 정리 상태",
+    exact: true,
+  });
+  await expect(status).toHaveText("정리 상태를 불러오지 못했습니다");
+  const reads = api.state.cleanupReads;
+  api.state.cleanupError = false;
+  await page.getByRole("button", { name: "새로고침", exact: true }).click();
+  await expect.poll(() => api.state.cleanupReads).toBeGreaterThan(reads);
+  await expect(status).toContainText("정리 완료");
+});
+
+test("retention refresh preserves data, reports its failure, and recovers through the common retry", async ({
+  page,
+}) => {
+  const api = await mockPolicy(page);
+  api.state.policy.cleanupOperationId = "cleanup-1";
+  api.state.cleanup = "succeeded";
+  await openDashboard(page, "/settings");
+  const status = page.getByRole("status", {
+    name: "보존 정리 상태",
+    exact: true,
+  });
+  await expect(status).toContainText("정리 완료");
+  let release!: () => void;
+  api.state.cleanupReadGate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  api.state.cleanupError = true;
+  const reads = api.state.cleanupReads;
+  await page.getByRole("button", { name: "새로고침", exact: true }).click();
+  await expect.poll(() => api.state.cleanupReads).toBeGreaterThan(reads);
+  await expect(
+    page.getByRole("button", { name: "조회 중…", exact: true }),
+  ).toBeVisible();
+  await expect(status).toContainText("정리 완료");
+  api.state.cleanupReadGate = null;
+  release();
+  const notice = page.getByRole("status", {
+    name: "데이터 갱신 상태",
+    exact: true,
+  });
+  await expect(notice).toContainText("데이터를 갱신하지 못했습니다");
+  await expect(status).toContainText("정리 완료");
+  api.state.cleanupError = false;
+  await notice.getByRole("button", { name: "다시 조회", exact: true }).click();
+  await expect(notice).toHaveCount(0);
+  await expect(status).toContainText("정리 완료");
+});
+
 test("회수 기준은 바로 저장하고, 보존 단축은 삭제 범위·경계를 확인한 뒤 저장해 정리 작업의 상태를 서버 값으로 보여 준다", async ({
   page,
 }) => {
@@ -232,4 +312,43 @@ test("회수 기준은 바로 저장하고, 보존 단축은 삭제 범위·경�
       .or(page.locator("#collection")),
   ).toContainText("다른 곳에서 변경되었습니다");
   await expect(reclaim).toHaveValue("30");
+});
+
+test("설정 저장 뒤 최신 설정 버전을 읽는 동안 다음 변경을 막는다", async ({
+  page,
+}) => {
+  const api = await mockPolicy(page);
+  await openDashboard(page, "/settings");
+  await api.save();
+  const reclaim = page.getByRole("combobox", {
+    name: "좌석 회수 기준",
+    exact: true,
+  });
+  await expect(reclaim).toBeEnabled();
+  let release = () => {};
+  api.state.settingsReadGate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  try {
+    await reclaim.selectOption("30");
+    await expect.poll(() => api.state.saves.length).toBe(1);
+    await expect.poll(() => api.state.pendingSettingsReads).toBeGreaterThan(0);
+    await expect(reclaim).toBeDisabled();
+  } finally {
+    api.state.settingsReadGate = null;
+    release();
+  }
+  await expect(reclaim).toHaveValue("30");
+  await expect(reclaim).toBeEnabled();
+  await reclaim.selectOption("14");
+  await expect.poll(() => api.state.saves.length).toBe(2);
+  expect(api.state.saves[1]).toMatchObject({
+    expectedVersion: 4,
+    expectedSettingsVersion: 3,
+    reclaimIdleDays: 14,
+  });
+  await expect(reclaim).toHaveValue("14");
+  await expect(
+    page.getByText("설정이 바뀌었습니다", { exact: false }),
+  ).toHaveCount(0);
 });

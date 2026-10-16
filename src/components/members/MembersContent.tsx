@@ -143,8 +143,12 @@ function OrganizationMembers({
   const { toast, showToast, dismissToast } = useToast();
 
   // 권한이 거부되면 이전에 받은 값도 보여 주지 않는다.
-  const forbidden = [query.error, invitations.error, teams.error].some(denied);
+  const deniedQuery = [query, invitations, teams].find((item) =>
+    denied(item.error),
+  );
+  const forbidden = !!deniedQuery;
   const data = forbidden ? undefined : query.data;
+  const pageError = deniedQuery?.error ?? (!data ? query.error : null);
   const invitationData = forbidden ? undefined : invitations.data;
   const model = useMemo(
     () => (data ? buildMembersView(data, invitationData) : null),
@@ -344,11 +348,13 @@ function OrganizationMembers({
           }
         />
 
-        {!data && query.error && (
+        {pageError && (
           <ErrorState
-            message={query.error.message}
-            retrying={query.isFetching}
-            onRetry={() => void query.refetch({ cancelRefetch: false })}
+            message={pageError.message}
+            retrying={(deniedQuery ?? query).isFetching}
+            onRetry={() =>
+              void (deniedQuery ?? query).refetch({ cancelRefetch: false })
+            }
           />
         )}
         {!teams.data && teams.error && !denied(teams.error) && (

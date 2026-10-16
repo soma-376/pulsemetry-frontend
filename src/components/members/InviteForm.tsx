@@ -410,8 +410,8 @@ export function InviteForm({
           <span className="pretty">{sent.summary}</span>
           {sent.guidance && <span className="pretty">{sent.guidance}</span>}
           <ul aria-label="초대 코드 발급 결과" className="flex flex-col gap-2">
-            {sent.rows.map((row) => (
-              <li key={row.email} className="flex flex-col gap-1">
+            {sent.rows.map((row, index) => (
+              <li key={`${index}:${row.email}`} className="flex flex-col gap-1">
                 <span>
                   <span className="font-mono text-text">{row.email}</span> ·{" "}
                   {row.text}

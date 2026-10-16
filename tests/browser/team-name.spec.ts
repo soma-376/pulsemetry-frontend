@@ -62,8 +62,9 @@ test("onboarding and team management reject emoji names and keep teams on the se
   // 같은 이름은 서버가 거절한다. 입력은 그대로 둔다.
   await editName.fill("플랫폼");
   await drawer.getByRole("button", { name: "팀 생성", exact: true }).click();
-  await expect(editName).toHaveAccessibleDescription(
-    /같은 이름의 팀이 있습니다/,
+  // 팀 관리의 서버 명령 오류는 docs/ui-feedback.md의 예외대로 Toast로 알린다.
+  await expect(drawer.getByRole("alert")).toContainText(
+    "같은 이름의 팀이 있습니다",
   );
   await expect(editName).toHaveValue("플랫폼");
   await editName.fill("AI/ML");
@@ -107,9 +108,10 @@ test("onboarding and team management reject emoji names and keep teams on the se
   created.version += 1;
   await editName.fill("AI Platform");
   await drawer.getByRole("button", { name: "변경 저장", exact: true }).click();
-  await expect(editName).toHaveAccessibleDescription(
-    /다른 곳에서 변경되었습니다/,
+  await expect(drawer.getByRole("alert")).toContainText(
+    "다른 곳에서 변경되었습니다",
   );
+  await expect(editName).toHaveValue("AI Platform");
   expect(created.teamName).toBe("AI 연구");
   await drawer
     .getByRole("button", { name: "최신 내용 불러오기", exact: true })
@@ -145,9 +147,9 @@ test("onboarding and team management reject emoji names and keep teams on the se
   await drawer
     .getByRole("button", { name: "팀 삭제 확인", exact: true })
     .click();
-  await expect(drawer.getByRole("status")).toContainText(
-    "데이터 팀을 삭제했습니다",
-  );
+  await expect(
+    drawer.getByRole("status").filter({ hasText: "데이터 팀을 삭제했습니다" }),
+  ).toBeVisible();
   await expect(
     list.getByRole("button", { name: "데이터 팀 수정", exact: true }),
   ).toHaveCount(0);
