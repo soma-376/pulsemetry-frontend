@@ -273,7 +273,7 @@ const SEAT_REASONS: Record<string, string> = {
   seat_unlinked: "구성원에 잇지 않은 좌석입니다",
   seat_source_unavailable: "좌석 원장을 쓸 수 없습니다",
   product_unobservable: "이 제품의 사용은 관측하지 않습니다",
-  in_use: "기준 기간 안에 사용했습니다",
+  in_use: "최근 사용 또는 좌석 배정 후 회수 기준 기간이 지나지 않았습니다",
   observation_incomplete: "관측이 부족해 판정하지 않았습니다",
   // 회수 가능 여부·미리보기 거절
   management_disabled: "관리 기능이 꺼진 서버입니다",

@@ -211,3 +211,216 @@ test("admin-action reclaim stays awaiting until confirmed, then restores through
     drawer.getByRole("region", { name: "좌석 복원 작업" }),
   ).toBeVisible();
 });
+
+for (const conflict of [
+  "preview_stale",
+  "preview_expired",
+  "version_conflict",
+] as const) {
+  test(`reclaim ${conflict} retry reads the latest seat before creating a new preview`, async ({
+    page,
+  }) => {
+    const api = await mockMembers(page, { reclaimable: true });
+    const candidate = fixtureCandidates(members)[0];
+    const versions: number[] = [];
+    const cors = {
+      "access-control-allow-origin": "*",
+      "access-control-allow-headers":
+        "content-type,authorization,idempotency-key",
+      "access-control-allow-methods": "GET,POST,OPTIONS",
+    };
+    await page.route(/\/seat-reclaims(?:\/preview)?$/, async (route) => {
+      if (route.request().method() === "OPTIONS")
+        return route.fulfill({ status: 204, headers: cors });
+      const path = new URL(route.request().url()).pathname;
+      if (!path.endsWith("/preview"))
+        return route.fulfill({
+          status: 409,
+          headers: cors,
+          json: { error: { code: conflict, message: conflict } },
+        });
+      const version = route.request().postDataJSON().seats[0]
+        .expectedVersion as number;
+      versions.push(version);
+      // Another administrator changes the seat after the initial list read.
+      // Initial preview conflicts too when the change preceded opening the modal.
+      const accepted = version === (api.seatVersions.get("seat-1") ?? 1);
+      return route.fulfill({
+        headers: cors,
+        json: {
+          previewId: `preview-${versions.length}`,
+          expiresAt: "2026-09-22T00:05:00Z",
+          eligibleSeatAssignmentIds: accepted ? ["seat-1"] : [],
+          rejected: accepted
+            ? []
+            : [{ seatAssignmentId: "seat-1", reason: "version_conflict" }],
+          estimatedMonthlySavingsUsd: accepted ? "20" : null,
+          savingsEffectiveAt: null,
+          resultingUnallocatedSeats: accepted ? 6 : null,
+          savingsBasis: "contract_unit_price",
+          targets: accepted
+            ? [
+                {
+                  seatAssignmentId: "seat-1",
+                  vendorId: "vendor-1",
+                  method: "admin_action",
+                },
+              ]
+            : [],
+        },
+      });
+    });
+    await openDashboard(page, "/members");
+    await page
+      .getByRole("region", { name: "좌석 회수 후보", exact: true })
+      .getByRole("button", {
+        name: `${candidate.account} 좌석 상세`,
+        exact: true,
+      })
+      .click();
+    const drawer = page.getByRole("dialog", {
+      name: "구성원 상세",
+      exact: true,
+    });
+    await drawer
+      .getByRole("button", { name: "벤더 좌석", exact: true })
+      .click();
+    const reclaim = drawer.getByRole("button", {
+      name: `Claude ${candidate.account} 좌석 회수`,
+    });
+    await expect(reclaim).toBeVisible();
+    if (conflict === "version_conflict") api.seatVersions.set("seat-1", 2);
+    await reclaim.click();
+    const modal = page.getByRole("dialog", {
+      name: "좌석 회수 확인",
+      exact: true,
+    });
+    if (conflict !== "version_conflict") {
+      await expect(
+        modal.getByRole("button", { name: "회수 실행" }),
+      ).toBeEnabled();
+      api.seatVersions.set("seat-1", 2);
+      await modal.getByRole("button", { name: "회수 실행" }).click();
+    }
+    await expect(
+      modal.getByRole("button", { name: "회수 실행" }),
+    ).toBeDisabled();
+    if (conflict === "preview_stale") {
+      // A failed fresh-ledger read must not re-enable the old preview.
+      const seatPath = new RegExp(`/members/${candidate.memberId}/seats$`);
+      await page.route(seatPath, (route) =>
+        route.request().method() === "OPTIONS"
+          ? route.fulfill({ status: 204, headers: cors })
+          : route.fulfill({
+              status: 422,
+              headers: cors,
+              json: { error: { code: "unavailable", message: "fixture" } },
+            }),
+      );
+      await modal.getByRole("button", { name: "다시 조회" }).click();
+      await expect(modal.getByRole("alert")).toBeVisible();
+      await expect(
+        modal.getByRole("button", { name: "다시 조회" }),
+      ).toBeEnabled();
+      await expect(
+        modal.getByRole("button", { name: "회수 실행" }),
+      ).toBeDisabled();
+      expect(versions).toEqual([1]);
+      await page.unroute(seatPath);
+    }
+    await modal.getByRole("button", { name: "다시 조회" }).click();
+    await expect(
+      modal.getByRole("button", { name: "회수 실행" }),
+    ).toBeEnabled();
+    await expect(modal).toContainText("$20.00");
+    expect(versions).toEqual([1, 2]);
+  });
+}
+
+for (const terminal of ["succeeded", "partially_failed"] as const) {
+  test(`vendor operation polling ${terminal} refreshes the seat ledger without reloading`, async ({
+    page,
+  }) => {
+    const api = await mockMembers(page, { reclaimable: true });
+    const candidate = fixtureCandidates(api.members)[0];
+    const seat = "seat-1";
+    api.seatControls.set(seat, {
+      operationId: "op-vendor-poll",
+      kind: "seat_reclaim",
+    });
+    let finish = false;
+    let seatReads = 0;
+    page.on("request", (request) => {
+      if (
+        request.method() === "GET" &&
+        request.url().endsWith(`/members/${candidate.memberId}/seats`)
+      )
+        seatReads++;
+    });
+    await page.route("**/operations/op-vendor-poll", (route) => {
+      if (finish) {
+        api.seatStates.set(seat, "released");
+        api.seatVersions.set(seat, 2);
+      }
+      return route.fulfill({
+        headers: finish ? {} : { "Retry-After": "1" },
+        json: {
+          operationId: "op-vendor-poll",
+          kind: "seat_reclaim",
+          status: finish ? terminal : "running",
+          createdAt: "2026-10-16T00:00:00Z",
+          completedAt: finish ? "2026-10-16T00:00:25Z" : null,
+          results: [
+            {
+              targetId: seat,
+              status: finish ? "succeeded" : "pending",
+              reason: null,
+              action: null,
+            },
+            ...(terminal === "partially_failed"
+              ? [
+                  {
+                    targetId: "seat-2",
+                    status: "failed",
+                    reason: "vendor_rejected",
+                    action: null,
+                  },
+                ]
+              : []),
+          ],
+          canRestore: finish,
+          restoreUntil: finish ? "2026-10-17T00:00:25Z" : null,
+          retention: null,
+        },
+      });
+    });
+    await openDashboard(page, "/members");
+    await page
+      .getByRole("region", { name: "좌석 회수 후보", exact: true })
+      .getByRole("button", {
+        name: `${candidate.account} 좌석 상세`,
+        exact: true,
+      })
+      .click();
+    const drawer = page.getByRole("dialog", {
+      name: "구성원 상세",
+      exact: true,
+    });
+    await drawer
+      .getByRole("button", { name: "벤더 좌석", exact: true })
+      .click();
+    const card = drawer.locator(`[data-seat-id="${seat}"]`);
+    const operation = card.getByRole("region", { name: "좌석 회수 작업" });
+    await expect(operation.getByRole("status")).toContainText("벤더 처리 중");
+    await expect(card.getByText("배정", { exact: true })).toBeVisible();
+    const before = seatReads;
+    finish = true;
+    await expect(operation.getByRole("status")).toContainText(
+      terminal === "succeeded" ? "회수 · 완료" : "회수 · 일부 실패",
+    );
+    await expect.poll(() => seatReads).toBeGreaterThan(before);
+    await expect(card.getByText("해제", { exact: true })).toBeVisible();
+    await expect(card.getByText("배정", { exact: true })).toHaveCount(0);
+    await expect(card).not.toContainText("회수할 수 없음");
+  });
+}

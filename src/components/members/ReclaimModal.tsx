@@ -43,23 +43,33 @@ export function ReclaimModal({
   target,
   open,
   onClose,
+  onRefreshTarget,
 }: {
   organizationId: string;
   target: ReclaimTarget | null;
   open: boolean;
   onClose: () => void;
+  onRefreshTarget: (target: ReclaimTarget) => Promise<ReclaimTarget>;
 }) {
   const client = useQueryClient();
   const [post] = useState(createCommands);
   const [operationId, setOperationId] = useState<string | null>(null);
   const preview = useMutation({
-    mutationFn: (seat: ReclaimTarget) =>
-      previewReclaim(post, organizationId, [
+    mutationFn: async ({
+      seat,
+      refresh = false,
+    }: {
+      seat: ReclaimTarget;
+      refresh?: boolean;
+    }) => {
+      const current = refresh ? await onRefreshTarget(seat) : seat;
+      return previewReclaim(post, organizationId, [
         {
-          seatAssignmentId: seat.seatAssignmentId,
-          expectedVersion: seat.version,
+          seatAssignmentId: current.seatAssignmentId,
+          expectedVersion: current.version,
         },
-      ]),
+      ]);
+    },
   });
   const execute = useMutation({
     mutationFn: (previewId: string) =>
@@ -81,8 +91,16 @@ export function ReclaimModal({
   const { reset: resetExecute } = execute;
   // 대상이 바뀌면 부모가 key 로 새로 만든다 — 열릴 때 한 번 서버에 다시 확인한다.
   useEffect(() => {
-    if (open && target) check(target);
+    if (open && target) check({ seat: target });
   }, [open, target, check]);
+
+  // 재확인은 기존 미리보기의 version을 재사용하지 않고 원장부터 다시 읽는다.
+  const retryPreview = () => {
+    if (target) {
+      resetExecute();
+      check({ seat: target, refresh: true });
+    }
+  };
 
   const close = () => {
     if (!execute.isPending) {
@@ -122,7 +140,9 @@ export function ReclaimModal({
               variant="danger"
               loading={execute.isPending}
               loadingLabel="요청 중…"
-              disabled={!eligible || preview.isPending || stale}
+              disabled={
+                !eligible || preview.isPending || !!preview.error || stale
+              }
               onClick={() => {
                 if (data) execute.mutate(data.previewId);
               }}
@@ -144,9 +164,7 @@ export function ReclaimModal({
           <ErrorState
             message={preview.error.message}
             retrying={preview.isPending}
-            onRetry={() => {
-              if (target) check(target);
-            }}
+            onRetry={retryPreview}
           />
         )}
         {data && !operationId && (
@@ -185,6 +203,12 @@ export function ReclaimModal({
             ) : (
               <ErrorState
                 message={`이 좌석은 회수할 수 없습니다 — ${seatReasonText(rejected?.reason)}`}
+                retrying={preview.isPending}
+                onRetry={
+                  rejected?.reason === "version_conflict"
+                    ? retryPreview
+                    : undefined
+                }
               />
             )}
             {method === "admin_action" && (
@@ -206,14 +230,7 @@ export function ReclaimModal({
           <ErrorState
             message={execute.error.message}
             retrying={preview.isPending}
-            onRetry={
-              stale && target
-                ? () => {
-                    resetExecute();
-                    check(target);
-                  }
-                : undefined
-            }
+            onRetry={stale && target ? retryPreview : undefined}
           />
         )}
         {operationId && target && (
