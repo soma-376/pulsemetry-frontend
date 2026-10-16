@@ -25,6 +25,24 @@ const security = {
   members: [{ memberId: "m1", account: "dana@example.test" }],
   evidence: { kind: "usage", targetName: "claude-opus-4" },
 };
+const cost = {
+  ...security,
+  alertId: "cost-alert",
+  ruleId: "spend_spike",
+  category: "cost",
+  subject: null,
+  eventCount: null,
+  memberCount: null,
+  members: [],
+  evidence: {
+    kind: "spend",
+    startDate: "2026-09-06",
+    endDate: "2026-09-12",
+    currentCostUsd: "200.00",
+    previousCostUsd: "100.00",
+    increaseRatio: 1,
+  },
+};
 
 async function serve(page: Page, options: { configured: boolean }) {
   const state = {
@@ -38,7 +56,12 @@ async function serve(page: Page, options: { configured: boolean }) {
     state.categories.push(url.searchParams.get("category"));
     const status = url.searchParams.get("status");
     const items = options.configured
-      ? [security]
+      ? [security, cost]
+          .filter(
+            (alert) =>
+              !url.searchParams.has("category") ||
+              alert.category === url.searchParams.get("category"),
+          )
           .filter(
             (alert) =>
               status === "all" ||
@@ -118,9 +141,17 @@ test("운영 · 보안은 보안 범주 알림만 목록·상세·확인으로 �
   await expect(
     item.getByRole("definition").filter({ hasText: "claude-opus-4" }),
   ).toBeVisible();
-  expect(state.categories.every((category) => category === "security")).toBe(
-    true,
-  );
+  // 공통 종은 범주 전체, 본문은 security를 조회한다. 서로 다른 캐시가
+  // 섞이면 위의 본문 1건 검증과 아래의 종 2건 검증이 함께 실패한다.
+  expect(state.categories).toContain("security");
+  expect(
+    state.categories.every(
+      (category) => category === null || category === "security",
+    ),
+  ).toBe(true);
+  await expect(
+    page.getByRole("button", { name: "알림, 미확인 2건", exact: true }),
+  ).toBeVisible();
   await item.getByRole("button", { name: /확인$/ }).click();
   await expect(
     page.getByRole("status").filter({ hasText: "알림을 확인했습니다." }),
@@ -139,6 +170,7 @@ test("운영 · 보안은 보안 범주 알림만 목록·상세·확인으로 �
   expect(text).toContain(
     "\r\nalerts,a1,model_not_allowed,security,open,claude-opus-4,4,1,dana@example.test,",
   );
+  expect(text).not.toContain("cost-alert");
 });
 
 test("규칙을 켜지 않은 조직은 빈 상태를 보인다", async ({ page }) => {

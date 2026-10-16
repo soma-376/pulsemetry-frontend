@@ -144,9 +144,15 @@ for (const completed of [false, true]) {
     await expect(page).toHaveURL(
       completed ? /\/overview(?:\?.*)?$/ : /\/onboarding$/,
     );
-    if (completed)
-      await expect(page.locator('nav a[href="/overview"]')).toBeVisible();
-    else
+    if (completed) {
+      const overview = page
+        .getByRole("navigation", { name: "주 내비게이션", exact: true })
+        .getByRole("link", { name: "개요", exact: true });
+      await expect(overview).toBeVisible();
+      expect(
+        new URL((await overview.getAttribute("href"))!, page.url()).pathname,
+      ).toBe("/overview");
+    } else
       await expect(
         page.getByRole("radio", { name: /^수집하지 않음/ }),
       ).toBeVisible();
