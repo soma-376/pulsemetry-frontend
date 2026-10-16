@@ -16,6 +16,11 @@ import { alertRuleSchema } from "./alerts";
 
 const money = z.string().regex(/^\d+(?:\.\d+)?$/);
 const count = z.number().int().nonnegative();
+// 개별 등급은 safe integer지만 여러 등급·제품의 합계는 서버 Long 범위다.
+const contractCount = z.union([
+  count,
+  z.bigint().nonnegative().max(BigInt("9223372036854775807")),
+]);
 const meta = z.object({ organizationId: z.string(), snapshotId: z.string() });
 export const contractSchema = z.object({
   version: count,
@@ -72,8 +77,8 @@ export const settingsVendorSchema = z.object({
   seats: section(
     z.object({
       assigned: count,
-      contracted: count.nullable(),
-      unallocated: count.nullable(),
+      contracted: contractCount.nullable(),
+      unallocated: contractCount.nullable(),
     }),
   ).optional(),
   meteredMonthToDate: section(meteredPeriodSchema).optional(),
@@ -92,7 +97,7 @@ export const settingsVendorRowSchema = z.object({
   version: count,
   contractStatus: contractStatusSchema,
   contractInput: contractInputSchema,
-  contractSeats: valueSchema(count.nullable()),
+  contractSeats: valueSchema(contractCount.nullable()),
   monthlySeatFeeUsd: valueSchema(money.nullable()),
   assignedSeats: valueSchema(count.nullable()),
 });
@@ -113,7 +118,7 @@ export const settingsSchema = z.object({
   summary: z.object({
     unconfiguredVendors: valueSchema(count.nullable()),
     monthlySeatFeeUsd: valueSchema(money.nullable()),
-    contractedSeats: valueSchema(count.nullable()),
+    contractedSeats: valueSchema(contractCount.nullable()),
     activeSeats7d: valueSchema(count.nullable()),
     assignedSeats: valueSchema(count.nullable()),
     meteredMonthToDate: valueSchema(money.nullable()),

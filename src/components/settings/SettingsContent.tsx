@@ -52,10 +52,10 @@ import { int, usd } from "@/lib/format";
 import { rolloutEvidenceText } from "@/lib/policy-rollout";
 import { downloadCsv, settingsCsv } from "@/lib/csv-export";
 
-const number = (value: number | null | undefined) =>
+const number = (value: number | bigint | null | undefined) =>
   value == null ? "-" : int(value);
 const amount = (value: string | null | undefined) =>
-  value == null ? "-" : usd(Number(value));
+  value == null ? "-" : usd(value);
 
 export function SettingsContent({
   initialVendorId,

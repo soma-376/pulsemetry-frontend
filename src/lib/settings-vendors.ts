@@ -32,7 +32,7 @@ export function settingsVendorRow(
     spendText:
       vendor.monthlySeatFeeUsd.value === null
         ? "-"
-        : `${prefix}${usd(Number(vendor.monthlySeatFeeUsd.value))} / 월`,
+        : `${prefix}${usd(vendor.monthlySeatFeeUsd.value)} / 월`,
     spendFg:
       vendor.monthlySeatFeeUsd.value === null ? "var(--text3)" : "var(--text)",
     inputNotice:
@@ -52,7 +52,10 @@ export function settingsVendorDetailRow(
 ): VendorRow {
   const contract = vendor.contract;
   const count =
-    contract?.tiers.reduce((sum, tier) => sum + tier.seats, 0) ?? null;
+    contract?.tiers.reduce(
+      (sum, tier) => sum + BigInt(tier.seats),
+      BigInt(0),
+    ) ?? null;
   const row = settingsVendorRow(
     {
       vendorId: vendor.vendorId,

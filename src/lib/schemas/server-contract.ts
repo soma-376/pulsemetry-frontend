@@ -142,7 +142,11 @@ export function validateServerTiers(
     errors,
     totalError,
     tiers: valid ? tiers : null,
-    seats: valid ? tiers.reduce((sum, tier) => sum + Number(tier.seats), 0) : 0,
-    spend: valid ? Number(total) / 1e12 : 0,
+    seats: valid
+      ? tiers.reduce((sum, tier) => sum + BigInt(tier.seats.trim()), BigInt(0))
+      : BigInt(0),
+    spend: valid
+      ? `${total / BigInt("1000000000000")}.${(total % BigInt("1000000000000")).toString().padStart(12, "0")}`
+      : "0",
   };
 }

@@ -233,7 +233,7 @@ export function ContractsStep({
           </ul>
         )}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p role="status" className="text-xs text-text2">
+          <p role="status" className="min-w-0 text-xs break-words text-text2">
             {message}
           </p>
           <Button

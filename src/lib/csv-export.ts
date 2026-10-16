@@ -17,7 +17,7 @@ import type { TeamAnalytics, TeamsView, TeamUser } from "./api/teams";
  * - null 은 빈 칸이고, 같은 행의 `reason` 열이 이유를 말한다 — 서버의 사유가 있으면 그것, 절은 가용한데 값만 없으면 `unknown`(모름 — 0 이 아니다).
  * - 금액은 서버의 USD 문자열 그대로, 비율·수치는 반올림하지 않는다.
  */
-export type CsvValue = string | number | boolean | null | undefined;
+export type CsvValue = string | number | bigint | boolean | null | undefined;
 export type CsvSection = {
   name: string;
   columns: string[];
