@@ -82,7 +82,7 @@ function teams(url: URL) {
     }));
     if (data.comparison.mode === "none")
       for (const metric of Object.values(team.metrics)) {
-        if ("comparison" in metric)
+        if (typeof metric === "object" && metric && "comparison" in metric)
           metric.comparison = {
             status: "disabled",
             reasons: [],
@@ -95,7 +95,7 @@ function teams(url: URL) {
   }
   if (data.comparison.mode === "none")
     for (const metric of Object.values(data.totals)) {
-      if ("comparison" in metric)
+      if (typeof metric === "object" && metric && "comparison" in metric)
         metric.comparison = {
           status: "disabled",
           reasons: [],
@@ -158,7 +158,8 @@ export function dashboardHandlers(
         };
         if (data.summary)
           for (const v of Object.values(data.summary))
-            if ("comparison" in v) v.comparison = disabled;
+            if (typeof v === "object" && v && "comparison" in v)
+              v.comparison = disabled;
         data.teamUsage?.topTeams.forEach((t) => {
           t.equivalentCostUsd.comparison = disabled;
         });
@@ -193,6 +194,7 @@ export function dashboardHandlers(
         data.meta.currentCoverage.status = "partial";
         if (data.summary)
           for (const metric of Object.values(data.summary)) {
+            if (typeof metric !== "object" || !metric) continue;
             metric.status = "partial";
             metric.reasons = reasons;
             if ("comparison" in metric) metric.comparison = change;

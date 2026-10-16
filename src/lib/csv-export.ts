@@ -7,6 +7,12 @@ import {
 } from "./api/alerts";
 import { groupModels } from "./api/overview-format";
 import { presentOverview } from "./metrics/overview-presentation";
+import {
+  presentTeams,
+  knownTrendNote,
+  type AxisKey,
+  type TrendMode,
+} from "./metrics/teams-presentation";
 import type { Overview, OverviewValue, OverviewMetric } from "./api/overview";
 import type { Settings } from "./api/settings";
 import type { TeamAnalytics, TeamsView, TeamUser } from "./api/teams";
@@ -15,7 +21,7 @@ import type { TeamAnalytics, TeamsView, TeamUser } from "./api/teams";
  * 공통 헤더의 CSV 내보내기(화면별 — 개요·팀·설정). 서버 CSV API 없이 **화면이 쓰는 응답**(같은 기간·비교·snapshot)에서만 만든다.
  * - 첫 머리 블록에 조직·기간·비교·snapshot·응답 시각·내보낸 시각을 둔다. 그 뒤 절마다 `section` 열로 시작하는 머리 행과 행들이 온다.
  * - null 은 빈 칸이고, 같은 행의 `reason` 열이 이유를 말한다 — 서버의 사유가 있으면 그것, 절은 가용한데 값만 없으면 `unknown`(모름 — 0 이 아니다).
- * - 금액은 서버의 USD 문자열 그대로, 비율·수치는 반올림하지 않는다.
+ * - 원시 금액은 서버의 USD 문자열 그대로, 비율·수치는 반올림하지 않는다. `chart_trend`는 선택한 축·모드의 화면 누적값이다.
  */
 export type CsvValue = string | number | bigint | boolean | null | undefined;
 export type CsvSection = {
@@ -71,11 +77,8 @@ export function overviewCsv(
   organization: string,
   exportedAt: string,
 ) {
-  const values = (v: OverviewValue<string | number>): CsvValue[] => [
-    v.value,
-    v.status,
-    v.reasons.join("|"),
-  ];
+  const values = (v: OverviewValue<string | number> | undefined): CsvValue[] =>
+    v ? [v.value, v.status, v.reasons.join("|")] : [null, null, null];
   const change = (v: OverviewMetric<string | number>): CsvValue[] => [
     v.comparison.status,
     v.comparison.reasons.join("|"),
@@ -104,8 +107,10 @@ export function overviewCsv(
       columns: ["metric", ...valueColumns("value"), ...changeColumns],
       rows: Object.entries(data.summary).map(([key, v]) => [
         key,
-        ...values(v),
-        ...("comparison" in v ? change(v) : Array(6).fill(null)),
+        ...(typeof v === "number" ? [v, null, null] : values(v)),
+        ...(typeof v === "object" && v && "comparison" in v
+          ? change(v)
+          : Array(6).fill(null)),
       ]),
     });
   if (data.trend)
@@ -116,12 +121,18 @@ export function overviewCsv(
         "observation",
         ...valueColumns("equivalentCostUsd"),
         ...valueColumns("totalTokens"),
+        ...valueColumns("knownEquivalentCostUsd"),
+        "pricedUsageRows",
+        "unpricedUsageRows",
       ],
       rows: data.trend.points.map((p) => [
         p.date,
         p.observation,
         ...values(p.equivalentCostUsd),
         ...values(p.totalTokens),
+        ...values(p.knownEquivalentCostUsd),
+        p.pricedUsageRows,
+        p.unpricedUsageRows,
       ]),
     });
   if (data.modelMix)
@@ -199,6 +210,16 @@ export function overviewCsv(
       ],
       ["currency", data.meta.currency],
       ["dataState", data.meta.dataState],
+      [
+        "trendValueBasis",
+        presentOverview(data).chart.knownCostNote
+          ? "known_observed_subtotal"
+          : "strict_total",
+      ],
+      [
+        "trendValueBasisNote",
+        presentOverview(data).chart.knownCostNote ?? null,
+      ],
       ["generatedAt", data.meta.generatedAt],
       ["exportedAt", exportedAt],
     ],
@@ -217,13 +238,17 @@ const teamMetricNames = [
   "sessionsPerUser",
   "tokensPerSession",
   "effectiveCostPerMillionTokensUsd",
+  "knownEquivalentCostUsd",
 ] as const;
 export function teamsCsv(
   view: TeamsView,
   organization: string,
   exportedAt: string,
   selected: { teamId: string; teamName: string; users: TeamUser[] } | null,
+  chart: { axis: AxisKey; mode: TrendMode } = { axis: "cost", mode: "strict" },
 ) {
+  // 세션은 날짜 간 중복을 제거한 서버 값만 사용한다.
+  const mode = chart.axis === "session" ? "strict" : chart.mode;
   const comparedMetrics = new Set<string>([
     "equivalentCostUsd",
     "totalTokens",
@@ -242,19 +267,24 @@ export function teamsCsv(
     `${name}_status`,
     `${name}_reasons`,
   ];
-  const valueCells = (value: OverviewValue<string | number>): CsvValue[] => [
-    value.value,
-    value.status,
-    value.reasons.join("|"),
+  const valueCells = (
+    value: OverviewValue<string | number> | undefined,
+  ): CsvValue[] =>
+    value
+      ? [value.value, value.status, value.reasons.join("|")]
+      : [null, null, null];
+  const columns = [
+    ...teamMetricNames.flatMap((name) => [
+      ...valueColumns(name),
+      ...(comparedMetrics.has(name) ? comparisonColumns(name) : []),
+    ]),
+    "pricedUsageRows",
+    "unpricedUsageRows",
   ];
-  const columns = teamMetricNames.flatMap((name) => [
-    ...valueColumns(name),
-    ...(comparedMetrics.has(name) ? comparisonColumns(name) : []),
-  ]);
-  const values = (metrics: TeamAnalytics["metrics"]): CsvValue[] =>
-    teamMetricNames.flatMap((name) => {
+  const values = (metrics: TeamAnalytics["metrics"]): CsvValue[] => [
+    ...teamMetricNames.flatMap((name) => {
       const m = metrics[name];
-      if (!("comparison" in m)) return valueCells(m);
+      if (!m || !("comparison" in m)) return valueCells(m);
       const c = m.comparison;
       return [
         ...valueCells(m),
@@ -264,7 +294,10 @@ export function teamsCsv(
         c.absoluteChange,
         c.percentChange,
       ];
-    });
+    }),
+    metrics.pricedUsageRows,
+    metrics.unpricedUsageRows,
+  ];
   const teams = [...view.teams, view.unassigned];
   const sections: CsvSection[] = [
     { name: "totals", columns, rows: [values(view.totals)] },
@@ -289,6 +322,9 @@ export function teamsCsv(
         "cumulativeSessionCount",
         "status",
         "reasons",
+        "knownEquivalentCostUsd",
+        "pricedUsageRows",
+        "unpricedUsageRows",
       ],
       rows: teams.flatMap((t) =>
         t.trend.map((p) => [
@@ -301,6 +337,9 @@ export function teamsCsv(
           p.cumulativeSessionCount,
           p.status,
           p.reasons.join("|"),
+          p.knownEquivalentCostUsd,
+          p.pricedUsageRows,
+          p.unpricedUsageRows,
         ]),
       ),
     },
@@ -349,6 +388,25 @@ export function teamsCsv(
       ]),
     },
   ];
+  const presentation = presentTeams(view);
+  const chartSeries =
+    mode === "known" && chart.axis !== "session"
+      ? presentation.knownTrend[chart.axis]
+      : presentation.trend[chart.axis];
+  sections.push({
+    name: "chart_trend",
+    columns: ["teamId", "teamName", "date", "axis", "mode", "value"],
+    rows: chartSeries.flatMap((series) =>
+      series.values.map((value, index) => [
+        series.key,
+        series.team,
+        (view.teams[0] ?? view.unassigned).trend[index].date,
+        chart.axis,
+        mode,
+        value,
+      ]),
+    ),
+  });
   if (selected)
     sections.push({
       name: "team_users",
@@ -414,6 +472,14 @@ export function teamsCsv(
       ],
       ["비교", compareText(view.comparison)],
       ["데이터 상태", view.meta.dataState],
+      ["누적 지표", chart.axis],
+      ["누적 집계 기준", mode === "known" ? "확인된 값 누적" : "전체 누적"],
+      [
+        "누적 집계 안내",
+        mode === "known" && chart.axis !== "session"
+          ? knownTrendNote(chart.axis)
+          : null,
+      ],
       ["데이터 확정 시각", view.meta.dataThrough],
       ["snapshot", view.meta.snapshotId],
       ["팀 수", view.teams.length],

@@ -189,6 +189,7 @@ function DashboardExamples() {
     })),
   }));
   for (const value of Object.values(teams.unassigned.metrics)) {
+    if (typeof value !== "object" || !value) continue;
     value.value = null;
     value.status = "unavailable";
     value.reasons = ["no_data"];

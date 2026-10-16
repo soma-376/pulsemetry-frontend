@@ -45,6 +45,10 @@ type Metric<T> = Value<T> & { comparison: Change<T> };
 `meta.currentCoverage`와 `comparison.coverage`는 `{status:"complete"|"partial"|"none",observedDays:number}`다.
 비교 없음의 날짜·coverage는 null이다. `dataThrough`는 시작일부터 연속으로 완전한 날짜의 끝 시각이다.
 
+관측 부분합 계약은 `summary`와 `trend.points[]`에 `knownEquivalentCostUsd: Value<string>`, `pricedUsageRows: number`, `unpricedUsageRows: number`를 추가한다. 프론트는 이전 fixture와의 호환을 위해 추가 필드를 optional로 읽는다. 같은 가격 판에서 환산 가능한 관측의 부분합이며, 공식 합계·사용자당·세션당 금액과 coverage는 그대로 유지한다. 환산 가능한 행이 없거나 가격 판이 혼재하면 부분합도 null이다. 완전 관측된 실제 빈 기간의 0만 허용한다.
+
+공식 금액이 null이고 부분합이 있으면 KPI에 ‘확인된 금액’을 보조로 표시한다. 추이는 ‘확인된 금액 · 일부 집계’라는 이름과 선택 기간 전체의 확정 금액이 아니라는 설명을 붙인다. 미관측일과 미래 날짜는 선을 연결하지 않는다. CSV는 공식 값과 부분합·행수·추이 기준을 함께 보존한다.
+
 `topTeams`는 현재 환산액 내림차순 상위 3팀이며 동률은 teamId 순이다. 금액 미확정 팀은 뒤에 둔다.
 각 행은 `teamId, teamName, products, activeUsers:Value<number>, equivalentCostUsd:Metric<string>`이다.
 `unassigned`는 같은 값에서 ID·이름을 뺀 형태이며 미배정 사용 행이 없으면 null이다.

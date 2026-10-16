@@ -40,6 +40,7 @@ import {
   presentTeams,
   teamDetail,
   type AxisKey,
+  type TrendMode,
 } from "@/lib/metrics/teams-presentation";
 import { downloadCsv, teamsCsv } from "@/lib/csv-export";
 
@@ -88,6 +89,7 @@ function OrganizationTeams({
   const model = useMemo(() => data && presentTeams(data), [data]);
 
   const [axis, setAxis] = useState<AxisKey>("cost");
+  const [trendMode, setTrendMode] = useState<TrendMode>("strict");
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<string | null>(
     initialTeamId ?? null,
@@ -161,6 +163,7 @@ function OrganizationTeams({
             session?.user.organizationName ?? organizationId,
             new Date().toISOString(),
             chosen,
+            { axis, mode: axis === "session" ? "strict" : trendMode },
           ),
         );
         return;
@@ -231,6 +234,8 @@ function OrganizationTeams({
                 model={model}
                 axis={axis}
                 onAxisChange={setAxis}
+                trendMode={trendMode}
+                onTrendModeChange={setTrendMode}
                 hidden={hidden}
                 onToggleTeam={toggleTeam}
                 onOpenTeam={(key) => {

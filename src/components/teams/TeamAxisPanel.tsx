@@ -7,9 +7,16 @@ import { LineAreaChart } from "@/components/charts/LineAreaChart";
 import { TrendFeedback } from "@/components/charts/TrendFeedback";
 import { MetricStatusBadge } from "@/components/overview/KpiCard";
 import { trendBadge } from "@/lib/metrics/trend-feedback";
+import { costAxisLabel, trendAxisMax } from "@/lib/metrics/chart-axis";
+import { knownMoneyText } from "@/lib/metrics/known-usage";
 import { xAt } from "@/components/charts/scale";
 import { ProgressBar } from "@/components/charts/ProgressBar";
-import type { AxisKey, TeamsModel } from "@/lib/metrics/teams-presentation";
+import {
+  knownTrendNote,
+  type AxisKey,
+  type TeamsModel,
+  type TrendMode,
+} from "@/lib/metrics/teams-presentation";
 
 const AXIS_TABS: { key: AxisKey; label: string }[] = [
   { key: "cost", label: "비용" },
@@ -40,6 +47,8 @@ export function TeamAxisPanel({
   hidden,
   onToggleTeam,
   onOpenTeam,
+  trendMode,
+  onTrendModeChange,
 }: {
   model: TeamsModel;
   axis: AxisKey;
@@ -48,8 +57,12 @@ export function TeamAxisPanel({
   hidden: Record<string, boolean>;
   onToggleTeam: (key: string) => void;
   onOpenTeam: (key: string) => void;
+  trendMode?: TrendMode;
+  onTrendModeChange?: (mode: TrendMode) => void;
 }) {
   const [sort, setSort] = useState(DEFAULT_SORT);
+  const [localTrendMode, setLocalTrendMode] = useState<TrendMode>("strict");
+  const mode = axis === "session" ? "strict" : (trendMode ?? localTrendMode);
   const activeSort =
     sort.key === "deltaValue" && !model.showDelta ? DEFAULT_SORT : sort;
   const ax = model.axes[axis];
@@ -59,10 +72,18 @@ export function TeamAxisPanel({
     activeSort.direction,
     (row) => row.team,
   );
-  const shown = model.trend[axis].filter((s) => !hidden[s.key]);
+  const selectedTrend =
+    mode === "known" && axis !== "session"
+      ? model.knownTrend[axis]
+      : model.trend[axis];
+  const selectedFeedback =
+    mode === "known" && axis !== "session"
+      ? model.knownTrendFeedback[axis]
+      : model.trendFeedback[axis];
+  const shown = selectedTrend.filter((s) => !hidden[s.key]);
   const feedback = {
-    ...model.trendFeedback[axis],
-    series: model.trendFeedback[axis].series.filter((s) => !hidden[s.id]),
+    ...selectedFeedback,
+    series: selectedFeedback.series.filter((s) => !hidden[s.id]),
   };
   const status = trendBadge(feedback);
   const isEmpty = shown.length === 0;
@@ -70,7 +91,9 @@ export function TeamAxisPanel({
   const known = shown
     .flatMap((s) => s.values)
     .filter((value): value is number => value !== null);
-  const max = Math.max(...known, 0) * 1.08 || 1;
+  const max = trendAxisMax(known, 1.08);
+  const axisLabel = (value: number) =>
+    axis === "cost" ? costAxisLabel(value, max) : ax.format(value);
 
   return (
     <section
@@ -127,15 +150,48 @@ export function TeamAxisPanel({
         </div>
       </div>
 
-      <div className="relative mb-6 flex flex-wrap items-baseline justify-between gap-3">
+      <div className="relative mb-3 flex flex-wrap items-baseline justify-between gap-3">
         <span className="text-[13px] font-semibold">팀별 누적 추이</span>
+        {axis !== "session" && (
+          <div
+            role="group"
+            aria-label="누적 집계 기준"
+            className="flex gap-1 rounded-md border border-border bg-sub p-0.5"
+          >
+            {(
+              [
+                ["strict", "전체 누적"],
+                ["known", "확인된 값 누적"],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={mode === key}
+                onClick={() => (onTrendModeChange ?? setLocalTrendMode)(key)}
+                className="cursor-pointer rounded px-2 py-1 text-[11px] font-semibold"
+                style={{
+                  background: mode === key ? "var(--text)" : "transparent",
+                  color: mode === key ? "var(--card)" : "var(--text2)",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
         {status && <MetricStatusBadge {...status} />}
       </div>
+      {mode === "known" && axis !== "session" && (
+        <p className="mb-4 text-[11px] leading-5 text-text2">
+          {knownTrendNote(axis)}
+        </p>
+      )}
 
-      <div className="mb-[18px] grid grid-cols-[56px_minmax(0,1fr)] gap-2">
+      <div className="mb-[18px] grid grid-cols-[minmax(56px,max-content)_minmax(0,1fr)] gap-2">
         <div className="tnum flex h-[196px] flex-col justify-between text-right text-[11px] text-text3">
-          <span>{isEmpty || !known.length ? "" : ax.format(max)}</span>
-          <span>{isEmpty || !known.length ? "" : ax.format(max / 2)}</span>
+          <span>{isEmpty || !known.length ? "" : axisLabel(max)}</span>
+          <span>{isEmpty || !known.length ? "" : axisLabel(max / 2)}</span>
           <span>{isEmpty ? "" : "0"}</span>
         </div>
 
@@ -154,11 +210,16 @@ export function TeamAxisPanel({
                 }))}
               />
               <TrendFeedback
-                key={axis}
+                key={`${axis}-${mode}`}
                 model={feedback}
                 max={max}
-                format={ax.format}
-                label="날짜별 팀 누적 사용량. 좌우 방향키로 날짜를 이동하세요"
+                format={
+                  mode === "known" && axis === "cost"
+                    ? (value) =>
+                        value === null ? "-" : knownMoneyText(String(value))
+                    : ax.format
+                }
+                label={`${mode === "known" ? "확인된 값 누적" : "전체 누적"}. 날짜별 팀 사용량. 좌우 방향키로 날짜를 이동하세요`}
               />
             </>
           )}

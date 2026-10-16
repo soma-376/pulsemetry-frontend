@@ -90,10 +90,12 @@ test("BFF를 통해 조회하고 기간·비교 변경과 수동 새로고침을
   const text = await (
     await import("node:fs/promises")
   ).readFile((await file.path())!, "utf8");
-  expect(text.startsWith("\uFEFF화면,개요\r\n")).toBe(true);
-  expect(text).toContain(`기간,${period.end} ~ ${period.end} (Asia/Seoul)`);
+  expect(text.startsWith("\uFEFForganization,코드웍스\r\n")).toBe(true);
   expect(text).toContain(
-    "\r\nsection,date,observation,equivalentCostUsd,allocatedSeatCostUsd,totalTokens,reason\r\n",
+    `period,${period.end} ~ ${period.end}\r\ntimeZone,Asia/Seoul`,
+  );
+  expect(text).toContain(
+    "\r\nsection,date,observation,equivalentCostUsd,equivalentCostUsdStatus,equivalentCostUsdReasons,totalTokens,totalTokensStatus,totalTokensReasons,knownEquivalentCostUsd,knownEquivalentCostUsdStatus,knownEquivalentCostUsdReasons,pricedUsageRows,unpricedUsageRows\r\n",
   );
 });
 
@@ -146,6 +148,13 @@ test("부분 관측과 알 수 없는 비용을 0으로 만들지 않는다", as
       status: "unavailable",
       reasons: ["pricing_missing"],
     });
+    // 한 모델의 금액을 확인할 수 없으면 전체 비중도 미확정이다(overview API 계약).
+    for (const model of data.modelMix!.models)
+      model.costShare = {
+        value: null,
+        status: "unavailable",
+        reasons: ["pricing_missing"],
+      };
   });
   await page.goto("/overview");
   // 선택 기간이 완전하지 않으면 비교하지 않고 그 이유를 보여 준다(0%로 그리지 않는다).
@@ -185,7 +194,9 @@ test("업무 API 401 뒤 로그인으로 이동하고 조직 데이터를 숨긴
       json: { error: { code: "unauthenticated" } },
     });
   });
-  await page.goto("/overview");
+  await page.goto(
+    "/overview?startDate=2026-09-07&endDate=2026-09-13&compare=prev_week",
+  );
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByLabel("회사 이메일", { exact: true })).toBeVisible();
   await expect(
@@ -379,7 +390,6 @@ test("5분 자동 갱신과 작은 화면이 동작한다", async ({ page }) => 
     fullPage: true,
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole("button", { name: "내비게이션 접기/펼치기" }).click();
   await expect(
     page.getByRole("navigation", { name: "주 내비게이션" }),
   ).toHaveCSS("width", "56px");

@@ -24,6 +24,12 @@ export type KpiCardProps = {
   noDeltaReason: string;
   /** 현재 값의 누락·부분 관측 상태. 비교 상태와 별개다. */
   valueStatus?: { label: string; reason: string };
+  supportingValue?: {
+    label: string;
+    value: string;
+    description: string;
+    exactValue: string;
+  };
   /** 카드에서 여는 상세(예: 알림 목록) */
   action?: { label: string; onClick: () => void };
 };
@@ -46,6 +52,7 @@ export function KpiCard({
   compareLabel,
   noDeltaReason,
   valueStatus,
+  supportingValue,
   action,
 }: KpiCardProps) {
   return (
@@ -86,6 +93,18 @@ export function KpiCard({
           {unit}
         </span>
       </div>
+
+      {supportingValue && (
+        <div className="text-[11px] leading-[1.45] text-text2">
+          <span
+            className="tnum font-semibold"
+            title={supportingValue.exactValue}
+          >
+            {supportingValue.label} {supportingValue.value}
+          </span>
+          <p className="mt-1 text-text3">{supportingValue.description}</p>
+        </div>
+      )}
 
       {showDelta && (
         <div className="tnum flex flex-wrap items-center gap-1.5 text-[12px]">
