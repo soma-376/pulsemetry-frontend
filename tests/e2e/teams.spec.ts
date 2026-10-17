@@ -192,7 +192,7 @@ test("TEAMS-A-PARTIAL @p0 @read 팀 목록·제품 비중·드로어·사용자 
   await expect(drawer).toContainText(CODEX);
   await page.keyboard.press("Escape");
 
-  // 사용자 표: 같은 snapshot의 사용자 조회. 서버 순서(비용 내림차순)로 그리고, 다른 열 정렬은 모든 사용자를 모은 뒤에 한다.
+  // 사용자 표: 같은 snapshot의 사용자 조회. 서버 순서(비용 내림차순)로 그리고, 모든 열을 서버에서 정렬한 뒤 필요한 페이지만 읽는다.
   const usage = page.getByRole("region", {
     name: "사용자별 사용량",
     exact: true,
@@ -215,7 +215,7 @@ test("TEAMS-A-PARTIAL @p0 @read 팀 목록·제품 비중·드로어·사용자 
       `/api/v1/organizations/${A.id}/analytics/teams/${platform.teamId}/users?${usersQuery}`,
     )
   ).body as TeamUsersPage;
-  expect(users.users.nextCursor).toBeNull();
+  expect(users.users.nextOffset).toBeNull();
   const accounts = () => usage.locator("span.font-mono").allTextContents();
   await expect
     .poll(accounts)
@@ -225,13 +225,13 @@ test("TEAMS-A-PARTIAL @p0 @read 팀 목록·제품 비중·드로어·사용자 
   const bySessions = [...users.users.items].sort(
     (a, b) =>
       (b.usage.sessionCount.value ?? -1) - (a.usage.sessionCount.value ?? -1) ||
-      a.account.localeCompare(b.account, "ko", { numeric: true }),
+      a.memberId.localeCompare(b.memberId),
   );
   await expect.poll(accounts).toEqual(bySessions.map((user) => user.account));
 
-  // cursor: 한 명씩 읽어도 같은 snapshot의 같은 사용자 집합이다(중복·누락 없음).
+  // offset: 한 명씩 읽어도 같은 snapshot의 같은 사용자 집합이다(중복·누락 없음).
   const pages: string[] = [];
-  let cursor: string | null = null;
+  let offset: number | null = 0;
   do {
     const query = new URLSearchParams({
       startDate: start,
@@ -239,7 +239,7 @@ test("TEAMS-A-PARTIAL @p0 @read 팀 목록·제품 비중·드로어·사용자 
       timeZone: "Asia/Seoul",
       snapshotId: body.meta.snapshotId,
       limit: "1",
-      ...(cursor ? { cursor } : {}),
+      offset: String(offset),
     });
     const next = await authenticatedRequest(
       page,
@@ -251,8 +251,8 @@ test("TEAMS-A-PARTIAL @p0 @read 팀 목록·제품 비중·드로어·사용자 
     pages.push(
       ...next.body.users.items.map((user: { account: string }) => user.account),
     );
-    cursor = next.body.users.nextCursor;
-  } while (cursor);
+    offset = next.body.users.nextOffset;
+  } while (offset !== null);
   expect(pages).toEqual(users.users.items.map((user) => user.account));
 
   // member2는 기간 중에 플랫폼 → 제품으로 옮겼다 — 이동 전·후 사용이 각 팀의 사용자로 나온다. 미배정 사용자는 member9다.

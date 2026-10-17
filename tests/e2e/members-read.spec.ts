@@ -143,14 +143,15 @@ test("MEMBERS-A @p0 @read 명단·요약·미배정·초대 대기를 서버 값
   );
   await search.fill("제품");
   await search.press("Enter");
-  await expect(rows).toHaveCount(A.product);
+  await expect(rows).toHaveCount(Math.min(20, A.product));
+  await showAllMembers(page, A.product);
   await search.fill("");
   await showAllMembers(page, A.roster);
   await expect(rows).toHaveCount(A.roster);
 
-  // 서버의 cursor 페이지가 같은 snapshot으로 같은 명단을 준다(화면은 100명 단위로 읽으므로 작은 페이지로 직접 확인한다).
+  // 같은 snapshot의 offset을 5명씩 이어도 전체 명단과 같다.
   const accounts = new Set<string>();
-  let cursor: string | null = null,
+  let offset: number | null = 0,
     pages = 0;
   do {
     const query = new URLSearchParams({
@@ -160,7 +161,7 @@ test("MEMBERS-A @p0 @read 명단·요약·미배정·초대 대기를 서버 값
       limit: "5",
       snapshotId: body.meta.snapshotId,
     });
-    if (cursor) query.set("cursor", cursor);
+    query.set("offset", String(offset));
     const next = await authenticatedRequest(
       page,
       dashboardBase(),
@@ -169,9 +170,9 @@ test("MEMBERS-A @p0 @read 명단·요약·미배정·초대 대기를 서버 값
     expect(next.status).toBe(200);
     expect(next.body.meta.snapshotId).toBe(body.meta.snapshotId);
     for (const item of next.body.members.items) accounts.add(item.account);
-    cursor = next.body.members.nextCursor;
+    offset = next.body.members.nextOffset;
     pages++;
-  } while (cursor);
+  } while (offset !== null);
   expect(pages).toBe(21);
   expect(accounts.size).toBe(A.roster);
   for (const account of accounts)

@@ -1,12 +1,12 @@
 # 팀 분석 API
 
-단일 snapshot에서 팀 비교·추이·모델 분포를 읽고, 선택한 팀의 구성원은 별도 페이지로 읽는다. 서버가 값의 상태와 증감을 판정한다. 프론트는 단위를 표시하고 차트 좌표·정렬을 만든다.
+단일 snapshot에서 팀 비교·추이·모델 분포를 읽고, 선택한 팀의 구성원은 별도 페이지로 읽는다. 서버가 값의 상태와 증감을 판정한다. 프론트는 단위를 표시하고 차트 좌표·팀 비교 표 정렬을 만든다. 사용자 표 정렬은 서버에서 처리한다.
 
 ## 요청
 
-- `GET /api/v1/organizations/{organizationId}/analytics/teams`: `startDate`, `endDate`, `timeZone=Asia/Seoul`, `compare=none|prev_week|prev_period`, `sort=cost|token|session`, `limit`, `cursor`, `snapshotId`.
+- `GET /api/v1/organizations/{organizationId}/analytics/teams`: `startDate`, `endDate`, `timeZone=Asia/Seoul`, `compare=none|prev_week|prev_period`, `sort=cost|token|session`, `limit`, `offset`, `snapshotId`.
 - `GET .../analytics/teams/{teamId}`: 같은 기간·비교·snapshot. 미배정 경로는 `unassigned`.
-- `GET .../analytics/teams/{teamId}/users`: 같은 기간·snapshot, `limit`, `cursor`. 사용자 목록은 비용 내림차순·구성원 ID 순이다.
+- `GET .../analytics/teams/{teamId}/users`: 같은 기간·snapshot, `limit`, `offset`, `sort=cost|averageDeviation|account|session|token|cache|lastUsed`, `order=asc|desc`. 기본값은 비용 내림차순이며 동률은 구성원 ID 오름차순이다. 평균 대비는 개인 비용 / 선택 팀 전체 식별 사용자 평균 − 1의 순서다. 평균이 확인 불가이거나 응답 평균이 0이면 비교 불가이며, 양방향 모두 구성원 ID 순으로 표시한다. offset은 기본 0이며 후속 페이지는 snapshotId와 정렬 조건을 유지한다. 조건 변경 시 offset=0부터 요청한다.
 
 현재 팀 관리 명단 `GET .../teams`와 생성·수정 명령은 별도 계약을 유지한다. 사용량 귀속은 관측 당시 대표 팀이다.
 
@@ -14,7 +14,7 @@
 
 `meta`, `comparison`, `attributionBasis`, `totals`, `sort`, `teams`, `unassigned`, `modelScatter`를 반환한다. `meta`는 조직·기간·시간대·일수·확정 시각·데이터 상태·관측 일수·snapshot ID다. 헤더 수집 상태와 가격 판 상세는 포함하지 않는다.
 
-`teams`는 `{items,totalCount,nextCursor}`다. 각 항목과 미배정은 `{teamId,teamName,metrics,modelMix,trend,products}`다. `current/previous` 범용 사용량은 반환하지 않는다.
+`teams`는 `{items,totalCount,nextOffset}`다. 각 항목과 미배정은 `{teamId,teamName,metrics,modelMix,trend,products}`다. `current/previous` 범용 사용량은 반환하지 않는다.
 
 `metrics`의 값:
 

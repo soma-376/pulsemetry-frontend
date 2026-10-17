@@ -9,9 +9,8 @@ import {
   signIn,
 } from "./helpers";
 
-// 페이지 나눔과 검색 — 팀·좌석은 조회 limit만 작게 바꿔(시험 이름에 적는다) 실제 서버가 cursor 쪽으로 나눠 주게 한다.
-// 다른 질의(기간·snapshotId·cursor)는 그대로다. 화면은 같은 snapshot 의 쪽을 이어 전부를 보여야 하고(대시보드 명세 §1 목록 규칙), 검색은 이메일·이름·팀이다.
-// 시드 A의 활성 구성원 101명은 서버의 기본 20명 페이지를 넘는다. 구성원 화면은 같은 snapshot의 cursor를 이어 전체 명단을 읽는다. 쓰기는 없다.
+// 고정 snapshot의 팀·구성원은 offset으로 읽고, 현재 상태의 좌석은 cursor를 유지한다.
+// 구성원은 더보기를 누를 때만 다음 20명을 읽으며, 검색도 서버 전체 명단을 기준으로 한다.
 const [A] = seedOrganizations;
 const O = `/api/v1/organizations/${A.id}`;
 
@@ -64,9 +63,10 @@ test("PAGE-MEMBERS-A @p1 @read 구성원 명단은 서버 명단 전부이고, �
   const team = all.find((member) => /[가-힣]/.test(member.team.teamName))!.team
     .teamName;
   await search.fill(team);
-  await expect(rows).toHaveCount(matches(team).length);
+  await expect(rows).toHaveCount(Math.min(20, matches(team).length));
+  await showAllMembers(page, matches(team).length);
   await expect(list).toContainText(
-    `검색 결과 ${matches(team).length}명 · 전체 ${all.length}명 내 검색`,
+    `검색 결과 ${matches(team).length}명 · ${matches(team).length}명 표시 · 전체 ${all.length}명 내 검색`,
   );
   // 정규식·특수문자는 글자 그대로다 — 오류 없이 결과 없음이고, @ 는 모든 계정에 맞는다.
   for (const keyword of ["(", "[a-z]+", "없는-사람-zz"]) {
@@ -75,7 +75,10 @@ test("PAGE-MEMBERS-A @p1 @read 구성원 명단은 서버 명단 전부이고, �
     await expect(rows).toHaveCount(0);
   }
   await search.fill(`@seed-${A.seed}`);
-  await expect(rows).toHaveCount(matches(`@seed-${A.seed}`).length);
+  await expect(rows).toHaveCount(
+    Math.min(20, matches(`@seed-${A.seed}`).length),
+  );
+  await showAllMembers(page, matches(`@seed-${A.seed}`).length);
   await search.fill("");
   await showAllMembers(page, all.length);
   await expect(rows).toHaveCount(all.length);
@@ -93,7 +96,7 @@ test("PAGE-TEAMS-A @p1 @read (팀 분석 조회 limit 2) 팀 분석은 같은 sn
       `${O}/analytics/teams?startDate=${start}&endDate=${end}&timeZone=Asia/Seoul&limit=50`,
     )
   ).body.teams;
-  expect(teams.nextCursor).toBeNull();
+  expect(teams.nextOffset).toBeNull();
   const sent = await shrinkLimit(page, /\/analytics\/teams(?:\?.*)?$/, 2);
   await page.goto("/teams");
   await selectPeriod(page, start, end);
@@ -107,12 +110,12 @@ test("PAGE-TEAMS-A @p1 @read (팀 분석 조회 limit 2) 팀 분석은 같은 sn
     (query) => query.get("startDate") === start && query.get("endDate") === end,
   );
   expect(
-    pages.filter((query) => query.has("cursor")).length,
+    pages.filter((query) => Number(query.get("offset")) > 0).length,
   ).toBeGreaterThanOrEqual(Math.ceil(teams.items.length / 2) - 1);
   expect(
     new Set(
       pages
-        .filter((query) => query.has("cursor"))
+        .filter((query) => Number(query.get("offset")) > 0)
         .map((query) => query.get("snapshotId")),
     ).size,
   ).toBe(1);

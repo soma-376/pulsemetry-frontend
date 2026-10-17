@@ -1,6 +1,8 @@
 "use client";
 
 import { useId, useState, type ReactNode } from "react";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { SkeletonRows } from "@/components/ui/Skeleton";
 import { DetailDrawer } from "@/components/ui/DetailDrawer";
 import { InstallationCodePanel } from "./InstallationCodePanel";
 import { MemberEditForm, type MemberEditTarget } from "./MemberEditForm";
@@ -26,6 +28,9 @@ type Props = {
   onAfterClose: () => void;
   onSaved: (message: string) => void;
   onReload: () => Promise<MemberEditTarget>;
+  loading?: boolean;
+  error?: Error | null;
+  onRetry?: () => void;
 };
 
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
@@ -110,6 +115,9 @@ export function MemberDetailDrawer({
   onAfterClose,
   onSaved,
   onReload,
+  loading,
+  error,
+  onRetry,
 }: Props) {
   const target = subject ? editTarget(subject) : null;
   const member = subject?.kind === "member" ? subject.row : null;
@@ -134,6 +142,8 @@ export function MemberDetailDrawer({
           subtitle={target?.account}
           footer={target && editable ? actions : undefined}
         >
+          {loading && <SkeletonRows rows={6} />}
+          {error && <ErrorState message={error.message} onRetry={onRetry} />}
           {target && (
             <div className="flex flex-col gap-7">
               {member && <MemberStatusBadges status={member.activity} />}

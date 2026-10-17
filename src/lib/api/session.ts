@@ -1,6 +1,7 @@
 "use client";
 import { useSyncExternalStore } from "react";
 import { AuthError, authErrorFrom } from "./auth-error";
+import { LEGACY_SESSION_STORAGE_KEY } from "./session-key";
 export { AuthError };
 import { authUserSchema, type AuthUser } from "../auth-user";
 
@@ -35,7 +36,7 @@ export function subscribeBackendIdentityChange(listener: () => void) {
 function removeLegacyTokens() {
   if (typeof window !== "undefined") {
     try {
-      sessionStorage.removeItem("pulsemetry.seed-session.v1");
+      sessionStorage.removeItem(LEGACY_SESSION_STORAGE_KEY);
     } catch {
       /* 저장소 차단 환경도 지원한다. */
     }

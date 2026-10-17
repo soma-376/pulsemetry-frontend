@@ -1,27 +1,5 @@
 import type { ReactNode } from "react";
 
-/** 카드 — 개요의 KPI·위젯이 공유하는 껍데기 */
-export function Card({
-  className,
-  children,
-}: {
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div
-      className={[
-        "flex min-w-0 flex-col rounded-lg border border-border bg-card p-4",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
-      {children}
-    </div>
-  );
-}
-
 export type WidgetProps = {
   id?: string;
   /** 스크린리더용 위젯 이름 */

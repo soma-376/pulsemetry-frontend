@@ -90,9 +90,3 @@ export const VENDORS: VendorRecord[] = [
     c: {},
   },
 ];
-
-/** 좌석제 계약의 좌석 종류 전부 — 표준 125석 × $20 + 프리미엄 23석 × $100 = $4,800/월 */
-export const SEAT_TIERS: SeatTier[] = VENDORS.flatMap((v) => v.c.tiers ?? []);
-
-/** 유휴 좌석 회수액을 계산할 때 쓰는 기준 단가 (가장 낮은 등급) */
-export const STD_SEAT_FEE = SEAT_TIERS[0].fee;

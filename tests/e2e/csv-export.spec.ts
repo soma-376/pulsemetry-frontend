@@ -160,10 +160,10 @@ test("CSV-TEAMS-A @p1 @read 팀 CSV 는 같은 snapshot 의 팀 전부와 사용
         current: { equivalentCostUsd: string | null } | null;
       }[];
       totalCount: number;
-      nextCursor: string | null;
+      nextOffset: number | null;
     };
   };
-  expect(api.teams.nextCursor).toBeNull();
+  expect(api.teams.nextOffset).toBeNull();
   await expect(
     page.getByRole("region", { name: "사용자별 사용량" }),
   ).toBeVisible();

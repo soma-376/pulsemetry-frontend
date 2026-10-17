@@ -28,9 +28,6 @@ export function points(values: number[], domain: Domain): Point[] {
 export const pathOf = (pts: Point[]) =>
   pts.map((p, i) => (i ? "L" : "M") + p[0] + "," + p[1]).join(" ");
 
-export const linePath = (values: number[], domain: Domain) =>
-  pathOf(points(values, domain));
-
 /**
  * 두 계열 사이를 채우는 닫힌 경로.
  * 위/아래 어느 쪽이 큰지는 호출부가 색으로 표현합니다.
@@ -47,21 +44,6 @@ export function bandPath(upper: Point[], lower: Point[]) {
     " Z"
   );
 }
-
-/**
- * 막대처럼 열 중앙을 지나는 선 — 양 끝이 가장자리에 붙지 않습니다.
- * (막대 차트 위에 추세선을 얹을 때)
- */
-export const centeredPath = (values: number[], domain: Domain) =>
-  values
-    .map(
-      (v, i) =>
-        (i ? "L" : "M") +
-        (((i + 0.5) / values.length) * 100).toFixed(2) +
-        "," +
-        yAt(v, domain).toFixed(2),
-    )
-    .join(" ");
 
 /** null 구간마다 경로를 끊되, 날짜의 원래 x 좌표는 유지한다. */
 export function nullableLinePath(

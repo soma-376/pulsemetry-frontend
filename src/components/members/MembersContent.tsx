@@ -39,7 +39,11 @@ import {
   teamsOptions,
 } from "@/lib/api/management";
 import { assignTeams, teamAssignments } from "@/lib/api/member-commands";
-import { membersOptions } from "@/lib/api/members";
+import {
+  fetchAllMembers,
+  fetchMemberPage,
+  membersOptions,
+} from "@/lib/api/members";
 import { organizationKey } from "@/lib/api/query-keys";
 import { useBackendSession } from "@/lib/api/session";
 import { DAY_MS, fromIso, toIso } from "@/lib/date";
@@ -47,6 +51,8 @@ import { useFilters } from "@/lib/filters";
 import {
   buildMembersView,
   membersCsv,
+  memberRow,
+  type MemberRow,
   type MembersModel,
 } from "@/lib/members-view";
 
@@ -78,7 +84,11 @@ export function MembersContent({
 const denied = (error: Error | null) =>
   error instanceof ManagementError && [401, 403].includes(error.status);
 
-type Selection = { kind: MemberSubject["kind"]; memberId: string };
+type Selection = {
+  kind: MemberSubject["kind"];
+  memberId: string;
+  row?: MemberRow;
+};
 function subjectOf(
   model: MembersModel | null,
   selection: Selection | null,
@@ -88,7 +98,9 @@ function subjectOf(
     const row = model.memberRows.find(
       (member) => member.memberId === selection.memberId,
     );
-    return row ? { kind: "member", row } : null;
+    return row || selection.row
+      ? { kind: "member", row: row ?? selection.row! }
+      : null;
   }
   const row = model.inviteRows?.find(
     (invite) => invite.memberId === selection.memberId,
@@ -138,6 +150,39 @@ function OrganizationMembers({
     () => (data ? buildMembersView(data, invitationData) : null),
     [data, invitationData],
   );
+  const selectedMember = useQuery({
+    queryKey: [
+      ...organizationKey(organizationId),
+      "member-detail",
+      data?.meta.snapshotId,
+      selected?.memberId,
+    ],
+    queryFn: async ({ signal }) => {
+      const page = await fetchMemberPage(
+        organizationId,
+        period,
+        data!.meta.snapshotId,
+        0,
+        { memberId: selected!.memberId },
+        signal,
+      );
+      const member = page.members.items.find(
+        (m) => m.memberId === selected!.memberId,
+      );
+      if (!member) throw new Error("구성원을 더 이상 찾을 수 없습니다.");
+      return memberRow(member, new Set<string>());
+    },
+    enabled: !!data && selected?.kind === "member",
+    retry: false,
+  });
+  const subject =
+    forbidden || denied(selectedMember.error)
+      ? null
+      : selected?.kind === "member"
+        ? selectedMember.data
+          ? { kind: "member" as const, row: selectedMember.data }
+          : subjectOf(model, selected)
+        : subjectOf(model, selected);
   const refresh = () =>
     void Promise.all(
       [query, invitations, teams].map((item) =>
@@ -150,8 +195,12 @@ function OrganizationMembers({
     forbidden ? undefined : refreshFeedback(query, invitations, teams),
   );
 
-  const openDetail = (kind: Selection["kind"], memberId: string) => {
-    setSelected({ kind, memberId });
+  const openDetail = (
+    kind: Selection["kind"],
+    memberId: string,
+    row?: MemberRow,
+  ) => {
+    setSelected({ kind, memberId, row });
     setDrawerOpen(true);
   };
   const invalidate = () =>
@@ -209,6 +258,23 @@ function OrganizationMembers({
       latestMembers.error ??
       (selected?.kind === "invite" ? latestInvitations.error : null);
     if (failed) throw failed;
+    if (selected?.kind === "member" && latestMembers.data) {
+      const page = await fetchMemberPage(
+        organizationId,
+        period,
+        latestMembers.data.meta.snapshotId,
+        0,
+        { memberId: selected.memberId },
+      );
+      const member = page.members.items.find(
+        (m) => m.memberId === selected.memberId,
+      );
+      if (!member) throw new Error("구성원을 더 이상 찾을 수 없습니다.");
+      return editTarget({
+        kind: "member",
+        row: memberRow(member, new Set<string>()),
+      });
+    }
     const latest = subjectOf(
       latestMembers.data
         ? buildMembersView(latestMembers.data, latestInvitations.data)
@@ -220,19 +286,37 @@ function OrganizationMembers({
     return editTarget(latest);
   };
   const capabilities = model?.capabilities;
+  const csv = useMutation({
+    retry: false,
+    mutationFn: async () => {
+      if (!model) return;
+      const all = await fetchAllMembers(
+        organizationId,
+        model.period,
+        model.snapshotId,
+      );
+      const url = URL.createObjectURL(
+        new Blob(
+          [
+            "\uFEFF",
+            membersCsv(all.map((m) => memberRow(m, new Set<string>()))),
+          ],
+          { type: "text/csv;charset=utf-8" },
+        ),
+      );
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `members_${model.period.startDate}_${model.period.endDate}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    },
+    onError: (error) => {
+      if (error instanceof ManagementError && error.code === "snapshot_expired")
+        void query.refetch({ cancelRefetch: false });
+    },
+  });
   const exportCsv = () => {
-    if (!model) return;
-    // 화면의 필터·정렬과 무관하게 같은 snapshot의 전체 명단을 내보낸다.
-    const url = URL.createObjectURL(
-      new Blob(["﻿", membersCsv(model.memberRows)], {
-        type: "text/csv;charset=utf-8",
-      }),
-    );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `members_${model.period.startDate}_${model.period.endDate}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    if (!csv.isPending) csv.mutate();
   };
   // 공통 헤더의 CSV 도 화면의 전체 명단 CSV 와 같은 파일이다.
   useDashboardPageExport(
@@ -337,8 +421,13 @@ function OrganizationMembers({
 
             <MemberListCard
               model={model}
-              onOpen={(member) => openDetail("member", member.memberId)}
+              onOpen={(member) => openDetail("member", member.memberId, member)}
               onExport={exportCsv}
+              exporting={csv.isPending}
+              exportError={csv.error}
+              onSnapshotExpired={() =>
+                void query.refetch({ cancelRefetch: false })
+              }
             />
           </div>
         )}
@@ -368,7 +457,12 @@ function OrganizationMembers({
         <MemberDetailDrawer
           organizationId={organizationId}
           post={post}
-          subject={subjectOf(model, selected)}
+          subject={subject}
+          loading={
+            selected?.kind === "member" && !subject && selectedMember.isPending
+          }
+          error={selected?.kind === "member" ? selectedMember.error : null}
+          onRetry={() => void selectedMember.refetch({ cancelRefetch: false })}
           teams={teams.data ?? []}
           currentMemberId={currentMemberId}
           editable={model.capabilities.assignTeam}

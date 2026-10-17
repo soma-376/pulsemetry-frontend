@@ -218,9 +218,6 @@ export const installationInvitationSchema = z.object({
   expiresAt: z.iso.datetime({ offset: true }),
   delivery: deliverySchema,
 });
-export type InstallationInvitation = z.infer<
-  typeof installationInvitationSchema
->;
 export const issueInstallationCode = (
   post: Post,
   organizationId: string,

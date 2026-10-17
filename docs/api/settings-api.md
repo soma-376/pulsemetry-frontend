@@ -1,7 +1,7 @@
 # 설정 API — 화면 전용 조회 계약
 
 [공통 계약](README.md)을 따른다. 설정은 선택 기간이 아닌 현재 계약·정책을 다룬다.
-현 화면: SettingsContent, VendorTable, VendorDrawer. 운영·보안 화면 API는 제외하되 이 화면의 정책·알림 토글은 포함한다.
+현 화면: SettingsContent, VendorTable, ServerVendorDrawer. 운영·보안 화면 API는 제외하되 이 화면의 정책·알림 토글은 포함한다.
 
 ## 조회
 

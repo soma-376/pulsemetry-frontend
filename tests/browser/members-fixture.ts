@@ -209,14 +209,70 @@ export async function mockMembers(
     asOf: "2026-09-22T00:00:00Z",
   });
   const pageOf = (items: FixtureMember[], url: URL, first: number) => {
-    const offset = Number(url.searchParams.get("cursor") ?? 0);
-    const limit = url.searchParams.has("cursor")
-      ? Number(url.searchParams.get("limit") ?? 20)
-      : first;
+    const offset = Number(url.searchParams.get("offset") ?? 0),
+      limit = Number(url.searchParams.get("limit") ?? first);
+    const candidates = new Set(
+      options.candidates === false
+        ? []
+        : fixtureCandidates(state.members).map((m) => m.memberId),
+    );
+    const q = (url.searchParams.get("q") ?? "").toLowerCase(),
+      status = url.searchParams.get("status") ?? "all",
+      id = url.searchParams.get("memberId");
+    const sort = url.searchParams.get("sort") ?? "account",
+      direction = url.searchParams.get("order") === "desc" ? -1 : 1;
+    const all = items
+      .map((m) => ({
+        ...m,
+        activity: candidates.has(m.memberId)
+          ? "candidate"
+          : m.periodUsage
+            ? "active"
+            : m.lastUsedAt
+              ? "idle"
+              : "unobserved",
+      }))
+      .filter(
+        (m) =>
+          (!id || m.memberId === id) &&
+          (status === "all" || m.activity === status) &&
+          (!q ||
+            [m.account, m.displayName, m.team.teamName].some((s) =>
+              s.toLowerCase().includes(q),
+            )),
+      );
+    const key = (m: FixtureMember) =>
+      sort === "cost"
+        ? m.periodUsage?.equivalentCostUsd.value == null
+          ? null
+          : Number(m.periodUsage.equivalentCostUsd.value)
+        : sort === "activity"
+          ? m.lastUsedAt
+            ? Date.parse(m.lastUsedAt)
+            : null
+          : sort === "team"
+            ? m.team.teamName
+            : m.account;
+    all.sort((a, b) => {
+      const x = key(a),
+        y = key(b);
+      return (
+        (x === null && y !== null
+          ? 1
+          : y === null && x !== null
+            ? -1
+            : x === null || y === null
+              ? 0
+              : (typeof x === "number" && typeof y === "number"
+                  ? x - y
+                  : String(x).localeCompare(String(y), "ko")) * direction) ||
+        a.memberId.localeCompare(b.memberId)
+      );
+    });
     return {
-      items: items.slice(offset, offset + limit),
-      totalCount: items.length,
-      nextCursor: offset + limit < items.length ? String(offset + limit) : null,
+      items: all.slice(offset, offset + limit),
+      totalCount: all.length,
+      nextOffset: offset + limit < all.length ? offset + limit : null,
     };
   };
   const json = (route: Route, value: unknown, status = 200) =>

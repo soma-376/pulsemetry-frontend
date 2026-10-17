@@ -147,8 +147,48 @@ export async function mockTeams(
           comparison: data.comparison,
           team,
         });
-      const all = users[teamId] ?? [];
-      const offset = Number(url.searchParams.get("cursor") ?? 0),
+      const all = [...(users[teamId] ?? [])];
+      const sort = url.searchParams.get("sort") ?? "cost",
+        direction = url.searchParams.get("order") === "asc" ? 1 : -1;
+      const averageAvailable =
+        all.length > 0 &&
+        all.every((r) => r.usage.equivalentCostUsd.value !== null) &&
+        all.some((r) => Number(r.usage.equivalentCostUsd.value) > 0);
+      const key = (r: User) =>
+        sort === "account"
+          ? r.account
+          : sort === "session"
+            ? r.usage.sessionCount.value
+            : sort === "token"
+              ? r.usage.totalTokens.value
+              : sort === "cache"
+                ? r.cacheHitRatio.value
+                : sort === "lastUsed"
+                  ? r.lastUsedAt
+                    ? Date.parse(r.lastUsedAt)
+                    : null
+                  : sort === "averageDeviation" && !averageAvailable
+                    ? null
+                    : r.usage.equivalentCostUsd.value === null
+                      ? null
+                      : Number(r.usage.equivalentCostUsd.value);
+      all.sort((a, b) => {
+        const x = key(a),
+          y = key(b);
+        return (
+          (x === null && y !== null
+            ? 1
+            : y === null && x !== null
+              ? -1
+              : x === null || y === null
+                ? 0
+                : (typeof x === "number" && typeof y === "number"
+                    ? x - y
+                    : String(x).localeCompare(String(y))) * direction) ||
+          a.memberId.localeCompare(b.memberId)
+        );
+      });
+      const offset = Number(url.searchParams.get("offset") ?? 0),
         limit = Number(url.searchParams.get("limit") ?? 12);
       const total = all.reduce(
         (sum, user) => sum + Number(user.usage.equivalentCostUsd.value),
@@ -173,8 +213,7 @@ export async function mockTeams(
         users: {
           items: all.slice(offset, offset + limit),
           totalCount: all.length,
-          nextCursor:
-            offset + limit < all.length ? String(offset + limit) : null,
+          nextOffset: offset + limit < all.length ? offset + limit : null,
         },
       });
     },

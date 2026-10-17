@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingState } from "@/components/ui/LoadingState";
 import { PeriodEmptyState } from "@/components/ui/PeriodEmptyState";
 import { MetricStatusBadge } from "@/components/overview/KpiCard";
 import { StatCard } from "@/components/ui/StatCard";
@@ -20,7 +19,7 @@ import {
   presentUsers,
   type TeamsModel,
 } from "@/lib/metrics/teams-presentation";
-import { nextSort, sortRows, type SortState } from "@/lib/sort";
+import { nextSort, type SortState } from "@/lib/sort";
 
 /**
  * 사용자별 사용량.
@@ -29,8 +28,7 @@ import { nextSort, sortRows, type SortState } from "@/lib/sort";
  * 팀 비용이 올랐을 때 전원이 조금씩 늘었는지, 몇 명이 크게 늘었는지가 갈립니다.
  * 캐시 적중과 마지막 사용은 각각 낭비와 유휴 좌석의 단서입니다.
  *
- * 서버는 비용 내림차순으로 페이지를 줍니다. 그 순서는 페이지를 이어 붙여 더보기로 넘기고,
- * 다른 열로 정렬하면 모든 페이지를 모은 뒤에 정렬합니다 — 첫 페이지만 정렬하지 않습니다.
+ * 모든 정렬은 서버에서 수행하며 같은 snapshot의 offset으로 필요한 페이지만 이어 읽습니다.
  */
 const COLS =
   "grid grid-cols-[minmax(0,1.7fr)_64px_88px_100px_78px_minmax(0,1.1fr)_76px_88px] items-center gap-x-[18px] gap-y-2 " +
@@ -45,6 +43,7 @@ type SortKey =
   | "sessionCount"
   | "tokenValue"
   | "costValue"
+  | "averageDeviation"
   | "cacheValue"
   | "lastValue";
 const SERVER_ORDER: SortState<SortKey> = {
@@ -77,19 +76,26 @@ export function UserUsageCard({
     height: number;
     rows: number;
   } | null>(null);
-  const serverOrder =
-    sort.key === SERVER_ORDER.key && sort.direction === SERVER_ORDER.direction;
+  const sortKeys = {
+    account: "account",
+    sessionCount: "session",
+    tokenValue: "token",
+    costValue: "cost",
+    averageDeviation: "averageDeviation",
+    cacheValue: "cache",
+    lastValue: "lastUsed",
+  } as const;
+  const ordering = { sort: sortKeys[sort.key], order: sort.direction };
 
   const query = useInfiniteQuery({
-    ...teamUsersOptions(organizationId, team, period, snapshotId),
+    ...teamUsersOptions(organizationId, team, period, snapshotId, ordering),
     enabled: !!team,
   });
   const pages = useMemo(() => query.data?.pages ?? [], [query.data]);
   const data = useMemo(() => presentUsers(pages), [pages]);
   const loaded = data.rows.length;
-  const complete = !!query.data && !query.hasNextPage;
-  // 서버 순서가 아니면 모든 페이지가, 서버 순서면 보여 줄 만큼의 페이지가 필요하다.
-  const needsMore = !serverOrder || loaded < visible;
+  // 더 보기로 요청한 행 수만큼만 이어 읽는다.
+  const needsMore = loaded < visible;
   const { hasNextPage, isFetching, isError, fetchNextPage } = query;
   useEffect(() => {
     if (needsMore && hasNextPage && !isFetching && !isError)
@@ -105,23 +111,16 @@ export function UserUsageCard({
     if (team) onTeamChange?.(team);
   }, [team, onTeamChange]);
 
-  const ordered = serverOrder
-    ? data.rows
-    : complete
-      ? sortRows(
-          data.rows,
-          (row) => row[sort.key],
-          sort.direction,
-          (row) => row.account,
-        )
-      : [];
-  const rows = ordered.slice(0, visible);
+  const rows = data.rows.slice(0, visible);
   const hasMore = visible < data.totalCount;
-  const gathering = !serverOrder && !complete && !query.isError;
-  const waitingForTeam =
-    !!team && (query.isPending || (!!pendingLayout && gathering));
+  const waitingForTeam = !!team && query.isPending;
   // 성공·빈 결과·오류로 전환하면 다음 조회에 이전 높이가 재사용되지 않게 한다.
   if (pendingLayout && !waitingForTeam) setPendingLayout(null);
+
+  const changeSort = (next: SortState<SortKey>) => {
+    setVisible(TEAM_USERS_PAGE);
+    setSort(next);
+  };
 
   const pick = (next: string) => {
     if (next === team) return;
@@ -222,10 +221,7 @@ export function UserUsageCard({
             }
             retrying={query.isFetching}
           />
-        ) : query.data &&
-          !query.isError &&
-          !gathering &&
-          data.totalCount === 0 ? (
+        ) : query.data && !query.isError && data.totalCount === 0 ? (
           <PeriodEmptyState scope="team" />
         ) : (
           query.data && (
@@ -262,13 +258,23 @@ export function UserUsageCard({
                     initial={key === "account" ? "asc" : "desc"}
                     direction={sort.key === key ? sort.direction : undefined}
                     onClick={() =>
-                      setSort(
+                      changeSort(
                         nextSort(sort, key, key === "account" ? "asc" : "desc"),
                       )
                     }
                   />
                 ))}
-                <span className="text-right">평균 대비</span>
+                <SortHeader
+                  label="평균 대비"
+                  align="right"
+                  initial="desc"
+                  direction={
+                    sort.key === "averageDeviation" ? sort.direction : undefined
+                  }
+                  onClick={() =>
+                    changeSort(nextSort(sort, "averageDeviation", "desc"))
+                  }
+                />
                 <span>주 사용 모델</span>
                 <SortHeader
                   label="캐시 적중"
@@ -277,7 +283,9 @@ export function UserUsageCard({
                   direction={
                     sort.key === "cacheValue" ? sort.direction : undefined
                   }
-                  onClick={() => setSort(nextSort(sort, "cacheValue", "desc"))}
+                  onClick={() =>
+                    changeSort(nextSort(sort, "cacheValue", "desc"))
+                  }
                 />
                 <SortHeader
                   label="마지막 사용"
@@ -286,17 +294,11 @@ export function UserUsageCard({
                   direction={
                     sort.key === "lastValue" ? sort.direction : undefined
                   }
-                  onClick={() => setSort(nextSort(sort, "lastValue", "desc"))}
+                  onClick={() =>
+                    changeSort(nextSort(sort, "lastValue", "desc"))
+                  }
                 />
               </div>
-
-              {gathering && (
-                <LoadingState
-                  variant="inline"
-                  message={`전체 ${data.totalCount}명을 모아 정렬하는 중입니다…`}
-                  className="py-3"
-                />
-              )}
 
               {rows.map((u) => (
                 <div
@@ -378,9 +380,9 @@ export function UserUsageCard({
                 {hasMore && (
                   <Button
                     onClick={() => setVisible((v) => v + TEAM_USERS_PAGE)}
-                    disabled={query.isFetchingNextPage || gathering}
+                    disabled={query.isFetchingNextPage}
                   >
-                    {query.isFetchingNextPage && serverOrder
+                    {query.isFetchingNextPage
                       ? "불러오는 중…"
                       : `다음 ${Math.min(TEAM_USERS_PAGE, data.totalCount - visible)}명 더보기`}
                   </Button>

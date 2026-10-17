@@ -628,7 +628,7 @@ test("드로어: 증가 기여는 두 기간이 모두 있을 때만, 모델 비
 
 const userPage = (
   items: TeamUsersPage["users"]["items"],
-  nextCursor: string | null,
+  nextOffset: number | null,
   total = 3,
 ): TeamUsersPage => ({
   meta: meta(),
@@ -644,7 +644,7 @@ const userPage = (
     cacheHitRatio: value(0.25),
     unidentifiedEquivalentCostUsd: "2.000000",
   },
-  users: { items, totalCount: total, nextCursor },
+  users: { items, totalCount: total, nextOffset },
 });
 const user = (
   id: string,
@@ -665,7 +665,7 @@ const user = (
 
 test("사용자 표: 평균 대비는 서버 평균과의 차이이고 금액을 모르는 사용자가 있으면 합계를 만들지 않는다", () => {
   const data = presentUsers([
-    userPage([user("u1", "15.000000"), user("u2", "10.000000")], "c1"),
+    userPage([user("u1", "15.000000"), user("u2", "10.000000")], 1),
     userPage([user("u3", null, "2026-09-01T01:00:00Z")], null),
   ]);
   assert.deepEqual(
@@ -695,12 +695,12 @@ test("사용자 표: 평균 대비는 서버 평균과의 차이이고 금액을
 const listPage = (
   items: TeamAnalytics[],
   total: number,
-  nextCursor: string | null,
+  nextOffset: number | null,
   snapshotId = "snapshot-1",
 ) => ({
   ...view(items),
   meta: meta(snapshotId),
-  teams: { items, totalCount: total, nextCursor },
+  teams: { items, totalCount: total, nextOffset },
 });
 
 async function withFetch<T>(
@@ -725,9 +725,9 @@ test("팀 목록은 모든 페이지를 같은 snapshot으로 읽는다", async 
   await withFetch(
     (url) =>
       Response.json(
-        url.searchParams.get("cursor") === "c1"
+        url.searchParams.get("offset") === "1"
           ? listPage([team("team-b", "데이터")], 2, null)
-          : listPage([team("team-a", "플랫폼")], 2, "c1"),
+          : listPage([team("team-a", "플랫폼")], 2, 1),
       ),
     async (urls) => {
       const result = await fetchTeams(ORG, period);
@@ -747,10 +747,10 @@ test("팀 목록은 모든 페이지를 같은 snapshot으로 읽는다", async 
       );
       assert.deepEqual(
         [
-          urls[1].searchParams.get("cursor"),
+          urls[1].searchParams.get("offset"),
           urls[1].searchParams.get("snapshotId"),
         ],
-        ["c1", "snapshot-1"],
+        ["1", "snapshot-1"],
       );
     },
   );
@@ -760,9 +760,9 @@ test("다른 snapshot의 페이지·빠진 날짜·개수 불일치는 버리고
   await withFetch(
     (url) =>
       Response.json(
-        url.searchParams.get("cursor")
+        url.searchParams.get("offset")
           ? listPage([team("team-b", "데이터")], 2, null, "snapshot-2")
-          : listPage([team("team-a", "플랫폼")], 2, "c1"),
+          : listPage([team("team-a", "플랫폼")], 2, 1),
       ),
     async () =>
       assert.rejects(
@@ -808,15 +808,10 @@ test("다른 snapshot의 페이지·빠진 날짜·개수 불일치는 버리고
     );
   await withFetch(
     (url) => {
-      if (!url.searchParams.get("cursor")) {
+      if (!url.searchParams.get("offset")) {
         firstPages++;
         return Response.json(
-          listPage(
-            [team("team-a", "플랫폼")],
-            2,
-            "c1",
-            `snapshot-${firstPages}`,
-          ),
+          listPage([team("team-a", "플랫폼")], 2, 1, `snapshot-${firstPages}`),
         );
       }
       return firstPages === 1
@@ -833,9 +828,9 @@ test("다른 snapshot의 페이지·빠진 날짜·개수 불일치는 버리고
   );
   await withFetch(
     (url) =>
-      url.searchParams.get("cursor")
+      url.searchParams.get("offset")
         ? expired()
-        : Response.json(listPage([team("team-a", "플랫폼")], 2, "c1")),
+        : Response.json(listPage([team("team-a", "플랫폼")], 2, 1)),
     async () =>
       assert.rejects(
         fetchTeams(ORG, period),
@@ -865,22 +860,16 @@ test("상세와 사용자는 목록의 snapshot을 넘기고 다른 팀의 응�
         (error) =>
           error instanceof ManagementError && error.code === "invalid_response",
       );
-      const page = await fetchTeamUsers(
-        ORG,
-        "team-a",
-        period,
-        "snapshot-1",
-        "c9",
-      );
+      const page = await fetchTeamUsers(ORG, "team-a", period, "snapshot-1", 9);
       assert.equal(page.users.items.length, 1);
       assert.match(urls[0].pathname, /\/analytics\/teams\/team-a$/);
       assert.deepEqual(
         [
           urls[2].searchParams.get("snapshotId"),
-          urls[2].searchParams.get("cursor"),
+          urls[2].searchParams.get("offset"),
           urls[2].searchParams.get("limit"),
         ],
-        ["snapshot-1", "c9", "12"],
+        ["snapshot-1", "9", "12"],
       );
     },
   );

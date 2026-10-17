@@ -17,7 +17,6 @@ export const memberSavedSchema = z.object({
   version: z.number(),
   plannedVendorIds: z.array(z.string()).optional(),
 });
-export type MemberSaved = z.infer<typeof memberSavedSchema>;
 /** 편집기가 값을 채운 시점의 구성원. version은 그때 조회가 준 값이다. */
 export type MemberBaseline = {
   memberId: string;

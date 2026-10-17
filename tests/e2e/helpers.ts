@@ -169,7 +169,7 @@ export function seedPeriod(scenario: "A" | "B" | "C" | "D" | "E" = "A") {
 export async function readAllMembers<T>(page: Page, organizationId: string) {
   const { start, end } = seedPeriod();
   const items: T[] = [];
-  let cursor: string | null = null;
+  let offset: number | null = 0;
   let snapshotId: string | undefined;
   let total = 0;
   do {
@@ -179,7 +179,7 @@ export async function readAllMembers<T>(page: Page, organizationId: string) {
       timeZone: "Asia/Seoul",
       limit: "100",
     });
-    if (cursor) query.set("cursor", cursor);
+    query.set("offset", String(offset));
     if (snapshotId) query.set("snapshotId", snapshotId);
     const response = await authenticatedRequest(
       page,
@@ -190,9 +190,9 @@ export async function readAllMembers<T>(page: Page, organizationId: string) {
     snapshotId ??= response.body.meta.snapshotId;
     expect(response.body.meta.snapshotId).toBe(snapshotId);
     items.push(...(response.body.members.items as T[]));
-    cursor = response.body.members.nextCursor;
+    offset = response.body.members.nextOffset;
     total = response.body.members.totalCount;
-  } while (cursor);
+  } while (offset !== null);
   expect(items).toHaveLength(total);
   return items;
 }

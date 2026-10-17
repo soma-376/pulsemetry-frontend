@@ -72,7 +72,7 @@ function teams(url: URL) {
   Object.assign(data.meta, period(url));
   Object.assign(data.comparison, comparison(url));
   data.teams.totalCount = data.teams.items.length;
-  data.teams.nextCursor = null;
+  data.teams.nextOffset = null;
   for (const team of [...data.teams.items, data.unassigned]) {
     team.trend = daily(team.trend, url).map((point, i, points) => ({
       ...point,
@@ -254,13 +254,67 @@ export function dashboardHandlers(
       data.team = { teamId: team.teamId, teamName: team.teamName };
       data.summary.usage = team.metrics;
       data.users.totalCount = data.users.items.length;
-      data.users.nextCursor = null;
+      data.users.nextOffset = null;
       return HttpResponse.json(data);
     }),
     http.get(`${api}/members/dashboard`, ({ request }) => {
       const data = membersDashboardSchema.parse(membersExample);
       Object.assign(data.meta, period(new URL(request.url)));
       return HttpResponse.json(data);
+    }),
+    http.get(`${api}/members`, ({ request }) => {
+      const url = new URL(request.url),
+        data = membersDashboardSchema.parse(membersExample);
+      Object.assign(data.meta, period(url));
+      const q = (url.searchParams.get("q") ?? "").toLowerCase();
+      const status = url.searchParams.get("status") ?? "all";
+      const id = url.searchParams.get("memberId");
+      const sort = url.searchParams.get("sort") ?? "account",
+        direction = url.searchParams.get("order") === "desc" ? -1 : 1;
+      const items = data.members.items.filter(
+        (m) =>
+          (!id || m.memberId === id) &&
+          (status === "all" || m.activity === status) &&
+          [m.account, m.displayName, m.team.teamName].some((text) =>
+            text.toLowerCase().includes(q),
+          ),
+      );
+      const key = (m: (typeof items)[number]) =>
+        sort === "cost"
+          ? m.periodUsage?.equivalentCostUsd.value == null
+            ? null
+            : Number(m.periodUsage.equivalentCostUsd.value)
+          : sort === "activity"
+            ? m.lastUsedAt
+            : sort === "team"
+              ? m.team.teamName
+              : m.account;
+      items.sort((a, b) => {
+        const x = key(a),
+          y = key(b);
+        return (
+          (x === null && y !== null
+            ? 1
+            : y === null && x !== null
+              ? -1
+              : x === null || y === null
+                ? 0
+                : (typeof x === "number" && typeof y === "number"
+                    ? x - y
+                    : String(x).localeCompare(String(y))) * direction) ||
+          a.memberId.localeCompare(b.memberId)
+        );
+      });
+      const offset = Number(url.searchParams.get("offset") ?? 0),
+        limit = Number(url.searchParams.get("limit") ?? 20);
+      return HttpResponse.json({
+        meta: data.meta,
+        members: {
+          items: items.slice(offset, offset + limit),
+          totalCount: items.length,
+          nextOffset: offset + limit < items.length ? offset + limit : null,
+        },
+      });
     }),
     http.get(`${api}/invitations`, () =>
       HttpResponse.json({ items: [], nextCursor: null }),

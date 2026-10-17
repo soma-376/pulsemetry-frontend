@@ -819,4 +819,3 @@ function userRow(
     lastColor: idle ? "var(--orange-ink)" : "var(--text2)",
   };
 }
-export type TeamUserRow = ReturnType<typeof userRow>;
