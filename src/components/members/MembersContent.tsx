@@ -176,7 +176,8 @@ function OrganizationMembers({
       if (!member) throw new Error("구성원을 더 이상 찾을 수 없습니다.");
       return memberRow(member, new Set<string>());
     },
-    enabled: !!data && selected?.kind === "member",
+    enabled: !!data && drawerOpen && selected?.kind === "member",
+    refetchInterval,
     retry: false,
   });
   const subject =
@@ -187,16 +188,21 @@ function OrganizationMembers({
           ? { kind: "member" as const, row: selectedMember.data }
           : subjectOf(model, selected)
         : subjectOf(model, selected);
+  // 열린 상세도 독립 쿼리다. 공통 새로고침은 같은 snapshot의 상세를
+  // 재확인하되, 저장하지 않은 폼 입력은 MemberEditForm이 유지한다.
+  const detailQueries =
+    drawerOpen && selected?.kind === "member" ? [selectedMember] : [];
+  const pageQueries = [query, invitations, teams, ...detailQueries];
   const refresh = () =>
     void Promise.all(
-      [query, invitations, teams].map((item) =>
-        item.refetch({ cancelRefetch: false }),
-      ),
+      pageQueries.map((item) => item.refetch({ cancelRefetch: false })),
     );
   useDashboardPageRefresh(
     refresh,
-    query.isFetching || invitations.isFetching || teams.isFetching,
-    forbidden ? undefined : refreshFeedback(query, invitations, teams),
+    pageQueries.some((item) => item.isFetching),
+    forbidden
+      ? undefined
+      : refreshFeedback(...pageQueries.filter((item) => !denied(item.error))),
   );
 
   const openDetail = (
