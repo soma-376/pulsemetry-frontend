@@ -88,15 +88,16 @@ export function ScatterPlot({
               style={{
                 left: `${xp.toFixed(1)}%`,
                 bottom: `${yp.toFixed(1)}%`,
-                width: p.size,
-                height: p.size,
+                width: `min(${p.size}px, 20%)`,
+                aspectRatio: "1",
                 transform: "translate(-50%, 50%)",
                 background: p.color,
                 boxShadow: "0 0 0 1.5px var(--card)",
               }}
             />
             <span
-              className="absolute text-[11px] leading-[1.2] font-semibold whitespace-nowrap"
+              title={p.tip ?? p.label}
+              className="absolute overflow-hidden text-[11px] leading-[1.2] font-semibold text-ellipsis whitespace-nowrap"
               style={{
                 // 위아래 경계에 라벨이 걸리지 않게 가둡니다
                 bottom: `${Math.min(Math.max(yp, 8), 88).toFixed(1)}%`,
@@ -104,6 +105,7 @@ export function ScatterPlot({
                 right: flip
                   ? `calc(${(100 - xp).toFixed(1)}% + ${offset}px)`
                   : "auto",
+                maxWidth: `calc(${(flip ? xp : 100 - xp).toFixed(1)}% - ${offset}px)`,
                 textAlign: flip ? "right" : "left",
                 transform: "translateY(50%)",
                 color: p.color,

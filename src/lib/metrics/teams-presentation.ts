@@ -642,8 +642,8 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
       key: model.modelId,
       x: tokensM,
       y: cost,
-      // 점 크기는 세 번째 차원 — 이 모델을 실제로 쓰는 팀 수(모르면 기본 크기)
-      size: 12 + (model.usingTeamCount ?? 0) * 3,
+      // 팀 수는 면적에 반영하되 많은 팀이 같은 모델을 써도 점이 차트를 덮지 않게 제한한다.
+      size: Math.min(40, 12 + Math.sqrt(model.usingTeamCount ?? 0) * 3),
       color: MODEL_SERIES[index % MODEL_SERIES.length],
       label: model.displayName,
       sub: `${usd(perM)}/M`,

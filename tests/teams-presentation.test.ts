@@ -675,17 +675,41 @@ test("모델 산점도는 금액·토큰이 있는 모델만 점으로 그리고
     }),
   );
   assert.deepEqual(
-    model.scatter.points.map((item) => [
-      item.key,
-      item.x,
-      item.y,
-      item.size,
-      item.sub,
-    ]),
-    [["m1", 2, 20, 18, "$10.00/M"]],
+    model.scatter.points.map((item) => [item.key, item.x, item.y, item.sub]),
+    [["m1", 2, 20, "$10.00/M"]],
   );
   assert.equal(model.scatter.avgPerM, 10);
   assert.match(model.scatter.note, /모델 1개는 점으로 그리지 않습니다/);
+});
+
+test("많은 팀이 쓰는 모델도 산점도의 크기를 제한하며 토큰·금액·팀 수는 보존한다", () => {
+  const sizes = [1, 2, 4, 53, 10_000].map((usingTeamCount) => {
+    const data = view([team("team-a", "플랫폼")]);
+    data.modelScatter.data!.models = [
+      {
+        modelId: "widely-used",
+        displayName: "Widely used model",
+        status: "complete",
+        reasons: [],
+        equivalentCostUsd: "40.000000",
+        totalTokens: 10_000_000,
+        usingTeamCount,
+      },
+    ];
+    const point = presentTeams(data).scatter.points[0];
+    assert.equal(point.x, 10);
+    assert.equal(point.y, 40);
+    assert.ok(point.size >= 12 && point.size <= 40);
+    assert.match(
+      point.tip,
+      new RegExp(`사용 팀 ${usingTeamCount.toLocaleString("en-US")}`),
+    );
+    return point.size;
+  });
+  assert.deepEqual(
+    sizes,
+    [...sizes].sort((a, b) => a - b),
+  );
 });
 
 test("드로어: 증가 기여는 두 기간이 모두 있을 때만, 모델 비중은 팀 금액 대비다", () => {
