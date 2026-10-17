@@ -236,7 +236,7 @@ test("좁은 팀 화면은 표를 가로로 읽고 추이 양끝 날짜를 겹�
   await expect(sort).toHaveAccessibleDescription(/내림차순 정렬 중/);
 });
 
-test("전체 사용자를 모아 정렬하는 동안 빈 임시 목록을 0명·0달러 합계로 표시하지 않는다", async ({
+test("서버 정렬의 첫 페이지를 기다리는 동안 빈 임시 목록을 0명·0달러 합계로 표시하지 않는다", async ({
   page,
 }) => {
   await mockTeams(page);
@@ -246,7 +246,10 @@ test("전체 사용자를 모아 정렬하는 동안 빈 임시 목록을 0명·
     release = resolve;
   });
   await page.route(
-    (url) => url.pathname.endsWith("/users") && url.searchParams.has("cursor"),
+    (url) =>
+      url.pathname.endsWith("/users") &&
+      url.searchParams.get("sort") === "account" &&
+      url.searchParams.get("offset") === "0",
     async (route) => {
       await nextPage;
       await route.fallback();
@@ -262,13 +265,14 @@ test("전체 사용자를 모아 정렬하는 동안 빈 임시 목록을 0명·
   await expect(users).toContainText("12명 합계");
   try {
     await users.getByRole("button", { name: "계정 정렬", exact: true }).click();
-    await expect(users).toContainText("전체 30명을 모아 정렬하는 중입니다");
+    await expect(users.getByRole("status")).toContainText("불러오는 중");
     await expect(users).not.toContainText("0명 합계");
-    await expect(users.getByRole("button", { name: /더보기/ })).toBeDisabled();
+    await expect(users).not.toContainText("12명 합계");
+    await expect(users.getByRole("button", { name: /더보기/ })).toHaveCount(0);
   } finally {
     release();
   }
-  await expect(users).not.toContainText("모아 정렬하는 중입니다");
+  await expect(users.getByRole("status")).toHaveCount(0);
   await expect(users).toContainText("12명 합계");
   await expect(
     users.getByRole("button", { name: "계정 정렬", exact: true }),

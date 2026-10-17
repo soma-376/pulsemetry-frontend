@@ -397,7 +397,7 @@ export function UserUsageCard({
                 )}
                 <div className="flex-1" />
                 <span className="tnum text-[11.5px] whitespace-nowrap text-text2">
-                  {!serverOrder && !complete ? "-" : data.sumNote(rows)}
+                  {data.sumNote(rows)}
                 </span>
               </div>
             </>
