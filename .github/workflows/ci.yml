@@ -136,3 +136,104 @@ jobs:
 
       - name: Build Next.js
         run: npm run build
+
+  container:
+    name: container build (ARM64)
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Build validation image (never published)
+        run: >-
+          docker build --platform linux/arm64
+          --build-arg NEXT_PUBLIC_ENROLLMENT_API_URL=https://enrollment.example.invalid
+          --tag frontend-validation .
+
+  publish:
+    name: publish image
+    needs: [lint, typecheck, format, test, build, container]
+    if: >-
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      id-token: write
+    environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+    env:
+      AWS_REGION: ap-northeast-2
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      AWS_ECR_PUSH_ROLE_ARN: ${{ vars.AWS_ECR_PUSH_ROLE_ARN }}
+      NEXT_PUBLIC_ENROLLMENT_API_URL: ${{ vars.NEXT_PUBLIC_ENROLLMENT_API_URL }}
+      AWS_PAGER: ""
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Build image with public environment
+        run: >-
+          docker build --platform linux/arm64
+          --build-arg NEXT_PUBLIC_ENROLLMENT_API_URL
+          --tag frontend-publish .
+
+      - name: Check branch still points to this commit
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          head_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$GITHUB_REF_NAME" --jq '.object.sha')
+          if [ "$head_sha" = "$GITHUB_SHA" ]; then
+            echo 'publish=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'publish=false' >> "$GITHUB_OUTPUT"
+            echo '브랜치가 변경되어 이전 커밋의 이미지 게시를 건너뜁니다.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Assume environment ECR push role
+        if: steps.current.outputs.publish == 'true'
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          aws-region: ap-northeast-2
+          role-to-assume: ${{ vars.AWS_ECR_PUSH_ROLE_ARN }}
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+          role-session-name: frontend-image-${{ github.run_id }}
+          role-duration-seconds: 900
+
+      - name: Push immutable image and record digest
+        if: steps.current.outputs.publish == 'true'
+        env:
+          REGISTRY: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com
+          REPOSITORY: soma-376/pulsemetry-frontend-${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+          IMAGE_TAG: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          head_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$GITHUB_REF_NAME" --jq '.object.sha')
+          if [ "$head_sha" != "$GITHUB_SHA" ]; then
+            echo '인증 중 브랜치가 변경되어 게시를 건너뜁니다.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          image="$REGISTRY/$REPOSITORY:$IMAGE_TAG"
+          trap 'docker logout "$REGISTRY" >/dev/null 2>&1 || true' EXIT
+          aws ecr get-login-password | docker login --username AWS --password-stdin "$REGISTRY"
+          docker tag frontend-publish "$image"
+          docker push "$image"
+          digest=$(aws ecr describe-images --repository-name "$REPOSITORY" --image-ids "imageTag=$IMAGE_TAG" --query 'imageDetails[0].imageDigest' --output text)
+          if [[ ! "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            echo 'ECR에서 유효한 digest를 확인하지 못했습니다.' >&2
+            exit 1
+          fi
+          {
+            echo '### 게시된 프론트엔드 이미지'
+            echo "- Commit: $GITHUB_SHA"
+            echo "- Tag: $IMAGE_TAG"
+            echo "- Digest: $REGISTRY/$REPOSITORY@$digest"
+            echo '- 이미지 게시만 완료했습니다. 실행 환경 반영은 infra에서 별도로 검토합니다.'
+          } >> "$GITHUB_STEP_SUMMARY"
