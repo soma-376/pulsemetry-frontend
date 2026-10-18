@@ -12,7 +12,7 @@ import { OverviewSkeleton } from "./OverviewSkeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { refreshFeedback } from "@/components/ui/RefreshNotice";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { OverviewData } from "./OverviewData";
+import { OverviewBody } from "./OverviewData";
 import { DashboardError, overviewQueryOptions } from "@/lib/api/overview";
 import { useBackendSession } from "@/lib/api/session";
 import { useFilters } from "@/lib/filters";
@@ -83,11 +83,11 @@ export function OverviewContent() {
       : undefined,
   );
   return (
-    <>
-      {!data && (
-        <PageContainer className="flex flex-col gap-6 pt-6 pb-10">
-          <PageHeader page="overview" />
-          {!configured ? (
+    <PageContainer className="flex items-start gap-4 pt-6 pb-10">
+      <div className="flex min-w-0 flex-1 flex-col gap-6">
+        <PageHeader page="overview" />
+        {!data &&
+          (!configured ? (
             <EmptyState
               message="조회할 조직이 설정되지 않았습니다."
               description="관리자에게 문의해 주세요."
@@ -108,15 +108,14 @@ export function OverviewContent() {
                 />
               )}
             </>
-          )}
-        </PageContainer>
-      )}
-      {configured && data && (
-        <OverviewData
-          key={[organizationId, dates.start, dates.end, compare].join(":")}
-          data={data}
-        />
-      )}
-    </>
+          ))}
+        {configured && data && (
+          <OverviewBody
+            key={[organizationId, dates.start, dates.end, compare].join(":")}
+            data={data}
+          />
+        )}
+      </div>
+    </PageContainer>
   );
 }

@@ -313,7 +313,9 @@ test("user usage sorts before pagination and totals the actual visible rows", as
   await expect(usage.getByRole("button", { name: /더보기/ })).toHaveCount(0);
   await usage.screenshot({ path: "test-results/user-sorting.png" });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole("button", { name: "내비게이션 접기/펼치기" }).click();
+  await expect(
+    page.getByRole("navigation", { name: "주 내비게이션" }),
+  ).toHaveCSS("width", "56px");
   await usage
     .getByRole("button", { name: "환산 금액 정렬", exact: true })
     .click();

@@ -129,6 +129,98 @@ test("개요 CSV는 null·0·부분 관측·조회 실패를 구분한다", () =
   assert.deepEqual(section(empty, "teamUsage"), []);
 });
 
+test("개요 CSV는 공식 null과 정확한 부분합·환산 행수·추이 기준을 보존한다", () => {
+  const data = overviewSchema.parse(overviewExample);
+  data.summary!.knownEquivalentCostUsd = {
+    value: "0.000800",
+    status: "partial",
+    reasons: ["pricing_missing"],
+  };
+  data.summary!.pricedUsageRows = 3;
+  data.summary!.unpricedUsageRows = 1;
+  Object.assign(data.summary!.equivalentCostUsd, {
+    value: null,
+    status: "unavailable",
+    reasons: ["pricing_missing"],
+  });
+  Object.assign(data.trend!.points[0], {
+    equivalentCostUsd: {
+      value: null,
+      status: "unavailable",
+      reasons: ["pricing_missing"],
+    },
+    knownEquivalentCostUsd: data.summary!.knownEquivalentCostUsd,
+    pricedUsageRows: 3,
+    unpricedUsageRows: 1,
+  });
+  const csv = overviewCsv(data, "조직", "now");
+  assert.match(csv, /trendValueBasis,known_observed_subtotal/);
+  assert.equal(
+    section(csv, "summary").find((r) => r.metric === "equivalentCostUsd")!
+      .value,
+    "",
+  );
+  assert.equal(
+    section(csv, "summary").find((r) => r.metric === "knownEquivalentCostUsd")!
+      .value,
+    "0.000800",
+  );
+  assert.equal(
+    section(csv, "summary").find((r) => r.metric === "pricedUsageRows")!.value,
+    "3",
+  );
+  assert.equal(section(csv, "trend")[0].knownEquivalentCostUsd, "0.000800");
+  assert.equal(section(csv, "trend")[0].unpricedUsageRows, "1");
+});
+
+test("팀 CSV는 선택한 누적 모드와 부분합을 내보내고 세션에 부분합을 적용하지 않는다", () => {
+  const source = structuredClone(teamsExample) as unknown as Omit<
+    TeamsView,
+    "teams"
+  > & { teams: { items: TeamsView["teams"] } };
+  const view: TeamsView = { ...source, teams: source.teams.items };
+  const team = view.teams[0];
+  Object.assign(team.trend[0], {
+    observation: "unobserved",
+    equivalentCostUsd: null,
+    knownEquivalentCostUsd: null,
+  });
+  Object.assign(team.trend[1], {
+    observation: "partial",
+    equivalentCostUsd: null,
+    knownEquivalentCostUsd: "4.000001",
+    pricedUsageRows: 3,
+    unpricedUsageRows: 1,
+  });
+  team.metrics.knownEquivalentCostUsd = {
+    value: "4.000001",
+    status: "partial",
+    reasons: ["pricing_missing"],
+  };
+  team.metrics.pricedUsageRows = 3;
+  team.metrics.unpricedUsageRows = 1;
+  const csv = teamsCsv(view, "조직", "now", null, {
+    axis: "cost",
+    mode: "known",
+  });
+  assert.match(csv, /누적 집계 기준,확인된 값 누적/);
+  assert.equal(section(csv, "teams")[0].knownEquivalentCostUsd, "4.000001");
+  assert.equal(section(csv, "teams")[0].pricedUsageRows, "3");
+  assert.equal(section(csv, "trend")[1].knownEquivalentCostUsd, "4.000001");
+  assert.equal(section(csv, "chart_trend")[0].value, "");
+  assert.equal(section(csv, "chart_trend")[1].value, "4.000001");
+  assert.equal(
+    section(teamsCsv(view, "조직", "now", null), "chart_trend")[1].value,
+    "",
+  );
+  const sessions = teamsCsv(view, "조직", "now", null, {
+    axis: "session",
+    mode: "known",
+  });
+  assert.match(sessions, /누적 집계 기준,전체 누적/);
+  assert.equal(section(sessions, "chart_trend")[1].mode, "strict");
+});
+
 test("팀: 목록 전 팀과 미배정, 고른 팀이 있으면 그 팀의 사용자 전부", () => {
   const view = {
     ...(teamsExample as unknown as TeamsView),

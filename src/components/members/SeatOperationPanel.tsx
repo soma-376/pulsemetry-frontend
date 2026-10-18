@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -56,7 +56,7 @@ export function SeatOperationPanel({
   const client = useQueryClient();
   const [post] = useState(createCommands);
   const query = useQuery(operationOptions(organizationId, operationId));
-  const refreshSeats = () => {
+  const refreshSeats = useCallback(() => {
     for (const name of [
       "member-seats",
       "vendor-seats",
@@ -67,7 +67,18 @@ export function SeatOperationPanel({
       void client.invalidateQueries({
         queryKey: managementKey(organizationId, name),
       });
-  };
+  }, [client, organizationId]);
+  const operationStatus = query.data?.operation.status;
+  useEffect(() => {
+    // 벤더 작업은 명령 접수 이후 polling으로 끝난다. 완료된 작업과
+    // 이전 좌석 원장이 동시에 남지 않도록 최종 결과의 원장도 다시 읽는다.
+    if (
+      operationStatus === "succeeded" ||
+      operationStatus === "partially_failed" ||
+      operationStatus === "failed"
+    )
+      refreshSeats();
+  }, [operationId, operationStatus, refreshSeats]);
   const settle = (operation: Operation) => {
     client.setQueryData(
       operationOptions(organizationId, operation.operationId).queryKey,

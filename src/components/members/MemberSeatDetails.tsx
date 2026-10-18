@@ -196,6 +196,20 @@ export function MemberSeatDetails({
         target={reclaim}
         open={!!reclaim}
         onClose={() => setReclaim(null)}
+        onRefreshTarget={async (target) => {
+          const latest = await query.refetch({
+            cancelRefetch: false,
+            throwOnError: true,
+          });
+          const seat = latest.data?.seats.find(
+            (item) => item.seatAssignmentId === target.seatAssignmentId,
+          );
+          if (!seat)
+            throw new Error(
+              "이 구성원의 좌석을 찾을 수 없습니다. 좌석 상세를 확인하세요.",
+            );
+          return { ...target, version: seat.version };
+        }}
       />
     </div>
   );

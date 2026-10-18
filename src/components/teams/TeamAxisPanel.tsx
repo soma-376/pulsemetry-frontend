@@ -7,9 +7,16 @@ import { LineAreaChart } from "@/components/charts/LineAreaChart";
 import { TrendFeedback } from "@/components/charts/TrendFeedback";
 import { MetricStatusBadge } from "@/components/overview/KpiCard";
 import { trendBadge } from "@/lib/metrics/trend-feedback";
+import { costAxisLabel, trendAxisMax } from "@/lib/metrics/chart-axis";
+import { knownMoneyText } from "@/lib/metrics/known-usage";
 import { xAt } from "@/components/charts/scale";
 import { ProgressBar } from "@/components/charts/ProgressBar";
-import type { AxisKey, TeamsModel } from "@/lib/metrics/teams-presentation";
+import {
+  knownTrendNote,
+  type AxisKey,
+  type TeamsModel,
+  type TrendMode,
+} from "@/lib/metrics/teams-presentation";
 
 const AXIS_TABS: { key: AxisKey; label: string }[] = [
   { key: "cost", label: "비용" },
@@ -40,6 +47,8 @@ export function TeamAxisPanel({
   hidden,
   onToggleTeam,
   onOpenTeam,
+  trendMode,
+  onTrendModeChange,
 }: {
   model: TeamsModel;
   axis: AxisKey;
@@ -48,8 +57,12 @@ export function TeamAxisPanel({
   hidden: Record<string, boolean>;
   onToggleTeam: (key: string) => void;
   onOpenTeam: (key: string) => void;
+  trendMode?: TrendMode;
+  onTrendModeChange?: (mode: TrendMode) => void;
 }) {
   const [sort, setSort] = useState(DEFAULT_SORT);
+  const [localTrendMode, setLocalTrendMode] = useState<TrendMode>("strict");
+  const mode = axis === "session" ? "strict" : (trendMode ?? localTrendMode);
   const activeSort =
     sort.key === "deltaValue" && !model.showDelta ? DEFAULT_SORT : sort;
   const ax = model.axes[axis];
@@ -59,10 +72,18 @@ export function TeamAxisPanel({
     activeSort.direction,
     (row) => row.team,
   );
-  const shown = model.trend[axis].filter((s) => !hidden[s.key]);
+  const selectedTrend =
+    mode === "known" && axis !== "session"
+      ? model.knownTrend[axis]
+      : model.trend[axis];
+  const selectedFeedback =
+    mode === "known" && axis !== "session"
+      ? model.knownTrendFeedback[axis]
+      : model.trendFeedback[axis];
+  const shown = selectedTrend.filter((s) => !hidden[s.key]);
   const feedback = {
-    ...model.trendFeedback[axis],
-    series: model.trendFeedback[axis].series.filter((s) => !hidden[s.id]),
+    ...selectedFeedback,
+    series: selectedFeedback.series.filter((s) => !hidden[s.id]),
   };
   const status = trendBadge(feedback);
   const isEmpty = shown.length === 0;
@@ -70,14 +91,16 @@ export function TeamAxisPanel({
   const known = shown
     .flatMap((s) => s.values)
     .filter((value): value is number => value !== null);
-  const max = Math.max(...known, 0) * 1.08 || 1;
+  const max = trendAxisMax(known, 1.08);
+  const axisLabel = (value: number) =>
+    axis === "cost" ? costAxisLabel(value, max) : ax.format(value);
 
   return (
     <section
       aria-label="팀별 사용량 비교"
       className="relative flex min-w-0 flex-col rounded-[10px] border border-border bg-card p-6"
     >
-      <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div className="relative mb-3.5 flex flex-wrap items-center justify-between gap-3">
         <div
           role="tablist"
           aria-label="지표 축"
@@ -127,15 +150,48 @@ export function TeamAxisPanel({
         </div>
       </div>
 
-      <div className="relative mb-6 flex flex-wrap items-baseline justify-between gap-3">
+      <div className="relative mb-3 flex flex-wrap items-baseline justify-between gap-3">
         <span className="text-[13px] font-semibold">팀별 누적 추이</span>
+        {axis !== "session" && (
+          <div
+            role="group"
+            aria-label="누적 집계 기준"
+            className="flex gap-1 rounded-md border border-border bg-sub p-0.5"
+          >
+            {(
+              [
+                ["strict", "전체 누적"],
+                ["known", "확인된 값 누적"],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={mode === key}
+                onClick={() => (onTrendModeChange ?? setLocalTrendMode)(key)}
+                className="cursor-pointer rounded px-2 py-1 text-[11px] font-semibold"
+                style={{
+                  background: mode === key ? "var(--text)" : "transparent",
+                  color: mode === key ? "var(--card)" : "var(--text2)",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
         {status && <MetricStatusBadge {...status} />}
       </div>
+      {mode === "known" && axis !== "session" && (
+        <p className="mb-4 text-[11px] leading-5 text-text2">
+          {knownTrendNote(axis)}
+        </p>
+      )}
 
-      <div className="mb-[18px] grid grid-cols-[56px_minmax(0,1fr)] gap-2">
+      <div className="mb-[18px] grid grid-cols-[minmax(56px,max-content)_minmax(0,1fr)] gap-2">
         <div className="tnum flex h-[196px] flex-col justify-between text-right text-[11px] text-text3">
-          <span>{isEmpty || !known.length ? "" : ax.format(max)}</span>
-          <span>{isEmpty || !known.length ? "" : ax.format(max / 2)}</span>
+          <span>{isEmpty || !known.length ? "" : axisLabel(max)}</span>
+          <span>{isEmpty || !known.length ? "" : axisLabel(max / 2)}</span>
           <span>{isEmpty ? "" : "0"}</span>
         </div>
 
@@ -154,11 +210,16 @@ export function TeamAxisPanel({
                 }))}
               />
               <TrendFeedback
-                key={axis}
+                key={`${axis}-${mode}`}
                 model={feedback}
                 max={max}
-                format={ax.format}
-                label="날짜별 팀 누적 사용량. 좌우 방향키로 날짜를 이동하세요"
+                format={
+                  mode === "known" && axis === "cost"
+                    ? (value) =>
+                        value === null ? "-" : knownMoneyText(String(value))
+                    : ax.format
+                }
+                label={`${mode === "known" ? "확인된 값 누적" : "전체 누적"}. 날짜별 팀 사용량. 좌우 방향키로 날짜를 이동하세요`}
               />
             </>
           )}
@@ -171,7 +232,7 @@ export function TeamAxisPanel({
         </div>
 
         <div />
-        <div className="tnum relative h-5 text-[11px] text-text3">
+        <div className="tnum relative h-5 @container text-[11px] text-text3">
           {model.dayLabels.map(
             (label, i) =>
               (i % Math.max(1, Math.ceil((model.dayLabels.length - 1) / 6)) ===
@@ -179,7 +240,7 @@ export function TeamAxisPanel({
                 i === model.dayLabels.length - 1) && (
                 <span
                   key={i}
-                  className="absolute whitespace-nowrap"
+                  className={`absolute whitespace-nowrap ${i !== 0 && i !== model.dayLabels.length - 1 ? "@max-[300px]:hidden" : ""}`}
                   style={{
                     left: `${xAt(i, model.dayLabels.length)}%`,
                     transform:
@@ -207,138 +268,150 @@ export function TeamAxisPanel({
       </div>
 
       <div
-        className={`${COLS} border-b border-border px-0.5 pb-2 text-[11px] text-text3`}
+        className="relative overflow-x-auto"
+        role="region"
+        aria-label="팀별 지표 표"
+        tabIndex={0}
       >
-        {(
-          [
-            ["team", "팀"],
-            ["totalValue", ax.c1],
-            ["perUserValue", ax.c2],
-            ["unitValue", ax.c3],
-            ["deltaValue", model.compareLabel || "증감"],
-          ] as const
-        ).map(([key, label], index) => (
-          <SortHeader
-            key={key}
-            label={label}
-            align={index < 2 ? "left" : "right"}
-            initial={key === "team" ? "asc" : "desc"}
-            direction={
-              activeSort.key === key ? activeSort.direction : undefined
-            }
-            disabled={key === "deltaValue" && !model.showDelta}
-            onClick={() =>
-              setSort(
-                nextSort(activeSort, key, key === "team" ? "asc" : "desc"),
-              )
-            }
-          />
-        ))}
-        <span aria-hidden="true" />
-      </div>
-
-      {rows.map((r) => {
-        const on = !hidden[r.key];
-        return (
+        <div className="min-w-[640px]">
           <div
-            key={r.key}
-            className={`${COLS} relative cursor-pointer border-b border-border px-0.5 py-2.5 transition-colors hover:bg-hover`}
-            style={{
-              // 꺼진 팀은 흐리게 — 표에서 사라지면 값을 비교할 수 없습니다
-              opacity: on ? 1 : 0.5,
-            }}
+            className={`${COLS} border-b border-border px-0.5 pb-2 text-[11px] text-text3`}
           >
-            <button
-              type="button"
-              aria-label={r.team}
-              aria-haspopup="dialog"
-              onClick={() => onOpenTeam(r.key)}
-              className="absolute inset-0 cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
-            />
-            <span className="pointer-events-none flex min-w-0 items-center gap-2">
-              <input
-                type="checkbox"
-                checked={on}
-                onChange={() => onToggleTeam(r.key)}
-                aria-label={`${r.team} 추이 선 표시`}
-                className="pointer-events-auto z-10 h-[14px] w-[14px] shrink-0 cursor-pointer"
-                style={{ accentColor: r.series }}
+            {(
+              [
+                ["team", "팀"],
+                ["totalValue", ax.c1],
+                ["perUserValue", ax.c2],
+                ["unitValue", ax.c3],
+                ["deltaValue", model.compareLabel || "증감"],
+              ] as const
+            ).map(([key, label], index) => (
+              <SortHeader
+                key={key}
+                label={label}
+                align={index < 2 ? "left" : "right"}
+                initial={key === "team" ? "asc" : "desc"}
+                direction={
+                  activeSort.key === key ? activeSort.direction : undefined
+                }
+                disabled={key === "deltaValue" && !model.showDelta}
+                onClick={() =>
+                  setSort(
+                    nextSort(activeSort, key, key === "team" ? "asc" : "desc"),
+                  )
+                }
               />
-              <span
-                className="min-w-0 overflow-hidden px-1 py-0.5 text-left text-[12px] text-ellipsis whitespace-nowrap"
+            ))}
+            <span aria-hidden="true" />
+          </div>
+
+          {rows.map((r) => {
+            const on = !hidden[r.key];
+            return (
+              <div
+                key={r.key}
+                className={`${COLS} relative cursor-pointer border-b border-border px-0.5 py-2.5 transition-colors hover:bg-hover`}
                 style={{
-                  fontWeight: r.unmapped ? 600 : 500,
-                  color: r.unmapped ? "var(--orange-ink)" : "var(--text)",
+                  // 꺼진 팀은 흐리게 — 표에서 사라지면 값을 비교할 수 없습니다
+                  opacity: on ? 1 : 0.5,
                 }}
               >
-                {r.team}
-              </span>
-            </span>
-
-            <div className="pointer-events-none flex min-w-0 items-center gap-2">
-              <ProgressBar
-                width={r.width}
-                color={r.fill}
-                height={9}
-                className="min-w-0 flex-1"
-              />
-              <span className="tnum flex min-w-[70px] shrink-0 flex-col items-end gap-1 text-right text-[12px] font-semibold">
-                {r.v1}
-                {r.status && (
-                  <span className="pointer-events-auto z-10">
-                    <MetricStatusBadge {...r.status} />
+                <button
+                  type="button"
+                  aria-label={r.team}
+                  aria-haspopup="dialog"
+                  onClick={() => onOpenTeam(r.key)}
+                  className="absolute inset-0 cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+                />
+                <span className="pointer-events-none flex min-w-0 items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={on}
+                    onChange={() => onToggleTeam(r.key)}
+                    aria-label={`${r.team} 추이 선 표시`}
+                    className="pointer-events-auto z-10 h-[14px] w-[14px] shrink-0 cursor-pointer"
+                    style={{ accentColor: r.series }}
+                  />
+                  <span
+                    className="min-w-0 overflow-hidden px-1 py-0.5 text-left text-[12px] text-ellipsis whitespace-nowrap"
+                    style={{
+                      fontWeight: r.unmapped ? 600 : 500,
+                      color: r.unmapped ? "var(--orange-ink)" : "var(--text)",
+                    }}
+                  >
+                    {r.team}
                   </span>
-                )}
-              </span>
-            </div>
+                </span>
 
-            <span className="pointer-events-none tnum flex min-w-0 flex-col items-end gap-1 text-right text-[12px] text-text2">
-              {r.v2}
-              {r.perUserStatus && (
-                <span className="pointer-events-auto z-10">
-                  <MetricStatusBadge
-                    label={r.perUserValue === null ? "확인 불가" : "일부"}
-                    reason={r.perUserStatus.reason}
+                <div className="pointer-events-none flex min-w-0 items-center gap-2">
+                  <ProgressBar
+                    width={r.width}
+                    color={r.fill}
+                    height={9}
+                    className="min-w-0 flex-1"
                   />
+                  <span className="tnum flex min-w-[70px] shrink-0 flex-col items-end gap-1 text-right text-[12px] font-semibold">
+                    {r.v1}
+                    {r.status && (
+                      <span className="pointer-events-auto z-10">
+                        <MetricStatusBadge {...r.status} />
+                      </span>
+                    )}
+                  </span>
+                </div>
+
+                <span className="pointer-events-none tnum flex min-w-0 flex-col items-end gap-1 text-right text-[12px] text-text2">
+                  {r.v2}
+                  {r.perUserStatus && (
+                    <span className="pointer-events-auto z-10">
+                      <MetricStatusBadge
+                        label={r.perUserValue === null ? "확인 불가" : "일부"}
+                        reason={r.perUserStatus.reason}
+                      />
+                    </span>
+                  )}
                 </span>
-              )}
-            </span>
-            <span className="pointer-events-none tnum flex min-w-0 flex-col items-end gap-1 text-right text-[12px] text-text2">
-              {r.v3}
-              {r.unitStatus && (
-                <span className="pointer-events-auto z-10">
-                  <MetricStatusBadge
-                    label={r.unitValue === null ? "확인 불가" : "일부"}
-                    reason={r.unitStatus.reason}
-                  />
+                <span className="pointer-events-none tnum flex min-w-0 flex-col items-end gap-1 text-right text-[12px] text-text2">
+                  {r.v3}
+                  {r.unitStatus && (
+                    <span className="pointer-events-auto z-10">
+                      <MetricStatusBadge
+                        label={r.unitValue === null ? "확인 불가" : "일부"}
+                        reason={r.unitStatus.reason}
+                      />
+                    </span>
+                  )}
                 </span>
-              )}
-            </span>
-            <span
-              title={r.deltaReason}
-              className="pointer-events-none tnum inline-flex justify-end text-right text-[12px] font-semibold whitespace-nowrap"
-              style={{ color: r.deltaColor }}
-            >
-              {model.compareLabel &&
-              r.totalValue !== null &&
-              r.delta === "-" &&
-              r.deltaReason ? (
-                <span className="pointer-events-auto z-10">
-                  <MetricStatusBadge label="비교 불가" reason={r.deltaReason} />
+                <span
+                  title={r.deltaReason}
+                  className="pointer-events-none tnum inline-flex justify-end text-right text-[12px] font-semibold whitespace-nowrap"
+                  style={{ color: r.deltaColor }}
+                >
+                  {model.compareLabel &&
+                  r.totalValue !== null &&
+                  r.delta === "-" &&
+                  r.deltaReason ? (
+                    <span className="pointer-events-auto z-10">
+                      <MetricStatusBadge
+                        label="비교 불가"
+                        reason={r.deltaReason}
+                      />
+                    </span>
+                  ) : (
+                    r.delta
+                  )}
                 </span>
-              ) : (
-                r.delta
-              )}
-            </span>
-            <span
-              aria-hidden="true"
-              className="pointer-events-none flex items-center justify-center text-text3"
-            >
-              ›
-            </span>
-          </div>
-        );
-      })}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none flex items-center justify-center text-text3"
+                >
+                  ›
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </section>
   );
 }

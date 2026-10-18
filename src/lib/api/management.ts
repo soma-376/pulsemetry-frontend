@@ -3,6 +3,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 import { sessionFetch } from "./session";
 import { retryAfterMs } from "./overview";
+import { parseJsonExactIntegers } from "../exact-numbers";
 
 const errorSchema = z.object({
   error: z.object({
@@ -150,7 +151,9 @@ export async function apiResponse<T>(
     );
   }
   const parsed = schema.safeParse(
-    response.status === 204 ? undefined : await response.json(),
+    response.status === 204
+      ? undefined
+      : parseJsonExactIntegers(await response.text()),
   );
   if (!parsed.success) throw new ManagementError("invalid_response", 422);
   return { data: parsed.data, headers: response.headers };

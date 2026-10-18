@@ -17,7 +17,7 @@ export type TrendSeriesInput = {
 export function trendFeedback(
   dates: string[],
   series: TrendSeriesInput[],
-  { today = currentDateIso(), cumulative = false } = {},
+  { today = currentDateIso(), cumulative = false, resumeAfterGap = false } = {},
 ) {
   return {
     dates,
@@ -34,7 +34,7 @@ export function trendFeedback(
         let note: string;
         if (value === null) {
           note =
-            cumulative && earlierMissing
+            cumulative && earlierMissing && !resumeAfterGap
               ? "이전 날짜의 값을 확인할 수 없어 누적값을 계산할 수 없습니다."
               : observation === "unobserved"
                 ? UNKNOWN_USAGE

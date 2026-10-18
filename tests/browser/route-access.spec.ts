@@ -20,6 +20,7 @@ async function sessionRoutes(
     onboardingStatus: options.onboardingStatus ?? 200,
     requests: 0,
     anonymous: false,
+    user: { ...fixtureUser },
   };
   await issueFixtureCookie(page);
   // 화면별 데이터는 이 테스트의 대상이 아니다. 인증 실패로 오인되는 실제 서버 요청을 방지한다.
@@ -33,7 +34,7 @@ async function sessionRoutes(
     state.requests++;
     return route.fulfill({
       status: state.status,
-      json: { user: state.anonymous ? null : fixtureUser },
+      json: { user: state.anonymous ? null : state.user },
     });
   });
   await page.route("**/api/v1/organizations/*/onboarding", (route) =>
@@ -43,6 +44,7 @@ async function sessionRoutes(
         state.onboardingStatus === 200
           ? {
               ...completedOnboarding,
+              organizationId: state.user.organizationId,
               completed: state.completed,
               ...(!state.completed
                 ? {
@@ -70,7 +72,10 @@ async function sessionRoutes(
 }
 const loginForm = (page: Page) =>
   page.getByLabel("회사 이메일", { exact: true });
-const dashboard = (page: Page) => page.locator('nav a[href="/overview"]');
+const dashboard = (page: Page) =>
+  page
+    .getByRole("navigation", { name: "주 내비게이션" })
+    .getByRole("link", { name: "개요", exact: true });
 
 for (const cookie of ["missing", "tampered", "expired"] as const) {
   test(`Proxy: ${cookie} 쿠키는 보호 경로·하위 경로를 렌더링 전에 차단한다`, async ({
@@ -365,3 +370,223 @@ test("보호 화면의 뒤로가기 캐시는 숨긴 뒤 로그아웃된 현재 
   await expect(loginForm(page)).toBeVisible();
   await expect(dashboard(page)).toHaveCount(0);
 });
+
+// Isolate a native tab's visibility lifecycle: do not synthesize window focus,
+// which would hide the tab-switch regression. Real Chrome tab switching is
+// verified separately against the local services.
+async function visibility(page: Page, state: DocumentVisibilityState) {
+  await page.evaluate((value) => {
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      value,
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  }, state);
+}
+
+test("탭을 숨길 때 이전 화면을 가리고 동일 사용자 복귀는 입력을 보존한다", async ({
+  page,
+}) => {
+  await sessionRoutes(page, { completed: false });
+  await page.goto("/onboarding");
+  const radio = page.getByRole("radio", { name: /^수집하지 않음/ });
+  await radio.check();
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let requests = 0;
+  await page.route("**/api/bff/auth/session", async (route) => {
+    requests++;
+    await held;
+    await route.fulfill({ json: { user: fixtureUser } });
+  });
+  await visibility(page, "hidden");
+  await expect(radio).toBeHidden();
+  expect(requests).toBe(0);
+  await visibility(page, "visible");
+  await expect.poll(() => requests).toBe(1);
+  await expect(radio).toBeHidden();
+  // A simultaneous real window-focus event shares the in-flight check.
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  release();
+  await expect(radio).toBeVisible();
+  await expect(radio).toBeChecked();
+  expect(requests).toBe(1);
+});
+
+for (const outcome of ["new-organization", "anonymous", "forbidden"] as const) {
+  test(`window focus 없이 보이는 탭의 ${outcome} 세션을 확인하고 이전 입력을 폐기한다`, async ({
+    page,
+  }) => {
+    const state = await sessionRoutes(page, { completed: false });
+    await page.goto("/onboarding");
+    const radio = page.getByRole("radio", { name: /^수집하지 않음/ });
+    await radio.check();
+    const previousRequests = state.requests;
+    await visibility(page, "hidden");
+    await expect(radio).toBeHidden();
+    if (outcome === "new-organization") {
+      state.user = {
+        ...fixtureUser,
+        organizationId: "22222222-2222-4222-8222-222222222222",
+        memberId: "other-admin",
+        organizationName: "다른 조직",
+      };
+    } else if (outcome === "anonymous") {
+      state.anonymous = true;
+    } else {
+      state.status = 403;
+    }
+    await visibility(page, "visible");
+    await expect.poll(() => state.requests).toBeGreaterThan(previousRequests);
+    if (outcome === "new-organization") {
+      await expect(radio).toBeVisible();
+      await expect(radio).not.toBeChecked();
+    } else if (outcome === "anonymous") {
+      await expect(page).toHaveURL(/\/login$/);
+      await expect(loginForm(page)).toBeVisible();
+      await expect(radio).toHaveCount(0);
+    } else {
+      await expect(
+        page.getByRole("alert").filter({ hasText: "접근할 권한" }),
+      ).toBeVisible();
+      await expect(radio).toHaveCount(0);
+    }
+  });
+}
+
+for (const lateResponse of ["success", "network-error"] as const) {
+  test(`재확인 도중 숨긴 탭의 늦은 ${lateResponse} 응답은 기존 입력을 폐기하지 않는다`, async ({
+    page,
+  }) => {
+    await sessionRoutes(page, { completed: false });
+    await page.goto("/onboarding");
+    const radio = page.getByRole("radio", {
+      name: /^수집하지 않음/,
+      includeHidden: true,
+    });
+    await radio.check();
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let requests = 0;
+    let settled = false;
+    await page.route("**/api/bff/auth/session", async (route) => {
+      requests++;
+      if (requests === 1) {
+        await held;
+        if (lateResponse === "network-error") await route.abort("failed");
+        else await route.fulfill({ json: { user: fixtureUser } });
+        settled = true;
+      } else await route.fulfill({ json: { user: fixtureUser } });
+    });
+    await visibility(page, "hidden");
+    await visibility(page, "visible");
+    await expect.poll(() => requests).toBe(1);
+    await expect(radio).toBeHidden();
+    await visibility(page, "hidden");
+    release();
+    await expect.poll(() => settled).toBe(true);
+    // Keep the same DOM control mounted and checked while the stale request settles.
+    await expect(radio).toBeAttached();
+    await expect(radio).toBeChecked();
+    await expect(radio).toBeHidden();
+    await visibility(page, "visible");
+    await expect(radio).toBeVisible();
+    await expect(radio).toBeChecked();
+    expect(requests).toBe(2);
+  });
+}
+
+for (const boundary of [
+  "organization",
+  "member",
+  "session-forbidden",
+  "onboarding-forbidden",
+] as const) {
+  test(`온보딩 초대 초안은 동일 계정에 보존하고 ${boundary} 경계에서는 폐기한다`, async ({
+    page,
+  }) => {
+    const state = await sessionRoutes(page, { completed: false });
+    await page.route("**/api/v1/organizations/*/onboarding", (route) =>
+      route.fulfill({
+        status: state.onboardingStatus,
+        json:
+          state.onboardingStatus === 200
+            ? {
+                ...completedOnboarding,
+                organizationId: state.user.organizationId,
+                completed: false,
+                completedAt: null,
+                nextStep: "team",
+              }
+            : { error: { code: "forbidden", message: "fixture" } },
+      }),
+    );
+    await page.route("**/api/v1/organizations/*/teams", (route) =>
+      route.fulfill({
+        json: {
+          meta: {
+            organizationId: state.user.organizationId,
+            snapshotId: "team-draft-check",
+            asOf: "2026-10-16T00:00:00Z",
+          },
+          teams: { items: [], nextCursor: null },
+        },
+      }),
+    );
+    await page.goto("/onboarding");
+    const input = page.getByRole("textbox", { name: "초대할 이메일" });
+    await input.fill("saved@organization-a.example.test");
+    await input.press("Enter");
+    await input.fill("draft@organization-a.example.test");
+    const role = page.getByRole("combobox", { name: "역할", exact: true });
+    await role.selectOption("admin");
+    const chip = page.getByRole("button", {
+      name: "saved@organization-a.example.test 제거",
+    });
+    await expect(chip).toBeVisible();
+    await visibility(page, "hidden");
+    await visibility(page, "visible");
+    await expect(input).toHaveValue("draft@organization-a.example.test");
+    await expect(chip).toBeVisible();
+    await expect(role).toHaveValue("admin");
+    await visibility(page, "hidden");
+    if (boundary === "organization" || boundary === "member") {
+      state.user = {
+        ...fixtureUser,
+        organizationId:
+          boundary === "organization"
+            ? "22222222-2222-4222-8222-222222222222"
+            : fixtureUser.organizationId,
+        memberId: "other-admin",
+        organizationName:
+          boundary === "organization"
+            ? "다른 미완료 조직"
+            : fixtureUser.organizationName,
+      };
+    } else if (boundary === "session-forbidden") state.status = 403;
+    else state.onboardingStatus = 403;
+    await visibility(page, "visible");
+    if (boundary === "organization")
+      await expect(
+        page.getByText("다른 미완료 조직 · 처음 시작하기"),
+      ).toBeVisible();
+    if (boundary.endsWith("forbidden")) {
+      await expect(
+        page.getByRole("alert").filter({ hasText: "접근할 권한" }),
+      ).toBeVisible();
+      await expect(input).toHaveCount(0);
+      state.status = 200;
+      state.onboardingStatus = 200;
+      await page
+        .getByRole("button", { name: "다시 시도", exact: true })
+        .click();
+    }
+    await expect(input).toHaveValue("");
+    await expect(chip).toHaveCount(0);
+    await expect(role).toHaveValue("member");
+  });
+}

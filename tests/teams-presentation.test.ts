@@ -11,6 +11,7 @@ import {
 } from "../src/lib/api/teams";
 import {
   cumulative,
+  knownCumulative,
   presentTeams,
   presentUsers,
   teamDetail,
@@ -310,6 +311,116 @@ test("누적 추이: 세션은 서버 누적값을 그대로 쓰고, 비용·토
   assert.deepEqual(cumulative(whole, "session"), [1, 1, 3]);
 });
 
+test("확인된 값 누적은 미관측·미환산 날짜를 비우고 뒤의 확인된 부분합에서 재개한다", () => {
+  const trend: TeamAnalytics["trend"] = [
+    point("2026-09-01", null, null, null, "unobserved"),
+    {
+      ...point("2026-09-13", null, 100, null, "partial"),
+      knownEquivalentCostUsd: "1.500000",
+      pricedUsageRows: 2,
+      unpricedUsageRows: 1,
+    },
+    point("2026-09-14", null, null, null, "unobserved"),
+    {
+      ...point("2026-09-16", null, 50, null, "partial"),
+      knownEquivalentCostUsd: "2.000000",
+    },
+    {
+      ...point("2026-09-17", "0.000000", 0, null),
+      knownEquivalentCostUsd: "0.000000",
+    },
+    {
+      ...point("2026-09-18", "9.000000", 10, null),
+      knownEquivalentCostUsd: null,
+    },
+    point("2026-09-19", "0.500000", 20, null),
+  ];
+  assert.deepEqual(knownCumulative(trend, "cost"), [
+    null,
+    1.5,
+    null,
+    3.5,
+    3.5,
+    null,
+    4,
+  ]);
+  assert.deepEqual(knownCumulative(trend, "token"), [
+    null,
+    100,
+    null,
+    150,
+    150,
+    160,
+    180,
+  ]);
+  assert.deepEqual(cumulative(trend, "cost"), Array(7).fill(null));
+  assert.deepEqual(cumulative(trend, "token"), Array(7).fill(null));
+  assert.deepEqual(cumulative(trend, "session"), Array(7).fill(null));
+});
+
+test("확인된 누적 모델은 부분합 상태·가격 행수를 표시하고 미래 날짜를 숨긴다", () => {
+  const t = team("team-a", "보관된 자료", {
+    trend: [
+      point(days[0], null, null, null, "unobserved"),
+      {
+        ...point(days[1], null, 100, null, "partial"),
+        knownEquivalentCostUsd: "3.000000",
+        pricedUsageRows: 2,
+        unpricedUsageRows: 1,
+      },
+      {
+        ...point(days[2], "4.000000", 200, null),
+        knownEquivalentCostUsd: "4.000000",
+      },
+    ],
+  });
+  const model = presentTeams(view([t]), days[1]);
+  assert.deepEqual(model.trend.cost[0].values, [null, null, null]);
+  assert.deepEqual(model.knownTrend.cost[0].values, [null, 3, null]);
+  assert.deepEqual(model.knownTrend.token[0].values, [null, 100, null]);
+  assert.equal(model.knownTrend.cost[0].observations[1], "partial");
+  assert.match(model.knownTrend.cost[0].reasons[1], /전체 금액의 하한/);
+  assert.match(
+    model.knownTrend.cost[0].reasons[1],
+    /환산 완료 2건 · 환산 미확인 1건/,
+  );
+  const gapModel = presentTeams(
+    view([
+      team("gap", "공백", {
+        trend: [
+          point(days[0], null, null, null, "unobserved"),
+          point(days[1], null, null, null, "unobserved"),
+          point(days[2], "4.000000", 200, null),
+        ],
+      }),
+    ]),
+    days[2],
+  );
+  assert.doesNotMatch(
+    gapModel.knownTrendFeedback.cost.series[0].notes[1],
+    /이전 날짜/,
+  );
+  assert.match(gapModel.trendFeedback.cost.series[0].notes[1], /이전 날짜/);
+});
+
+test("날짜별 금액이 있어도 기간의 가격 판이 혼재하면 확인된 비용 누적을 만들지 않는다", () => {
+  const t = team("mixed", "가격 판 혼재", {
+    trend: days.map((date) => ({
+      ...point(date, "2.000000", 10, 1),
+      knownEquivalentCostUsd: "2.000000",
+    })),
+  });
+  t.metrics.knownEquivalentCostUsd = {
+    value: null,
+    status: "unavailable",
+    reasons: ["pricing_version_mixed"],
+  };
+  const model = presentTeams(view([t]), days[2]);
+  assert.deepEqual(model.knownTrend.cost[0].values, [null, null, null]);
+  assert.deepEqual(model.knownTrend.token[0].values, [10, 20, 30]);
+  assert.match(model.knownTrend.cost[0].reasons[0], /서로 다른 가격 기준/);
+});
+
 test("팀 표: 사용자당·단가 열은 서버 값의 비율이고 분모가 없거나 0이면 비운다", () => {
   const model = presentTeams(
     view([
@@ -564,17 +675,41 @@ test("모델 산점도는 금액·토큰이 있는 모델만 점으로 그리고
     }),
   );
   assert.deepEqual(
-    model.scatter.points.map((item) => [
-      item.key,
-      item.x,
-      item.y,
-      item.size,
-      item.sub,
-    ]),
-    [["m1", 2, 20, 18, "$10.00/M"]],
+    model.scatter.points.map((item) => [item.key, item.x, item.y, item.sub]),
+    [["m1", 2, 20, "$10.00/M"]],
   );
   assert.equal(model.scatter.avgPerM, 10);
   assert.match(model.scatter.note, /모델 1개는 점으로 그리지 않습니다/);
+});
+
+test("많은 팀이 쓰는 모델도 산점도의 크기를 제한하며 토큰·금액·팀 수는 보존한다", () => {
+  const sizes = [1, 2, 4, 53, 10_000].map((usingTeamCount) => {
+    const data = view([team("team-a", "플랫폼")]);
+    data.modelScatter.data!.models = [
+      {
+        modelId: "widely-used",
+        displayName: "Widely used model",
+        status: "complete",
+        reasons: [],
+        equivalentCostUsd: "40.000000",
+        totalTokens: 10_000_000,
+        usingTeamCount,
+      },
+    ];
+    const point = presentTeams(data).scatter.points[0];
+    assert.equal(point.x, 10);
+    assert.equal(point.y, 40);
+    assert.ok(point.size >= 12 && point.size <= 40);
+    assert.match(
+      point.tip,
+      new RegExp(`사용 팀 ${usingTeamCount.toLocaleString("en-US")}`),
+    );
+    return point.size;
+  });
+  assert.deepEqual(
+    sizes,
+    [...sizes].sort((a, b) => a - b),
+  );
 });
 
 test("드로어: 증가 기여는 두 기간이 모두 있을 때만, 모델 비중은 팀 금액 대비다", () => {

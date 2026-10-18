@@ -3,6 +3,7 @@ import { mockOverview } from "./overview-fixture";
 import { mockTeams } from "./teams-fixture";
 import { currentDateIso } from "../../src/lib/date";
 import { defaultDashboardFilters } from "../../src/lib/filter-query";
+import { completedOnboarding, fixtureOrg } from "./session-fixture";
 
 test.beforeEach(async ({ page }) => {
   await mockOverview(page);
@@ -153,6 +154,10 @@ test("관리 페이지에서는 기간·비교를 숨기고 구성원 사용량�
 }) => {
   const { mockMembers } = await import("./members-fixture");
   await mockMembers(page, { invitations: [] });
+  await page.route(
+    `**/api/v1/organizations/${fixtureOrg}/onboarding`,
+    (route) => route.fulfill({ json: completedOnboarding }),
+  );
   const requests: URL[] = [];
   page.on("request", (request) => {
     if (request.url().includes("/members/dashboard?"))
@@ -195,6 +200,10 @@ test("관리 페이지는 깨끗한 URL을 사용하고 분석 페이지로 복�
   const { serveSettings } = await import("./onboarding-fixture");
   await mockMembers(page, { invitations: [] });
   serveSettings(page);
+  await page.route(
+    `**/api/v1/organizations/${fixtureOrg}/onboarding`,
+    (route) => route.fulfill({ json: completedOnboarding }),
+  );
   await page.goto(
     "/overview?startDate=2026-09-01&endDate=2026-09-13&compare=none",
   );

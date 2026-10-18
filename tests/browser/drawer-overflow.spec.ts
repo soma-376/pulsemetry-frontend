@@ -216,9 +216,9 @@ for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 800 });
     await openDashboard(page, "/teams");
     if (width < 600)
-      await page
-        .getByRole("button", { name: "내비게이션 접기/펼치기" })
-        .click();
+      await expect(
+        page.getByRole("navigation", { name: "주 내비게이션" }),
+      ).toHaveCSS("width", "56px");
     const trigger = page
       .getByRole("region", { name: "팀별 사용량 비교" })
       .getByRole("button", { name: "플랫폼", exact: true });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -35,6 +35,7 @@ export function InstallationCodePanel({
 }) {
   const client = useQueryClient();
   const [confirming, setConfirming] = useState(false);
+  const issuing = useRef(false);
   const codes = useQuery(installationCodesOptions(organizationId, memberId));
   const issue = useMutation({
     retry: false,
@@ -56,6 +57,9 @@ export function InstallationCodePanel({
         void client.invalidateQueries({
           queryKey: organizationKey(organizationId),
         });
+    },
+    onSettled: () => {
+      issuing.current = false;
     },
   });
   const issued = issue.data;
@@ -90,9 +94,9 @@ export function InstallationCodePanel({
               {delivery.detail && ` · ${delivery.detail}`}
             </span>
           </span>
-        ) : (
+        ) : codes.data ? (
           <span className="text-text3">쓰지 않은 설치 코드가 없습니다.</span>
-        )}
+        ) : null}
       </div>
       {codes.error && (
         <ErrorState
@@ -136,7 +140,11 @@ export function InstallationCodePanel({
             loading={issue.isPending}
             loadingLabel="발급 중…"
             disabled={issue.isPending}
-            onClick={() => issue.mutate()}
+            onClick={() => {
+              if (issuing.current) return;
+              issuing.current = true;
+              issue.mutate();
+            }}
           >
             발급 확인
           </Button>

@@ -140,7 +140,11 @@ test("실제 BFF 쿠키는 JS에서 숨겨지고 두 탭의 동시 401은 한 �
       .value,
   ).not.toBe(saved.value);
   await second.goto("/overview");
-  await expect(second.locator('nav a[href="/overview"]')).toBeVisible();
+  await expect(
+    second
+      .getByRole("navigation", { name: "주 내비게이션" })
+      .getByRole("link", { name: "개요", exact: true }),
+  ).toBeVisible();
   const logout = await page.evaluate(
     async () =>
       (
@@ -189,7 +193,11 @@ test("실제 화면 가드는 만료 AT를 BFF에서 갱신하고 폐기 RT는 �
   expired = true;
   await page.goto("/login");
   await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
-  await expect(page.locator('nav a[href="/overview"]')).toBeVisible();
+  await expect(
+    page
+      .getByRole("navigation", { name: "주 내비게이션" })
+      .getByRole("link", { name: "개요", exact: true }),
+  ).toBeVisible();
   expect(refreshes).toBe(1);
   revoked = true;
   await page.goto("/overview");

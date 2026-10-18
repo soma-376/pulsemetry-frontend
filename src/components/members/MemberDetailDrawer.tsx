@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonRows } from "@/components/ui/Skeleton";
 import { DetailDrawer } from "@/components/ui/DetailDrawer";
@@ -119,6 +119,7 @@ export function MemberDetailDrawer({
   error,
   onRetry,
 }: Props) {
+  const submitting = useRef(false);
   const target = subject ? editTarget(subject) : null;
   const member = subject?.kind === "member" ? subject.row : null;
   const invite = subject?.kind === "invite" ? subject.row : null;
@@ -132,11 +133,17 @@ export function MemberDetailDrawer({
       editable={editable}
       onSaved={onSaved}
       onReload={onReload}
+      onSubmittingChange={(pending) => {
+        submitting.current = pending;
+      }}
     >
-      {({ fields, actions }) => (
+      {({ fields, actions, busy }) => (
         <DetailDrawer
           open={open}
-          onClose={onClose}
+          closeDisabled={busy}
+          onClose={() => {
+            if (!busy && !submitting.current) onClose();
+          }}
           onAfterClose={onAfterClose}
           title="구성원 상세"
           subtitle={target?.account}

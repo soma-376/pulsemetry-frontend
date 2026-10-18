@@ -75,11 +75,14 @@ export function TeamManagement() {
     setConfirming(false);
   };
 
-  const save = async (name: string) => {
-    if (editing) await renameTeam(organizationId, editing, name);
-    else await createTeam(post, organizationId, name);
-    await refresh();
-  };
+  const save = useMutation({
+    retry: false,
+    mutationFn: async (name: string) => {
+      if (editing) await renameTeam(organizationId, editing, name);
+      else await createTeam(post, organizationId, name);
+      await refresh();
+    },
+  });
   const remove = useMutation({
     retry: false,
     mutationFn: async (team: ServerTeam) => {
@@ -112,7 +115,7 @@ export function TeamManagement() {
       setEditing(latest);
     },
   });
-  const busy = remove.isPending || reload.isPending;
+  const busy = save.isPending || remove.isPending || reload.isPending;
   const reloadButton = (
     <Button
       size="sm"
@@ -146,6 +149,7 @@ export function TeamManagement() {
       </Button>
       <DetailDrawer
         open={open}
+        closeDisabled={busy}
         onClose={() => {
           if (!busy) setOpen(false);
         }}
@@ -186,7 +190,7 @@ export function TeamManagement() {
                 onSave={async (name) => {
                   setRenameStale(false);
                   try {
-                    await save(name);
+                    await save.mutateAsync(name);
                   } catch (error) {
                     if (editing && stale(error)) setRenameStale(true);
                     throw error;

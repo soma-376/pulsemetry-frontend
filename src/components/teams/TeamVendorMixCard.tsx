@@ -58,47 +58,62 @@ export function TeamVendorMixCard({
           </span>
         </div>
 
-        <div className="flex h-[226px] items-end gap-2.5 border-b border-l border-border px-1 pt-5">
-          {columns.map((c) => (
-            <div
-              key={c.key}
-              role="img"
-              aria-label={`${c.team} · ${c.totalText} · ${c.segments.length ? c.segments.map((segment) => segment.tip).join(", ") : c.topText}`}
-              className="relative flex h-full min-w-0 flex-1 flex-col items-center justify-end"
-            >
-              <span
-                className="relative flex w-full max-w-[56px] flex-col"
-                style={{ height: c.height }}
-              >
-                <span className="tnum absolute right-0 bottom-full left-0 pb-1 text-center text-[10.5px] whitespace-nowrap text-text2">
-                  {c.totalText}
-                </span>
-                <StackedBar segments={c.segments} vertical />
-              </span>
+        <div
+          role="group"
+          aria-label="팀별 벤더 비중 차트"
+          tabIndex={0}
+          className="min-w-0 overflow-x-auto pb-2"
+        >
+          <div style={{ minWidth: columns.length * 80 }}>
+            <div className="flex h-[226px] items-end gap-2.5 border-b border-l border-border px-1 pt-5">
+              {columns.map((c) => (
+                <div
+                  key={c.key}
+                  role="img"
+                  aria-label={`${c.team} · ${c.totalText} · ${c.segments.length ? c.segments.map((segment) => segment.tip).join(", ") : c.topText}`}
+                  className="relative flex h-full min-w-0 flex-1 flex-col items-center justify-end"
+                >
+                  <span
+                    className="relative flex w-full max-w-[56px] flex-col"
+                    style={{ height: c.height }}
+                  >
+                    <span
+                      title={c.totalText}
+                      className="tnum absolute right-0 bottom-full left-0 overflow-hidden pb-1 text-center text-[10.5px] text-ellipsis whitespace-nowrap text-text2"
+                    >
+                      {c.totalText}
+                    </span>
+                    <StackedBar segments={c.segments} vertical />
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        <div />
-        <div className="flex gap-2.5 px-1 pt-1.5">
-          {columns.map((c) => (
-            <div
-              key={c.key}
-              className="flex min-w-0 flex-1 flex-col items-center gap-px"
-            >
-              <span
-                className="max-w-full overflow-hidden text-[11px] font-medium text-ellipsis whitespace-nowrap"
-                style={{
-                  color: c.unmapped ? "var(--orange-ink)" : "var(--text)",
-                }}
-              >
-                {c.team}
-              </span>
-              <span className="max-w-full overflow-hidden text-[10px] text-ellipsis whitespace-nowrap text-text3">
-                {c.topText}
-              </span>
+            <div className="flex gap-2.5 border-l border-transparent px-1 pt-1.5">
+              {columns.map((c) => (
+                <div
+                  key={c.key}
+                  className="flex min-w-0 flex-1 flex-col items-center gap-px"
+                >
+                  <span
+                    title={c.team}
+                    className="max-w-full overflow-hidden text-[11px] font-medium text-ellipsis whitespace-nowrap"
+                    style={{
+                      color: c.unmapped ? "var(--orange-ink)" : "var(--text)",
+                    }}
+                  >
+                    {c.team}
+                  </span>
+                  <span
+                    title={c.topText}
+                    className="max-w-full overflow-hidden text-[10px] text-ellipsis whitespace-nowrap text-text3"
+                  >
+                    {c.topText}
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </section>

@@ -95,7 +95,7 @@ export async function fetchWaitingInvitations(
 }
 
 /**
- * 활성 구성원이 아직 쓰지 않은 설치 코드 — 설치가 남은 그 구성원의 대기 초대(서버 ADR 0055). 발급 시각 순이다.
+ * 활성 구성원이 아직 쓰지 않은 설치 코드 — 대기 중이거나 만료된 코드(서버 ADR 0055). 발급 시각 순이다.
  * 코드 원문은 없다. 발급·만료 시각과 메일 발송 상태만 다시 볼 수 있다.
  */
 export async function fetchInstallationCodes(
@@ -104,14 +104,11 @@ export async function fetchInstallationCodes(
   signal?: AbortSignal,
   fetcher: Fetcher = enrollmentApi,
 ) {
-  const pending = await allPages(
-    fetcher,
-    organizationId,
-    "pending",
-    signal,
-    "active",
-  );
-  return pending
+  const [pending, expired] = await Promise.all([
+    allPages(fetcher, organizationId, "pending", signal, "active"),
+    allPages(fetcher, organizationId, "expired", signal, "active"),
+  ]);
+  return [...pending, ...expired]
     .filter((item) => item.memberId === memberId && !item.installationUsedAt)
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }

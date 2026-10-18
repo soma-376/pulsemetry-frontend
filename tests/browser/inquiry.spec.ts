@@ -49,6 +49,38 @@ async function mockInquiries(page: Page, replies: Reply[]) {
   return state;
 }
 
+test("pending 렌더링 전 같은 순간의 두 제출도 한 문의 요청만 보낸다", async ({
+  page,
+}) => {
+  const api = await mockInquiries(page, []);
+  api.hold = true;
+  await page.goto("/contact");
+  await page.getByLabel("회사명", { exact: true }).fill("동시 문의 검증");
+  await page
+    .getByLabel("회사 이메일", { exact: true })
+    .fill("concurrent@example.test");
+  await page
+    .getByRole("button", { name: "문의 내용 확인", exact: true })
+    .click();
+  // 두 클릭 사이 React의 다음 pending 렌더가 끼지 않는 실제 실패 경계를 고정한다.
+  await page
+    .getByRole("button", { name: "문의 접수", exact: true })
+    .evaluate((button: HTMLButtonElement) => {
+      button.click();
+      button.click();
+    });
+  await expect(
+    page.getByRole("button", { name: "접수 중…", exact: true }),
+  ).toBeDisabled();
+  await expect.poll(() => api.requests.length).toBeGreaterThan(0);
+  expect(api.requests).toHaveLength(1);
+  api.hold = false;
+  api.release();
+  await expect(page.getByRole("main").getByRole("status")).toContainText(
+    "문의를 접수했습니다",
+  );
+});
+
 test("confirming sends nothing, and the receipt appears only after the server accepts the inquiry", async ({
   page,
 }) => {

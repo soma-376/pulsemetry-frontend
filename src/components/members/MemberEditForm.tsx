@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -37,7 +37,12 @@ type Props = {
   onSaved: (message: string) => void;
   /** 충돌 뒤 최신 값을 다시 읽는다. 찾지 못하면 예외를 던진다. */
   onReload: () => Promise<MemberEditTarget>;
-  children: (slots: { fields: ReactNode; actions: ReactNode }) => ReactNode;
+  onSubmittingChange: (submitting: boolean) => void;
+  children: (slots: {
+    fields: ReactNode;
+    actions: ReactNode;
+    busy: boolean;
+  }) => ReactNode;
 };
 
 const valuesOf = (target: MemberEditTarget | null): Values => ({
@@ -58,11 +63,14 @@ export function MemberEditForm({
   editable,
   onSaved,
   onReload,
+  onSubmittingChange,
   children,
 }: Props) {
   const id = useId();
   const vendors = usePlannedVendors(organizationId, !!target);
   const client = useQueryClient();
+  // handleSubmit의 비동기 검증과 다음 렌더 사이에도 같은 명령을 다시 보내지 않는다.
+  const submitting = useRef(false);
   // 열어 둔 사이 목록이 다시 조회돼도 입력과 기준 version을 바꾸지 않는다.
   const [baseline, setBaseline] = useState(target);
   const {
@@ -71,7 +79,7 @@ export function MemberEditForm({
     reset,
     setFocus,
     control,
-    formState: { isDirty },
+    formState: { isDirty, isSubmitting },
   } = useForm<Values>({ defaultValues: valuesOf(target) });
   const role = useWatch({ control, name: "role" });
   const save = useMutation({
@@ -118,7 +126,7 @@ export function MemberEditForm({
   const conflict =
     save.error instanceof ManagementError &&
     save.error.code === "version_conflict";
-  const busy = save.isPending || reload.isPending;
+  const busy = isSubmitting || save.isPending || reload.isPending;
   const locked = !editable || busy || conflict;
   const knownRole = (ASSIGNABLE_ROLES as readonly string[]).includes(
     baseline?.role ?? "member",
@@ -129,9 +137,23 @@ export function MemberEditForm({
       id={id}
       noValidate
       className="flex flex-col gap-4"
-      onSubmit={handleSubmit((values) => {
-        if (!locked) save.mutate(values);
-      })}
+      onSubmit={(event) => {
+        if (locked || submitting.current) {
+          event.preventDefault();
+          return;
+        }
+        submitting.current = true;
+        onSubmittingChange(true);
+        void handleSubmit(async (values) => {
+          await save.mutateAsync(values);
+        })(event)
+          // 오류 표시는 mutation 상태가 맡고 입력은 그대로 둔다.
+          .catch(() => undefined)
+          .finally(() => {
+            submitting.current = false;
+            onSubmittingChange(false);
+          });
+      }}
     >
       <fieldset disabled={locked} className="flex min-w-0 flex-col gap-4">
         <div className="flex min-w-0 flex-col gap-1.5">
@@ -263,5 +285,9 @@ export function MemberEditForm({
       </Button>
     </div>
   );
-  return children({ fields, actions });
+  return children({
+    fields,
+    actions,
+    busy,
+  });
 }

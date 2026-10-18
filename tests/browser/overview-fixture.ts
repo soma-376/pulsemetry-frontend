@@ -47,7 +47,8 @@ export function overviewFixture(url: string) {
       change: null,
     };
     for (const m of Object.values(data.summary!))
-      if ("comparison" in m) m.comparison = disabled;
+      if (typeof m === "object" && m && "comparison" in m)
+        m.comparison = disabled;
     for (const t of data.teamUsage!.topTeams)
       t.equivalentCostUsd.comparison = disabled;
     if (data.teamUsage!.unassigned)

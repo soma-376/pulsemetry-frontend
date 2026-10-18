@@ -647,3 +647,47 @@ test("pagination rejects changed periods and total counts even when snapshot mat
     global.fetch = original;
   }
 });
+
+test("member detail preserves the exact member filter, snapshot and cancellation signal", async () => {
+  const controller = new AbortController();
+  const selected = member(47);
+  const result = await fetchMemberPage(
+    ORG,
+    period,
+    "snapshot-detail",
+    0,
+    { memberId: selected.memberId },
+    controller.signal,
+    async (path, schema, signal) => {
+      const url = new URL(path, "http://localhost");
+      assert.equal(url.searchParams.get("memberId"), selected.memberId);
+      assert.equal(url.searchParams.get("snapshotId"), "snapshot-detail");
+      assert.equal(url.searchParams.get("offset"), "0");
+      assert.equal(url.searchParams.has("cursor"), false);
+      assert.equal(signal, controller.signal);
+      return schema.parse({
+        meta: meta("snapshot-detail"),
+        members: { items: [selected], totalCount: 1, nextOffset: null },
+      });
+    },
+  );
+  assert.deepEqual(result.members.items, [selected]);
+});
+
+test("member detail permission failure is not converted into an empty successful page", async () => {
+  const failure = new ManagementError("forbidden", 403);
+  await assert.rejects(
+    fetchMemberPage(
+      ORG,
+      period,
+      "snapshot-detail",
+      0,
+      { memberId: "member-47" },
+      undefined,
+      async () => {
+        throw failure;
+      },
+    ),
+    (error) => error === failure,
+  );
+});

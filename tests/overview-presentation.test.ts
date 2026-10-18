@@ -22,6 +22,87 @@ const unavailable = {
   percentChange: null,
   change: null,
 };
+test("소액 환산액 추이는 실제 최댓값에 맞추고 0·미가격 날짜를 유지한다", () => {
+  const d = data();
+  const amounts = ["0.000800", "0", null];
+  d.trend!.points = d.trend!.points.slice(0, 3).map((point, index) => ({
+    ...point,
+    observation: "complete",
+    equivalentCostUsd: value(amounts[index]),
+  }));
+  const chart = presentOverview(d).chart;
+  assert.deepEqual(chart.cost, [0.0008, 0, null]);
+  assert.equal(chart.yMax, 0.0008 * 1.15);
+  assert.notEqual(chart.topLabel, chart.midLabel);
+  assert.ok(Number(chart.midLabel.slice(1)) > 0);
+  assert.match(nullableLinePath(chart.cost, { max: chart.yMax }), /L50,100$/);
+});
+
+test("확인된 금액은 공식 KPI·평균을 대체하지 않고 일별 부분합으로 분리된다", () => {
+  const d = data();
+  d.summary!.equivalentCostUsd = {
+    ...value<string>(null, ["pricing_missing"]),
+    comparison: unavailable,
+  };
+  d.summary!.equivalentCostPerUserUsd = {
+    ...value<string>(null, ["pricing_missing"]),
+    comparison: unavailable,
+  };
+  d.summary!.knownEquivalentCostUsd = value("0.000800", [
+    "pricing_missing",
+    "current_period_incomplete",
+  ]);
+  d.summary!.pricedUsageRows = 3;
+  d.summary!.unpricedUsageRows = 1;
+  d.trend!.points = d.trend!.points.slice(0, 4).map((p, index) => ({
+    ...p,
+    observation: index === 1 ? "unobserved" : "partial",
+    equivalentCostUsd: value<string>(null, ["pricing_missing"]),
+    knownEquivalentCostUsd: value(index === 1 ? null : "0.000800", [
+      "current_period_incomplete",
+    ]),
+    pricedUsageRows: index === 1 ? 0 : 3,
+    unpricedUsageRows: 1,
+  }));
+  const parsed = overviewSchema.parse(d);
+  const m = presentOverview(parsed, d.trend!.points[2].date);
+  assert.equal(m.kpis[1].value, "-");
+  assert.equal(m.kpis[3].value, "-");
+  assert.equal(m.kpis[1].supportingValue?.value, "$0.0008");
+  assert.match(
+    m.kpis[1].supportingValue?.description ?? "",
+    /확정 금액이 아닙니다/,
+  );
+  assert.match(
+    m.kpis[1].supportingValue?.description ?? "",
+    /환산 완료 3건 · 환산 미확인 1건/,
+  );
+  assert.deepEqual(m.chart.cost, [null, null, null, null]);
+  assert.deepEqual(m.chart.series[0].values, [0.0008, null, 0.0008, null]);
+  assert.equal(m.chart.series[0].name, "확인된 금액 · 일부 집계");
+  assert.match(m.chart.knownCostNote ?? "", /부분합/);
+});
+
+test("부분합 계약이 없는 기존 응답과 부분합도 미확인인 응답은 0을 만들지 않는다", () => {
+  const d = data();
+  assert.equal(presentOverview(d).chart.knownCostNote, undefined);
+  assert.equal(presentOverview(d).kpis[1].supportingValue, undefined);
+  d.summary!.equivalentCostUsd = {
+    ...value<string>(null, ["pricing_missing"]),
+    comparison: unavailable,
+  };
+  d.summary!.knownEquivalentCostUsd = value<string>(null, ["pricing_missing"]);
+  d.trend!.points.forEach((p) => {
+    p.equivalentCostUsd = value<string>(null, ["pricing_missing"]);
+    p.knownEquivalentCostUsd = value<string>(null, ["pricing_missing"]);
+  });
+  const m = presentOverview(overviewSchema.parse(d));
+  assert.equal(m.kpis[1].value, "-");
+  assert.equal(m.kpis[1].supportingValue, undefined);
+  assert.ok(m.chart.series[0].values.every((v) => v === null));
+  assert.equal(m.chart.knownCostNote, undefined);
+});
+
 test("KPI 5개는 파생값을 재계산하지 않고 서버 값을 표시한다", () => {
   const d = data();
   d.summary!.equivalentCostUsd.value = "0.525980";
@@ -99,6 +180,7 @@ test("금액 누락과 비중 산출 불가 상태는 목록에 남고 도넛은
   assert.equal(m.mix.rows.length, 2);
   assert.ok(m.mix.rows.some((r) => r.costText === "-"));
   assert.deepEqual(m.mix.slices, []);
+  assert.equal(m.mix.detail, "모델별 사용 정보만 확인할 수 있습니다");
 });
 test("두 기간이 완전한 지표는 서버 증감·이전 값·팀 변화액을 표시한다", () => {
   const m = presentOverview(data());
@@ -182,7 +264,7 @@ test("비교 없음에서도 현재 값의 부분 관측·누락은 유지한다
   const d = data();
   d.comparison.mode = "none";
   for (const m of Object.values(d.summary!))
-    if ("comparison" in m)
+    if (typeof m === "object" && m && "comparison" in m)
       m.comparison = {
         status: "disabled",
         reasons: [],
@@ -261,4 +343,31 @@ test("집계 대기와 수집 공백의 배지 및 비교 기간 사유를 구�
   );
   assert.doesNotMatch(reasonsText(pending), /근거가 완전하지/);
   assert.equal(reasonsText([...pending, ...pending]), reasonsText(pending));
+});
+
+test("미확정 총 토큰은 단위와 확정값 설명을 붙이지 않고 실제 0과 구분한다", () => {
+  const d = data();
+  d.summary!.totalTokens = {
+    ...value<number>(null, ["token_semantics_incompatible"]),
+    comparison: unavailable,
+  };
+  const missing = presentOverview(d).kpis.find(
+    (item) => item.label === "총 토큰 수",
+  )!;
+  assert.equal(missing.value, "-");
+  assert.equal(missing.unit, "");
+  assert.equal(missing.caption, "전체 토큰 수를 확인할 수 없습니다");
+  assert.equal(missing.valueStatus?.label, "값 확인 불가");
+
+  d.summary!.totalTokens = {
+    ...value(0),
+    comparison: unavailable,
+  };
+  const zero = presentOverview(d).kpis.find(
+    (item) => item.label === "총 토큰 수",
+  )!;
+  assert.equal(zero.value, "0");
+  assert.equal(zero.unit, "토큰");
+  assert.equal(zero.caption, "기간 내 사용한 전체 토큰");
+  assert.equal(zero.valueStatus, undefined);
 });

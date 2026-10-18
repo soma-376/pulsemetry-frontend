@@ -25,7 +25,7 @@ test("페이지 왕복은 개요 캐시를 재사용하고 재로그인 시에�
   );
   await openDashboard(page, "/overview");
   await expect(
-    page.getByRole("region", { name: "사용 관측 인원", exact: true }),
+    page.getByRole("region", { name: "사용자 수", exact: true }),
   ).toBeVisible();
   const initialRequests = requests;
   expect(initialRequests).toBeGreaterThan(0);
@@ -33,7 +33,7 @@ test("페이지 왕복은 개요 캐시를 재사용하고 재로그인 시에�
   await expect(page).toHaveURL(/\/settings(?:\?.*)?$/);
   await page.getByRole("link", { name: "개요", exact: true }).click();
   await expect(
-    page.getByRole("region", { name: "사용 관측 인원", exact: true }),
+    page.getByRole("region", { name: "사용자 수", exact: true }),
   ).toBeVisible();
   expect(requests).toBe(initialRequests);
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
@@ -42,7 +42,7 @@ test("페이지 왕복은 개요 캐시를 재사용하고 재로그인 시에�
   await signIn(page);
   await fresh;
   await expect(
-    page.getByRole("region", { name: "사용 관측 인원", exact: true }),
+    page.getByRole("region", { name: "사용자 수", exact: true }),
   ).toBeVisible();
   expect(requests).toBeGreaterThan(initialRequests);
 });

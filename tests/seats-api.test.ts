@@ -157,3 +157,19 @@ test("candidate pages continue from the dashboard cursor and stop when the serve
   assert.equal(options.getNextPageParam!(page("c2"), [], "c1", []), "c2");
   assert.equal(options.getNextPageParam!(page(null), [], "c1", []), null);
 });
+
+test("recent assignment without usage does not claim an observed use", () => {
+  const recent = memberSeatSchema.parse({
+    ...seat,
+    lastUsedAt: null,
+    idleDays: 0,
+    reviewReason: "in_use",
+    reclaimCandidate: false,
+    canReclaim: false,
+  });
+  assert.equal(recent.lastUsedAt, null);
+  assert.equal(
+    seatReasonText(recent.reviewReason),
+    "최근 사용 또는 좌석 배정 후 회수 기준 기간이 지나지 않았습니다",
+  );
+});

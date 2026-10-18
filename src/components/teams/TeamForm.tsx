@@ -83,6 +83,7 @@ export function TeamForm({
           onChange: (event) => onDraftChange?.(event.target.value),
         })}
         className="h-10"
+        disabled={isSubmitting}
         maxLength={40}
         aria-invalid={!!errors.name}
         aria-describedby={`${fieldId}-error`}

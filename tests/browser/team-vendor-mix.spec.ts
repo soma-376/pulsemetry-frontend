@@ -64,14 +64,30 @@ test("team mix displays server product usage, keeps unmapped observations separa
     .click();
   const calendar = page.getByRole("dialog", { name: "기간 선택" });
   await calendar.getByRole("button", { name: "오늘", exact: true }).click();
+  const refreshed = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    const start = url.searchParams.get("startDate");
+    return (
+      url.pathname.endsWith("/analytics/teams") &&
+      !!start &&
+      start === url.searchParams.get("endDate") &&
+      response.status() === 200
+    );
+  });
   await calendar.getByRole("button", { name: "적용", exact: true }).click();
+  const refreshedResponse = await refreshed;
+  const refreshedData = await refreshedResponse.json();
+  expect(refreshedData.meta.startDate).toBe(refreshedData.meta.endDate);
   // 오늘 하루를 다시 조회했다(시작일 = 종료일).
-  await expect(
-    page.getByRole("status").filter({ hasText: "팀별 비교" }),
-  ).toContainText(/팀별 비교 · (\d{4}-\d{2}-\d{2}) ~ \1/);
+  await expect(page).toHaveURL((url) => {
+    const start = url.searchParams.get("startDate");
+    return !!start && start === url.searchParams.get("endDate");
+  });
   await card.screenshot({ path: "test-results/team-vendor-mix-desktop.png" });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole("button", { name: "내비게이션 접기/펼치기" }).click();
+  await expect(
+    page.getByRole("navigation", { name: "주 내비게이션" }),
+  ).toHaveCSS("width", "56px");
   await card.scrollIntoViewIfNeeded();
   expect(
     await page.evaluate(

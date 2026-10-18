@@ -8,6 +8,7 @@ const EXIT_MS = 180; // 닫힘 시간(ms): 작을수록 빠릅니다.
 
 export function DetailDrawer({
   open,
+  closeDisabled = false,
   onClose,
   onAfterClose,
   title,
@@ -19,6 +20,8 @@ export function DetailDrawer({
   bodyClassName = "min-h-0 flex-1 overflow-y-auto p-6",
 }: {
   open: boolean;
+  /** 변경 요청 중처럼 닫으면 진행 상태를 잃는 경우에만 잠근다. */
+  closeDisabled?: boolean;
   onClose: () => void;
   title: string;
   titleAccessory?: ReactNode;
@@ -74,7 +77,7 @@ export function DetailDrawer({
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault();
-        onClose();
+        if (!closeDisabled) onClose();
       }}
       onKeyDown={(event) => {
         if (event.key !== "Tab") return;
@@ -109,7 +112,9 @@ export function DetailDrawer({
                 opacity: 0,
                 transition: { duration: reduced ? 0 : EXIT_MS / 1000 },
               }}
-              onClick={onClose}
+              onClick={() => {
+                if (!closeDisabled) onClose();
+              }}
               aria-hidden="true"
             />
             <motion.section
@@ -134,9 +139,12 @@ export function DetailDrawer({
             >
               <header className="shrink-0 border-b border-border p-6">
                 <div className="flex items-start justify-between gap-4">
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-baseline gap-2">
-                      <h2 id={titleId} className="text-lg font-semibold">
+                      <h2
+                        id={titleId}
+                        className="min-w-0 text-lg font-semibold break-words"
+                      >
                         {title}
                       </h2>
                       {titleAccessory}
@@ -148,9 +156,10 @@ export function DetailDrawer({
                   <button
                     ref={close}
                     type="button"
+                    disabled={closeDisabled}
                     onClick={onClose}
                     aria-label="상세 패널 닫기"
-                    className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border text-lg hover:bg-hover"
+                    className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border text-lg hover:bg-hover disabled:cursor-default disabled:opacity-55"
                   >
                     ×
                   </button>
@@ -166,7 +175,10 @@ export function DetailDrawer({
               </div>
               {footer !== null && (
                 <footer className="shrink-0 border-t border-border px-6 py-3 text-[11px] text-text3">
-                  {footer ?? "Esc 키 또는 바깥 영역을 눌러 닫기"}
+                  {footer ??
+                    (closeDisabled
+                      ? "요청 처리 중에는 닫을 수 없습니다"
+                      : "Esc 키 또는 바깥 영역을 눌러 닫기")}
                 </footer>
               )}
             </motion.section>

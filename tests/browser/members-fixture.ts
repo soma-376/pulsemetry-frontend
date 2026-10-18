@@ -189,6 +189,8 @@ export async function mockMembers(
     >(),
     /** 좌석 ID → 원장 상태 */
     seatStates: new Map<string, string>(),
+    /** 좌석 ID → 다른 관리자가 변경한 최신 원장 버전 */
+    seatVersions: new Map<string, number>(),
   };
   const candidateIds =
     options.candidates === false
@@ -489,7 +491,7 @@ export async function mockMembers(
               : [
                   {
                     seatAssignmentId: `seat-${index + 1}`,
-                    version: 1,
+                    version: state.seatVersions.get(`seat-${index + 1}`) ?? 1,
                     vendorId: "vendor-1",
                     vendorName: "Claude",
                     kind: "claude_team",

@@ -1,4 +1,5 @@
 import { trendFeedback } from "./trend-feedback";
+import { pricingRowsText } from "./known-usage";
 import { currentDateIso } from "../date";
 import { moneyText, numberText, numeric } from "@/lib/api/overview-format";
 import {
@@ -27,6 +28,11 @@ import {
  */
 
 export type AxisKey = "cost" | "token" | "session";
+export type TrendMode = "strict" | "known";
+export const knownTrendNote = (axis: "cost" | "token") =>
+  axis === "cost"
+    ? "보관된 자료 중 계산 가능한 금액의 누적합입니다. 선택 기간 전체 금액의 하한이며, 확인할 수 없는 날짜는 비워 둡니다."
+    : "확인 가능한 날의 토큰만 더한 누적합입니다. 선택 기간 전체 사용량의 하한이며, 확인할 수 없는 날짜는 비워 둡니다.";
 type Usage = NonNullable<TeamAnalytics["metrics"]>;
 
 /** 팀 선 색 — 표의 체크박스 accent 와 추이 선이 같은 색을 쓴다. */
@@ -269,6 +275,27 @@ export function cumulative(
     const value =
       axis === "cost" ? numeric(point.equivalentCostUsd) : point.totalTokens;
     running = running === null || value === null ? null : running + value;
+    return running;
+  });
+}
+
+/** 확인된 부분합은 공백 뒤에서 재개하되, 공백 자체에 값이나 0을 만들지 않는다. 세션에는 적용하지 않는다. */
+export function knownCumulative(
+  trend: TeamAnalytics["trend"],
+  axis: "cost" | "token",
+): (number | null)[] {
+  let running = 0;
+  return trend.map((point) => {
+    const value =
+      axis === "cost"
+        ? numeric(
+            point.knownEquivalentCostUsd === undefined
+              ? point.equivalentCostUsd
+              : point.knownEquivalentCostUsd,
+          )
+        : point.totalTokens;
+    if (point.observation === "unobserved" || value === null) return null;
+    running += value;
     return running;
   });
 }
@@ -549,6 +576,43 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
     token: trendOf("token"),
     session: trendOf("session"),
   };
+  const mixedPricing = (entry: TeamEntry) =>
+    [
+      ...entry.analytics.metrics.equivalentCostUsd.reasons,
+      ...(entry.analytics.metrics.knownEquivalentCostUsd?.reasons ?? []),
+    ].includes("pricing_version_mixed");
+  const knownTrendOf = (axis: "cost" | "token") =>
+    entries.map((entry) => ({
+      key: entry.key,
+      team: entry.team,
+      color: colorOf(entry.key),
+      values: knownCumulative(entry.analytics.trend, axis).map((value, i) =>
+        dates[i] > today || (axis === "cost" && mixedPricing(entry))
+          ? null
+          : value,
+      ),
+      observations: entry.analytics.trend.map((point) =>
+        point.observation === "unobserved"
+          ? ("unobserved" as const)
+          : ("partial" as const),
+      ),
+      reasons: entry.analytics.trend.map((point) =>
+        [
+          knownTrendNote(axis),
+          trendPointState(point, axis).reason,
+          axis === "cost" ? pricingRowsText(point) : "",
+          axis === "cost" && mixedPricing(entry)
+            ? reasonsText(["pricing_version_mixed"])
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      ),
+    }));
+  const knownTrend = {
+    cost: knownTrendOf("cost"),
+    token: knownTrendOf("token"),
+  };
   const broken = (axis: AxisKey) =>
     trend[axis].some((series) =>
       series.values.some((value, i) => dates[i] <= today && value === null),
@@ -578,8 +642,8 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
       key: model.modelId,
       x: tokensM,
       y: cost,
-      // 점 크기는 세 번째 차원 — 이 모델을 실제로 쓰는 팀 수(모르면 기본 크기)
-      size: 12 + (model.usingTeamCount ?? 0) * 3,
+      // 팀 수는 면적에 반영하되 많은 팀이 같은 모델을 써도 점이 차트를 덮지 않게 제한한다.
+      size: Math.min(40, 12 + Math.sqrt(model.usingTeamCount ?? 0) * 3),
       color: MODEL_SERIES[index % MODEL_SERIES.length],
       label: model.displayName,
       sub: `${usd(perM)}/M`,
@@ -650,6 +714,17 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
       (date) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`,
     ),
     trend,
+    knownTrend,
+    knownTrendFeedback: Object.fromEntries(
+      (["cost", "token"] as const).map((axis) => [
+        axis,
+        trendFeedback(
+          dates,
+          knownTrend[axis].map((s) => ({ ...s, id: s.key, name: s.team })),
+          { today, cumulative: true, resumeAfterGap: true },
+        ),
+      ]),
+    ) as Record<"cost" | "token", ReturnType<typeof trendFeedback>>,
     trendFeedback: Object.fromEntries(
       (Object.keys(trend) as AxisKey[]).map((axis) => [
         axis,

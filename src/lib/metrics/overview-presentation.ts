@@ -17,6 +17,12 @@ import {
   numeric,
 } from "@/lib/api/overview-format";
 import { signedUsd } from "@/lib/format";
+import { costAxisLabel, trendAxisMax } from "./chart-axis";
+import {
+  KNOWN_COST_NOTE,
+  knownMoneyText,
+  pricingRowsText,
+} from "./known-usage";
 import type { OverviewModel } from "./overview";
 export type OverviewChart = Omit<
   OverviewModel["chart"],
@@ -24,6 +30,7 @@ export type OverviewChart = Omit<
 > & {
   ticks: (OverviewModel["chart"]["ticks"][number] & { status?: string })[];
   feedback?: TrendFeedback;
+  knownCostNote?: string;
   cost: (number | null)[];
   series: {
     id: string;
@@ -248,6 +255,18 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
           def: "토큰 × 공시 단가 = 사용 환산액 · 실제 청구액과 별개",
           caption: "사용량을 금액으로 환산한 값",
           good: false,
+          supportingValue:
+            summary.equivalentCostUsd.value === null &&
+            summary.knownEquivalentCostUsd?.value != null
+              ? {
+                  label: "확인된 금액",
+                  value: knownMoneyText(summary.knownEquivalentCostUsd.value),
+                  description: [KNOWN_COST_NOTE, pricingRowsText(summary)]
+                    .filter(Boolean)
+                    .join(" · "),
+                  exactValue: `USD ${summary.knownEquivalentCostUsd.value}`,
+                }
+              : undefined,
         },
         {
           label: "세션 수",
@@ -276,9 +295,12 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
           label: "총 토큰 수",
           metric: summary.totalTokens,
           format: (v: string | number | null) => tokenText(numeric(v)),
-          unit: "토큰",
+          unit: summary.totalTokens.value === null ? "" : "토큰",
           def: `선택 기간 전체 ${numberText(summary.totalTokens.value)} 토큰`,
-          caption: "기간 내 사용한 전체 토큰",
+          caption:
+            summary.totalTokens.value === null
+              ? "전체 토큰 수를 확인할 수 없습니다"
+              : "기간 내 사용한 전체 토큰",
           good: false,
         },
       ]
@@ -315,8 +337,25 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
       ? null
       : numeric(p.equivalentCostUsd.value),
   );
-  const yMax =
-    Math.max(1, ...cost.filter((v): v is number => v !== null)) * 1.15;
+  const showKnownCost = points.some(
+    (p, i) =>
+      p.date <= today &&
+      p.observation !== "unobserved" &&
+      cost[i] === null &&
+      p.knownEquivalentCostUsd?.value != null,
+  );
+  const displayedCost = showKnownCost
+    ? points.map((p) =>
+        p.date > today || p.observation === "unobserved"
+          ? null
+          : numeric(
+              p.knownEquivalentCostUsd === undefined
+                ? p.equivalentCostUsd.value
+                : p.knownEquivalentCostUsd.value,
+            ),
+      )
+    : cost;
+  const yMax = trendAxisMax(displayedCost, 1.15);
   const ticks = points.map((p) => ({
     label: `${Number(p.date.slice(5, 7))}.${Number(p.date.slice(8))}`,
     date: p.date,
@@ -329,17 +368,18 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
   }));
   const chart: OverviewChart = {
     cost,
+    knownCostNote: showKnownCost ? KNOWN_COST_NOTE : undefined,
     yMax,
-    topLabel: moneyText(String(yMax)),
-    midLabel: moneyText(String(yMax / 2)),
+    topLabel: costAxisLabel(yMax, yMax),
+    midLabel: costAxisLabel(yMax / 2, yMax),
     labels: ticks.map((t) => t.label),
     ticks,
     series: [
       {
         id: "organization",
-        name: "전체",
+        name: showKnownCost ? "확인된 금액 · 일부 집계" : "전체",
         color: "var(--purple)",
-        values: cost,
+        values: displayedCost,
       },
     ],
   };
@@ -347,9 +387,21 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
     points.map((p) => p.date),
     chart.series.map((series) => ({
       ...series,
-      observations: points.map((p) => p.observation),
-      reasons: ticks.map((tick) => tick.status),
-      extras: ticks.map((tick) => `토큰 ${tick.tokens}`),
+      observations: points.map((p, i) =>
+        showKnownCost && displayedCost[i] !== null
+          ? ("partial" as const)
+          : p.observation,
+      ),
+      reasons: ticks.map((tick) =>
+        [showKnownCost ? KNOWN_COST_NOTE : "", tick.status]
+          .filter(Boolean)
+          .join(" · "),
+      ),
+      extras: ticks.map((tick, i) =>
+        [`토큰 ${tick.tokens}`, showKnownCost ? pricingRowsText(points[i]) : ""]
+          .filter(Boolean)
+          .join(" · "),
+      ),
     })),
     { today },
   );
@@ -372,6 +424,7 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
         }))
       : [],
     rows: models.map((m, i) => ({
+      id: m.modelId,
       name: m.displayName,
       color: colors[i % colors.length],
       shareText: shareText(m.costShare.value),
@@ -389,7 +442,9 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
       : models.length
         ? "사용 환산액 비중을 확인할 수 없습니다"
         : "사용이 확인된 모델이 없습니다",
-    detail: "모델을 선택하면 사용 환산액 비중을 확인할 수 있습니다",
+    detail: sharesAvailable
+      ? "모델을 선택하면 사용 환산액 비중을 확인할 수 있습니다"
+      : "모델별 사용 정보만 확인할 수 있습니다",
   };
   const teams = data.teamUsage;
   const unmapped = teams?.unassigned;

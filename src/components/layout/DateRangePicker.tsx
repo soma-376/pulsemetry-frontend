@@ -121,7 +121,7 @@ export function DateRangePicker({
         <div
           role="dialog"
           aria-label="기간 선택"
-          className="absolute top-9 left-0 z-40 flex w-[316px] flex-col gap-3 rounded-lg border border-border bg-card p-3.5"
+          className="absolute top-9 left-0 z-40 flex w-[316px] max-w-[calc(100cqw-48px)] flex-col gap-3 rounded-lg border border-border bg-card p-3.5"
         >
           <div className="grid grid-cols-2 gap-1.5">
             {presets.map((p) => (

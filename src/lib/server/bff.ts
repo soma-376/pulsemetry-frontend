@@ -20,6 +20,7 @@ type Entry = {
   expiresAt: number;
   invalidated: boolean;
 };
+type RefreshSession = { currentKey: string; expiresAt: number };
 export type BffConfig = {
   origin: string;
   enrollmentUrl: string;
@@ -27,6 +28,7 @@ export type BffConfig = {
   keys: string[];
   refreshGraceMs?: number;
   maxRefreshEntries?: number;
+  maxRefreshSessions?: number;
   timeoutMs?: number;
 };
 class BffError extends Error {
@@ -71,11 +73,17 @@ export function createBff(
   const grace = config.refreshGraceMs ?? 5000,
     limit = config.maxRefreshEntries ?? 1000;
   const refreshes = new Map<string, Entry>();
+  // 자격증명이 아닌 최신 RT 해시만 세션당 하나 보관한다. 유예 뒤 구쿠키에
+  // 새 RT를 주거나 소비 RT를 다시 제출하지 않고 브라우저의 현재 쿠키를 요구한다.
+  const refreshSessions = new Map<string, RefreshSession>();
+  const sessionLimit = config.maxRefreshSessions ?? 1000;
   const cacheKey = (session: Session) =>
     createHash("sha256").update(session.refreshToken).digest("hex");
   function prune() {
     for (const [key, entry] of refreshes)
       if (entry.expiresAt <= now()) refreshes.delete(key);
+    for (const [id, session] of refreshSessions)
+      if (session.expiresAt <= now()) refreshSessions.delete(id);
   }
   function response(body: unknown, status = 200) {
     return new Response(status === 204 ? null : JSON.stringify(body), {
@@ -164,19 +172,47 @@ export function createBff(
       );
   }
   function invalidate(id: string) {
+    refreshSessions.delete(id);
     for (const [key, entry] of refreshes)
       if (entry.sessionId === id) {
         entry.invalidated = true;
         refreshes.delete(key);
       }
   }
+  async function currentSession(session: Session) {
+    prune();
+    let active = session;
+    const visited = new Set<string>();
+    for (;;) {
+      const key = cacheKey(active);
+      const recent = refreshes.get(key);
+      if (!recent || visited.has(key)) break;
+      visited.add(key);
+      active = await recent.task;
+    }
+    const tracked = refreshSessions.get(session.id);
+    if (tracked && tracked.currentKey !== cacheKey(active))
+      fail(409, "session_refresh_required");
+    return active;
+  }
   function refresh(session: Session): Promise<Session> {
     prune();
     const key = cacheKey(session),
       existing = refreshes.get(key);
     if (existing) return existing.task;
+    let tracked = refreshSessions.get(session.id);
+    if (tracked && tracked.currentKey !== key)
+      return Promise.reject(new BffError(409, "session_refresh_required"));
     if (refreshes.size >= limit)
       return Promise.reject(new BffError(503, "refresh_busy"));
+    const newlyTracked = !tracked;
+    if (!tracked) {
+      if (refreshSessions.size >= sessionLimit)
+        return Promise.reject(new BffError(503, "refresh_busy"));
+      tracked = { currentKey: key, expiresAt: session.sessionExpiresAt };
+      refreshSessions.set(session.id, tracked);
+    }
+    const record = tracked;
     const entry: Entry = {
       sessionId: session.id,
       task: undefined as unknown as Promise<Session>,
@@ -200,6 +236,7 @@ export function createBff(
           await revoke(next);
           fail(401, "unauthenticated");
         }
+        record.currentKey = cacheKey(next);
         entry.expiresAt = now() + grace;
         const timer = setTimeout(() => {
           if (refreshes.get(key) === entry) refreshes.delete(key);
@@ -209,6 +246,12 @@ export function createBff(
       })
       .catch((error) => {
         if (refreshes.get(key) === entry) refreshes.delete(key);
+        if (
+          newlyTracked &&
+          refreshSessions.get(session.id) === record &&
+          record.currentKey === key
+        )
+          refreshSessions.delete(session.id);
         throw error;
       });
     refreshes.set(key, entry);
@@ -220,11 +263,8 @@ export function createBff(
     path: string,
     init: RequestInit = {},
   ) {
-    let active = session;
-    prune();
-    const recent = refreshes.get(cacheKey(session));
-    if (recent) active = await recent.task;
-    else if (active.accessTokenExpiresAt <= now() + 5000)
+    let active = await currentSession(session);
+    if (active.accessTokenExpiresAt <= now() + 5000)
       active = await refresh(active);
     const send = (s: Session) => {
       const headers = new Headers(init.headers);
@@ -458,6 +498,8 @@ export function createBff(
       );
       if (error instanceof BffError && error.retryAfter)
         result.headers.set("Retry-After", error.retryAfter);
+      if (code === "session_refresh_required")
+        result.headers.set("X-Pulsemetry-Session-Retry", "1");
       // RT 회전 성공 후 권한 거부·일시 조회 실패가 와도 새 RT를 잃지 않는다.
       return renewedSession && status !== 401
         ? write(result, renewedSession)

@@ -52,10 +52,12 @@ import { int, usd } from "@/lib/format";
 import { rolloutEvidenceText } from "@/lib/policy-rollout";
 import { downloadCsv, settingsCsv } from "@/lib/csv-export";
 
-const number = (value: number | null | undefined) =>
+const number = (value: number | bigint | null | undefined) =>
   value == null ? "-" : int(value);
 const amount = (value: string | null | undefined) =>
-  value == null ? "-" : usd(Number(value));
+  value == null ? "-" : usd(value);
+const isAccessDenied = (error: unknown): error is ManagementError =>
+  error instanceof ManagementError && [401, 403].includes(error.status);
 
 export function SettingsContent({
   initialVendorId,
@@ -128,7 +130,8 @@ function OrganizationSettings({
     onSuccess: () => {
       setPolicyChoice(null);
       showToast("수집 정책을 저장했습니다.");
-      void client.invalidateQueries({
+      // 다음 저장이 최신 판을 사용하도록 재조회까지 저장 중 상태를 유지합니다.
+      return client.invalidateQueries({
         queryKey: organizationKey(organizationId),
       });
     },
@@ -165,7 +168,8 @@ function OrganizationSettings({
           ? "집계 보존을 저장했습니다. 정리 작업이 만들어졌습니다."
           : "정책을 저장했습니다.",
       );
-      void client.invalidateQueries({
+      // 다음 저장이 최신 판을 사용하도록 재조회까지 저장 중 상태를 유지합니다.
+      return client.invalidateQueries({
         queryKey: organizationKey(organizationId),
       });
     },
@@ -186,10 +190,7 @@ function OrganizationSettings({
     accessError,
     policy.error,
     settingsSave.error,
-  ].some(
-    (error) =>
-      error instanceof ManagementError && [401, 403].includes(error.status),
-  );
+  ].some(isAccessDenied);
   const data = forbidden ? undefined : query.data;
   const openVendor = (id: string) => {
     setAccessError(null);
@@ -266,15 +267,33 @@ function OrganizationSettings({
     data ? null : query.error,
     catalog.data && !forbidden ? null : catalog.error,
     accessError,
+    isAccessDenied(policy.error) ? policy.error : null,
+    isAccessDenied(settingsSave.error) ? settingsSave.error : null,
   ].filter(Boolean);
+  const refresh = async () => {
+    if (cleanupId) void cleanup.refetch({ cancelRefetch: false });
+    const [settingsResult, catalogResult] = await Promise.all([
+      query.refetch({ cancelRefetch: false }),
+      catalog.refetch({ cancelRefetch: false }),
+    ]);
+    // 거부된 저장은 다시 보내지 않는다. 읽기 권한이 확인될 때까지 캐시를
+    // 가린 채 오류를 유지하고, 성공하면 최신 값에서 다시 시작한다.
+    if (settingsResult.isSuccess && catalogResult.isSuccess) {
+      setAccessError((current) => (current === accessError ? null : current));
+      if (isAccessDenied(policy.error)) {
+        setPolicyChoice(null);
+        policy.reset();
+      }
+      if (isAccessDenied(settingsSave.error)) {
+        setRetentionChoice(null);
+        settingsSave.reset();
+      }
+    }
+  };
   useDashboardPageRefresh(
-    () => {
-      setAccessError(null);
-      void query.refetch({ cancelRefetch: false });
-      void catalog.refetch({ cancelRefetch: false });
-    },
-    query.isFetching || catalog.isFetching,
-    forbidden ? undefined : refreshFeedback(query, catalog),
+    refresh,
+    query.isFetching || catalog.isFetching || cleanup.isFetching,
+    forbidden ? undefined : refreshFeedback(query, catalog, cleanup),
   );
   return (
     <>
@@ -291,11 +310,7 @@ function OrganizationSettings({
               </>
             }
             retrying={query.isFetching || catalog.isFetching}
-            onRetry={() => {
-              setAccessError(null);
-              void query.refetch({ cancelRefetch: false });
-              void catalog.refetch({ cancelRefetch: false });
-            }}
+            onRetry={refresh}
           />
         )}
         {!data && !forbidden && query.isPending && <SettingsSkeleton />}

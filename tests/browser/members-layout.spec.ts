@@ -119,7 +119,9 @@ test("pending invitations remain below the cards with resend and revoke actions"
   });
   await members.screenshot({ path: "test-results/members-table-desktop.png" });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole("button", { name: "내비게이션 접기/펼치기" }).click();
+  await expect(
+    page.getByRole("navigation", { name: "주 내비게이션" }),
+  ).toHaveCSS("width", "56px");
   await members.scrollIntoViewIfNeeded();
   expect(
     await page.evaluate(

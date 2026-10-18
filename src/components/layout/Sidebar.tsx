@@ -4,7 +4,7 @@ import { useDashboardHref } from "@/lib/filters";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useOrganization } from "@/lib/organization-store";
 import {
   backendLogout,
@@ -28,6 +28,15 @@ const ROLE_LABEL = {
   member: "구성원",
 } as const;
 
+const COMPACT_NAV_QUERY = "(max-width: 767px)";
+const subscribeViewport = (onChange: () => void) => {
+  const viewport = window.matchMedia(COMPACT_NAV_QUERY);
+  viewport.addEventListener("change", onChange);
+  return () => viewport.removeEventListener("change", onChange);
+};
+const isCompactViewport = () => window.matchMedia(COMPACT_NAV_QUERY).matches;
+const desktopViewport = () => false;
+
 export function Sidebar() {
   const dashboardHref = useDashboardHref();
   const { update } = useOrganization();
@@ -37,7 +46,14 @@ export function Sidebar() {
   const [logoutError, setLogoutError] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
   const logoutLimit = useRateLimit();
-  const [collapsed, setCollapsed] = useState(false);
+  const compactViewport = useSyncExternalStore(
+    subscribeViewport,
+    isCompactViewport,
+    desktopViewport,
+  );
+  // 작은 창에서는 기존 아이콘 내비게이션으로 시작한다. 사용자가 직접 고른 열림 상태는 유지한다.
+  const [collapseChoice, setCollapseChoice] = useState<boolean | null>(null);
+  const collapsed = collapseChoice ?? compactViewport;
 
   const logout = (
     <button
@@ -87,8 +103,13 @@ export function Sidebar() {
   return (
     <nav
       aria-label="주 내비게이션"
-      className="sticky top-0 flex h-dvh shrink-0 flex-col self-start overflow-y-auto border-r border-border bg-card px-2 py-3 transition-[width] duration-200"
-      style={{ width: collapsed ? 56 : 240 }}
+      className="sticky top-0 flex h-dvh shrink-0 flex-col self-start overflow-y-auto border-r border-border bg-card px-2 py-3 transition-[width,margin-right] duration-200"
+      style={{
+        width: collapsed ? 56 : 240,
+        // 좁은 화면에서는 펼쳐도 본문이 차지하는 폭을 줄이지 않습니다.
+        marginRight: compactViewport && !collapsed ? -184 : 0,
+        zIndex: compactViewport ? 50 : undefined,
+      }}
     >
       <div className="flex min-h-9 shrink-0 items-center justify-between px-2 pt-1 pb-3">
         {!collapsed && (
@@ -101,7 +122,7 @@ export function Sidebar() {
         )}
         <button
           type="button"
-          onClick={() => setCollapsed((v) => !v)}
+          onClick={() => setCollapseChoice(!collapsed)}
           aria-label="내비게이션 접기/펼치기"
           aria-expanded={!collapsed}
           className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-border bg-card text-[12px] text-text3 hover:bg-hover"

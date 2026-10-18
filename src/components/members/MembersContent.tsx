@@ -143,8 +143,12 @@ function OrganizationMembers({
   const { toast, showToast, dismissToast } = useToast();
 
   // 권한이 거부되면 이전에 받은 값도 보여 주지 않는다.
-  const forbidden = [query.error, invitations.error, teams.error].some(denied);
+  const deniedQuery = [query, invitations, teams].find((item) =>
+    denied(item.error),
+  );
+  const forbidden = !!deniedQuery;
   const data = forbidden ? undefined : query.data;
+  const pageError = deniedQuery?.error ?? (!data ? query.error : null);
   const invitationData = forbidden ? undefined : invitations.data;
   const model = useMemo(
     () => (data ? buildMembersView(data, invitationData) : null),
@@ -172,7 +176,8 @@ function OrganizationMembers({
       if (!member) throw new Error("구성원을 더 이상 찾을 수 없습니다.");
       return memberRow(member, new Set<string>());
     },
-    enabled: !!data && selected?.kind === "member",
+    enabled: !!data && drawerOpen && selected?.kind === "member",
+    refetchInterval,
     retry: false,
   });
   const subject =
@@ -183,16 +188,21 @@ function OrganizationMembers({
           ? { kind: "member" as const, row: selectedMember.data }
           : subjectOf(model, selected)
         : subjectOf(model, selected);
+  // 열린 상세도 독립 쿼리다. 공통 새로고침은 같은 snapshot의 상세를
+  // 재확인하되, 저장하지 않은 폼 입력은 MemberEditForm이 유지한다.
+  const detailQueries =
+    drawerOpen && selected?.kind === "member" ? [selectedMember] : [];
+  const pageQueries = [query, invitations, teams, ...detailQueries];
   const refresh = () =>
     void Promise.all(
-      [query, invitations, teams].map((item) =>
-        item.refetch({ cancelRefetch: false }),
-      ),
+      pageQueries.map((item) => item.refetch({ cancelRefetch: false })),
     );
   useDashboardPageRefresh(
     refresh,
-    query.isFetching || invitations.isFetching || teams.isFetching,
-    forbidden ? undefined : refreshFeedback(query, invitations, teams),
+    pageQueries.some((item) => item.isFetching),
+    forbidden
+      ? undefined
+      : refreshFeedback(...pageQueries.filter((item) => !denied(item.error))),
   );
 
   const openDetail = (
@@ -344,11 +354,13 @@ function OrganizationMembers({
           }
         />
 
-        {!data && query.error && (
+        {pageError && (
           <ErrorState
-            message={query.error.message}
-            retrying={query.isFetching}
-            onRetry={() => void query.refetch({ cancelRefetch: false })}
+            message={pageError.message}
+            retrying={(deniedQuery ?? query).isFetching}
+            onRetry={() =>
+              void (deniedQuery ?? query).refetch({ cancelRefetch: false })
+            }
           />
         )}
         {!teams.data && teams.error && !denied(teams.error) && (

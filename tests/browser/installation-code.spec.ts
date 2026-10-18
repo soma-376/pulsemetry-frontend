@@ -26,6 +26,54 @@ async function openMember(page: Page, account: string) {
   return drawer.getByRole("region", { name: "설치 코드", exact: true });
 }
 
+test("설치 코드 발급은 pending 렌더링 전 두 번 확인해도 한 번만 요청한다", async ({
+  page,
+}) => {
+  const api = await mockMembers(page);
+  let requests = 0;
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/installation-invitations", async (route) => {
+    requests += 1;
+    await pending;
+    await route.fallback();
+  });
+  await openDashboard(page, "/members");
+  const target = api.members[0];
+  const panel = await openMember(page, target.account);
+  await panel
+    .getByRole("button", {
+      name: `${target.account} 설치 코드 발급`,
+      exact: true,
+    })
+    .click();
+  // 두 클릭 사이 pending 렌더가 끼기 전에도 첫 발급을 다시 폐기하면 안 된다.
+  await panel
+    .getByRole("button", { name: "발급 확인", exact: true })
+    .evaluate((button: HTMLButtonElement) => {
+      button.click();
+      button.click();
+    });
+  try {
+    await expect.poll(() => requests).toBeGreaterThan(0);
+    await expect(
+      panel.getByRole("button", { name: "발급 중…", exact: true }),
+    ).toBeDisabled();
+    expect(requests).toBe(1);
+  } finally {
+    release();
+  }
+  await expect(
+    panel.getByRole("status", {
+      name: `${target.account} 설치 코드 발급 결과`,
+      exact: true,
+    }),
+  ).toContainText("설치 코드를 발급했습니다");
+  expect(issued(api)).toHaveLength(1);
+});
+
 test("활성 구성원 상세에서 설치 코드를 발급하면 코드와 메일 발송 상태를 따로 보이고, 발송 결과를 다시 읽으며, 다시 내면 이전 코드를 폐기했다고 말한다", async ({
   page,
 }) => {
@@ -181,4 +229,50 @@ test("초대 대기자의 상세에는 설치 코드 발급이 없다 — 초대
   await expect(
     modal.getByRole("region", { name: "설치 코드", exact: true }),
   ).toHaveCount(0);
+});
+
+test("활성 구성원의 만료된 미사용 설치 코드를 메타데이터로 보여 준다", async ({
+  page,
+}) => {
+  const api = await mockMembers(page);
+  const target = api.members[0];
+  api.invitations.push({
+    ...api.invitations[0],
+    invitationId: "expired-installation",
+    email: target.account,
+    memberId: target.memberId,
+    memberStatus: "active",
+    status: "expired",
+    createdAt: "2026-09-01T00:00:00Z",
+    expiresAt: "2026-09-04T00:00:00Z",
+    installationUsedAt: null,
+    signupUsedAt: "2026-09-01T00:00:00Z",
+  });
+  await openDashboard(page, "/members");
+  const panel = await openMember(page, target.account);
+  await expect(panel).toContainText("2026.09.04 09:00 만료 (만료됨)");
+  await expect(panel).not.toContainText("쓰지 않은 설치 코드가 없습니다");
+  expect(issued(api)).toHaveLength(0);
+});
+
+test("최초 설치 코드 조회 실패는 코드가 없다는 확정 문구를 보이지 않으며 재조회로 복구한다", async ({
+  page,
+}) => {
+  const api = await mockMembers(page);
+  let failed = true;
+  await page.route(/\/invitations\?.*memberStatus=active/, async (route) => {
+    if (!failed) return route.fallback();
+    return route.fulfill({
+      status: 503,
+      json: { error: { code: "unavailable", message: "목록 조회 실패" } },
+    });
+  });
+  await openDashboard(page, "/members");
+  const panel = await openMember(page, api.members[0].account);
+  await expect(panel.getByRole("alert")).toBeVisible();
+  await expect(panel).not.toContainText("쓰지 않은 설치 코드가 없습니다");
+  failed = false;
+  await panel.getByRole("button", { name: "다시 조회", exact: true }).click();
+  await expect(panel).toContainText("쓰지 않은 설치 코드가 없습니다");
+  await expect(panel.getByRole("alert")).toHaveCount(0);
 });

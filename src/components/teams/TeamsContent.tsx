@@ -4,6 +4,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 
 import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useDashboardPageExport,
@@ -39,6 +40,7 @@ import {
   presentTeams,
   teamDetail,
   type AxisKey,
+  type TrendMode,
 } from "@/lib/metrics/teams-presentation";
 import { downloadCsv, teamsCsv } from "@/lib/csv-export";
 
@@ -71,6 +73,7 @@ function OrganizationTeams({
   initialTeamId?: string;
 }) {
   const dashboardHref = useDashboardHref();
+  const router = useRouter();
   const client = useQueryClient();
   const { compare, dates, autoRefresh } = useFilters();
   const period: TeamsPeriod = {
@@ -86,6 +89,7 @@ function OrganizationTeams({
   const model = useMemo(() => data && presentTeams(data), [data]);
 
   const [axis, setAxis] = useState<AxisKey>("cost");
+  const [trendMode, setTrendMode] = useState<TrendMode>("strict");
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<string | null>(
     initialTeamId ?? null,
@@ -159,6 +163,7 @@ function OrganizationTeams({
             session?.user.organizationName ?? organizationId,
             new Date().toISOString(),
             chosen,
+            { axis, mode: axis === "session" ? "strict" : trendMode },
           ),
         );
         return;
@@ -229,6 +234,8 @@ function OrganizationTeams({
                 model={model}
                 axis={axis}
                 onAxisChange={setAxis}
+                trendMode={trendMode}
+                onTrendModeChange={setTrendMode}
                 hidden={hidden}
                 onToggleTeam={toggleTeam}
                 onOpenTeam={(key) => {
@@ -243,7 +250,7 @@ function OrganizationTeams({
               </div>
 
               <UserUsageCard
-                key={model.snapshotId}
+                key={`${organizationId}:${period.startDate}:${period.endDate}:${period.compare}`}
                 organizationId={organizationId}
                 period={{
                   startDate: period.startDate,
@@ -260,7 +267,17 @@ function OrganizationTeams({
       <TeamDetailDrawer
         team={detail}
         open={detailOpen && !!model && !!selected && (!!detail || !listed)}
-        onClose={() => setDetailOpen(false)}
+        onClose={() => {
+          setDetailOpen(false);
+          if (initialTeamId) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete("team");
+            // 직접 링크의 서버 prop도 비워 새로고침에서 다시 열리지 않게 한다.
+            router.replace(`${url.pathname}${url.search}${url.hash}`, {
+              scroll: false,
+            });
+          }
+        }}
         periodLabel={model?.periodLabel ?? ""}
         compareLabel={model?.compareLabel ?? ""}
         showDelta={model?.showDelta ?? false}

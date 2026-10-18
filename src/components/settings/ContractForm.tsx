@@ -212,7 +212,7 @@ export function ContractForm({
                     }
                     className="text-right"
                   />
-                  <span className="tnum text-right text-[12px] text-text2">
+                  <span className="tnum min-w-0 text-right text-[12px] break-all text-text2">
                     {rowValidation.tiers ? usd(rowValidation.spend) : "-"}
                   </span>
                   <button

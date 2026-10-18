@@ -48,6 +48,24 @@ test("알림의 같은 계약 갱신 링크를 닫은 뒤 다시 눌러도 계�
   await page.getByRole("button", { name: "새로고침", exact: true }).click();
   const data = await (await settingsResponse).json();
   const vendor = data.vendors.items[0];
+  // 종의 합계는 실제 알림 목록과 만료 계약을 함께 읽는다.
+  await page.route("**/api/v1/organizations/*/alerts?*", (route) =>
+    route.fulfill({
+      json: {
+        meta: {
+          organizationId: data.meta.organizationId,
+          snapshotId: "empty-alerts",
+          asOf: "2026-10-13T00:00:00Z",
+        },
+        evaluation: {
+          status: "complete",
+          reasons: [],
+          asOf: "2026-10-13T00:00:00Z",
+        },
+        alerts: { items: [], totalCount: 0, nextCursor: null },
+      },
+    }),
+  );
   await page.route("**/api/v1/organizations/*/contract-input-status", (route) =>
     route.fulfill({
       json: {

@@ -52,6 +52,7 @@ partial.meta.currentCoverage = { status: "partial", observedDays: 4 };
 partial.meta.dataState = "partial";
 if (partial.summary)
   for (const metric of Object.values(partial.summary)) {
+    if (typeof metric !== "object" || !metric) continue;
     metric.status = "partial";
     metric.reasons = ["current_period_incomplete"];
     if ("comparison" in metric)
