@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { DetailDrawer } from "@/components/ui/DetailDrawer";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
-import { Toast, useToast } from "@/components/ui/Toast";
+import { Toast } from "@/components/ui/Toast";
+import { useToast } from "@/hooks/ui/use-toast";
 import { waitingInvitationsOptions } from "@/lib/api/invitations";
 import {
   createCommands,
@@ -18,8 +19,8 @@ import {
 import { createTeam, deleteTeam, renameTeam } from "@/lib/api/member-commands";
 import { membersOptions } from "@/lib/api/members";
 import { organizationKey } from "@/lib/api/query-keys";
-import { useBackendSession } from "@/lib/api/session";
-import { useFilters } from "@/lib/filters";
+import { useBackendSession } from "@/hooks/auth/use-backend-session";
+import { useFilters } from "@/hooks/dashboard/use-filters";
 
 const stale = (error: unknown) =>
   error instanceof ManagementError &&

@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, type ReactNode } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useId, type ReactNode } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { useDialog } from "@/hooks/ui/use-dialog";
 
 const ENTER_MS = 320; // 열림 시간(ms): 작을수록 빠릅니다.
 const EXIT_MS = 180; // 닫힘 시간(ms): 작을수록 빠릅니다.
@@ -32,67 +33,21 @@ export function DetailDrawer({
   /** 폼이 스크롤 본문과 하단 액션을 함께 소유할 때 사용한다. */
   bodyClassName?: string;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  const close = useRef<HTMLButtonElement>(null);
   const titleId = useId();
-  const reduced = useReducedMotion();
-  const finishClose = useCallback(() => {
-    const element = dialog.current;
-    if (open || !element?.open) return;
-    element.close();
-    onAfterClose?.();
-  }, [open, onAfterClose]);
-  /*
-    열고 닫는 것은 open 하나만 보고 결정합니다.
-    완료 콜백으로 닫되, 콜백이 누락돼도 빈 dialog가 화면을 막지 않도록
-    애니메이션 길이보다 조금 긴 타이머를 함께 둡니다.
-  */
-  useEffect(() => {
-    const element = dialog.current;
-    if (!element) return;
-
-    if (open) {
-      if (!element.open) {
-        element.showModal();
-        close.current?.focus();
-      }
-      const previous = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = previous;
-      };
-    }
-
-    if (!element.open) return;
-    const timer = setTimeout(finishClose, reduced ? 0 : EXIT_MS + 80);
-    return () => clearTimeout(timer);
-  }, [open, reduced, finishClose]);
+  const { dialog, close, reduced, onCancel, onKeyDown, finishClose } =
+    useDialog({
+      open,
+      onClose,
+      onAfterClose,
+      exitDelayMs: EXIT_MS + 80,
+    });
 
   return (
     <dialog
       ref={dialog}
       aria-labelledby={titleId}
-      onCancel={(event) => {
-        event.preventDefault();
-        onClose();
-      }}
-      onKeyDown={(event) => {
-        if (event.key !== "Tab") return;
-        const targets = Array.from(
-          event.currentTarget.querySelectorAll<HTMLElement>(
-            'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]',
-          ),
-        ).filter((element) => element.getClientRects().length > 0);
-        const first = targets[0];
-        const last = targets.at(-1);
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last?.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first?.focus();
-        }
-      }}
+      onCancel={onCancel}
+      onKeyDown={onKeyDown}
       className="fixed inset-0 m-0 h-dvh max-h-none w-dvw max-w-none overflow-hidden bg-transparent p-0 text-text backdrop:bg-transparent"
     >
       <AnimatePresence onExitComplete={finishClose}>

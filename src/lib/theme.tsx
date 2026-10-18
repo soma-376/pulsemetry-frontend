@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { useEffect } from "react";
 import {
   SYSTEM_THEME_QUERY,
   THEME_STORAGE_KEY,
@@ -73,23 +73,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-export function useTheme() {
-  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-
-  const setTheme = useCallback((next: Theme) => {
-    selectedTheme = next;
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, next);
-    } catch {
-      /* 프라이빗 모드 등 — 저장 실패는 무시합니다 */
-    }
-    applyTheme(next);
-  }, []);
-
-  const toggleTheme = useCallback(
-    () => setTheme(theme === "dark" ? "light" : "dark"),
-    [theme, setTheme],
-  );
-
-  return { theme, isDark: theme === "dark", setTheme, toggleTheme };
+function setTheme(next: Theme) {
+  selectedTheme = next;
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, next);
+  } catch {
+    /* 프라이빗 모드 등 — 저장 실패는 무시합니다 */
+  }
+  applyTheme(next);
 }
+
+export const themeStore = {
+  subscribe,
+  getSnapshot,
+  getServerSnapshot,
+  setTheme,
+};

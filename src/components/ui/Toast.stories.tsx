@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, waitFor } from "storybook/test";
 import { Button } from "./Button";
-import { Toast, useToast } from "./Toast";
+import { Toast } from "./Toast";
+import { useToast } from "@/hooks/ui/use-toast";
 
 function ToastExample({
   message,

@@ -3,7 +3,7 @@
 import { DateRangePicker } from "@/components/layout/DateRangePicker";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
-import { useFilters } from "@/lib/filters";
+import { useFilters } from "@/hooks/dashboard/use-filters";
 import type { CompareKey } from "@/types/domain";
 
 /** 공통 헤더 오른쪽의 새로고침·자동 갱신·CSV 도구. */

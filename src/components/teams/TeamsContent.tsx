@@ -5,10 +5,8 @@ import { PageHeader } from "@/components/layout/PageHeader";
 
 import { useCallback, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  useDashboardPageExport,
-  useDashboardPageRefresh,
-} from "@/components/layout/DashboardHeader";
+import { useDashboardPageExport } from "@/hooks/dashboard/use-dashboard-page-export";
+import { useDashboardPageRefresh } from "@/hooks/dashboard/use-dashboard-page-refresh";
 import { ModelScatterCard } from "@/components/teams/ModelScatterCard";
 import { TeamAxisPanel } from "@/components/teams/TeamAxisPanel";
 import { TeamDetailDrawer } from "@/components/teams/TeamDetailDrawer";
@@ -22,7 +20,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PeriodEmptyState } from "@/components/ui/PeriodEmptyState";
 import { TeamsSkeleton } from "./TeamsSkeleton";
 import { ManagementError } from "@/lib/api/management";
-import { useBackendSession } from "@/lib/api/session";
+import { useBackendSession } from "@/hooks/auth/use-backend-session";
 import {
   fetchTeams,
   fetchTeamUsers,
@@ -34,7 +32,8 @@ import {
   type TeamsView,
   type TeamUser,
 } from "@/lib/api/teams";
-import { useFilters, useDashboardHref } from "@/lib/filters";
+import { useFilters } from "@/hooks/dashboard/use-filters";
+import { useDashboardHref } from "@/hooks/dashboard/use-dashboard-href";
 import {
   presentTeams,
   teamDetail,

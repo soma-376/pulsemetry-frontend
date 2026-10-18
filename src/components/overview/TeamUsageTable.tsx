@@ -1,6 +1,6 @@
 "use client";
 
-import { useDashboardHref } from "@/lib/filters";
+import { useDashboardHref } from "@/hooks/dashboard/use-dashboard-href";
 
 import { useState } from "react";
 import Link from "next/link";

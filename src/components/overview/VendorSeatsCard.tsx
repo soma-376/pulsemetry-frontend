@@ -1,6 +1,6 @@
 "use client";
 
-import { useDashboardHref } from "@/lib/filters";
+import { useDashboardHref } from "@/hooks/dashboard/use-dashboard-href";
 
 import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge";
 import {

@@ -5,12 +5,11 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { AlertsPanel } from "@/components/alerts/AlertsPanel";
-import {
-  useDashboardPageExport,
-  useDashboardPageRefresh,
-} from "@/components/layout/DashboardHeader";
+import { useDashboardPageExport } from "@/hooks/dashboard/use-dashboard-page-export";
+import { useDashboardPageRefresh } from "@/hooks/dashboard/use-dashboard-page-refresh";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { Toast, useToast } from "@/components/ui/Toast";
+import { Toast } from "@/components/ui/Toast";
+import { useToast } from "@/hooks/ui/use-toast";
 import {
   alertsOptions,
   fetchAlerts,
@@ -20,7 +19,7 @@ import {
 } from "@/lib/api/alerts";
 import { ManagementError } from "@/lib/api/management";
 import { refreshFeedback } from "@/components/ui/RefreshNotice";
-import { useBackendSession } from "@/lib/api/session";
+import { useBackendSession } from "@/hooks/auth/use-backend-session";
 import { alertsCsv, downloadCsv } from "@/lib/csv-export";
 
 /**

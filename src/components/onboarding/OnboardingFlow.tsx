@@ -8,9 +8,9 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { CollectionStep } from "./CollectionStep";
 import { ContractsStep } from "./ContractsStep";
 import { TeamSetupStep } from "./TeamSetupStep";
-import { useOrganization } from "@/lib/organization-store";
-import { backendLogout, useBackendSession } from "@/lib/api/session";
-import { useRateLimit } from "@/lib/use-rate-limit";
+import { useOrganization } from "@/hooks/organization/use-organization";
+import { useBackendSession } from "@/hooks/auth/use-backend-session";
+import { useLogout } from "@/hooks/auth/use-logout";
 import { organizationKey } from "@/lib/api/query-keys";
 import {
   apiJson,
@@ -119,8 +119,14 @@ function OnboardingSteps({
   });
   const [teamDraft, setTeamDraft] = useState("");
   const [childBusy, setChildBusy] = useState(false);
-  const [logoutError, setLogoutError] = useState("");
-  const logoutLimit = useRateLimit();
+  const {
+    logout,
+    loggingOut,
+    error: logoutError,
+    rateLimit: logoutLimit,
+  } = useLogout({
+    onSuccess: () => update((previous) => ({ ...previous, session: null })),
+  });
   const heading = useRef<HTMLHeadingElement>(null);
   const current = steps[index];
   useEffect(() => {
@@ -179,7 +185,8 @@ function OnboardingSteps({
       });
     },
   });
-  const busy = childBusy || policy.isPending || complete.isPending;
+  const busy =
+    childBusy || policy.isPending || complete.isPending || loggingOut;
   const canAdvance =
     index === 0 ? promptRaw !== null : server.selectedVendorCount > 0;
   return (
@@ -189,29 +196,18 @@ function OnboardingSteps({
         <div className="flex items-center gap-3">
           <ButtonLink
             href="/login"
-            aria-disabled={logoutLimit.waiting || undefined}
-            onClick={async (event) => {
+            aria-disabled={busy || logoutLimit.waiting || undefined}
+            onClick={(event) => {
               event.preventDefault();
-              if (busy || logoutLimit.waiting) return;
-              try {
-                await backendLogout();
-                update((previous) => ({ ...previous, session: null }));
-                router.replace("/login");
-              } catch (cause) {
-                // 요청 제한(429)이면 세션을 유지한 채 서버가 준 시간 동안 다시 보내지 않는다.
-                setLogoutError(
-                  logoutLimit.capture(cause)
-                    ? ""
-                    : cause instanceof Error
-                      ? cause.message
-                      : "로그아웃에 실패했습니다.",
-                );
-              }
+              if (busy) return;
+              void logout();
             }}
           >
-            {logoutLimit.waiting
-              ? `로그아웃 · ${logoutLimit.seconds}초 뒤`
-              : "로그아웃"}
+            {loggingOut
+              ? "로그아웃 중…"
+              : logoutLimit.waiting
+                ? `로그아웃 · ${logoutLimit.seconds}초 뒤`
+                : "로그아웃"}
           </ButtonLink>
           <ThemeToggle />
         </div>

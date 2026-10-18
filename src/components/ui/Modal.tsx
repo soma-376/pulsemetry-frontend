@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useId, useRef, type ReactNode } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useId, type ReactNode } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { useDialog } from "@/hooks/ui/use-dialog";
 
 /** 나가는 애니메이션 길이 — 이만큼 지나면 top layer 를 반납합니다 */
 const EXIT_MS = 180;
@@ -34,62 +35,19 @@ export function Modal({
   width?: number;
   children: ReactNode;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  const close = useRef<HTMLButtonElement>(null);
   const titleId = useId();
-  const reduced = useReducedMotion();
-
-  /*
-    열고 닫는 것은 open 하나만 보고 결정합니다.
-    나가는 애니메이션의 완료 콜백에 close() 를 맡기면, 그 콜백이 오지 않았을 때
-    빈 모달이 top layer 를 계속 잡아 뒤 페이지 클릭이 통째로 막힙니다.
-  */
-  useEffect(() => {
-    const element = dialog.current;
-    if (!element) return;
-
-    if (open) {
-      if (!element.open) {
-        element.showModal();
-        close.current?.focus();
-      }
-      const previous = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = previous;
-      };
-    }
-
-    if (!element.open) return;
-    const timer = setTimeout(() => element.close(), reduced ? 0 : EXIT_MS);
-    return () => clearTimeout(timer);
-  }, [open, reduced]);
+  const { dialog, close, reduced, onCancel, onKeyDown } = useDialog({
+    open,
+    onClose,
+    exitDelayMs: EXIT_MS,
+  });
 
   return (
     <dialog
       ref={dialog}
       aria-labelledby={titleId}
-      onCancel={(event) => {
-        event.preventDefault();
-        onClose();
-      }}
-      onKeyDown={(event) => {
-        if (event.key !== "Tab") return;
-        const targets = Array.from(
-          event.currentTarget.querySelectorAll<HTMLElement>(
-            'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]',
-          ),
-        ).filter((element) => element.getClientRects().length > 0);
-        const first = targets[0];
-        const last = targets.at(-1);
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last?.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first?.focus();
-        }
-      }}
+      onCancel={onCancel}
+      onKeyDown={onKeyDown}
       className="fixed inset-0 m-0 h-dvh max-h-none w-screen max-w-none bg-transparent p-0 text-text backdrop:bg-transparent"
     >
       <AnimatePresence>

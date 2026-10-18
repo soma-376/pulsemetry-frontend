@@ -1,14 +1,13 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useMemo, useState } from "react";
 import { DAY_MS, fromIso, toIso, type DateRange } from "@/lib/date";
 import {
   defaultDashboardFilters,
-  withFilterQuery,
   type DashboardFilters,
 } from "@/lib/filter-query";
 import type { CompareKey, RangeKey } from "@/types/domain";
-import { useAutoRefresh } from "@/lib/use-auto-refresh";
+import { useAutoRefresh } from "@/hooks/dashboard/use-auto-refresh";
 
 type FiltersValue = {
   todayIso: string;
@@ -21,7 +20,7 @@ type FiltersValue = {
   autoRefresh: boolean;
   toggleAutoRefresh: () => void;
 };
-const FiltersContext = createContext<FiltersValue | null>(null);
+export const FiltersContext = createContext<FiltersValue | null>(null);
 const RANGE_DAYS: Record<RangeKey, number> = {
   "24h": 1,
   "7d": 7,
@@ -83,16 +82,4 @@ export function FiltersProvider({
   return (
     <FiltersContext.Provider value={value}>{children}</FiltersContext.Provider>
   );
-}
-
-export function useFilters() {
-  const ctx = useContext(FiltersContext);
-  if (!ctx) throw new Error("useFilters must be used within <FiltersProvider>");
-  return ctx;
-}
-
-/** 전역 필터가 없는 독립 카드에서는 원래 링크를 사용한다. */
-export function useDashboardHref() {
-  const filters = useContext(FiltersContext);
-  return (href: string) => (filters ? withFilterQuery(href, filters) : href);
 }

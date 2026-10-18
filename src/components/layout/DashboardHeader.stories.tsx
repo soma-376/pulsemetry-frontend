@@ -4,10 +4,8 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, waitFor, within } from "storybook/test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { delay, http, HttpResponse } from "msw";
-import {
-  DashboardHeaderProvider,
-  useDashboardPageRefresh,
-} from "./DashboardHeader";
+import { DashboardHeaderProvider } from "./DashboardHeader";
+import { useDashboardPageRefresh } from "@/hooks/dashboard/use-dashboard-page-refresh";
 import { FiltersProvider } from "@/lib/filters";
 import { PageHeader } from "./PageHeader";
 import { Button } from "@/components/ui/Button";

@@ -6,8 +6,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   PlannedVendorPicker,
   PlannedVendorQueryState,
-  usePlannedVendors,
 } from "./PlannedVendorPicker";
+import { usePlannedVendors } from "@/hooks/vendors/use-planned-vendors";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Select } from "@/components/ui/Select";

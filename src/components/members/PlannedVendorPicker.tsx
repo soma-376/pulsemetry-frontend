@@ -1,18 +1,10 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { settingsOptions } from "@/lib/api/settings";
+import type { usePlannedVendors } from "@/hooks/vendors/use-planned-vendors";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
 
 export type VendorOption = { vendorId: string; displayName: string };
-export function usePlannedVendors(organizationId: string, enabled: boolean) {
-  return useQuery({
-    ...settingsOptions(organizationId),
-    enabled: !!organizationId && enabled,
-  });
-}
-
 /** 초대와 구성원 편집에서 공유한다. 사용 예정 제품은 실제 좌석 배정과 다르다. */
 export function PlannedVendorPicker({
   label = "사용 예정 제품 (선택)",

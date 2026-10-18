@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { completeOidcCallback } from "@/lib/oidc";
 import type { BackendSession } from "@/lib/api/session";
 import { fetchOnboarding } from "@/lib/api/management";
-import { useOrganization } from "@/lib/organization-store";
+import { useOrganization } from "@/hooks/organization/use-organization";
 import { AuthFrame } from "./AuthFrame";
 import { Button, ButtonLink } from "@/components/ui/Button";
 

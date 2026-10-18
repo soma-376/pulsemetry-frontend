@@ -7,8 +7,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -18,8 +16,8 @@ import { ThemeToggle } from "./ThemeToggle";
 import { FilterToolbar, PeriodFilters } from "./FilterToolbar";
 import { IngestStatusBar } from "./IngestStatusBar";
 import { ingestStatusOptions } from "@/lib/api/ingest-status";
-import { useBackendSession } from "@/lib/api/session";
-import { useFilters } from "@/lib/filters";
+import { useBackendSession } from "@/hooks/auth/use-backend-session";
+import { useFilters } from "@/hooks/dashboard/use-filters";
 import { NotificationBell } from "./NotificationBell";
 import { alertsOptions } from "@/lib/api/alerts";
 import { ManagementError } from "@/lib/api/management";
@@ -29,22 +27,13 @@ import {
   type RefreshFeedback,
 } from "@/components/ui/RefreshNotice";
 
-type PageRefresh = {
-  refresh: () => void;
-  refreshing: boolean;
-  feedback?: RefreshFeedback;
-};
-const RegisterRefresh = createContext<
-  ((value: PageRefresh | null) => void) | null
->(null);
-/** 화면이 등록한 CSV 내보내기. `run`이 없으면 `disabledReason`을 버튼에 보인다. */
-type PageExport = {
-  run: (() => Promise<void> | void) | null;
-  disabledReason: string;
-};
-const RegisterExport = createContext<
-  ((value: PageExport | null) => void) | null
->(null);
+import {
+  RegisterRefresh,
+  RegisterExport,
+  type PageRefresh,
+  type PageExport,
+} from "@/lib/dashboard-page-tools";
+
 const FilterToday = createContext<string | null>(null);
 const NO_EXPORT = "이 화면에는 CSV로 내보낼 목록이 없습니다";
 
@@ -222,53 +211,4 @@ export function DashboardPageToolbar({
   const todayIso = useContext(FilterToday);
   if (!showPeriod || !todayIso) return null;
   return <PeriodFilters todayIso={todayIso} />;
-}
-
-export function useDashboardPageRefresh(
-  refresh: () => void,
-  refreshing: boolean,
-  feedback?: RefreshFeedback,
-) {
-  const register = useContext(RegisterRefresh);
-  const latest = useRef(refresh);
-  useEffect(() => {
-    latest.current = refresh;
-  }, [refresh]);
-  const paused = feedback?.paused;
-  const updatedAt = feedback?.updatedAt;
-  const partial = feedback?.partial;
-  useEffect(() => {
-    register?.({
-      refresh: () => latest.current(),
-      refreshing,
-      feedback:
-        paused === undefined
-          ? undefined
-          : { paused, updatedAt: updatedAt ?? 0, partial },
-    });
-    return () => register?.(null);
-  }, [register, refreshing, paused, updatedAt, partial]);
-}
-
-/**
- * 화면이 공통 헤더의 CSV 버튼에 내보내기를 등록한다. [run] 이 null 이면 버튼은 [disabledReason] 을 보이며 꺼진다.
- * 내보내기는 그 화면이 보이는 조건(기간·비교·snapshot)의 응답으로만 만든다(csv-export.ts).
- */
-export function useDashboardPageExport(
-  run: (() => Promise<void> | void) | null,
-  disabledReason: string,
-) {
-  const register = useContext(RegisterExport);
-  const latest = useRef(run);
-  useEffect(() => {
-    latest.current = run;
-  }, [run]);
-  const available = !!run;
-  useEffect(() => {
-    register?.({
-      run: available ? () => latest.current?.() : null,
-      disabledReason,
-    });
-    return () => register?.(null);
-  }, [register, available, disabledReason]);
 }

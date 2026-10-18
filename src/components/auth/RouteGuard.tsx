@@ -5,13 +5,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AuthError,
-  backendLogout,
   getSessionState,
   invalidateBackendSessionCheck,
   restoreBackendSession,
-  useBackendSession,
-  useSessionState,
 } from "@/lib/api/session";
+import { useBackendSession } from "@/hooks/auth/use-backend-session";
+import { useLogout } from "@/hooks/auth/use-logout";
+import { useSessionState } from "@/hooks/auth/use-session-state";
 import { onboardingOptions } from "@/lib/api/management";
 import { routeAccess, routeDestination } from "@/lib/route-access";
 import { LoadingState } from "@/components/ui/LoadingState";
@@ -35,8 +35,12 @@ export function RouteGuard({ children }: { children?: ReactNode }) {
     session = useBackendSession();
   const [attempt, setAttempt] = useState(0);
   const [check, setCheck] = useState<Check>();
-  const [logoutError, setLogoutError] = useState<Error>();
-  const [loggingOut, setLoggingOut] = useState(false);
+  const {
+    logout,
+    loggingOut,
+    error: logoutError,
+    rateLimit: logoutLimit,
+  } = useLogout();
   const identity = session
     ? `${session.user.organizationId}:${session.user.memberId}:${session.user.role}`
     : undefined;
@@ -164,21 +168,17 @@ export function RouteGuard({ children }: { children?: ReactNode }) {
                   <Button
                     loading={loggingOut}
                     loadingLabel="로그아웃 중…"
-                    onClick={() => {
-                      setLoggingOut(true);
-                      setLogoutError(undefined);
-                      void backendLogout()
-                        .then(
-                          () => router.replace("/login"),
-                          (error) => setLogoutError(error),
-                        )
-                        .finally(() => setLoggingOut(false));
-                    }}
+                    disabled={logoutLimit.waiting}
+                    onClick={() => void logout()}
                   >
-                    로그아웃
+                    {logoutLimit.waiting
+                      ? `로그아웃 · ${logoutLimit.seconds}초 뒤`
+                      : "로그아웃"}
                   </Button>
                 )}
-                {logoutError && <p role="alert">{logoutError.message}</p>}
+                {(logoutLimit.message || logoutError) && (
+                  <p role="alert">{logoutLimit.message || logoutError}</p>
+                )}
                 <ButtonLink href="/contact">관리자에게 문의</ButtonLink>
               </>
             ) : (

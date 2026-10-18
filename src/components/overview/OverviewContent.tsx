@@ -4,18 +4,16 @@ import { PageHeader } from "@/components/layout/PageHeader";
 
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useQuery } from "@tanstack/react-query";
-import {
-  useDashboardPageExport,
-  useDashboardPageRefresh,
-} from "@/components/layout/DashboardHeader";
+import { useDashboardPageExport } from "@/hooks/dashboard/use-dashboard-page-export";
+import { useDashboardPageRefresh } from "@/hooks/dashboard/use-dashboard-page-refresh";
 import { OverviewSkeleton } from "./OverviewSkeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { refreshFeedback } from "@/components/ui/RefreshNotice";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { OverviewData } from "./OverviewData";
 import { DashboardError, overviewQueryOptions } from "@/lib/api/overview";
-import { useBackendSession } from "@/lib/api/session";
-import { useFilters } from "@/lib/filters";
+import { useBackendSession } from "@/hooks/auth/use-backend-session";
+import { useFilters } from "@/hooks/dashboard/use-filters";
 import { downloadCsv, overviewCsv } from "@/lib/csv-export";
 
 export function OverviewContent() {

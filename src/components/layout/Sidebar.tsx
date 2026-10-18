@@ -1,17 +1,14 @@
 "use client";
 
-import { useDashboardHref } from "@/lib/filters";
+import { useDashboardHref } from "@/hooks/dashboard/use-dashboard-href";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { useOrganization } from "@/lib/organization-store";
-import {
-  backendLogout,
-  sessionRole,
-  useBackendSession,
-} from "@/lib/api/session";
-import { useRateLimit } from "@/lib/use-rate-limit";
+import { useOrganization } from "@/hooks/organization/use-organization";
+import { sessionRole } from "@/lib/api/session";
+import { useBackendSession } from "@/hooks/auth/use-backend-session";
+import { useLogout } from "@/hooks/auth/use-logout";
 import { Icon, type IconName } from "@/components/ui/Icon";
 
 const NAV: { href: string; label: string; icon: IconName }[] = [
@@ -33,10 +30,14 @@ export function Sidebar() {
   const { update } = useOrganization();
   const pathname = usePathname();
   const session = useBackendSession();
-  const router = useRouter();
-  const [logoutError, setLogoutError] = useState("");
-  const [loggingOut, setLoggingOut] = useState(false);
-  const logoutLimit = useRateLimit();
+  const {
+    logout: performLogout,
+    loggingOut,
+    error: logoutError,
+    rateLimit: logoutLimit,
+  } = useLogout({
+    onSuccess: () => update((previous) => ({ ...previous, session: null })),
+  });
   const [collapsed, setCollapsed] = useState(false);
 
   const logout = (
@@ -50,26 +51,7 @@ export function Sidebar() {
           : "로그아웃"
       }
       title="로그아웃"
-      onClick={async () => {
-        if (loggingOut || logoutLimit.waiting) return;
-        setLoggingOut(true);
-        setLogoutError("");
-        try {
-          await backendLogout();
-          update((previous) => ({ ...previous, session: null }));
-          router.replace("/login");
-        } catch (cause) {
-          setLogoutError(
-            logoutLimit.capture(cause)
-              ? ""
-              : cause instanceof Error
-                ? cause.message
-                : "로그아웃에 실패했습니다.",
-          );
-        } finally {
-          setLoggingOut(false);
-        }
-      }}
+      onClick={() => void performLogout()}
       className="shrink-0 cursor-pointer whitespace-nowrap rounded-md px-1.5 py-1 text-[11px] text-text3 hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {collapsed ? (

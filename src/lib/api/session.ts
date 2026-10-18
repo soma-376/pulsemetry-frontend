@@ -1,5 +1,4 @@
 "use client";
-import { useSyncExternalStore } from "react";
 import { AuthError, authErrorFrom } from "./auth-error";
 import { LEGACY_SESSION_STORAGE_KEY } from "./session-key";
 export { AuthError };
@@ -129,7 +128,7 @@ export async function restoreBackendSession(force = false) {
     if (restoreTask === task) restoreTask = null;
   }
 }
-const subscribe = (listener: () => void) => {
+export const subscribeSessionState = (listener: () => void) => {
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
@@ -138,16 +137,11 @@ const subscribe = (listener: () => void) => {
 export function getSessionState() {
   return sessionState;
 }
-export function useSessionState() {
-  return useSyncExternalStore(subscribe, getSessionState, () => initialState);
+export function getServerSessionState() {
+  return initialState;
 }
-/** 세션 확인은 공통 화면 가드가 소유한다. 각 소비자가 별도로 /me를 호출하지 않는다. */
-export function useBackendSession() {
-  return useSyncExternalStore(
-    subscribe,
-    () => current,
-    () => null,
-  );
+export function getBackendSession() {
+  return current;
 }
 // OIDC 페이지 이동만 브라우저가 공개 enrollment 주소를 사용한다.
 export const enrollmentUrl = () =>

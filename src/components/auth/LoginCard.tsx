@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { loginSchema, type LoginForm } from "@/lib/schemas/auth";
 import { discoverOrganizations, startOidcLogin } from "@/lib/oidc";
 
-import { useRateLimit } from "@/lib/use-rate-limit";
+import { useRateLimit } from "@/hooks/use-rate-limit";
 
 export function LoginCard() {
   const limit = useRateLimit();

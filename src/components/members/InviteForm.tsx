@@ -15,8 +15,8 @@ import { Select } from "@/components/ui/Select";
 import {
   PlannedVendorPicker,
   PlannedVendorQueryState,
-  usePlannedVendors,
 } from "./PlannedVendorPicker";
+import { usePlannedVendors } from "@/hooks/vendors/use-planned-vendors";
 import { InviteCode } from "./InviteCode";
 import type {
   InvitationRequest,
@@ -36,7 +36,7 @@ import {
   inviteSubmissionSchema,
   type InviteForm as InviteFormValues,
 } from "@/lib/schemas/invite";
-import { useOrganization } from "@/lib/organization-store";
+import { useOrganization } from "@/hooks/organization/use-organization";
 
 /**
  * 구성원 초대.

@@ -4,10 +4,8 @@ import { PageHeader } from "@/components/layout/PageHeader";
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  useDashboardPageRefresh,
-  useDashboardPageExport,
-} from "@/components/layout/DashboardHeader";
+import { useDashboardPageRefresh } from "@/hooks/dashboard/use-dashboard-page-refresh";
+import { useDashboardPageExport } from "@/hooks/dashboard/use-dashboard-page-export";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { InviteModal } from "@/components/members/InviteModal";
 import {
@@ -25,7 +23,8 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { refreshFeedback } from "@/components/ui/RefreshNotice";
 import { MembersSkeleton } from "./MembersSkeleton";
 import { StatCard } from "@/components/ui/StatCard";
-import { Toast, useToast } from "@/components/ui/Toast";
+import { Toast } from "@/components/ui/Toast";
+import { useToast } from "@/hooks/ui/use-toast";
 import {
   DELIVERY_POLL_MS,
   deliveryPending,
@@ -45,9 +44,9 @@ import {
   membersOptions,
 } from "@/lib/api/members";
 import { organizationKey } from "@/lib/api/query-keys";
-import { useBackendSession } from "@/lib/api/session";
+import { useBackendSession } from "@/hooks/auth/use-backend-session";
 import { DAY_MS, fromIso, toIso } from "@/lib/date";
-import { useFilters } from "@/lib/filters";
+import { useFilters } from "@/hooks/dashboard/use-filters";
 import {
   buildMembersView,
   membersCsv,

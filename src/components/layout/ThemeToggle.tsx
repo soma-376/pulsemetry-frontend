@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon } from "@/components/ui/Icon";
-import { useTheme } from "@/lib/theme";
+import { useTheme } from "@/hooks/ui/use-theme";
 
 /**
  * 테마 스위치.

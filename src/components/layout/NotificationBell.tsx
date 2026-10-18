@@ -4,10 +4,11 @@ import { useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { AlertsDrawer } from "@/components/overview/AlertsDrawer";
 import { Icon } from "@/components/ui/Icon";
-import { Toast, useToast } from "@/components/ui/Toast";
+import { Toast } from "@/components/ui/Toast";
+import { useToast } from "@/hooks/ui/use-toast";
 import { alertsOptions } from "@/lib/api/alerts";
 import { contractInputStatusOptions } from "@/lib/api/contract-input";
-import { useFilters } from "@/lib/filters";
+import { useFilters } from "@/hooks/dashboard/use-filters";
 
 /** 미확인 알림과 아직 갱신하지 않은 계약. 헤더·드로어와 조회 캐시를 공유한다. */
 export function NotificationBell({

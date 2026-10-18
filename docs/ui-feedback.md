@@ -92,7 +92,7 @@
 공통 컴포넌트에 특정 API 호출이나 페이지별 권한 판단을 넣지 않는다.
 규칙을 바꿀 때는 문서·관련 컴포넌트·Storybook 사례를 함께 갱신한다.
 
-공통 성공 알림은 [Toast.tsx](../src/components/ui/Toast.tsx)의 `Toast`와 `useToast`를 사용한다.
+공통 성공 알림은 [Toast.tsx](../src/components/ui/Toast.tsx)의 `Toast`와 [useToast](../src/hooks/ui/use-toast.ts)를 사용한다.
 화면에서 `useToast()`를 호출하고 `Toast`를 한 번 렌더링한 뒤, 사용자 작업의 성공 콜백에서
 `showToast(message)`를 호출한다. API·캐시 처리는 호출하는 화면에 둔다.
 [Toast 스토리](../src/components/ui/Toast.stories.tsx)와 [성공 알림 예시](http://localhost:6006/?path=/story/ui-toast--success)에서 확인한다.

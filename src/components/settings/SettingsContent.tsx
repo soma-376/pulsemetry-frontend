@@ -7,10 +7,8 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  useDashboardPageExport,
-  useDashboardPageRefresh,
-} from "@/components/layout/DashboardHeader";
+import { useDashboardPageExport } from "@/hooks/dashboard/use-dashboard-page-export";
+import { useDashboardPageRefresh } from "@/hooks/dashboard/use-dashboard-page-refresh";
 import { SettingRow, SettingSection } from "./SettingRow";
 import { VendorTable } from "./VendorTable";
 import { ServerVendorDrawer } from "./ServerVendorDrawer";
@@ -25,9 +23,10 @@ import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { StatCard } from "@/components/ui/StatCard";
 import { settingsValueStatus } from "@/lib/metrics/settings-presentation";
-import { Toast, useToast } from "@/components/ui/Toast";
+import { Toast } from "@/components/ui/Toast";
+import { useToast } from "@/hooks/ui/use-toast";
 import { Toggle } from "@/components/ui/Toggle";
-import { useBackendSession } from "@/lib/api/session";
+import { useBackendSession } from "@/hooks/auth/use-backend-session";
 import {
   apiJson,
   ManagementError,
@@ -47,7 +46,7 @@ import {
 import { catalogOptions } from "@/lib/api/vendor-catalog";
 import { organizationKey } from "@/lib/api/query-keys";
 import { settingsVendorRow } from "@/lib/settings-vendors";
-import { useFilters } from "@/lib/filters";
+import { useFilters } from "@/hooks/dashboard/use-filters";
 import { int, usd } from "@/lib/format";
 import { rolloutEvidenceText } from "@/lib/policy-rollout";
 import { downloadCsv, settingsCsv } from "@/lib/csv-export";

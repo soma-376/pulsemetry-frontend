@@ -1,7 +1,8 @@
 "use client";
 
 import { ButtonLink } from "@/components/ui/Button";
-import { useFilters, useDashboardHref } from "@/lib/filters";
+import { useFilters } from "@/hooks/dashboard/use-filters";
+import { useDashboardHref } from "@/hooks/dashboard/use-dashboard-href";
 import {
   FIRST_COLLECTION_STEPS,
   INVITE_DEEP_LINK,
