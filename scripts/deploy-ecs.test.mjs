@@ -82,7 +82,15 @@ function fixture(options = {}) {
       case "batch-get-image": {
         const digest = value("--image-ids").split("=")[1];
         return {
-          images: [{ imageId: { imageDigest: digest }, imageManifest: digest }],
+          images: (options.tags ?? ["commit"]).map((imageTag, index) => ({
+            imageId: {
+              imageDigest:
+                index > 0 && options.wrongManifestDigest ? newDigest : digest,
+              imageTag,
+            },
+            imageManifest:
+              index > 0 && options.inconsistentManifest ? "different" : digest,
+          })),
         };
       }
       case "describe-images":
@@ -139,6 +147,32 @@ test("develop/dev, main/prod 매핑과 PR·임의 브랜치 배포 차단", () =
     assert.throws(() => deploymentConfig({ ...env, ...patch }));
   }
 });
+
+test("동일 digest에 commit/deploy 태그가 함께 있어도 배포와 실패 복구가 가능하다", async () => {
+  const success = fixture({ tags: ["commit", "deploy"] });
+  assert.deepEqual(await success.run(), {
+    deploymentId: "new",
+    digest: newDigest,
+  });
+  const failure = fixture({ tags: ["commit", "deploy"], updateError: true });
+  await assert.rejects(failure.run());
+  assert.equal(failure.tag(), oldDigest);
+});
+
+for (const options of [
+  { tags: [] },
+  { tags: ["commit", "deploy"], wrongManifestDigest: true },
+  { tags: ["commit", "deploy"], inconsistentManifest: true },
+])
+  test(`비어 있거나 서로 다른 manifest 응답은 쓰기 전에 차단한다: ${JSON.stringify(options)}`, async () => {
+    const f = fixture(options);
+    await assert.rejects(f.run(), /ECR manifest/);
+    assert.ok(
+      !f.calls.some((c) =>
+        ["put-image", "update-service"].includes(c.operation),
+      ),
+    );
+  });
 
 test("완료 deployment와 실행 digest가 모두 맞아야 성공하며 task definition을 바꾸지 않는다", async () => {
   const f = fixture();

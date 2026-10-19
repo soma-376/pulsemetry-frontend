@@ -117,9 +117,12 @@ export async function deployImage({
     const entry = result.images?.[0];
     if (
       result.failures?.length ||
-      result.images?.length !== 1 ||
-      !entry.imageManifest ||
-      entry.imageId?.imageDigest !== imageDigest
+      !entry?.imageManifest ||
+      result.images.some(
+        (item) =>
+          item.imageId?.imageDigest !== imageDigest ||
+          item.imageManifest !== entry.imageManifest,
+      )
     ) {
       throw new Error(`ECR manifest를 확인하지 못했습니다: ${imageDigest}`);
     }
