@@ -2,7 +2,7 @@
 
 import { PageHeader } from "@/components/layout/PageHeader";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useDashboardPageRefresh,
@@ -137,6 +137,7 @@ function OrganizationMembers({
   const teams = useQuery(teamsOptions(organizationId));
   const [selected, setSelected] = useState<Selection | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const restoreDetailFocus = useRef<(() => void) | undefined>(undefined);
   const [inviteOpen, setInviteOpen] = useState(initialInvite);
   const [picks, setPicks] = useState<Record<string, string>>({});
   const [post] = useState(createCommands);
@@ -209,7 +210,9 @@ function OrganizationMembers({
     kind: Selection["kind"],
     memberId: string,
     row?: MemberRow,
+    restoreFocus?: () => void,
   ) => {
+    restoreDetailFocus.current = restoreFocus;
     setSelected({ kind, memberId, row });
     setDrawerOpen(true);
   };
@@ -433,7 +436,9 @@ function OrganizationMembers({
 
             <MemberListCard
               model={model}
-              onOpen={(member) => openDetail("member", member.memberId, member)}
+              onOpen={(member, restoreFocus) =>
+                openDetail("member", member.memberId, member, restoreFocus)
+              }
               onExport={exportCsv}
               exporting={csv.isPending}
               exportError={csv.error}
@@ -480,7 +485,11 @@ function OrganizationMembers({
           editable={model.capabilities.assignTeam}
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
-          onAfterClose={() => setSelected(null)}
+          onAfterClose={() => {
+            restoreDetailFocus.current?.();
+            restoreDetailFocus.current = undefined;
+            setSelected(null);
+          }}
           onSaved={(message) => {
             showToast(message);
             setDrawerOpen(false);

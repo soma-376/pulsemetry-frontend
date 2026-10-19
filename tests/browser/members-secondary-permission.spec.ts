@@ -85,7 +85,7 @@ test("열린 구성원 상세의 재조회 권한 거부는 이전 입력을 숨
         deniedRequests++;
         return route.fulfill({
           status: 403,
-          json: { error: { code: "forbidden" } },
+          json: { error: { code: "forbidden", message: "denied" } },
         });
       }
       await pending;

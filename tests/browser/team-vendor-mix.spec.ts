@@ -12,6 +12,10 @@ test("team mix displays server product usage, keeps unmapped observations separa
   page,
 }) => {
   await openDashboard(page, "/teams");
+  // 기본 기간이 이미 오늘이어도 실제 기간 변경과 새 조회를 검증한다.
+  await page.goto(
+    "/teams?startDate=2026-09-07&endDate=2026-09-13&compare=prev_week",
+  );
   const card = page.getByRole("region", {
     name: "팀별 벤더 비중",
     exact: true,
@@ -78,6 +82,10 @@ test("team mix displays server product usage, keeps unmapped observations separa
   const refreshedResponse = await refreshed;
   const refreshedData = await refreshedResponse.json();
   expect(refreshedData.meta.startDate).toBe(refreshedData.meta.endDate);
+  expect([
+    refreshedData.meta.startDate,
+    refreshedData.meta.endDate,
+  ]).not.toEqual([data.meta.startDate, data.meta.endDate]);
   // 오늘 하루를 다시 조회했다(시작일 = 종료일).
   await expect(page).toHaveURL((url) => {
     const start = url.searchParams.get("startDate");

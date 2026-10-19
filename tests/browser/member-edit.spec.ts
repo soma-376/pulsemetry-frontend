@@ -357,8 +357,11 @@ test("several unassigned members are assigned in one command and a stale list is
   );
   expect(commands).toHaveLength(1);
   expect(commands[0].idempotencyKey).toMatch(/^[A-Za-z0-9_-]{8,128}$/);
-  expect(commands[0].body).toEqual({
-    assignments: [
+  const assignmentBody = commands[0].body as { assignments: unknown[] };
+  // 선택한 대상·팀·버전은 정확히 두 건이어야 하지만 표시 순서는 계약이 아니다.
+  expect(assignmentBody.assignments).toHaveLength(2);
+  expect(assignmentBody).toEqual({
+    assignments: expect.arrayContaining([
       {
         memberId: unassigned[0].memberId,
         teamId: "team-platform",
@@ -369,7 +372,7 @@ test("several unassigned members are assigned in one command and a stale list is
         teamId: "team-data",
         expectedVersion: unassigned[1].version,
       },
-    ],
+    ]),
   });
   // 서버가 확정한 뒤에 목록에서 빠진다.
   await expect(card.getByRole("combobox")).toHaveCount(3);

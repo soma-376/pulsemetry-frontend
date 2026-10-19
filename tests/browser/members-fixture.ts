@@ -547,7 +547,17 @@ export async function mockMembers(
               .split("/")[0],
             snapshotId: "fixture-teams",
           },
-          teams: { items: state.teams, nextCursor: null },
+          teams: {
+            items: state.teams.map((team) => ({
+              ...team,
+              memberCount: state.members.filter(
+                (member) =>
+                  member.team.teamId === team.teamId &&
+                  ["active", "suspended"].includes(member.status),
+              ).length,
+            })),
+            nextCursor: null,
+          },
         });
 
       if (method === "PATCH" && path.startsWith("members/")) {

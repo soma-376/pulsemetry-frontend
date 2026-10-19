@@ -52,7 +52,7 @@ export function MemberListCard({
   exportError,
 }: {
   model: MembersModel;
-  onOpen: (member: MemberRow) => void;
+  onOpen: (member: MemberRow, restoreFocus: () => void) => void;
   onExport: () => void;
   onSnapshotExpired: () => void;
   exporting?: boolean;
@@ -66,6 +66,8 @@ export function MemberListCard({
     direction: "asc",
   });
   const [searchHeight, setSearchHeight] = useState<number | null>(null);
+  const search = useRef<HTMLInputElement>(null);
+  const memberButtons = useRef(new Map<string, HTMLButtonElement>());
   const results = useRef<HTMLDivElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const composing = useRef(false);
@@ -182,6 +184,7 @@ export function MemberListCard({
       className="col-span-full @max-[620px]:[&>div:first-child]:flex-col @max-[620px]:[&>div:first-child]:items-stretch [&>div:first-child>div>span:first-child]:shrink-0"
       action={
         <Input
+          ref={search}
           value={query}
           onChange={(event) => changeQuery(event.target.value)}
           onCompositionStart={() => {
@@ -274,8 +277,18 @@ export function MemberListCard({
               {rows.map((m) => (
                 <button
                   key={m.memberId}
+                  ref={(element) => {
+                    if (element) memberButtons.current.set(m.memberId, element);
+                    else memberButtons.current.delete(m.memberId);
+                  }}
                   type="button"
-                  onClick={() => onOpen(m)}
+                  onClick={() =>
+                    onOpen(m, () => {
+                      // 검색 응답이 기존 행을 교체해도 현재 행으로 돌아간다.
+                      const target = memberButtons.current.get(m.memberId);
+                      (target?.isConnected ? target : search.current)?.focus();
+                    })
+                  }
                   aria-label={`${m.account} 구성원 상세`}
                   aria-haspopup="dialog"
                   className={`${COLS} relative w-full cursor-pointer border-b border-border px-0.5 py-3 text-left transition-colors hover:bg-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue`}

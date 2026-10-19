@@ -258,6 +258,9 @@ export const teamSchema = z.object({
   teamId: z.string(),
   teamName: z.string(),
   version: z.number(),
+  memberCount: z
+    .union([z.number().int().nonnegative(), z.bigint().nonnegative()])
+    .optional(),
 });
 export type ServerTeam = z.infer<typeof teamSchema>;
 const metaSchema = z.object({
