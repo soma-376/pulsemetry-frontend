@@ -16,24 +16,21 @@ import {
   type ServerTeam,
 } from "@/lib/api/management";
 import { createTeam, deleteTeam, renameTeam } from "@/lib/api/member-commands";
-import { membersOptions } from "@/lib/api/members";
 import { organizationKey } from "@/lib/api/query-keys";
 import { useBackendSession } from "@/lib/api/session";
-import { useFilters } from "@/lib/filters";
 
 const stale = (error: unknown) =>
   error instanceof ManagementError &&
   (error.code === "version_conflict" || error.code === "not_found");
 
 /**
- * 조직의 팀 목록과 팀 만들기·이름 변경·삭제. 인원은 현재 명단과 대기 중인 초대에서 센다.
+ * 조직의 팀 목록과 팀 만들기·이름 변경·삭제. 구성원 수는 서버의 현재 디렉터리, 초대 수는 전체 초대 목록에서 읽는다.
  * 저장은 서버가 확정한 뒤에만 목록에 반영하고, 다른 곳에서 바뀐 팀은 최신 내용을 다시 읽은 뒤에 고친다.
  */
 export function TeamManagement() {
   const session = useBackendSession();
   const organizationId = session?.user.organizationId ?? "";
   const client = useQueryClient();
-  const { dates } = useFilters();
   const [open, setOpen] = useState(false);
   // undefined: 목록, null: 새 팀, 팀: 그 팀을 열었을 때의 이름과 version
   const [editing, setEditing] = useState<ServerTeam | null | undefined>(
@@ -47,13 +44,6 @@ export function TeamManagement() {
   const [post] = useState(createCommands);
   const enabled = !!organizationId && open;
   const teams = useQuery({ ...teamsOptions(organizationId), enabled });
-  const members = useQuery({
-    ...membersOptions(organizationId, {
-      startDate: dates.start,
-      endDate: dates.end ?? dates.start,
-    }),
-    enabled,
-  });
   const invitations = useQuery({
     ...waitingInvitationsOptions(organizationId),
     enabled,
@@ -64,10 +54,9 @@ export function TeamManagement() {
   ) =>
     values ? String(values.filter((value) => value === teamId).length) : "-";
   const memberCount = (teamId: string) =>
-    count(
-      members.data?.members.map((member) => member.team.teamId),
-      teamId,
-    );
+    teams.isError
+      ? undefined
+      : teams.data?.find((team) => team.teamId === teamId)?.memberCount;
   const refresh = () =>
     client.invalidateQueries({ queryKey: organizationKey(organizationId) });
   const list = () => {
@@ -223,8 +212,10 @@ export function TeamManagement() {
               >
                 <h3 className="text-sm font-semibold">팀 삭제</h3>
                 <p className="text-xs leading-5 text-text3">
-                  팀을 삭제하면 현재 구성원 {memberCount(editing.teamId)}명이
-                  미배정이 됩니다. 과거 사용 기록은 바뀌지 않습니다.
+                  {memberCount(editing.teamId) === undefined
+                    ? "현재 구성원 수를 확인할 수 없습니다. 팀을 삭제하면 해당 팀의 구성원이 미배정됩니다."
+                    : `팀을 삭제하면 현재 구성원 ${memberCount(editing.teamId)}명이 미배정이 됩니다.`}{" "}
+                  과거 사용 기록은 바뀌지 않습니다.
                 </p>
                 {remove.error && (
                   <ErrorState message={remove.error.message}>
@@ -313,11 +304,17 @@ export function TeamManagement() {
                           {team.teamName}
                         </span>
                         <span className="mt-1 block text-xs text-text3">
-                          구성원 {memberCount(team.teamId)}명 · 초대{" "}
+                          구성원{" "}
+                          {memberCount(team.teamId) === undefined
+                            ? "수 확인 불가"
+                            : `${memberCount(team.teamId)}명`}{" "}
+                          · 초대{" "}
                           {count(
-                            invitations.data?.map(
-                              (invite) => invite.team?.teamId,
-                            ),
+                            invitations.isError
+                              ? undefined
+                              : invitations.data?.map(
+                                  (invite) => invite.team?.teamId,
+                                ),
                             team.teamId,
                           )}
                           명
