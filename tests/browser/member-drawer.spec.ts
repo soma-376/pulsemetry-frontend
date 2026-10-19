@@ -20,6 +20,7 @@ test("row opens the standard-width drawer with the server values of that member"
     (member) => member.periodUsage && member.team.teamId,
   )!;
   await list.getByRole("textbox", { name: "구성원 검색" }).fill(target.account);
+  await expect(rows).toHaveCount(1);
   const row = list.getByRole("button", {
     name: `${target.account} 구성원 상세`,
     exact: true,
@@ -62,6 +63,93 @@ test("row opens the standard-width drawer with the server values of that member"
   await expect(drawer).not.toBeVisible();
   await expect(row).toBeFocused();
 });
+
+for (const result of ["member", "empty", "pending"] as const) {
+  test(`closing a drawer opened during search restores focus when the result is ${result}`, async ({
+    page,
+  }) => {
+    await mockMembers(page);
+    await openDashboard(page, "/members");
+    const list = page.getByRole("region", {
+      name: "구성원 목록",
+      exact: true,
+      includeHidden: true,
+    });
+    const rows = list.getByRole("button", {
+      name: /구성원 상세$/,
+      includeHidden: true,
+    });
+    await expect(rows).toHaveCount(20);
+    const target = members.find(
+      (member) => member.periodUsage && member.team.teamId,
+    )!;
+    const query = result === "empty" ? "no-such-member" : target.account;
+    let releaseSearch!: () => void;
+    let searchStarted!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      releaseSearch = resolve;
+    });
+    const started = new Promise<void>((resolve) => {
+      searchStarted = resolve;
+    });
+    await page.route(
+      (url) =>
+        /\/members$/.test(url.pathname) && url.searchParams.get("q") === query,
+      async (route) => {
+        searchStarted();
+        await pending;
+        await route.fallback();
+      },
+    );
+    const input = list.getByRole("textbox", {
+      name: "구성원 검색",
+      includeHidden: true,
+    });
+    const row = list.getByRole("button", {
+      name: `${target.account} 구성원 상세`,
+      exact: true,
+      includeHidden: true,
+    });
+    const originalRow = await row.elementHandle();
+    expect(originalRow).not.toBeNull();
+    // 검색 debounce 전에 상세를 열고, 응답은 원래 행이 제거될 때까지 보류한다.
+    await page.clock.install({ time: new Date("2026-09-22T00:00:00Z") });
+    await page.clock.pauseAt(new Date("2026-09-22T00:00:01Z"));
+    await input.fill(query);
+    await row.focus();
+    await row.press("Enter");
+    const drawer = page.getByRole("dialog", {
+      name: "구성원 상세",
+      exact: true,
+    });
+    await expect(drawer).toBeVisible();
+    await page.clock.runFor(250);
+    await page.clock.resume();
+    try {
+      await started;
+      await expect
+        .poll(() => originalRow!.evaluate((element) => element.isConnected))
+        .toBe(false);
+      if (result !== "pending") {
+        releaseSearch();
+        await expect(rows).toHaveCount(result === "member" ? 1 : 0);
+        if (result === "empty")
+          await expect(list.getByText("검색 결과가 없습니다")).toBeVisible();
+      }
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.keyboard.press("Escape");
+      await expect(drawer).not.toBeVisible();
+      await expect(result === "member" ? row : input).toBeFocused();
+      if (result === "pending") {
+        releaseSearch();
+        await expect(rows).toHaveCount(1);
+        await expect(input).toBeFocused();
+      }
+    } finally {
+      releaseSearch();
+    }
+  });
+}
 
 test("candidate entry opens the drawer of the member the server named", async ({
   page,
