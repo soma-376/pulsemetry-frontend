@@ -10,7 +10,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "test": "tsx --test tests/*.test.ts",
+    "test": "tsx --test tests/*.test.ts && node --test scripts/deploy-ecs.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
