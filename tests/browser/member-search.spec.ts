@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 import { openDashboard } from "./helpers";
-import { mockMembers } from "./members-fixture";
+import { fixtureMembers, mockMembers } from "./members-fixture";
 
 test.beforeEach(async ({ page }) => {
   await mockMembers(page);
@@ -34,15 +34,31 @@ test("typing keeps results until a pause, while Enter and clearing apply immedia
   await page.clock.runFor(249);
   await expect(rows).toHaveCount(20);
   await page.clock.runFor(1);
+  // debounce 경계 검증 후에는 비동기 응답을 반영하는 타이머도 진행한다.
+  await page.clock.resume();
   await expect(rows).toHaveCount(1);
   await expect(rows).toHaveAttribute("aria-label", `${account} 구성원 상세`);
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
   await input.fill("not-a-member");
   await expect(rows).toHaveCount(1);
+  const enterSearch = page.waitForRequest((request) => {
+    const url = new URL(request.url());
+    return (
+      request.method() === "GET" &&
+      url.pathname.endsWith("/members") &&
+      url.searchParams.get("q") === "not-a-member"
+    );
+  });
   await input.press("Enter");
+  // 멈춘 시계에서 요청이 시작돼야 한다. 250ms debounce를 기다리지 않는다.
+  await enterSearch;
+  await page.clock.resume();
   await expect(rows).toHaveCount(0);
   await expect(members.getByText("검색 결과가 없습니다")).toBeVisible();
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
   await input.fill(account);
   await input.fill("");
+  await page.clock.runFor(0);
   await expect(rows).toHaveCount(20);
   await page.clock.runFor(300);
   await expect(rows).toHaveCount(20);
@@ -81,9 +97,13 @@ test("Korean IME searches after an input pause without compositionend or losing 
   await page.clock.runFor(249);
   await expect(rows).toHaveCount(20);
   await page.clock.runFor(1);
+  await page.clock.resume();
   await expect(members).toContainText("검색 결과");
   await expect(input).toBeFocused();
-  expect(await rows.count()).toBeGreaterThan(0);
+  const platformMembers = fixtureMembers().filter(
+    (member) => member.team.teamId === "team-platform",
+  );
+  await expect(rows).toHaveCount(platformMembers.length);
   for (const row of await rows.all())
     await expect(row.getByText("플랫폼", { exact: true })).toBeVisible();
   await ime.send("Input.imeSetComposition", {
@@ -109,9 +129,13 @@ test("search preserves list height and scroll position, then releases space when
   const input = members.getByRole("textbox", { name: "구성원 검색" });
   const rows = members.getByRole("button", { name: /구성원 상세$/ });
   const main = page.getByRole("main");
-  await members
-    .getByRole("button", { name: "다음 20명 더보기", exact: true })
-    .click();
+  const loadMore = members.getByRole("button", {
+    name: /^다음 \d+명 더보기$/,
+  });
+  await expect(rows).toHaveCount(20);
+  const initialHeight = (await members.boundingBox())!.height;
+  await expect(loadMore).toHaveText("다음 20명 더보기");
+  await loadMore.click();
   await expect(rows).toHaveCount(40);
   await input.focus();
   await main.evaluate((element) => {
@@ -126,6 +150,7 @@ test("search preserves list height and scroll position, then releases space when
   expect(originalScroll).toBeGreaterThan(0);
   await input.fill("no-such-member");
   await page.clock.runFor(250);
+  await page.clock.resume();
   await expect(rows).toHaveCount(0);
   await expect(members.getByText("검색 결과가 없습니다")).toBeVisible();
   expect(
@@ -139,8 +164,24 @@ test("search preserves list height and scroll position, then releases space when
 
   // 검색 결과가 더 많아졌다가 다시 줄어드는 경우에도 스크롤 영역이 갑자기 줄지 않습니다.
   await input.fill("@codeworks.io");
-  await page.clock.runFor(250);
-  expect(await rows.count()).toBeGreaterThan(40);
+  const accounts = fixtureMembers()
+    .map((member) => member.account)
+    .sort();
+  const labels = accounts.map((account) => `${account} 구성원 상세`);
+  await expect(rows).toHaveCount(20);
+  for (const [index, label] of labels.slice(0, 20).entries())
+    await expect(rows.nth(index)).toHaveAttribute("aria-label", label);
+  await expect(loadMore).toHaveText("다음 20명 더보기");
+  await loadMore.click();
+  await expect(rows).toHaveCount(40);
+  for (const [index, label] of labels.slice(20, 40).entries())
+    await expect(rows.nth(index + 20)).toHaveAttribute("aria-label", label);
+  await expect(loadMore).toHaveText(`다음 ${accounts.length - 40}명 더보기`);
+  await loadMore.click();
+  await expect(rows).toHaveCount(accounts.length);
+  for (const [index, label] of labels.slice(40).entries())
+    await expect(rows.nth(index + 40)).toHaveAttribute("aria-label", label);
+  await expect(loadMore).toHaveCount(0);
   const expandedHeight = (await members.boundingBox())!.height;
   expect(expandedHeight).toBeGreaterThan(originalHeight);
   const account = (await rows.first().getAttribute("aria-label"))!.replace(
@@ -155,10 +196,10 @@ test("search preserves list height and scroll position, then releases space when
   ).toBeLessThanOrEqual(1);
 
   await input.fill("");
-  await expect(rows).toHaveCount(40);
+  await expect(rows).toHaveCount(20);
   expect(
-    Math.abs((await members.boundingBox())!.height - originalHeight),
+    Math.abs((await members.boundingBox())!.height - initialHeight),
   ).toBeLessThanOrEqual(1);
   await page.clock.runFor(300);
-  await expect(rows).toHaveCount(40);
+  await expect(rows).toHaveCount(20);
 });
