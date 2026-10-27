@@ -5,6 +5,7 @@ import { Button } from "./Button";
 import { ErrorState } from "./ErrorState";
 import { EmptyState } from "./EmptyState";
 import { PeriodEmptyState } from "./PeriodEmptyState";
+import { RenderErrorState } from "./RenderErrorState";
 
 const meta = {
   title: "UI/Feedback",
@@ -20,6 +21,18 @@ const meta = {
 }>;
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+export const RenderError: Story = {
+  name: "렌더링 오류·다시 시도",
+  render: (args) => <RenderErrorState retry={args.onRetry} />,
+  async play({ canvas, userEvent, args }) {
+    await expect(
+      canvas.getByRole("heading", { name: "화면을 불러오지 못했습니다" }),
+    ).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "다시 시도" }));
+    await expect(args.onRetry).toHaveBeenCalledOnce();
+  },
+};
 
 export const PageLoading: Story = {
   name: "본문 최초 로딩",
