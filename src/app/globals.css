@@ -28,6 +28,11 @@
   --gray: #787e89;
   --gray-tint: #e4e6ea;
 
+  /* 터미널 명령 블록 — 테마와 무관하게 어두운 바탕 */
+  --code: #0f1115;
+  --code-text: #e5e7eb;
+  --code-dim: #8b93a3;
+
   /* 순차 램프 — 도넛·스택 막대 */
   --seq1: #22385f;
   --seq2: #33538f;
@@ -71,6 +76,10 @@
   --gray: #979ca6;
   --gray-tint: #2a2f3a;
 
+  --code: #0b0d11;
+  --code-text: #e5e7eb;
+  --code-dim: #8b93a3;
+
   --seq1: #d3deee;
   --seq2: #b4c5e2;
   --seq3: #8fa9d4;
@@ -112,6 +121,9 @@
   --color-red-tint: var(--red-tint);
   --color-gray: var(--gray);
   --color-gray-tint: var(--gray-tint);
+  --color-code: var(--code);
+  --color-code-text: var(--code-text);
+  --color-code-dim: var(--code-dim);
 
   --color-seq1: var(--seq1);
   --color-seq2: var(--seq2);
