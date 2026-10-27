@@ -19,6 +19,7 @@ test("경로와 하위 경로를 분류하되 비슷한 이름·API·정적 파�
   assert.equal(routeAccess("/"), "entry");
   for (const path of [
     "/contact",
+    "/install",
     "/auth/callback",
     "/api/bff/auth/session",
     "/_next/static/test.js",
