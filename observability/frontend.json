@@ -1,0 +1,351 @@
+{
+  "uid": "pulsemetry-frontend-local",
+  "title": "Pulsemetry frontend · Local",
+  "tags": ["pulsemetry", "local"],
+  "schemaVersion": 39,
+  "version": 2,
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 6,
+      "title": "요청 수 · 선택 기간 (추정)",
+      "description": "Next.js 요청 span 기준. Prometheus increase 추정치이며 첫 수집 이전 요청은 빠질 수 있습니다. 페이지/RSC/API 요청을 포함하며 방문자 수가 아닙니다. 정적 파일 등 Next 계측을 거치지 않는 요청은 제외됩니다.",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(frontend_http_server_duration_seconds_count{service_name=\"pulsemetry-frontend\",deployment_environment_name=\"local\"}[$__range]))",
+          "legendFormat": "요청 수 · 선택 기간 (추정)",
+          "range": false,
+          "instant": true
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "서버 에러율 · 5xx (5분)",
+      "description": "최근 5분 요청 중 HTTP 500–599 응답 비율. 4xx는 제외합니다. 요청이 없는 구간은 비율을 계산할 수 없어 No data/빈 구간으로 표시합니다.",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(sum(rate(frontend_http_server_duration_seconds_count{service_name=\"pulsemetry-frontend\",deployment_environment_name=\"local\",http_response_status_code=~\"5..\"}[5m])) or (0 * sum(rate(frontend_http_server_duration_seconds_count{service_name=\"pulsemetry-frontend\",deployment_environment_name=\"local\"}[5m])))) / (sum(rate(frontend_http_server_duration_seconds_count{service_name=\"pulsemetry-frontend\",deployment_environment_name=\"local\"}[5m])) > 0)",
+          "legendFormat": "서버 에러율 · 5xx (5분)",
+          "range": true,
+          "instant": false
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "응답 시간 p95 · 5분",
+      "description": "최근 5분 완료된 Next.js 요청 span 시간의 95백분위 추정값. 95%의 요청이 이 시간 이내입니다. 개발 컴파일 시간이 포함될 수 있고 브라우저 전체 로딩 시간은 아닙니다. 요청이 없으면 빈 구간입니다.",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(frontend_http_server_duration_seconds_bucket{service_name=\"pulsemetry-frontend\",deployment_environment_name=\"local\"}[5m])))",
+          "legendFormat": "응답 시간 p95 · 5분",
+          "range": true,
+          "instant": false
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Node.js CPU · 코어 1개 = 100%",
+      "description": "프론트 Node.js 프로세스의 최근 1분 CPU 사용률. user+system CPU 초 / 경과 초. 여러 스레드가 코어를 쓰면 100%를 넘을 수 있습니다. 컴퓨터/EC2 전체 및 컨테이너 할당량 대비 사용률이 아닙니다.",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(frontend_node_cpu_time_seconds_total{service_name=\"pulsemetry-frontend\",deployment_environment_name=\"local\"}[1m])",
+          "legendFormat": "{{service_instance_id}}",
+          "range": true,
+          "instant": false
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "title": "Node.js process RSS",
+      "description": "프로세스가 차지하는 물리 메모리. 브라우저 메모리가 아닙니다.",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "frontend_node_memory_bytes{service_name=\"pulsemetry-frontend\",deployment_environment_name=\"local\",kind=~\"rss\"}",
+          "legendFormat": "{{kind}} · {{service_instance_id}}",
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "JavaScript heap",
+      "description": "heapUsed: 사용 중인 JS 힙. heapTotal: 현재 확보한 힙이며 최대 한도가 아닙니다.",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "frontend_node_memory_bytes{service_name=\"pulsemetry-frontend\",deployment_environment_name=\"local\",kind=~\"heapUsed|heapTotal\"}",
+          "legendFormat": "{{kind}} · {{service_instance_id}}",
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Native memory / ArrayBuffers",
+      "description": "arrayBuffers는 external에 포함됩니다. RSS, heap, external 값을 더하지 마세요.",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "frontend_node_memory_bytes{service_name=\"pulsemetry-frontend\",deployment_environment_name=\"local\",kind=~\"external|arrayBuffers\"}",
+          "legendFormat": "{{kind}} · {{service_instance_id}}",
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "요청 추적 보기",
+      "type": "text",
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "Explore에서 **Tempo** 데이터 소스를 선택하고 TraceQL로 검색하세요.\n\n```traceql\n{ resource.service.name = \"pulsemetry-frontend\" && resource.deployment.environment.name = \"local\" }\n```\n\n프론트 http://localhost:3000 에서 요청을 만든 뒤 검색합니다. 요청별 소요 시간과 상태 코드는 trace에서 확인합니다. 개발 서버의 컴파일 시간은 운영 성능과 다릅니다.\n\n지표는 5초 간격으로 전송됩니다. 서버를 종료하면 새 데이터가 들어오지 않습니다. 서버 console 로그와 Next.js 요청 오류는 아래 Loki 패널에서 확인합니다. 웹 바이탈과 브라우저 로그·메모리는 수집하지 않습니다."
+      }
+    },
+    {
+      "id": 5,
+      "title": "Frontend server errors · Loki",
+      "description": "서버 console.error 및 Next.js 요청 오류. 오류가 없으면 No data가 정상입니다. 로그를 펼치면 stack trace와 trace_id를 확인할 수 있습니다.",
+      "type": "logs",
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service_name=\"pulsemetry-frontend\", deployment_environment_name=\"local\"} | severity_text=~\"ERROR|FATAL\"",
+          "queryType": "range",
+          "editorMode": "code"
+        }
+      ]
+    }
+  ],
+  "description": "로컬 Next.js → Alloy → Prometheus 메트릭 / Tempo trace / Loki 서버 로그. 브라우저 메모리가 아닙니다."
+}

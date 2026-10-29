@@ -13,6 +13,15 @@ npm run dev
 
 http://localhost:3000 에서 확인할 수 있습니다.
 
+운영 빌드는 `npm run build` 후 `PORT=3107 npm start`로 실행합니다(비어 있는 포트 사용).
+`start`는 standalone 서버를 실행하기 전에 `public`과 정적 JS/CSS를 빌드 폴더에 복사하며, 빌드는 수행하지 않습니다.
+루트 `.env.production.local`, `.env.local`, `.env.production`, `.env`를 Next.js의 운영 환경 우선순위로 읽습니다. 명령행에서 전달한 환경변수가 우선하며, 환경 파일을 standalone 폴더에 복사할 필요는 없습니다.
+로컬 관측을 켜려면 `npm run observability:up` 후 `PORT=3107 npm run start:otel`을 실행합니다.
+`start:otel`은 환경 이름 `local`, Alloy 주소 `http://127.0.0.1:14318`을 사용합니다.
+다른 수집기를 사용하려면 OTel 환경변수 세 개를 직접 지정하고 `npm start`를 실행합니다.
+개발 서버와 빌드 폴더도 분리하려면 빌드와 실행 양쪽에 같은 `NEXT_DIST_DIR=.next-production`을 지정합니다.
+포트는 `--port` 인자 대신 `PORT` 환경변수로 지정하고, 인증에 사용하는 `BFF_ORIGIN`과 콜백 주소도 실행 주소에 맞춥니다.
+
 로컬 API 포트는 **Enrollment 8080 / Dashboard 8081**를 사용합니다.
 백엔드도 이 포트로 실행하고 루트 `.env.local`에 아래 주소를 설정합니다.
 
@@ -71,6 +80,21 @@ BFF_SESSION_KEYS=<openssl rand -hex 32로 생성한 값>
 로딩·오류·빈 상태·성공 Toast의 표시 범위와 현재 적용 현황, Storybook 사례를 정리한다.
 
 ## 개발 도구
+
+### 로컬 서버 관측성
+
+Next.js 서버의 요청 추적, Node.js 메모리와 서버 로그를 **OTel SDK → Alloy → Prometheus·Tempo·Loki → Grafana** 경로로 확인할 수 있습니다.
+로컬 메트릭 저장소는 Prometheus이며, Grafana의 **Prometheus** 데이터 소스에서 조회합니다.
+AWS 인프라 변경 없이 실행하며, 설정과 수집 범위는 [로컬 관측성 안내](docs/local-observability.md)를 따릅니다.
+
+```sh
+npm run observability:up
+npm run dev:otel
+```
+
+프론트는 http://localhost:3000, Grafana는 http://localhost:3300/d/pulsemetry-frontend-local 입니다.
+기존 `npm run dev`가 3000번에서 실행 중이면 해당 터미널에서 종료한 뒤 `dev:otel`로 다시 실행합니다.
+일반 `npm run dev`는 명시적으로 계측을 활성화하지 않는 한 데이터를 전송하지 않습니다.
 
 ### TanStack Query Devtools
 
