@@ -194,3 +194,7 @@ AWS 인프라 적용과 Git push는 수행하지 않습니다.
 
 공식 문서: [Next.js OpenTelemetry](https://nextjs.org/docs/app/guides/open-telemetry),
 [Prometheus remote write 수신](https://prometheus.io/docs/prometheus/latest/querying/api/#remote-write-receiver).
+
+## AWS 대시보드 관리
+
+AWS 관측 EC2의 Dev Frontend·Observability Server 대시보드는 [infra 저장소](https://github.com/soma-376/infra/tree/develop/frontend/observability/dashboards)에서 관리합니다. 이 저장소의 `observability/frontend.json`은 로컬 앱 계측 검증용이며 AWS 배포 원본이 아닙니다.
