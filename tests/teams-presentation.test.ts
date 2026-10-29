@@ -403,7 +403,7 @@ test("확인된 누적 모델은 부분합 상태·가격 행수를 표시하고
   assert.match(gapModel.trendFeedback.cost.series[0].notes[1], /이전 날짜/);
 });
 
-test("날짜별 금액이 있어도 기간의 가격 판이 혼재하면 확인된 비용 누적을 만들지 않는다", () => {
+test("기간에 구 가격판 사유가 남아 있어도 서버의 날짜별 계산 금액은 누적한다", () => {
   const t = team("mixed", "가격 판 혼재", {
     trend: days.map((date) => ({
       ...point(date, "2.000000", 10, 1),
@@ -416,9 +416,12 @@ test("날짜별 금액이 있어도 기간의 가격 판이 혼재하면 확인�
     reasons: ["pricing_version_mixed"],
   };
   const model = presentTeams(view([t]), days[2]);
-  assert.deepEqual(model.knownTrend.cost[0].values, [null, null, null]);
+  assert.deepEqual(model.knownTrend.cost[0].values, [2, 4, 6]);
   assert.deepEqual(model.knownTrend.token[0].values, [10, 20, 30]);
-  assert.match(model.knownTrend.cost[0].reasons[0], /서로 다른 가격 기준/);
+  assert.doesNotMatch(
+    model.knownTrend.cost[0].reasons[0],
+    /서로 다른 가격 기준/,
+  );
 });
 
 test("팀 표: 사용자당·단가 열은 서버 값의 비율이고 분모가 없거나 0이면 비운다", () => {
@@ -1017,7 +1020,7 @@ test("화면은 서버가 준 지표별 비교 불가와 파생 값의 상태를
   });
   analytics.metrics.equivalentCostUsd.comparison = {
     status: "unavailable",
-    reasons: ["pricing_version_mixed"],
+    reasons: ["pricing_missing"],
     previousValue: null,
     absoluteChange: null,
     percentChange: null,

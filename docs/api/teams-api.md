@@ -12,7 +12,7 @@
 
 ## 팀 목록 응답
 
-`meta`, `comparison`, `attributionBasis`, `totals`, `sort`, `teams`, `unassigned`, `modelScatter`를 반환한다. `meta`는 조직·기간·시간대·일수·확정 시각·데이터 상태·관측 일수·snapshot ID다. 헤더 수집 상태와 가격 판 상세는 포함하지 않는다.
+`meta`, `comparison`, `attributionBasis`, `totals`, `sort`, `teams`, `unassigned`, `modelScatter`를 반환한다. `meta`는 조직·기간·시간대·일수·확정 시각·데이터 상태·관측 일수·snapshot ID다. 헤더 수집 상태는 포함하지 않는다.
 
 `teams`는 `{items,totalCount,nextOffset}`다. 각 항목과 미배정은 `{teamId,teamName,metrics,modelMix,trend,products}`다. `current/previous` 범용 사용량은 반환하지 않는다.
 
@@ -37,9 +37,9 @@
 
 `trend`는 날짜·관측 상태·일별 비용·토큰·기간 시작일부터의 고유 누적 세션을 반환한다. 일별 고유 세션을 합산하지 않는다. 모델·날짜별 `status/reasons`로 수집 불완전·단가·토큰·누적 근거 부족을 보존한다. 비용·토큰 누적선은 값이 없는 날짜부터 끊는다.
 
-관측 부분합 계약은 `metrics`와 `totals`에 `knownEquivalentCostUsd: Value<string>`, `pricedUsageRows: number`, `unpricedUsageRows: number`를 추가한다. `trend[]`는 동일한 행수와 `knownEquivalentCostUsd: string|null`을 제공한다. 프론트는 이전 fixture와의 호환을 위해 추가 필드를 optional로 읽는다. 부분합은 같은 가격 판에서 계산 가능한 관측만 더한 값이며 공식 환산액·평균·비중을 대체하지 않는다.
+관측 부분합 계약은 `metrics`와 `totals`에 `knownEquivalentCostUsd: Value<string>`, `pricedUsageRows: number`, `unpricedUsageRows: number`를 추가한다. `trend[]`는 동일한 행수와 `knownEquivalentCostUsd: string|null`을 제공한다. 프론트는 이전 fixture와의 호환을 위해 추가 필드를 optional로 읽는다. 부분합은 관측에 저장된 USD 환산액 중 계산 가능한 금액만 더한 값이며 공식 환산액·평균·비중을 대체하지 않는다. 과거 가격표의 차이로 금액을 가리지 않으며 모든 행을 현재 단가로 재평가했다는 뜻은 아니다.
 
-비용·토큰의 별도 ‘확인된 값 누적’ 모드는 확인 가능한 날의 값을 더하고 공백 뒤에서 재개한다. 미관측·미확인 날짜는 null로 남기고 선택 기간 전체의 하한임을 표시한다. 비용은 추가 부분합 필드를 사용하며 필드가 생략된 구 응답에서는 기존 일별 금액을 쓴다. 명시적인 null은 기존 금액으로 대체하지 않고, 기간의 가격 판이 혼재하면 비용 부분합 누적을 만들지 않는다. 세션은 이 모드를 지원하지 않는다. CSV에는 원시 추가 필드와 선택한 모드의 `chart_trend`를 함께 기록한다.
+비용·토큰의 별도 ‘확인된 값 누적’ 모드는 확인 가능한 날의 값을 더하고 공백 뒤에서 재개한다. 미관측·미확인 날짜는 null로 남기고 선택 기간 전체의 하한임을 표시한다. 비용은 추가 부분합 필드를 사용하며 필드가 생략된 구 응답에서는 기존 일별 금액을 쓴다. 명시적인 null은 기존 금액으로 대체하지 않는다. 세션은 이 모드를 지원하지 않는다. CSV에는 원시 추가 필드와 선택한 모드의 `chart_trend`를 함께 기록한다.
 
 `products`는 화면의 제품별 비중에 필요한 제품 이름·비용·토큰·세션·활성 사용자다. `modelMix`와 `modelScatter`는 현재 선택 기간의 모델 값과 가용성을 제공한다. 값이 없는 모델은 점으로 그리지 않는다.
 

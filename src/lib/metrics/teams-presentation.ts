@@ -576,20 +576,13 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
     token: trendOf("token"),
     session: trendOf("session"),
   };
-  const mixedPricing = (entry: TeamEntry) =>
-    [
-      ...entry.analytics.metrics.equivalentCostUsd.reasons,
-      ...(entry.analytics.metrics.knownEquivalentCostUsd?.reasons ?? []),
-    ].includes("pricing_version_mixed");
   const knownTrendOf = (axis: "cost" | "token") =>
     entries.map((entry) => ({
       key: entry.key,
       team: entry.team,
       color: colorOf(entry.key),
       values: knownCumulative(entry.analytics.trend, axis).map((value, i) =>
-        dates[i] > today || (axis === "cost" && mixedPricing(entry))
-          ? null
-          : value,
+        dates[i] > today ? null : value,
       ),
       observations: entry.analytics.trend.map((point) =>
         point.observation === "unobserved"
@@ -601,9 +594,6 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
           knownTrendNote(axis),
           trendPointState(point, axis).reason,
           axis === "cost" ? pricingRowsText(point) : "",
-          axis === "cost" && mixedPricing(entry)
-            ? reasonsText(["pricing_version_mixed"])
-            : "",
         ]
           .filter(Boolean)
           .join(" · "),

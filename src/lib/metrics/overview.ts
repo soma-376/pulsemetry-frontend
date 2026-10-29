@@ -121,7 +121,7 @@ export function buildOverview(
       label: "토큰 비용",
       value: usd(equivValue),
       unit: ` / ${int(Math.round(tokensM))}M`,
-      def: "토큰 × 공시 단가 = 사용 환산액 · 실제 청구액과 별개 · 토큰은 입력·출력·캐시 합 실측값",
+      def: "관측별로 저장된 참조 평가액의 합 · 실제 청구액과 별개 · 토큰은 입력·출력·캐시 합 실측값",
       caption: `${mixTopName.replace("claude-", "")} 환산가치 ${mixTopShare}`,
       delta: pct(ORG.costGrowth),
       up: ORG.costGrowth >= 0,
