@@ -9,7 +9,14 @@ import {
 import { createSessionCookie } from "../src/lib/server/session-cookie";
 
 test("경로와 하위 경로를 분류하되 비슷한 이름·API·정적 파일은 제외한다", () => {
-  for (const root of ["overview", "teams", "members", "settings", "ops"]) {
+  for (const root of [
+    "overview",
+    "teams",
+    "members",
+    "settings",
+    "ops",
+    "security",
+  ]) {
     for (const suffix of ["", "/", "/detail"])
       assert.equal(routeAccess(`/${root}${suffix}`), "protected");
     assert.equal(routeAccess(`/${root}-public`), "public");

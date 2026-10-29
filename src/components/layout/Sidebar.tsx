@@ -17,7 +17,8 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 const NAV: { href: string; label: string; icon: IconName }[] = [
   { href: "/overview", label: "개요", icon: "overview" },
   { href: "/teams", label: "팀 분석", icon: "teams" },
-  { href: "/ops", label: "운영 · 보안", icon: "ops" },
+  { href: "/ops", label: "성과", icon: "performance" },
+  { href: "/security", label: "보안", icon: "security" },
   { href: "/members", label: "구성원", icon: "members" },
   { href: "/settings", label: "설정", icon: "settings" },
 ];

@@ -10,13 +10,13 @@ const pages = [
   { path: "/teams", api: "analytics/teams?*", region: "팀별 사용량 비교" },
   { path: "/members", api: "members/dashboard?*", region: "구성원 목록" },
   { path: "/settings", api: "settings", region: "계약 벤더" },
-  { path: "/ops", api: "alerts?*", region: "보안 알림" },
+  { path: "/security", api: "alerts?*", region: "보안 알림" },
 ];
 
 async function preparePage(page: Page, path: string) {
   serveSettings(page);
   if (path === "/members") await mockMembers(page, { invitations: [] });
-  if (path === "/ops") {
+  if (path === "/security") {
     await page.route("**/api/v1/organizations/*/alerts?*", (route) =>
       route.fulfill({
         json: {
@@ -136,7 +136,7 @@ for (const target of pages) {
     serveSettings(page);
     if (target.path === "/members")
       await mockMembers(page, { invitations: [] });
-    if (target.path === "/ops") {
+    if (target.path === "/security") {
       await page.route("**/api/v1/organizations/*/alerts?*", (route) =>
         route.fulfill({
           json: {
@@ -197,7 +197,7 @@ for (const target of pages) {
         .click();
       await expect
         .poll(() => [pageRequests, ingestRequests])
-        .toEqual([target.path === "/ops" ? 2 : 1, 1]);
+        .toEqual([target.path === "/security" ? 2 : 1, 1]);
       const refreshing = toolbar.getByRole("button", {
         name: "조회 중…",
         exact: true,
@@ -227,7 +227,7 @@ for (const target of pages) {
         toolbar.getByRole("button", { name: "새로고침", exact: true }),
       ).toBeEnabled();
       await expect(body).toBeVisible();
-      expect(pageRequests).toBe(target.path === "/ops" ? 2 : 1);
+      expect(pageRequests).toBe(target.path === "/security" ? 2 : 1);
     } finally {
       releasePage();
       releaseIngest();

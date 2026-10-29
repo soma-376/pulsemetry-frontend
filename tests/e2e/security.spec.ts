@@ -3,7 +3,7 @@ import { dashboardBase, expect, test, seedOrganizations } from "./fixtures";
 import { authenticatedRequest, signIn } from "./helpers";
 import { PreparationError } from "./harness";
 
-// 운영 · 보안 — 보안 범주 알림(미등록 제품 사용 및 과거 알림 이력)의 목록·상세·확인. 기대값은 같은 조건의 알림 API 와 서버 명세(평가 전제 사유)에서 쓴다.
+// 보안 — 보안 범주 알림(미등록 제품 사용 및 과거 알림 이력)의 목록·상세·확인. 기대값은 같은 조건의 알림 API 와 서버 명세(평가 전제 사유)에서 쓴다.
 const [A, B] = seedOrganizations;
 type AlertsBody = {
   evaluation: {
@@ -22,7 +22,7 @@ type AlertsBody = {
   };
 };
 
-test("OPS-A @p1 @write 운영 · 보안은 보안 범주 알림을 목록·상세·확인으로 보이고, 확인은 새로고침 뒤에도 남으며, CSV 는 같은 조건의 알림이다", async ({
+test("OPS-A @p1 @write 보안 화면은 보안 범주 알림을 목록·상세·확인으로 보이고, 확인은 새로고침 뒤에도 남으며, CSV 는 같은 조건의 알림이다", async ({
   page,
 }) => {
   test.setTimeout(180_000);
@@ -57,7 +57,7 @@ test("OPS-A @p1 @write 운영 · 보안은 보안 범주 알림을 목록·상�
     before.alerts.items.every((item) => item.category === "security"),
   ).toBe(true);
 
-  await page.goto("/ops");
+  await page.goto("/security");
   const panel = page
     .getByRole("main")
     .getByRole("region", { name: "보안 알림" });
@@ -110,7 +110,7 @@ test("OPS-A @p1 @write 운영 · 보안은 보안 범주 알림을 목록·상�
   expect(rows.some((line) => line.startsWith(`alerts,${alertId},`))).toBe(true);
 });
 
-test("OPS-EMPTY-B @p1 @read 규칙을 켜지 않은 조직의 운영 · 보안은 빈 상태와 평가 전제 사유를 보인다", async ({
+test("OPS-EMPTY-B @p1 @read 규칙을 켜지 않은 조직의 보안 화면은 빈 상태와 평가 전제 사유를 보인다", async ({
   page,
 }) => {
   await signIn(page, `owner@seed-${B.seed}.example.test`);
@@ -126,7 +126,7 @@ test("OPS-EMPTY-B @p1 @read 규칙을 켜지 않은 조직의 운영 · 보안�
     status: "unavailable",
     reasons: ["evaluation_not_configured"],
   });
-  await page.goto("/ops");
+  await page.goto("/security");
   const panel = page
     .getByRole("main")
     .getByRole("region", { name: "보안 알림" });

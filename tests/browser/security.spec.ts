@@ -3,7 +3,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 import { mockOverview } from "./overview-fixture";
 import { mockSession } from "./helpers";
 
-/** 운영 · 보안 — 보안 범주 알림(서버 ADR 0051)의 목록·상세·확인·CSV(UI 테스트). 실서버 검증은 tests/e2e/ops.spec.ts 가 한다. */
+/** 보안 — 보안 범주 알림(서버 ADR 0051)의 목록·상세·확인·CSV(UI 테스트). 실서버 검증은 tests/e2e/security.spec.ts 가 한다. */
 const cors = (page: Page) => ({
   "access-control-allow-origin": new URL(page.url()).origin,
   "access-control-allow-headers": "content-type,authorization,idempotency-key",
@@ -119,13 +119,13 @@ async function serve(page: Page, options: { configured: boolean }) {
   return state;
 }
 
-test("운영 · 보안은 보안 범주 알림만 목록·상세·확인으로 보인다", async ({
+test("보안 화면은 보안 범주 알림만 목록·상세·확인으로 보인다", async ({
   page,
 }) => {
   await mockSession(page);
   await mockOverview(page);
   const state = await serve(page, { configured: true });
-  await page.goto("/ops");
+  await page.goto("/security");
   const main = page.getByRole("main");
   await expect(main).not.toContainText("세션 조회와 감사 로그");
   await expect(main).not.toContainText(
@@ -165,7 +165,7 @@ test("운영 · 보안은 보안 범주 알림만 목록·상세·확인으로 �
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "CSV", exact: true }).click();
   const text = await readFile((await (await download).path())!, "utf8");
-  expect(text).toContain("화면,운영 · 보안\r\n");
+  expect(text).toContain("화면,보안\r\n");
   expect(text).toContain("상태,acknowledged\r\n");
   expect(text).toContain(
     "\r\nalerts,a1,model_not_allowed,security,open,claude-opus-4,4,1,dana@example.test,",
@@ -177,7 +177,7 @@ test("규칙을 켜지 않은 조직은 빈 상태를 보인다", async ({ page 
   await mockSession(page);
   await mockOverview(page);
   await serve(page, { configured: false });
-  await page.goto("/ops");
+  await page.goto("/security");
   const panel = page
     .getByRole("main")
     .getByRole("region", { name: "보안 알림" });

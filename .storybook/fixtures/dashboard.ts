@@ -11,7 +11,7 @@ import { settingsHandlers } from "./settings";
 import { notificationHandlers } from "./alerts";
 
 export type DashboardPage =
-  "overview" | "teams" | "members" | "ops" | "settings";
+  "overview" | "teams" | "members" | "ops" | "security" | "settings";
 export type PageState =
   | "normal"
   | "loading"
@@ -113,34 +113,39 @@ export function dashboardHandlers(
   page: DashboardPage,
   response: { state: PageState },
 ) {
-  const paths: Record<DashboardPage, string> = {
+  // 성과(ops)는 백엔드 API 없이 예시 데이터를 보여주므로 상태를 바꿀 조회가 없다.
+  const paths: Record<Exclude<DashboardPage, "ops">, string> = {
     overview: "/analytics/overview",
     teams: "/analytics/teams",
     members: "/members/dashboard",
-    ops: "/alerts",
+    security: "/alerts",
     settings: "/settings",
   };
   let recovering = false;
   return [
-    http.get(`${api}${paths[page]}`, async ({ request }) => {
-      if (
-        page === "ops" &&
-        new URL(request.url).searchParams.get("category") !== "security"
-      )
-        return;
-      if (response.state === "loading") await delay("infinite");
-      if (response.state === "error")
-        return HttpResponse.json(
-          {
-            error: {
-              code: "unavailable",
-              message: "storybook service unavailable",
-            },
-          },
-          { status: 503 },
-        );
-      // undefined이면 뒤의 정상 응답 핸들러가 처리한다.
-    }),
+    ...(page === "ops"
+      ? []
+      : [
+          http.get(`${api}${paths[page]}`, async ({ request }) => {
+            if (
+              page === "security" &&
+              new URL(request.url).searchParams.get("category") !== "security"
+            )
+              return;
+            if (response.state === "loading") await delay("infinite");
+            if (response.state === "error")
+              return HttpResponse.json(
+                {
+                  error: {
+                    code: "unavailable",
+                    message: "storybook service unavailable",
+                  },
+                },
+                { status: 503 },
+              );
+            // undefined이면 뒤의 정상 응답 핸들러가 처리한다.
+          }),
+        ]),
     http.get(`${api}/analytics/overview`, async ({ request }) => {
       const url = new URL(request.url),
         data = overviewSchema.parse(overviewExample);

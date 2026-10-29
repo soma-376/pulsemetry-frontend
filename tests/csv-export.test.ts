@@ -365,7 +365,7 @@ test("설정: 화면 카드·벤더 행 값과 상태만 내보내며 상세 계
   assert.equal("meteredActualBilledUsd" in vendors[0], false);
 });
 
-test("운영 · 보안: 같은 범주의 알림과 화면 요약만 내보내고 숨겨진 규칙 기록은 제외한다", () => {
+test("보안: 같은 범주의 알림과 화면 요약만 내보내고 숨겨진 규칙 기록은 제외한다", () => {
   const alert = (id: string, patch: Partial<Alert>): Alert => ({
     alertId: id,
     version: 1,
@@ -420,7 +420,7 @@ test("운영 · 보안: 같은 범주의 알림과 화면 요약만 내보내고
   );
   assert.match(
     csv,
-    /^화면,운영 · 보안\r\n조직,예시 조직\r\n범주,security\r\n상태,all\r\n/,
+    /^화면,보안\r\n조직,예시 조직\r\n범주,security\r\n상태,all\r\n/,
   );
   assert.match(csv, /\r\nsnapshot,snap-1\r\n알림 수,2\r\n/);
   assert.equal(csv.includes("section,ruleId,enabled"), false);

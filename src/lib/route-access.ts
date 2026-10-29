@@ -1,6 +1,13 @@
 export type RouteAccess =
   "public" | "guest" | "onboarding" | "protected" | "entry";
-const dashboards = ["/overview", "/teams", "/members", "/settings", "/ops"];
+const dashboards = [
+  "/overview",
+  "/teams",
+  "/members",
+  "/settings",
+  "/ops",
+  "/security",
+];
 const within = (path: string, root: string) =>
   path === root || path.startsWith(root + "/");
 export function routeAccess(pathname: string): RouteAccess {

@@ -8,7 +8,9 @@ export type DashboardFilters = {
 const FILTER_KEYS = ["startDate", "endDate", "compare"] as const;
 
 export function hasPeriodFilters(pathname: string): boolean {
-  return pathname === "/overview" || pathname === "/teams";
+  return (
+    pathname === "/overview" || pathname === "/teams" || pathname === "/ops"
+  );
 }
 
 export function defaultDashboardFilters(todayIso: string): DashboardFilters {

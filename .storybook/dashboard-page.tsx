@@ -19,7 +19,8 @@ import { DashboardHeaderProvider } from "@/components/layout/DashboardHeader";
 import { OverviewContent } from "@/components/overview/OverviewContent";
 import { TeamsContent } from "@/components/teams/TeamsContent";
 import { MembersContent } from "@/components/members/MembersContent";
-import { OpsContent } from "@/components/ops/OpsContent";
+import { PerformanceContent } from "@/components/performance/PerformanceContent";
+import { SecurityContent } from "@/components/security/SecurityContent";
 import { SettingsContent } from "@/components/settings/SettingsContent";
 import { COMPANY_A } from "@/mocks/company-a";
 import { onboardingHandlers } from "./fixtures/onboarding";
@@ -36,14 +37,16 @@ const contents = {
   overview: OverviewContent,
   teams: TeamsContent,
   members: MembersContent,
-  ops: OpsContent,
+  ops: PerformanceContent,
+  security: SecurityContent,
   settings: SettingsContent,
 };
 const loadingMessages = {
   overview: "개요 데이터를",
   teams: "팀 분석을",
   members: "구성원을",
-  ops: "알림을",
+  ops: "성과를",
+  security: "알림을",
   settings: "설정을",
 };
 
@@ -76,6 +79,8 @@ async function loadLastSuccessfulResponse(
       await client.fetchQuery(settingsOptions(STORY_ORG));
       break;
     case "ops":
+      break;
+    case "security":
       await client.fetchInfiniteQuery(
         alertsOptions(STORY_ORG, "unacknowledged", "security"),
       );
@@ -215,7 +220,7 @@ export function dashboardPageMeta(page: DashboardPage): Meta<PageStoryArgs> {
         await expect(
           await canvas.findByRole("textbox", { name: "구성원 검색" }),
         ).toBeVisible();
-      else if (page === "ops")
+      else if (page === "security")
         await expect(
           await canvas.findByRole("list", { name: "알림 목록" }),
         ).toBeVisible();
@@ -226,6 +231,7 @@ export function dashboardPageMeta(page: DashboardPage): Meta<PageStoryArgs> {
               overview: "사용 환산액",
               teams: "팀별 사용량 비교",
               settings: "계약 벤더",
+              ops: "성과 요약",
             }[page],
           }),
         ).toBeVisible();

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { OpsContent } from "@/components/ops/OpsContent";
+import { PerformanceContent } from "@/components/performance/PerformanceContent";
 
 export const metadata: Metadata = {
-  title: "운영 · 보안 · Pulsemetry",
+  title: "성과 · Pulsemetry",
 };
 
 export default function Page() {
-  return <OpsContent />;
+  return <PerformanceContent />;
 }

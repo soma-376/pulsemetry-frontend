@@ -92,7 +92,7 @@ test("분석 화면만 기간·비교를 포함하고 관리 화면은 다른 �
     dates: { start: "2026-09-01", end: "2026-09-13" },
     compare: "none" as const,
   };
-  for (const path of ["/members", "/ops", "/settings"]) {
+  for (const path of ["/members", "/security", "/settings"]) {
     const url = new URL(
       withFilterQuery(
         `${path}?startDate=old&endDate=old&compare=prev_week&invite=1&vendor=v1#section`,
@@ -103,7 +103,7 @@ test("분석 화면만 기간·비교를 포함하고 관리 화면은 다른 �
     assert.equal(url.searchParams.toString(), "invite=1&vendor=v1");
     assert.equal(url.hash, "#section");
   }
-  for (const path of ["/overview", "/teams"]) {
+  for (const path of ["/overview", "/teams", "/ops"]) {
     const url = new URL(
       withFilterQuery(`${path}?team=t1`, filters),
       "http://localhost",
@@ -125,7 +125,7 @@ test("관리 페이지를 거쳐 돌아오면 마지막 조건을 복원하고 �
     "startDate=2026-01-01&endDate=2026-01-28&compare=prev_week",
   );
   let remembered = selected;
-  for (const path of ["/members", "/ops", "/settings"])
+  for (const path of ["/members", "/security", "/settings"])
     remembered = resolveDashboardFilters(path, stale, today, remembered);
   assert.deepEqual(remembered, selected);
   assert.deepEqual(

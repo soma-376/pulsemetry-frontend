@@ -26,7 +26,8 @@ export const Members: Story = {
     ),
   },
 };
-export const Operations: Story = { args: { page: "ops" } };
+export const Performance: Story = { args: { page: "ops" } };
+export const Security: Story = { args: { page: "security" } };
 export const Settings: Story = { args: { page: "settings" } };
 export const Narrow: Story = {
   args: Members.args,
