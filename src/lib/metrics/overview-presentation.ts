@@ -129,7 +129,6 @@ const REASONS: Record<string, string> = {
   member_identity_missing: "구성원을 확인할 수 없는 사용이 있습니다",
   session_identity_missing: "세션을 확인할 수 없는 사용이 있습니다",
   pricing_missing: "단가를 확인할 수 없는 사용이 있습니다",
-  pricing_version_mixed: "서로 다른 가격 기준이 섞여 있습니다",
   token_data_incomplete: "일부 토큰 값이 없습니다",
   token_semantics_incompatible: "토큰 집계 기준을 합칠 수 없습니다",
   zero_denominator: "분모가 0이므로 계산할 수 없습니다",
@@ -252,7 +251,7 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
           format: (v: string | number | null) =>
             moneyText(v === null ? null : String(v)),
           unit: "",
-          def: "토큰 × 공시 단가 = 사용 환산액 · 실제 청구액과 별개",
+          def: "관측별로 저장된 참조 평가액의 합 · 실제 청구액과 별개",
           caption: "사용량을 금액으로 환산한 값",
           good: false,
           supportingValue:
@@ -533,7 +532,7 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
       coverageNote: "",
     },
     defs: {
-      w12: "날짜별 토큰 사용량의 공시 단가 환산액 · 실제 청구액과 별개",
+      w12: "날짜별로 저장된 참조 평가액의 합 · 실제 청구액과 별개",
       w14: "모델별 사용 환산액 ÷ 전체 사용 환산액",
       w17: "이벤트 당시 팀별 사용 환산액",
     },

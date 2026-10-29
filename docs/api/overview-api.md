@@ -45,7 +45,7 @@ type Metric<T> = Value<T> & { comparison: Change<T> };
 `meta.currentCoverage`와 `comparison.coverage`는 `{status:"complete"|"partial"|"none",observedDays:number}`다.
 비교 없음의 날짜·coverage는 null이다. `dataThrough`는 시작일부터 연속으로 완전한 날짜의 끝 시각이다.
 
-관측 부분합 계약은 `summary`와 `trend.points[]`에 `knownEquivalentCostUsd: Value<string>`, `pricedUsageRows: number`, `unpricedUsageRows: number`를 추가한다. 프론트는 이전 fixture와의 호환을 위해 추가 필드를 optional로 읽는다. 같은 가격 판에서 환산 가능한 관측의 부분합이며, 공식 합계·사용자당·세션당 금액과 coverage는 그대로 유지한다. 환산 가능한 행이 없거나 가격 판이 혼재하면 부분합도 null이다. 완전 관측된 실제 빈 기간의 0만 허용한다.
+관측 부분합 계약은 `summary`와 `trend.points[]`에 `knownEquivalentCostUsd: Value<string>`, `pricedUsageRows: number`, `unpricedUsageRows: number`를 추가한다. 프론트는 이전 fixture와의 호환을 위해 추가 필드를 optional로 읽는다. 관측에 저장된 환산액 중 계산 가능한 금액의 부분합이며, 공식 합계·사용자당·세션당 금액과 coverage는 그대로 유지한다. 환산 가능한 행이 없으면 부분합도 null이다. 완전 관측된 실제 빈 기간의 0만 허용한다.
 
 공식 금액이 null이고 부분합이 있으면 KPI에 ‘확인된 금액’을 보조로 표시한다. 추이는 ‘확인된 금액 · 일부 집계’라는 이름과 선택 기간 전체의 확정 금액이 아니라는 설명을 붙인다. 미관측일과 미래 날짜는 선을 연결하지 않는다. CSV는 공식 값과 부분합·행수·추이 기준을 함께 보존한다.
 
@@ -56,6 +56,8 @@ type Metric<T> = Value<T> & { comparison: Change<T> };
 나머지 팀 합계, 팀 대표 모델, 제품별 상세 집계, 좌석료, 토큰 성분은 반환하지 않는다.
 
 ## 값과 비교 상태
+
+사용 환산액은 관측별로 저장된 USD 참조 평가액의 합이다. 서버는 새 사용량에 단일 참조 단가표를 적용하며 가격판 선택·버전 기록·응답 필드를 제공하지 않는다. 과거 금액은 보존하므로 모든 사용량을 현재 단가로 재평가한 합계는 아니다. 이전 가격표의 차이만으로 전체값·부분합·비교를 가리지 않는다. 미등록 모델·미검증 토큰 의미·필수 성분 누락은 계속 null이다. [허브 ADR 0028](https://github.com/soma-376/docs/blob/main/adr/0028-single-reference-price-catalog.md)을 따른다.
 
 - `complete`: 값이 있고 사유가 없다. 확인된 사용 없음은 0이다.
 - `partial`: 값은 있으나 기간 또는 식별 근거가 불완전하다. 사유를 함께 반환한다.
@@ -73,7 +75,6 @@ type Metric<T> = Value<T> & { comparison: Change<T> };
 | member_identity_missing      | 구성원 미식별 사용 존재                    |
 | session_identity_missing     | 세션 미식별 사용 존재                      |
 | pricing_missing              | 단가 누락                                  |
-| pricing_version_mixed        | snapshot의 가격 판 혼재                    |
 | token_data_incomplete        | 토큰 누락                                  |
 | token_semantics_incompatible | 의미 미검증 또는 다른 의미 프로파일의 토큰 |
 | zero_denominator             | 평균·비중의 분모 0                         |
