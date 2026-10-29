@@ -532,7 +532,7 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
       coverageNote: "",
     },
     defs: {
-      w12: "날짜별 토큰 사용량의 공시 단가 환산액 · 실제 청구액과 별개",
+      w12: "날짜별로 저장된 참조 평가액의 합 · 실제 청구액과 별개",
       w14: "모델별 사용 환산액 ÷ 전체 사용 환산액",
       w17: "이벤트 당시 팀별 사용 환산액",
     },
