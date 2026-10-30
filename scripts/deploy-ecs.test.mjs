@@ -24,8 +24,10 @@ function fixture(options = {}) {
     "arn:aws:ecs:ap-northeast-2:111111111111:task-definition/frontend:1";
   const service = () => ({
     status: "ACTIVE",
-    desiredCount: 1,
-    runningCount: 1,
+    desiredCount: updated
+      ? (options.afterCount ?? options.count ?? 1)
+      : (options.count ?? 1),
+    runningCount: options.count ?? 1,
     pendingCount: 0,
     taskDefinition: definition,
     deployments: [
@@ -59,25 +61,37 @@ function fixture(options = {}) {
           },
         };
       case "list-tasks":
-        return { taskArns: ["task"] };
+        return {
+          taskArns: Array.from(
+            { length: options.listCount ?? options.count ?? 1 },
+            (_, i) => `task-${i}`,
+          ),
+        };
       case "describe-tasks":
         return {
-          tasks: [
-            {
-              taskDefinitionArn: definition,
-              lastStatus: "RUNNING",
-              startedBy: updated ? "new" : "old",
-              containers: [
-                {
-                  name: "frontend",
-                  lastStatus: "RUNNING",
-                  imageDigest: updated
-                    ? (options.actualDigest ?? newDigest)
+          tasks: args.slice(args.indexOf("--tasks") + 1).map((taskArn, i) => ({
+            taskArn,
+            taskDefinitionArn: definition,
+            lastStatus: "RUNNING",
+            startedBy: updated
+              ? options.oldSecondTask && i === 1
+                ? "old"
+                : "new"
+              : "old",
+            containers: [
+              {
+                name: "frontend",
+                lastStatus: "RUNNING",
+                imageDigest: updated
+                  ? options.mixedAfter && i === 1
+                    ? oldDigest
+                    : (options.actualDigest ?? newDigest)
+                  : options.mixedBefore && i === 1
+                    ? newDigest
                     : oldDigest,
-                },
-              ],
-            },
-          ],
+              },
+            ],
+          })),
         };
       case "batch-get-image": {
         const digest = value("--image-ids").split("=")[1];
@@ -241,3 +255,41 @@ test("태그 복구 실패도 원래 배포 실패를 성공으로 바꾸지 않
   await assert.rejects(f.run(), /배포가 실패/);
   assert.equal(f.tag(), newDigest);
 });
+
+for (const count of [1, 2, 101]) {
+  test(`desiredCount ${count}개의 모든 태스크를 확인하고 배포한다`, async () => {
+    const f = fixture({ count });
+    assert.deepEqual(await f.run(), { deploymentId: "new", digest: newDigest });
+    assert.ok(
+      f.calls
+        .filter((c) => c.operation === "describe-tasks")
+        .every((c) => c.args.length <= 103),
+    );
+  });
+}
+for (const options of [
+  { count: 0 },
+  { count: 2, listCount: 1 },
+  { count: 2, mixedBefore: true },
+]) {
+  test(`불완전한 배포 전 태스크는 쓰기 전에 차단: ${JSON.stringify(options)}`, async () => {
+    const f = fixture(options);
+    await assert.rejects(f.run());
+    assert.ok(
+      !f.calls.some((c) =>
+        ["put-image", "update-service"].includes(c.operation),
+      ),
+    );
+  });
+}
+for (const options of [
+  { count: 2, mixedAfter: true },
+  { count: 2, oldSecondTask: true },
+  { count: 2, afterCount: 3 },
+]) {
+  test(`일부 태스크 불일치·배포 중 규모 변경은 실패하고 태그 복구: ${JSON.stringify(options)}`, async () => {
+    const f = fixture(options);
+    await assert.rejects(f.run());
+    assert.equal(f.tag(), oldDigest);
+  });
+}
