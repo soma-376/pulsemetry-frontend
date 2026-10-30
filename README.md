@@ -82,6 +82,8 @@ BFF_SESSION_KEYS=<openssl rand -hex 32로 생성한 값>
 
 ## 개발 도구
 
+브라우저 LCP·INP·CLS 수집·실행 설정은 [브라우저 RUM 안내](docs/browser-rum.md)를 참고합니다.
+
 ### 로컬 서버 관측성
 
 Next.js 서버의 요청 추적, Node.js 메모리와 서버 로그를 **OTel SDK → Alloy → Prometheus·Tempo·Loki → Grafana** 경로로 확인할 수 있습니다.

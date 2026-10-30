@@ -53,6 +53,16 @@ test("request histogram counts only completed outer requests, keeps 4xx/5xx and 
       );
       span.end([100, 250_000_000]);
     }
+    tracer
+      .startSpan("GET /api/rum/config", {
+        kind: SpanKind.SERVER,
+        attributes: {
+          "next.span_type": "BaseServer.handleRequest",
+          "http.status_code": 200,
+          "http.route": "/api/rum/config",
+        },
+      })
+      .end();
     for (const [kind, type, status] of [
       [SpanKind.INTERNAL, "AppRender.getBodyResult", 200],
       [SpanKind.CLIENT, "BaseServer.handleRequest", 200],
