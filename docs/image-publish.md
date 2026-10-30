@@ -43,9 +43,9 @@ Environment에 required reviewer가 설정되어 있으면 승인 후 진행한�
 
 ## 배포와 실패 판정
 
-커밋 SHA·실행 ID·시도 번호를 조합한 immutable 태그로 먼저 게시한다. 배포 스크립트는 현재 서비스가 정상 단일 태스크 상태이고 `:deploy`를 참조하는지 확인한다.
+커밋 SHA·실행 ID·시도 번호를 조합한 immutable 태그로 먼저 게시한다. 배포 스크립트는 현재 서비스의 실행 태스크 수가 양수인 `desiredCount`와 일치하고 진행 중인 배포가 없으며 `:deploy`를 참조하는지 확인한다.
 실제 실행 digest와 기존 `deploy` 태그가 일치해야 새 manifest를 승격한다. 이어서 `ecs update-service --force-new-deployment`를 호출한다.
-ECS의 새 deployment가 COMPLETED이고 실행 중 frontend 컨테이너의 digest가 게시한 digest와 같아야 성공한다. ALB에 연결된 ECS 서비스 완료는 target health를 반영하지만, 로그인 성공을 증명하지는 않는다.
+ECS의 새 deployment가 COMPLETED이고 모든 실행 태스크의 배포 ID·task definition·frontend 컨테이너 digest가 새 배포와 일치해야 성공한다. 배포 도중 desiredCount가 바뀌거나 서로 다른 이미지가 섞이면 실패한다. dev 2개와 prod 1개 모두 서비스의 desiredCount를 기준으로 검증한다. ALB에 연결된 ECS 서비스 완료는 target health를 반영하지만, 로그인 성공을 증명하지는 않는다.
 
 브랜치별 push 실행은 취소 없이 직렬화한다. 게시 직전과 배포 태그 갱신 직전에 HEAD를 다시 검사한다. 이후 새 커밋이 생기면 진행 중 배포를 마치고 다음 실행이 반영한다. GitHub는 대기 실행을 최신 실행으로 교체할 수 있다.
 

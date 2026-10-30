@@ -43,8 +43,9 @@ function primary(service) {
 function stable(service) {
   return (
     service.status === "ACTIVE" &&
-    service.desiredCount === 1 &&
-    service.runningCount === 1 &&
+    Number.isInteger(service.desiredCount) &&
+    service.desiredCount > 0 &&
+    service.runningCount === service.desiredCount &&
     service.pendingCount === 0 &&
     service.deployments?.length === 1 &&
     primary(service)?.rolloutState === "COMPLETED"
@@ -72,7 +73,7 @@ export async function deployImage({
     }
     return result.services[0];
   };
-  const runningTask = (definition, deploymentId) => {
+  const runningTasksDigest = (definition, deploymentId, desiredCount) => {
     const { taskArns } = aws("ecs", "list-tasks", [
       "--cluster",
       service,
@@ -81,31 +82,49 @@ export async function deployImage({
       "--desired-status",
       "RUNNING",
     ]);
-    if (taskArns?.length !== 1)
-      throw new Error("실행 중 태스크가 정확히 1개여야 합니다.");
-    const result = aws("ecs", "describe-tasks", [
-      "--cluster",
-      service,
-      "--tasks",
-      ...taskArns,
-    ]);
-    const task = result.tasks?.[0];
-    const container = task?.containers?.find(
-      (item) => item.name === "frontend",
-    );
     if (
-      result.failures?.length ||
-      result.tasks?.length !== 1 ||
-      task.lastStatus !== "RUNNING" ||
-      task.taskDefinitionArn !== definition ||
-      task.startedBy !== deploymentId ||
-      container?.lastStatus !== "RUNNING" ||
-      !digestPattern.test(container?.imageDigest ?? "")
+      taskArns?.length !== desiredCount ||
+      new Set(taskArns).size !== desiredCount
     )
-      throw new Error(
-        "실제 태스크의 배포 ID·정의·상태·이미지 digest를 확인하지 못했습니다.",
+      throw new Error("실행 중 태스크 수가 desiredCount와 일치하지 않습니다.");
+    const tasks = [];
+    // DescribeTasks는 호출당 최대 100개를 허용한다.
+    for (let offset = 0; offset < taskArns.length; offset += 100) {
+      const batch = taskArns.slice(offset, offset + 100);
+      const result = aws("ecs", "describe-tasks", [
+        "--cluster",
+        service,
+        "--tasks",
+        ...batch,
+      ]);
+      if (result.failures?.length || result.tasks?.length !== batch.length)
+        throw new Error("실행 태스크 전체를 조회하지 못했습니다.");
+      tasks.push(...result.tasks);
+    }
+    const seen = new Set();
+    const digests = new Set();
+    for (const task of tasks) {
+      const container = task.containers?.find(
+        (item) => item.name === "frontend",
       );
-    return container.imageDigest;
+      if (
+        !taskArns.includes(task.taskArn) ||
+        seen.has(task.taskArn) ||
+        task.lastStatus !== "RUNNING" ||
+        task.taskDefinitionArn !== definition ||
+        task.startedBy !== deploymentId ||
+        container?.lastStatus !== "RUNNING" ||
+        !digestPattern.test(container?.imageDigest ?? "")
+      )
+        throw new Error(
+          "실제 태스크의 배포 ID·정의·상태·이미지 digest를 확인하지 못했습니다.",
+        );
+      seen.add(task.taskArn);
+      digests.add(container.imageDigest);
+    }
+    if (digests.size !== 1)
+      throw new Error("실행 태스크들의 이미지 digest가 서로 다릅니다.");
+    return [...digests][0];
   };
   const manifestFor = (imageDigest) => {
     const result = aws("ecr", "batch-get-image", [
@@ -161,9 +180,10 @@ export async function deployImage({
   const before = describeService();
   if (!stable(before))
     throw new Error(
-      "ECS가 정상 단일 태스크 상태가 아니거나 다른 배포가 진행 중입니다.",
+      "ECS 실행 수가 desiredCount와 다르거나 다른 배포가 진행 중입니다.",
     );
   const definition = before.taskDefinition;
+  const desiredCount = before.desiredCount;
   const { taskDefinition } = aws("ecs", "describe-task-definition", [
     "--task-definition",
     definition,
@@ -180,7 +200,11 @@ export async function deployImage({
         image,
     );
   }
-  const previousDigest = runningTask(definition, primary(before).id);
+  const previousDigest = runningTasksDigest(
+    definition,
+    primary(before).id,
+    desiredCount,
+  );
   // 태그가 아니라 실제 실행 버전을 복구 기준으로 삼는다.
   const previousManifest = manifestFor(previousDigest);
   const newManifest = manifestFor(digest);
@@ -197,7 +221,8 @@ export async function deployImage({
   if (
     !stable(current) ||
     primary(current).id !== primary(before).id ||
-    current.taskDefinition !== definition
+    current.taskDefinition !== definition ||
+    current.desiredCount !== desiredCount
   ) {
     throw new Error(
       "배포 준비 중 ECS 서비스가 변경되었습니다. 인프라 apply와 동시에 실행하지 마세요.",
@@ -237,6 +262,7 @@ export async function deployImage({
       }
       if (
         state.taskDefinition !== definition ||
+        state.desiredCount !== desiredCount ||
         (primary(state)?.id !== deploymentId && now() - started >= 60000)
       ) {
         throw new Error(
@@ -244,7 +270,11 @@ export async function deployImage({
         );
       }
       if (primary(state)?.id === deploymentId && stable(state)) {
-        const actualDigest = runningTask(definition, deploymentId);
+        const actualDigest = runningTasksDigest(
+          definition,
+          deploymentId,
+          desiredCount,
+        );
         if (actualDigest !== digest)
           throw new Error(
             `실행 이미지 불일치: 기대 ${digest}, 실제 ${actualDigest}`,
