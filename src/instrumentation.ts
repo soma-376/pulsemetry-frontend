@@ -6,7 +6,7 @@ export async function register() {
     process.env.OTEL_SDK_DISABLED === "false"
   ) {
     const { startTelemetry } = await import("./lib/telemetry/server");
-    startTelemetry();
+    await startTelemetry();
   }
 }
 
