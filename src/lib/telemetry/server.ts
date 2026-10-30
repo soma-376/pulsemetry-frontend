@@ -11,6 +11,9 @@ import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { BatchLogRecordProcessor } from "@opentelemetry/sdk-logs";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { AlwaysOnSampler, BatchSpanProcessor } from "@opentelemetry/sdk-trace";
+import { registerContainerMetrics } from "./container-metrics";
+import { registerEventLoopMetrics } from "./event-loop-metrics";
+import { registerHeapMetrics } from "./heap-metrics";
 import { getTelemetryConfig } from "./config";
 import { captureConsoleLogs } from "./logging";
 import { createRequestMetricsProcessor } from "./request-metrics";
@@ -75,6 +78,9 @@ export function startTelemetry() {
   captureConsoleLogs();
 
   const meter = metrics.getMeter("pulsemetry-frontend.runtime");
+  registerHeapMetrics(meter);
+  registerContainerMetrics(meter);
+  registerEventLoopMetrics(meter);
   const memory = meter.createObservableGauge("frontend.node.memory", {
     description: "Node.js process memory; kinds overlap and must not be summed",
     unit: "By",
