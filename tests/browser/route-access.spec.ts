@@ -94,6 +94,7 @@ for (const cookie of ["missing", "tampered", "expired"] as const) {
       "/members",
       "/settings",
       "/ops/child",
+      "/security/child",
       "/onboarding/child",
     ]) {
       const response = await request.get(path, { maxRedirects: 0 });
@@ -160,6 +161,7 @@ test("온보딩 미완료 사용자는 login·루트·모든 보호 경로에서
     "/members",
     "/settings",
     "/ops",
+    "/security",
   ]) {
     await page.goto(path);
     await expect(page).toHaveURL(/\/onboarding$/);

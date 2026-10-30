@@ -211,9 +211,18 @@ test("관리 페이지는 깨끗한 URL을 사용하고 분석 페이지로 복�
   await expect(
     page.getByRole("button", { name: "2026.09.01 ~ 2026.09.13", exact: true }),
   ).toBeVisible();
+  // 성과는 분석 페이지라 기간 조건을 유지한다.
+  await nav.getByRole("link", { name: "성과", exact: true }).click();
+  await expect(page).toHaveURL(
+    (url) =>
+      url.pathname === "/ops" &&
+      url.searchParams.get("startDate") === "2026-09-01" &&
+      url.searchParams.get("endDate") === "2026-09-13" &&
+      url.searchParams.get("compare") === "none",
+  );
   for (const [name, path] of [
     ["구성원", "/members"],
-    ["운영 · 보안", "/ops"],
+    ["보안", "/security"],
     ["설정", "/settings"],
   ]) {
     await expect(nav.getByRole("link", { name, exact: true })).toHaveAttribute(

@@ -566,7 +566,7 @@ export function downloadCsv(filename: string, text: string) {
   URL.revokeObjectURL(url);
 }
 
-/** 운영 · 보안의 같은 필터·snapshot 알림과 화면에 표시하는 근거만 내보낸다. */
+/** 보안 화면의 같은 필터·snapshot 알림과 화면에 표시하는 근거만 내보낸다. */
 export function alertsCsv(
   first: AlertsPage,
   items: Alert[],
@@ -577,7 +577,7 @@ export function alertsCsv(
 ) {
   return buildCsv(
     [
-      ["화면", "운영 · 보안"],
+      ["화면", "보안"],
       ["조직", organization],
       ["범주", category],
       ["상태", status],

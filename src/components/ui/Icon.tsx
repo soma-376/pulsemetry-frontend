@@ -10,7 +10,8 @@ type Part = string | [cx: number, cy: number, r: number];
 export type IconName =
   | "overview"
   | "teams"
-  | "ops"
+  | "performance"
+  | "security"
   | "members"
   | "settings"
   | "calendar"
@@ -45,7 +46,8 @@ const PARTS: Record<IconName, Part[]> = {
     "M16.2 6.6a2.9 2.9 0 0 1 0 5.6",
     "M17.4 14.4c1.9.7 2.8 2.4 2.8 4.6",
   ],
-  ops: [
+  performance: ["M4 19h16", "M6 15l4-4 3 3 5-6", "M15 8h3v3"],
+  security: [
     "M12 3.6l6.6 2.4v5.4c0 4-2.7 7.1-6.6 9-3.9-1.9-6.6-5-6.6-9V6z",
     "M9.4 12.2l1.9 1.9 3.5-3.9",
   ],

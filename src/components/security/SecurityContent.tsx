@@ -24,15 +24,15 @@ import { useBackendSession } from "@/lib/api/session";
 import { alertsCsv, downloadCsv } from "@/lib/csv-export";
 
 /**
- * 운영 · 보안 — 보안 범주 알림(미등록 제품 사용과 과거 알림 이력, 허브 ADR 0008)의 목록·상세·확인.
+ * 보안 — 보안 범주 알림(미등록 제품 사용과 과거 알림 이력, 허브 ADR 0008)의 목록·상세·확인.
  * 세션 조회와 감사 로그는 이 화면의 범위가 아니다(감사 로그 저장소가 정해지지 않았다).
  */
-export function OpsContent() {
+export function SecurityContent() {
   const session = useBackendSession();
   // 세션이 없을 때의 안내는 대시보드 레이아웃의 SessionGate 하나가 맡는다.
   if (!session) return null;
   return (
-    <OrganizationOps
+    <OrganizationSecurity
       key={session.user.organizationId}
       organizationId={session.user.organizationId}
       organizationName={session.user.organizationName}
@@ -40,7 +40,7 @@ export function OpsContent() {
   );
 }
 
-function OrganizationOps({
+function OrganizationSecurity({
   organizationId,
   organizationName,
 }: {
@@ -109,7 +109,7 @@ function OrganizationOps({
   useDashboardPageExport(exportAlerts, "");
   return (
     <PageContainer className="flex flex-col gap-6 pt-6 pb-10">
-      <PageHeader page="ops" />
+      <PageHeader page="security" />
       <section
         aria-label="보안 알림"
         className="max-w-[760px] rounded-lg border border-border bg-card p-4"

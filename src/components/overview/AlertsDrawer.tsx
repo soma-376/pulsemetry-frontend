@@ -27,7 +27,7 @@ function referenceTime(value: string) {
 }
 
 /**
- * 공통 헤더·개요의 알림 목록과 확인(서버 ADR 0051 §6). 목록·상세·확인은 운영 · 보안 화면과 같은 [AlertsPanel] 이다.
+ * 공통 헤더·개요의 알림 목록과 확인(서버 ADR 0051 §6). 목록·상세·확인은 보안 화면과 같은 [AlertsPanel] 이다.
  */
 export function AlertsDrawer({
   organizationId,

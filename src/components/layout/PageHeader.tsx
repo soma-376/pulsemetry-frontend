@@ -5,7 +5,8 @@ const PAGES = {
   overview: { title: "개요" },
   teams: { title: "팀 분석" },
   members: { title: "구성원" },
-  ops: { title: "운영 · 보안" },
+  ops: { title: "성과" },
+  security: { title: "보안" },
   settings: { title: "설정" },
 } as const;
 
@@ -28,7 +29,7 @@ export function PageHeader({
           {title}
         </h1>
         <DashboardPageToolbar
-          showPeriod={page === "overview" || page === "teams"}
+          showPeriod={page === "overview" || page === "teams" || page === "ops"}
         />
       </div>
       {actions && (

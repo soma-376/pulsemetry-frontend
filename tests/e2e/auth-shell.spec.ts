@@ -22,7 +22,14 @@ test("AUTH-SHELL-ANON @p0 @read 로그인하지 않은 새 탭의 보호 경로�
     if (request.url().includes("/api/v1/organizations/"))
       organizationRequests.push(new URL(request.url()).pathname);
   });
-  for (const path of ["/overview", "/members", "/settings", "/teams", "/ops"]) {
+  for (const path of [
+    "/overview",
+    "/members",
+    "/settings",
+    "/teams",
+    "/ops",
+    "/security",
+  ]) {
     await page.goto(path);
     await expectSignedOutShell(page);
   }
