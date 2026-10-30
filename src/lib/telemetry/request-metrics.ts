@@ -17,6 +17,9 @@ export function createRequestMetricsProcessor(
       ) {
         return;
       }
+      const route =
+        span.attributes["http.route"] ?? span.attributes["next.route"];
+      if (typeof route === "string" && route.startsWith("/api/rum/")) return;
       const status = Number(
         span.attributes["http.response.status_code"] ??
           span.attributes["http.status_code"],

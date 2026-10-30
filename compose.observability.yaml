@@ -52,6 +52,7 @@ services:
       ]
     ports:
       - "127.0.0.1:14318:4318"
+      - "127.0.0.1:14347:12347"
     volumes:
       - ./observability/config.alloy:/etc/alloy/config.alloy:ro
       - alloy-data:/data
@@ -113,6 +114,7 @@ services:
       - ./observability/datasources.yaml:/etc/grafana/provisioning/datasources/frontend.yaml:ro
       - ./observability/dashboards.yaml:/etc/grafana/provisioning/dashboards/frontend.yaml:ro
       - ./observability/frontend.json:/etc/grafana/dashboards/frontend.json:ro
+      - ./observability/rum.json:/etc/grafana/dashboards/rum.json:ro
     # up --wait는 Grafana뿐 아니라 저장소와 Alloy가 준비될 때까지 기다린다.
     healthcheck:
       test:
