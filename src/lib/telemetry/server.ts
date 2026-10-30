@@ -11,6 +11,7 @@ import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { BatchLogRecordProcessor } from "@opentelemetry/sdk-logs";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { AlwaysOnSampler, BatchSpanProcessor } from "@opentelemetry/sdk-trace";
+import { getEcsResourceAttributes } from "./ecs-resource";
 import { registerContainerMetrics } from "./container-metrics";
 import { registerEventLoopMetrics } from "./event-loop-metrics";
 import { registerHeapMetrics } from "./heap-metrics";
@@ -20,17 +21,29 @@ import { createRequestMetricsProcessor } from "./request-metrics";
 
 const state = globalThis as typeof globalThis & {
   pulsemetryTelemetrySdk?: NodeSDK;
+  pulsemetryTelemetryStarting?: Promise<NodeSDK | undefined>;
 };
 
 export function startTelemetry() {
+  return (state.pulsemetryTelemetryStarting ??= initializeTelemetry().catch(
+    (error) => {
+      state.pulsemetryTelemetryStarting = undefined;
+      throw error;
+    },
+  ));
+}
+
+async function initializeTelemetry() {
   if (state.pulsemetryTelemetrySdk) return state.pulsemetryTelemetrySdk;
   const config = getTelemetryConfig(process.env);
   if (!config) return;
 
+  const ecsAttributes = await getEcsResourceAttributes();
   const sdk = new NodeSDK({
     autoDetectResources: false,
     resource: defaultResource().merge(
       resourceFromAttributes({
+        ...ecsAttributes,
         "service.name": config.serviceName,
         "service.instance.id": randomUUID(),
         "deployment.environment.name": config.environment,
