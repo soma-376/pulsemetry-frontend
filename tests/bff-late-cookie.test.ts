@@ -37,6 +37,7 @@ function rotatingBackend(options: Partial<BffConfig> = {}) {
   let revoked = false;
   let refreshCalls = 0;
   let rejectNextResource = false;
+  let failNextRead = false;
   const consumed = new Set<string>();
   const accessExpiry = new Map<string, number>();
   function issue() {
@@ -65,6 +66,10 @@ function rotatingBackend(options: Partial<BffConfig> = {}) {
     if (pathname === "/api/v1/auth/logout") {
       revoked = true;
       return new Response(null, { status: 204 });
+    }
+    if (failNextRead) {
+      failNextRead = false;
+      throw new TypeError("synthetic network failure");
     }
     const authorization = new Headers(init.headers).get("Authorization");
     const expiry = accessExpiry.get(
@@ -95,6 +100,9 @@ function rotatingBackend(options: Partial<BffConfig> = {}) {
     bff,
     fetcher,
     anotherProcess: makeBff,
+    failNextRead: () => {
+      failNextRead = true;
+    },
     rejectNextResource: () => {
       rejectNextResource = true;
     },
@@ -254,4 +262,36 @@ test("회전 upstream fixture 자체는 실제 소비 RT 재사용을 계속 거
   assert.equal(replay.status, 401);
   assert.equal(f.status().revoked, true);
   assert.equal((await f.bff.handle(request(path, current))).status, 401);
+});
+
+for (const route of [path, "/auth/session"]) {
+  test(`갱신 후 연결 실패 응답도 새 쿠키를 전달하고 유예 뒤 복구한다: ${route}`, async () => {
+    const f = rotatingBackend();
+    const old = cookie(await f.login());
+    f.advance(300_000);
+    f.failNextRead();
+    const failed = await f.bff.handle(request(route, old));
+    assert.equal(failed.status, 503);
+    assert.equal((await failed.json()).error.code, "unavailable");
+    assert.ok(failed.headers.has("set-cookie"));
+    const current = cookie(failed);
+    f.advance(6_000);
+    const recovered = await f.bff.handle(request(route, current));
+    assert.equal(recovered.status, 200);
+    assert.deepEqual(f.status(), { revoked: false, refreshCalls: 1 });
+  });
+}
+
+test("다른 요청의 갱신 결과를 재사용한 뒤 연결 실패해도 새 쿠키를 전달한다", async () => {
+  const f = rotatingBackend();
+  const old = cookie(await f.login());
+  f.advance(300_000);
+  assert.equal((await f.bff.handle(request(path, old))).status, 200);
+  f.failNextRead();
+  const failed = await f.bff.handle(request(path, old));
+  assert.equal(failed.status, 503);
+  assert.ok(failed.headers.has("set-cookie"));
+  f.advance(6_000);
+  assert.equal((await f.bff.handle(request(path, cookie(failed)))).status, 200);
+  assert.equal(f.status().refreshCalls, 1);
 });

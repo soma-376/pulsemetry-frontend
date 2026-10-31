@@ -672,3 +672,40 @@ test("세션 갱신 후 역할 거부와 일시적인 me 실패도 회전한 RT�
     assert.equal(f.counts().refreshCount, 1);
   }
 });
+
+for (const finalFailure of ["network", "unauthenticated"] as const) {
+  test(`업무 401 후 갱신한 세션의 후속 실패 처리: ${finalFailure}`, async () => {
+    const f = fixture();
+    const saved = cookie(await f.login());
+    let resourceCalls = 0;
+    const bff = createBff(
+      config,
+      async (input, init) => {
+        if (String(input).includes("/analytics/overview")) {
+          resourceCalls++;
+          if (resourceCalls === 1 || finalFailure === "unauthenticated")
+            return Response.json({}, { status: 401 });
+          if (resourceCalls === 2)
+            throw new TypeError("synthetic network failure");
+        }
+        return f.fetcher(input, init);
+      },
+      f.clock,
+    );
+    const result = await bff.handle(request(api, saved));
+    assert.equal(f.counts().refreshCount, 1);
+    if (finalFailure === "unauthenticated") {
+      assert.equal(result.status, 401);
+      assert.equal(result.headers.has("set-cookie"), false);
+    } else {
+      assert.equal(result.status, 503);
+      assert.ok(result.headers.has("set-cookie"));
+      f.advance(6000);
+      assert.equal(
+        (await bff.handle(request(api, cookie(result)))).status,
+        200,
+      );
+      assert.equal(f.counts().refreshCount, 1);
+    }
+  });
+}

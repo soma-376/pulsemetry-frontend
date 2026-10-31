@@ -276,11 +276,15 @@ export function createBff(
     session: Session,
     service: keyof typeof bases,
     path: string,
-    init: RequestInit = {},
+    init: RequestInit,
+    rememberSession: (session: Session) => void,
   ) {
     let active = await currentSession(session);
+    // 후속 갱신·조회가 실패해도 이미 확보한 새 세션을 응답에 반영한다.
+    if (active !== session) rememberSession(active);
     if (active.accessTokenExpiresAt <= now() + 5000)
       active = await refresh(active);
+    if (active !== session) rememberSession(active);
     const send = (s: Session) => {
       const headers = new Headers(init.headers);
       headers.set("Authorization", `Bearer ${s.accessToken}`);
@@ -290,6 +294,7 @@ export function createBff(
     if (result.status === 401 && active === session) {
       await result.body?.cancel();
       active = await refresh(session);
+      rememberSession(active);
       result = await send(active);
     }
     if (result.status === 401) {
@@ -332,6 +337,9 @@ export function createBff(
   }
   async function handle(request: Request): Promise<Response> {
     let renewedSession: Session | null = null;
+    const rememberSession = (latest: Session) => {
+      renewedSession = latest;
+    };
     const startedAt = now();
     // Never log raw paths: they can contain identifiers or attacker input.
     const pathname = new URL(request.url).pathname;
@@ -460,8 +468,13 @@ export function createBff(
       }
       if (route === "auth/session" && request.method === "GET") {
         if (!session) return response({ user: null });
-        const auth = await authorized(session, "enrollment", "/api/v1/auth/me");
-        if (auth.renewed) renewedSession = auth.session;
+        const auth = await authorized(
+          session,
+          "enrollment",
+          "/api/v1/auth/me",
+          {},
+          rememberSession,
+        );
         const user = await json(auth.result, authUserSchema);
         if (
           user.organizationId !== session.organizationId ||
@@ -500,11 +513,17 @@ export function createBff(
       const contentType = request.headers.get("content-type");
       if (contentType) headers.set("Content-Type", contentType);
       const body = await requestBytes(request);
-      const auth = await authorized(session!, service, path + url.search, {
-        method: request.method,
-        headers,
-        body,
-      });
+      const auth = await authorized(
+        session!,
+        service,
+        path + url.search,
+        {
+          method: request.method,
+          headers,
+          body,
+        },
+        rememberSession,
+      );
       const result = new Response(auth.result.body, {
         status: auth.result.status,
         headers: {
