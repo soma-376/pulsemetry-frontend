@@ -309,13 +309,13 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "Explore에서 **Tempo** 데이터 소스를 선택하고 TraceQL로 검색하세요.\n\n```traceql\n{ resource.service.name = \"pulsemetry-frontend\" && resource.deployment.environment.name = \"local\" }\n```\n\n프론트 http://localhost:3000 에서 요청을 만든 뒤 검색합니다. 요청별 소요 시간과 상태 코드는 trace에서 확인합니다. 개발 서버의 컴파일 시간은 운영 성능과 다릅니다.\n\n지표는 5초 간격으로 전송됩니다. 서버를 종료하면 새 데이터가 들어오지 않습니다. 서버 console 로그와 Next.js 요청 오류는 아래 Loki 패널에서 확인합니다. 웹 바이탈과 브라우저 로그·메모리는 수집하지 않습니다."
+        "content": "Explore에서 **Tempo** 데이터 소스를 선택하고 TraceQL로 검색하세요.\n\n```traceql\n{ resource.service.name = \"pulsemetry-frontend\" && resource.deployment.environment.name = \"local\" }\n```\n\n프론트 http://localhost:3000 에서 요청을 만든 뒤 검색합니다. 요청별 소요 시간과 상태 코드는 trace에서 확인합니다. 개발 서버의 컴파일 시간은 운영 성능과 다릅니다.\n\n지표는 5초 간격으로 전송됩니다. 서버를 종료하면 새 데이터가 들어오지 않습니다. 서버 console·BFF 경고/오류와 Next.js 요청 오류는 아래 Loki 패널에서 확인합니다. 웹 바이탈·브라우저 예외는 RUM 활성화 시 별도 Browser RUM 대시보드에서 확인합니다. 브라우저 console 전체와 브라우저 메모리는 수집하지 않습니다."
       }
     },
     {
       "id": 5,
-      "title": "Frontend server errors · Loki",
-      "description": "서버 console.error 및 Next.js 요청 오류. 오류가 없으면 No data가 정상입니다. 로그를 펼치면 stack trace와 trace_id를 확인할 수 있습니다.",
+      "title": "Frontend server warnings & errors · Loki",
+      "description": "서버 WARN·ERROR·FATAL. BFF 공통 로그는 source·code·upstreamService로 구분합니다. 세션 409(INFO)는 Explore에서 수준 필터 없이 조회합니다.",
       "type": "logs",
       "gridPos": {
         "x": 0,
@@ -340,7 +340,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "{service_name=\"pulsemetry-frontend\", deployment_environment_name=\"local\"} | severity_text=~\"ERROR|FATAL\"",
+          "expr": "{service_name=\"pulsemetry-frontend\", deployment_environment_name=\"local\"} | severity_text=~\"WARN|ERROR|FATAL\"",
           "queryType": "range",
           "editorMode": "code"
         }

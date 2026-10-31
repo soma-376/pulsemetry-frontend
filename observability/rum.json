@@ -23,7 +23,7 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "브라우저에서 수집한 LCP·INP·CLS입니다. p75·분포는 선택 기간의 수신 보고값 기준이며 방문별 최종값이나 사용자 백분위가 아닙니다. 같은 측정 ID가 갱신·재전송되면 여러 보고로 집계될 수 있습니다. 페이지는 최초 진입 경로 그룹이며 SPA 이동마다 새 LCP가 생기지 않습니다. INP는 클릭·키 입력이 있어야 생기고, CLS·INP는 탭을 숨기거나 떠날 때 전송될 수 있습니다. Chrome에서 먼저 검증하세요. 표본이 없으면 0이나 정상으로 간주하지 않습니다.\n\n서버가 응답을 기다리는 전체 시간과 INP는 다릅니다. 개발 서버 수치는 운영 성능과 비교하지 마세요. 사용자·세션·원본 URL·쿼리·브라우저 로그는 수집하지 않습니다."
+        "content": "브라우저에서 수집한 LCP·INP·CLS입니다. p75·분포는 선택 기간의 수신 보고값 기준이며 방문별 최종값이나 사용자 백분위가 아닙니다. 같은 측정 ID가 갱신·재전송되면 여러 보고로 집계될 수 있습니다. 페이지는 최초 진입 경로 그룹이며 SPA 이동마다 새 LCP가 생기지 않습니다. INP는 클릭·키 입력이 있어야 생기고, CLS·INP는 탭을 숨기거나 떠날 때 전송될 수 있습니다. Chrome에서 먼저 검증하세요. 표본이 없으면 0이나 정상으로 간주하지 않습니다.\n\n서버가 응답을 기다리는 전체 시간과 INP는 다릅니다. 개발 서버 수치는 운영 성능과 비교하지 마세요. 사용자·세션·원본 URL·쿼리·console 로그는 수집하지 않습니다. 브라우저 예외는 종류·정제한 번들 위치만 수집하며 원문 메시지는 제외합니다. 바이탈은 최초 진입 화면, 오류는 발생 당시 화면 그룹입니다. 오류 중복 억제와 전송 제한이 있어 로그 수가 전체 오류 발생 수는 아닙니다."
       }
     },
     {
@@ -484,6 +484,36 @@
           "values": false
         }
       }
+    },
+    {
+      "id": 90,
+      "type": "logs",
+      "title": "Browser exceptions · Loki",
+      "description": "미처리 예외·Promise rejection·React boundary. 원문 메시지·사용자 데이터 제외. 제한된 수집 보고이며 전체 발생 건수 아님.",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 24,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"frontend-rum\"} |= \"Browser exception (message omitted)\" | json | app_environment=~\"$environment\" | page_url=~\"$page\"",
+          "queryType": "range",
+          "editorMode": "code"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      }
     }
   ],
   "templating": {
@@ -501,7 +531,7 @@
       },
       {
         "name": "page",
-        "label": "최초 진입 경로",
+        "label": "화면 그룹 (바이탈: 진입 / 오류: 발생)",
         "type": "custom",
         "query": "/,/login,/overview,/teams,/members,/settings,/ops,/security,/onboarding,/other",
         "includeAll": true,

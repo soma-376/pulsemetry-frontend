@@ -1,5 +1,13 @@
 import { formatWithOptions, stripVTControlCharacters } from "node:util";
-import { context, logs, SeverityNumber, type Logger } from "@opentelemetry/api";
+import {
+  context,
+  logs,
+  trace,
+  isSpanContextValid,
+  SeverityNumber,
+  type Logger,
+} from "@opentelemetry/api";
+import { setServerLogTransport } from "../server/logger";
 import { isTracingSuppressed } from "@opentelemetry/core";
 import type { Instrumentation } from "next";
 
@@ -13,6 +21,28 @@ const levels = {
 
 type ConsoleOutput = Pick<Console, keyof typeof levels>;
 const installed = new WeakSet<ConsoleOutput>();
+
+export function connectServerLogger(
+  logger = logs.getLogger("pulsemetry-frontend.server"),
+) {
+  setServerLogTransport({
+    context() {
+      const active = trace.getSpanContext(context.active());
+      return active && isSpanContextValid(active)
+        ? { trace_id: active.traceId, span_id: active.spanId }
+        : undefined;
+    },
+    emit(record) {
+      if (isTracingSuppressed(context.active())) return;
+      logger.emit({
+        severityNumber: SeverityNumber[record.level],
+        severityText: record.level,
+        body: record.event,
+        attributes: { ...record, "log.source": "server.logger" },
+      });
+    },
+  });
+}
 
 // Preserve terminal output; a logging failure must never fail an app request.
 export function captureConsoleLogs(
