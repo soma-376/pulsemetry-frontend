@@ -1,6 +1,30 @@
 import { entryPage, sanitizeRumBody } from "./payload";
+import { createErrorGate } from "./error-gate";
+import type { Faro } from "@grafana/faro-web-sdk";
 
 let starting: Promise<void> | undefined;
+let instance: Faro | undefined;
+const reported = new WeakSet<Error>();
+export async function reportBrowserError(
+  error: Error & { digest?: string },
+  source: "react-boundary" | "global-boundary" = "react-boundary",
+) {
+  if (reported.has(error)) return;
+  reported.add(error);
+  try {
+    await startRum();
+    instance?.api.pushError(error, {
+      context: {
+        source,
+        ...(error.digest && /^[a-fA-F0-9]{1,64}$/.test(error.digest)
+          ? { digest: error.digest }
+          : {}),
+      },
+    });
+  } catch {
+    /* Error reporting must never break the fallback UI. */
+  }
+}
 export function startRum() {
   return (starting ??= initialize().catch(() => {
     // 관측 실패가 화면 실행이나 오류 로그 수집 반복을 유발하지 않는다.
@@ -17,11 +41,19 @@ async function initialize() {
   const config = await response.json();
   if (config.enabled !== true || !["local", "dev"].includes(config.environment))
     return;
-  const { initializeFaro, WebVitalsInstrumentation, FetchTransport } =
-    await import("@grafana/faro-web-sdk");
-  initializeFaro({
+  const {
+    initializeFaro,
+    WebVitalsInstrumentation,
+    ErrorsInstrumentation,
+    FetchTransport,
+  } = await import("@grafana/faro-web-sdk");
+  const allowError = createErrorGate();
+  instance = initializeFaro({
     app: { name: "pulsemetry-browser", environment: config.environment },
-    instrumentations: [new WebVitalsInstrumentation()],
+    instrumentations: [
+      new WebVitalsInstrumentation(),
+      new ErrorsInstrumentation(),
+    ],
     metas: [],
     sessionTracking: { enabled: false, persistent: false },
     trackGeolocation: false,
@@ -41,6 +73,25 @@ async function initialize() {
       }),
     ],
     beforeSend(item) {
+      if (item.type === "exception") {
+        const clean = sanitizeRumBody(
+          {
+            meta: { page: { url: entryPage(window.location.pathname) } },
+            exceptions: [item.payload],
+          },
+          config.environment,
+        );
+        const exception = clean?.exceptions?.[0];
+        if (!exception) return null;
+        const identity = [
+          exception.type,
+          exception.context,
+          exception.stacktrace,
+        ];
+        if (!allowError(JSON.stringify([clean.meta.page.url, identity])))
+          return null;
+        return { type: item.type, payload: exception, meta: clean.meta };
+      }
       if (item.type !== "measurement") return null;
       const clean = sanitizeRumBody(
         { meta: { page: { url: page } }, measurements: [item.payload] },

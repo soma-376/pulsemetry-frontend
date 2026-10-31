@@ -51,15 +51,15 @@ Grafana 데이터 소스와 기존 메트릭 패널은 동일한 `uid: prometheu
 Prometheus는 로컬 Docker 볼륨에 데이터를 저장합니다. 이 구성은 로컬 개발용입니다.
 Alloy는 수신 데이터의 환경을 `local`로 표시합니다. AWS dev/prod에서 이 endpoint를 사용하지 않습니다.
 SDK가 시작된 Node.js 프로세스의 `console.log/info/warn/error/debug`와 Next.js `onRequestError` 오류를 OTLP로 전송합니다.
-기존 터미널 출력도 유지합니다. 브라우저 콘솔, SDK 시작 전 로그, 별도 프로세스 및 직접 `stdout/stderr.write()`로 출력한 내용은 이 수집 대상이 아닙니다.
+기존 터미널 출력도 유지합니다. 브라우저 콘솔, SDK 시작 전 로그, 별도 프로세스 및 직접 `stdout/stderr.write()`로 출력한 내용은 console bridge 수집 대상이 아닙니다. 공통 로거는 별도 OTel 연결로 동일 로그를 전송합니다.
 
-| 항목                      | 이번에 수집하는 내용                                                    | 구현                                   |
-| ------------------------- | ----------------------------------------------------------------------- | -------------------------------------- |
-| 요청 추적                 | Next.js 서버 요청과 렌더링 등의 소요 시간, Next.js가 기록하는 HTTP 상태 | Next.js 기본 계측 + SDK                |
-| 프로세스 메모리           | RSS, heapUsed, heapTotal, external, arrayBuffers                        | `process.memoryUsage()`를 5초마다 관측 |
-| 웹 바이탈·브라우저 메모리 | 이번 범위에 포함하지 않음                                               | 추후 브라우저 계측 필요                |
-| CSV 처리 시간·행 수       | 이번 범위에 포함하지 않음                                               | 실제 CSV 실행 코드에 추가 필요         |
-| 앱 로그                   | 서버 console 출력, Next.js 요청 오류                                    | OTel Logs → Alloy → Loki               |
+| 항목                | 이번에 수집하는 내용                                                    | 구현                                   |
+| ------------------- | ----------------------------------------------------------------------- | -------------------------------------- |
+| 요청 추적           | Next.js 서버 요청과 렌더링 등의 소요 시간, Next.js가 기록하는 HTTP 상태 | Next.js 기본 계측 + SDK                |
+| 프로세스 메모리     | RSS, heapUsed, heapTotal, external, arrayBuffers                        | `process.memoryUsage()`를 5초마다 관측 |
+| 브라우저 계측       | 웹 바이탈·정제한 예외는 별도 RUM, 브라우저 메모리는 미수집              | [브라우저 RUM](browser-rum.md)         |
+| CSV 처리 시간·행 수 | 이번 범위에 포함하지 않음                                               | 실제 CSV 실행 코드에 추가 필요         |
+| 앱 로그             | 서버 console 출력, Next.js 요청 오류                                    | OTel Logs → Alloy → Loki               |
 
 SDK는 측정 데이터를 모아서 전송하는 앱 내부 라이브러리입니다.
 Next.js가 이미 측정하는 요청 추적은 그대로 활용하고, 업무별 지표는 필요한 위치에 추가합니다.
@@ -126,7 +126,7 @@ frontend_node_memory_bytes{service_name="pulsemetry-frontend",deployment_environ
 
 `dev:otel`을 실행한 서버에서 `console.error("CSV 처리 실패", error)`를 호출하면
 터미널 출력과 함께 Loki로 전송됩니다. SDK와 Alloy가 배치 전송하므로 보통 수 초 후 표시됩니다.
-대시보드 하단 **Frontend server errors · Loki**는 ERROR/FATAL만 표시하며, 오류가 없으면 `No data`가 정상입니다.
+대시보드 하단 **Frontend server warnings & errors · Loki**는 WARN/ERROR/FATAL을 표시합니다. INFO로 기록되는 세션 409는 Explore에서 수준 필터 없이 조회합니다.
 **Explore → Loki**에서는 전체 로그를 조회합니다.
 
 ```logql
@@ -143,7 +143,7 @@ frontend_node_memory_bytes{service_name="pulsemetry-frontend",deployment_environ
 활성 trace 안에서 기록된 로그에는 `trace_id`도 들어가므로 Tempo에서 같은 ID를 검색할 수 있습니다.
 Next.js 요청 오류는 `log_source=next.request`, 콘솔 로그는 `log_source=console`입니다.
 같은 오류가 Next.js 훅과 콘솔 양쪽에 기록될 수 있으며 두 기록의 출처로 구분합니다.
-HTTP 4xx/5xx 응답을 직접 반환하는 것만으로 에러 로그가 생기지는 않습니다.
+HTTP 4xx/5xx 응답 자체가 로그를 만드는 것은 아닙니다. BFF는 공통 로거로 최종 실패를 명시적으로 기록하며 `log_source=server.logger`로 구분합니다. 상세 기준은 [서버 로깅](server-logging.md)을 참고하세요.
 
 요청 오류 훅은 헤더·쿠키·본문·쿼리 문자열을 자동 수집하지 않습니다.
 console에 전달한 내용과 오류 메시지·스택은 전송되므로 토큰이나 개인정보를 출력하지 않습니다.

@@ -1,6 +1,7 @@
 "use client";
 
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useEffect } from "react";
+import { reportBrowserError } from "@/lib/rum/client";
 import { RenderErrorState } from "@/components/ui/RenderErrorState";
 import {
   SYSTEM_THEME_QUERY,
@@ -11,7 +12,16 @@ import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import "./globals.css";
 
 /** 루트 레이아웃을 대체하므로 문서·스타일·테마를 직접 제공합니다. */
-export default function GlobalError({ retry }: { retry: () => void }) {
+export default function GlobalError({
+  error,
+  retry,
+}: {
+  error: Error & { digest?: string };
+  retry: () => void;
+}) {
+  useEffect(() => {
+    void reportBrowserError(error, "global-boundary");
+  }, [error]);
   useLayoutEffect(() => {
     // 클라이언트에서 루트 문서를 교체하면 head의 스크립트가 재실행되지 않을 수 있습니다.
     let theme = window.matchMedia(SYSTEM_THEME_QUERY).matches

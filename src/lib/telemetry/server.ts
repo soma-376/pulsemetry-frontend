@@ -16,7 +16,7 @@ import { registerContainerMetrics } from "./container-metrics";
 import { registerEventLoopMetrics } from "./event-loop-metrics";
 import { registerHeapMetrics } from "./heap-metrics";
 import { getTelemetryConfig } from "./config";
-import { captureConsoleLogs } from "./logging";
+import { captureConsoleLogs, connectServerLogger } from "./logging";
 import { createRequestMetricsProcessor } from "./request-metrics";
 
 const state = globalThis as typeof globalThis & {
@@ -88,6 +88,7 @@ async function initializeTelemetry() {
   });
   sdk.start();
   state.pulsemetryTelemetrySdk = sdk;
+  connectServerLogger();
   captureConsoleLogs();
 
   const meter = metrics.getMeter("pulsemetry-frontend.runtime");

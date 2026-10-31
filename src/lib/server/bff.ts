@@ -2,6 +2,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { authUserSchema } from "../auth-user";
+import { logger, type LogFields, type ServerLogger } from "./logger";
 import {
   createSessionCookie,
   SessionCookieError,
@@ -36,6 +37,7 @@ class BffError extends Error {
     public status: number,
     public code: string,
     public retryAfter?: string | null,
+    public upstream?: Pick<LogFields, "upstreamService" | "upstreamStatus">,
   ) {
     super(code);
   }
@@ -44,14 +46,16 @@ const fail = (
   status: number,
   code: string,
   retryAfter?: string | null,
+  upstream?: Pick<LogFields, "upstreamService" | "upstreamStatus">,
 ): never => {
-  throw new BffError(status, code, retryAfter);
+  throw new BffError(status, code, retryAfter, upstream);
 };
 
 export function createBff(
   config: BffConfig,
   fetcher: typeof fetch = fetch,
   now = Date.now,
+  log: ServerLogger = logger,
 ) {
   const origin = new URL(config.origin).origin;
   const { read, write } = createSessionCookie(config, now);
@@ -73,6 +77,10 @@ export function createBff(
   const grace = config.refreshGraceMs ?? 5000,
     limit = config.maxRefreshEntries ?? 1000;
   const refreshes = new Map<string, Entry>();
+  const upstreamResponses = new WeakMap<
+    Response,
+    Pick<LogFields, "upstreamService" | "upstreamStatus">
+  >();
   // 자격증명이 아닌 최신 RT 해시만 세션당 하나 보관한다. 유예 뒤 구쿠키에
   // 새 RT를 주거나 소비 RT를 다시 제출하지 않고 브라우저의 현재 쿠키를 요구한다.
   const refreshSessions = new Map<string, RefreshSession>();
@@ -114,14 +122,19 @@ export function createBff(
     init: RequestInit = {},
   ) {
     try {
-      return await fetcher(new URL(path, bases[service]), {
+      const result = await fetcher(new URL(path, bases[service]), {
         ...init,
         redirect: "error",
         cache: "no-store",
         signal: AbortSignal.timeout(config.timeoutMs ?? 10000),
       });
+      upstreamResponses.set(result, {
+        upstreamService: service,
+        upstreamStatus: result.status,
+      });
+      return result;
     } catch {
-      return fail(503, "unavailable");
+      return fail(503, "unavailable", undefined, { upstreamService: service });
     }
   }
   async function json<T>(r: Response, schema: z.ZodType<T>) {
@@ -134,11 +147,12 @@ export function createBff(
             ? "unavailable"
             : "unauthenticated",
         r.headers.get("Retry-After"),
+        upstreamResponses.get(r),
       );
     try {
       return schema.parse(await r.json());
     } catch {
-      return fail(502, "invalid_response");
+      return fail(502, "invalid_response", undefined, upstreamResponses.get(r));
     }
   }
   function tokenSession(
@@ -169,6 +183,7 @@ export function createBff(
         r.status === 429 ? 429 : 503,
         r.status === 429 ? "rate_limited" : "unavailable",
         r.headers.get("Retry-After"),
+        upstreamResponses.get(r),
       );
   }
   function invalidate(id: string) {
@@ -317,6 +332,43 @@ export function createBff(
   }
   async function handle(request: Request): Promise<Response> {
     let renewedSession: Session | null = null;
+    const startedAt = now();
+    // Never log raw paths: they can contain identifiers or attacker input.
+    const pathname = new URL(request.url).pathname;
+    const route =
+      ["session", "token", "logout", "organizations"]
+        .map((name) => `/api/bff/auth/${name}`)
+        .find((path) => path === pathname) ??
+      (pathname.startsWith("/api/bff/dashboard/")
+        ? "/api/bff/dashboard/[...path]"
+        : pathname.startsWith("/api/bff/enrollment/")
+          ? "/api/bff/enrollment/[...path]"
+          : "/api/bff/[...path]");
+    function recordFailure(
+      status: number,
+      code: string,
+      upstream?: BffError["upstream"],
+    ) {
+      const level =
+        status >= 500
+          ? "error"
+          : code === "session_refresh_required"
+            ? "info"
+            : "warn";
+      try {
+        log[level]("bff.request.failed", {
+          source: upstream ? "upstream" : "bff",
+          route,
+          method: request.method,
+          status,
+          code,
+          ...upstream,
+          durationMs: Math.max(0, now() - startedAt),
+        });
+      } catch {
+        /* A failed log transport must not change auth behavior. */
+      }
+    }
     try {
       checkRequest(request);
       const url = new URL(request.url),
@@ -465,7 +517,14 @@ export function createBff(
         const v = auth.result.headers.get(name);
         if (v) result.headers.set(name, v);
       }
-      return auth.renewed ? write(result, auth.session) : result;
+      const finalResponse = auth.renewed ? write(result, auth.session) : result;
+      if (result.status >= 400)
+        recordFailure(
+          result.status,
+          "upstream_http_error",
+          upstreamResponses.get(auth.result),
+        );
+      return finalResponse;
     } catch (error) {
       const status =
         error instanceof BffError
@@ -483,6 +542,11 @@ export function createBff(
             : error instanceof SessionCookieError
               ? "session_too_large"
               : "unavailable";
+      recordFailure(
+        status,
+        code,
+        error instanceof BffError ? error.upstream : undefined,
+      );
       // 늦은 실패 응답으로 새 로그인 쿠키를 지우지 않는다. 세션 폐기는 backend가 판정한다.
       const result = response(
         {

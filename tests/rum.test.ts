@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { sanitizeRumBody, entryPage } from "../src/lib/rum/payload";
 import { createRumHandler, rumConfig } from "../src/lib/rum/server";
+import { createErrorGate } from "../src/lib/rum/error-gate";
 const payload = {
   meta: {
     page: { url: "/teams" },
@@ -93,4 +94,97 @@ test("프로세스 전체 rate limit이 과도한 전송을 제한", async () =>
   for (let i = 0; i < 40; i++)
     assert.equal((await handler(request(), config)).status, 202);
   assert.equal((await handler(request(), config)).status, 429);
+});
+
+const exceptionPayload = {
+  meta: { page: { url: "/members" }, user: { email: "private@example.test" } },
+  exceptions: [
+    {
+      type: "TypeError",
+      value: "secret token and private@example.test",
+      context: {
+        source: "react-boundary",
+        digest: "12345",
+        cause: "secret",
+        email: "private@example.test",
+      },
+      stacktrace: {
+        frames: [
+          {
+            filename:
+              "https://private.example/_next/static/chunks/app.js?token=secret",
+            function: "secretFunction",
+            lineno: 10,
+            colno: 20,
+          },
+          {
+            filename: "https://private.example/members/secret",
+            function: "secret",
+            lineno: 1,
+          },
+        ],
+      },
+      trace: { trace_id: "secret" },
+    },
+  ],
+};
+test("브라우저 오류는 종류·정적 번들 위치만 유지하고 메시지·cause·개인정보를 제거한다", () => {
+  const clean = sanitizeRumBody(exceptionPayload, "dev");
+  assert.ok(clean?.exceptions);
+  assert.equal(clean.exceptions[0].type, "TypeError");
+  assert.equal(clean.exceptions[0].context.source, "react-boundary");
+  assert.deepEqual(clean.exceptions[0].stacktrace.frames, [
+    {
+      filename: "/_next/static/chunks/app.js",
+      function: "<anonymous>",
+      lineno: 10,
+      colno: 20,
+    },
+  ]);
+  assert.doesNotMatch(JSON.stringify(clean), /secret|private/);
+  assert.deepEqual(
+    sanitizeRumBody(clean, "dev", new Date(clean.exceptions[0].timestamp)),
+    clean,
+  );
+  assert.equal(sanitizeRumBody({ meta: exceptionPayload.meta }, "dev"), null);
+  assert.equal(
+    sanitizeRumBody(
+      {
+        ...exceptionPayload,
+        exceptions: Array(11).fill(exceptionPayload.exceptions[0]),
+      },
+      "dev",
+    ),
+    null,
+  );
+});
+test("오류 payload도 기존 프록시를 통과하며 Web Vitals와 혼합할 수 있다", async () => {
+  const received: string[] = [];
+  const handler = createRumHandler(async (_url, init) => {
+    received.push(String(init?.body));
+    return new Response(null, { status: 202 });
+  });
+  assert.equal(
+    (await handler(request(JSON.stringify(exceptionPayload)), config)).status,
+    202,
+  );
+  assert.doesNotMatch(received[0], /secret|private/);
+  const mixed = sanitizeRumBody(
+    { ...exceptionPayload, measurements: payload.measurements },
+    "local",
+  );
+  assert.equal(mixed?.measurements.length, 1);
+  assert.equal(mixed?.exceptions?.length, 1);
+});
+test("오류 중복 5초 억제 및 분당 10건 상한은 시간창 이후 복구된다", () => {
+  let time = 0;
+  const allow = createErrorGate(() => time);
+  assert.equal(allow("same"), true);
+  assert.equal(allow("same"), false);
+  time = 5000;
+  assert.equal(allow("same"), true);
+  for (let i = 0; i < 8; i++) assert.equal(allow(`different-${i}`), true);
+  assert.equal(allow("overflow"), false);
+  time = 60000;
+  assert.equal(allow("overflow"), true);
 });

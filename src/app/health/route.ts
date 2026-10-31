@@ -1,9 +1,4 @@
-export const dynamic = "force-dynamic";
+// ALB가 /api/health로 전환될 때까지 유지하는 호환 경로다.
+export { GET } from "../api/health/route";
 
-// ALB가 프론트 HTTP 서버의 응답 가능 여부만 확인한다.
-export function GET() {
-  return Response.json(
-    { status: "ok" },
-    { headers: { "Cache-Control": "no-store" } },
-  );
-}
+export const dynamic = "force-dynamic";
