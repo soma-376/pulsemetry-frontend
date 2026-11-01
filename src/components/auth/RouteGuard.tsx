@@ -199,10 +199,8 @@ export function RouteGuard({ children }: { children?: ReactNode }) {
         (auth.status === "checking" || auth.status === "anonymous")));
   return (
     <>
-      {(!allowed || guestError) && (
-        <div
-          className={`flex w-full items-center justify-center p-8 ${guestError ? "" : "min-h-dvh"}`}
-        >
+      {!allowed && (
+        <div className="flex min-h-dvh w-full items-center justify-center p-8">
           <div className="flex max-w-md flex-col gap-4 text-sm">
             {error ? (
               <>

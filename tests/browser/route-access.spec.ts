@@ -229,19 +229,27 @@ for (const status of [403, 429, 503]) {
   }
 }
 
-test("네트워크 오류에서도 로그인 폼을 제공하며 재시도 성공 시 기존 세션으로 복구한다", async ({
+test("로그인 페이지는 세션 네트워크 오류 화면을 중복 표시하지 않고 재조회 성공 시 복구한다", async ({
   page,
 }) => {
   await sessionRoutes(page);
   await page.route("**/api/bff/auth/session", (route) => route.abort("failed"));
   await page.goto("/login");
-  await expect(page.getByRole("alert").first()).toContainText("연결 상태");
   await expect(loginForm(page)).toBeVisible();
+  await expect(
+    page.getByRole("alert").filter({ hasText: /세션을 확인하지 못했습니다/ }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "다시 시도", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "관리자에게 문의" })).toHaveCount(
+    0,
+  );
   await page.unroute("**/api/bff/auth/session");
   await page.route("**/api/bff/auth/session", (route) =>
     route.fulfill({ json: { user: fixtureUser } }),
   );
-  await page.getByRole("button", { name: "다시 시도", exact: true }).click();
+  await page.reload();
   await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
 });
 
