@@ -164,14 +164,35 @@ test("세션 확인이 계속 실패해도 로그인 폼으로 이동할 수 있
     page.getByRole("link", { name: "로그인 페이지로 이동" }),
   ).toBeVisible();
   await expect(page.getByLabel("로그인한 계정")).toHaveCount(0);
+  await expect(page.getByLabel("회사 이메일", { exact: true })).toHaveCount(0);
+  await page.screenshot({
+    path: test.info().outputPath("session-error.png"),
+    fullPage: true,
+  });
   await page.getByRole("link", { name: "로그인 페이지로 이동" }).click();
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByLabel("회사 이메일", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("alert").filter({ hasText: /세션을 확인하지 못했습니다/ }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "다시 시도", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "관리자에게 문의" })).toHaveCount(
+    0,
+  );
+  await page.screenshot({
+    path: test.info().outputPath("login-recovery.png"),
+    fullPage: true,
+  });
   await expect(
     page.getByRole("link", { name: "로그인 페이지로 이동" }),
   ).toHaveCount(0);
   await page.reload();
   await expect(page.getByLabel("회사 이메일", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("alert").filter({ hasText: /세션을 확인하지 못했습니다/ }),
+  ).toHaveCount(0);
   await page.goto("/overview");
   await expect(
     page.getByRole("link", { name: "로그인 페이지로 이동" }),
