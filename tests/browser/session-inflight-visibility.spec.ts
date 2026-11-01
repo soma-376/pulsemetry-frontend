@@ -82,7 +82,7 @@ for (const status of [200, 503]) {
         await visibility(page, "hidden");
         await visibility(page, "visible");
         await expect.poll(() => confirmations).toBeGreaterThan(0);
-        await expect(dialog).toBeHidden();
+        await expect(dialog).toBeVisible();
         if (order === "mutation-first") {
           releaseMutation();
           await expect.poll(() => mutationResponseSent).toBe(true);
@@ -93,7 +93,7 @@ for (const status of [200, 503]) {
               includeHidden: true,
             }),
           ).toBeAttached();
-          await expect(dialog).toBeHidden();
+          await expect(dialog).toBeVisible();
           releaseConfirmation();
         } else {
           releaseConfirmation();

@@ -119,6 +119,37 @@ for (const cookie of ["missing", "tampered", "expired"] as const) {
   });
 }
 
+test("최초 세션 확인은 개요 스켈레톤을 표시하고 사용자 화면은 확인 후 연다", async ({
+  page,
+}) => {
+  await sessionRoutes(page);
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/bff/auth/session", async (route) => {
+    await held;
+    await route.fulfill({ json: { user: fixtureUser } });
+  });
+  try {
+    await page.goto("/overview");
+    await expect(page.getByRole("status")).toContainText(
+      "개요 데이터를 불러오는 중",
+    );
+    await expect(
+      page.getByText("로그인 상태를 확인 중입니다…", { exact: true }),
+    ).toHaveCount(0);
+    await expect(page.getByLabel("로그인한 계정")).toHaveCount(0);
+    await page.screenshot({
+      path: "/tmp/pulsemetry-auth-initial-skeleton.png",
+    });
+    release();
+    await expect(dashboard(page)).toBeVisible();
+  } finally {
+    release();
+  }
+});
+
 test("로그인 상태 확인 중에는 폼을 숨기고 완료 사용자는 overview로 이동한다", async ({
   page,
 }) => {
@@ -135,7 +166,7 @@ test("로그인 상태 확인 중에는 폼을 숨기고 완료 사용자는 ove
     await route.fulfill({ json: { user: fixtureUser } });
   });
   await page.goto("/login");
-  await expect(page.getByRole("status")).toContainText("로그인 상태를 확인");
+  await expect(page.getByRole("status")).toContainText("화면을 불러오는 중");
   await expect(loginForm(page)).toHaveCount(0);
   release();
   await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
@@ -278,9 +309,10 @@ test("클라이언트 이동과 포커스 복귀에 재확인하며 동시 확�
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(
     page.getByRole("status").filter({ hasText: "로그인 상태를 확인" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
+  await expect.poll(() => requests).toBe(1);
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await expect(dashboard(page)).toBeHidden();
+  await expect(dashboard(page)).toBeVisible();
   release();
   await expect(dashboard(page)).toBeVisible();
   expect(requests).toBe(1);
@@ -298,7 +330,7 @@ test("클라이언트 이동과 포커스 복귀에 재확인하며 동시 확�
   await expect(dashboard(page)).toHaveCount(0);
 });
 
-test("포커스 재확인 동안 온보딩 입력을 숨겨 보존한다", async ({ page }) => {
+test("포커스 재확인 동안 온보딩 입력을 표시하고 보존한다", async ({ page }) => {
   await sessionRoutes(page, { completed: false });
   await page.goto("/onboarding");
   const radio = page.getByRole("radio", { name: /^수집하지 않음/ });
@@ -312,7 +344,7 @@ test("포커스 재확인 동안 온보딩 입력을 숨겨 보존한다", async
     await route.fulfill({ json: { user: fixtureUser } });
   });
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await expect(radio).toBeHidden();
+  await expect(radio).toBeVisible();
   release();
   await expect(radio).toBeVisible();
   await expect(radio).toBeChecked();
@@ -335,7 +367,7 @@ test("미로그인 상태의 포커스 재확인도 작성한 이메일을 보�
     await route.fulfill({ json: { user: null } });
   });
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await expect(loginForm(page)).toBeHidden();
+  await expect(loginForm(page)).toBeVisible();
   release();
   await expect(loginForm(page)).toBeVisible();
   await expect(loginForm(page)).toHaveValue("draft@example.test");
@@ -358,7 +390,7 @@ test("뒤로가기 캐시에서 복원된 login은 현재 쿠키 세션을 다�
   await expect(dashboard(page)).toBeVisible();
 });
 
-test("보호 화면의 뒤로가기 캐시는 숨긴 뒤 로그아웃된 현재 세션으로 재검사한다", async ({
+test("보호 화면의 뒤로가기 캐시는 백그라운드 재검사 후 로그아웃을 반영한다", async ({
   page,
 }) => {
   const state = await sessionRoutes(page);
@@ -369,7 +401,7 @@ test("보호 화면의 뒤로가기 캐시는 숨긴 뒤 로그아웃된 현재 
       new PageTransitionEvent("pagehide", { persisted: true }),
     ),
   );
-  await expect(dashboard(page)).toBeHidden();
+  await expect(dashboard(page)).toBeVisible();
   state.anonymous = true;
   await page.evaluate(() =>
     window.dispatchEvent(
@@ -394,7 +426,7 @@ async function visibility(page: Page, state: DocumentVisibilityState) {
   }, state);
 }
 
-test("탭을 숨길 때 이전 화면을 가리고 동일 사용자 복귀는 입력을 보존한다", async ({
+test("탭 복귀 시 이전 화면을 유지하며 동일 사용자 입력을 보존한다", async ({
   page,
 }) => {
   await sessionRoutes(page, { completed: false });
@@ -412,11 +444,11 @@ test("탭을 숨길 때 이전 화면을 가리고 동일 사용자 복귀는 �
     await route.fulfill({ json: { user: fixtureUser } });
   });
   await visibility(page, "hidden");
-  await expect(radio).toBeHidden();
+  await expect(radio).toBeVisible();
   expect(requests).toBe(0);
   await visibility(page, "visible");
   await expect.poll(() => requests).toBe(1);
-  await expect(radio).toBeHidden();
+  await expect(radio).toBeVisible();
   // A simultaneous real window-focus event shares the in-flight check.
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   release();
@@ -435,7 +467,7 @@ for (const outcome of ["new-organization", "anonymous", "forbidden"] as const) {
     await radio.check();
     const previousRequests = state.requests;
     await visibility(page, "hidden");
-    await expect(radio).toBeHidden();
+    await expect(radio).toBeVisible();
     if (outcome === "new-organization") {
       state.user = {
         ...fixtureUser,
@@ -495,14 +527,14 @@ for (const lateResponse of ["success", "network-error"] as const) {
     await visibility(page, "hidden");
     await visibility(page, "visible");
     await expect.poll(() => requests).toBe(1);
-    await expect(radio).toBeHidden();
+    await expect(radio).toBeVisible();
     await visibility(page, "hidden");
     release();
     await expect.poll(() => settled).toBe(true);
     // Keep the same DOM control mounted and checked while the stale request settles.
     await expect(radio).toBeAttached();
     await expect(radio).toBeChecked();
-    await expect(radio).toBeHidden();
+    await expect(radio).toBeVisible();
     await visibility(page, "visible");
     await expect(radio).toBeVisible();
     await expect(radio).toBeChecked();

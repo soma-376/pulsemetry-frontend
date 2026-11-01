@@ -156,6 +156,24 @@ test("로그인은 사용자만 반환하고 인증 암호화 HttpOnly 쿠키를
   assert.equal(restored.headers.has("set-cookie"), false);
 });
 
+test("정상 세션 확인과 업무 요청은 각각 Valkey GET 한 번으로 처리한다", async () => {
+  const f = fixture();
+  const saved = cookie(await f.login());
+  const get = f.memory.commands.get;
+  let reads = 0;
+  f.memory.commands.get = async (key) => {
+    reads++;
+    return get(key);
+  };
+  for (const path of ["/auth/session", api]) {
+    reads = 0;
+    const result = await f.bff.handle(request(path, saved));
+    assert.equal(result.status, 200);
+    assert.equal(reads, 1);
+  }
+  assert.equal(f.counts().refreshCount, 0);
+});
+
 test("쿠키 변조·다른 키·다른 origin·절대 만료는 upstream 인증을 하지 못한다", async () => {
   const f = fixture(),
     saved = cookie(await f.login());

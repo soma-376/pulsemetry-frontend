@@ -50,7 +50,7 @@ test("경로 확인 중 업무401이 같은 세션을 다시 확인해도 화면
     async (route) => {
       teamsRequests++;
       // 경로 가드가 세션 객체를 캡처하고 온보딩을 기다린 뒤에만
-      // 숨겨진 팀 화면의 401로 같은 계정의 새 세션 객체를 만든다.
+      // 표시 중인 팀 화면의 401로 같은 계정의 새 세션 객체를 만든다.
       await onboardingStarted;
       events.push("teams:401");
       await route.fulfill({
@@ -77,18 +77,18 @@ test("경로 확인 중 업무401이 같은 세션을 다시 확인해도 화면
     await expect(page).toHaveURL(/\/teams(?:\?.*)?$/);
 
     // 이 오류 본문은 sessionFetch의 강제 재확인이 완료된 뒤 생성된다.
-    // 숨김 DOM을 기다려 응답 소비까지 보장하되 아직 가드 승인은 보류한다.
+    // 오류 표시로 응답 소비를 확인하되 온보딩 재확인은 아직 보류한다.
     const teamError = page
       .getByRole("alert", { includeHidden: true })
       .filter({ hasText: "이 조직의 팀 분석을 조회할 권한이 없습니다." });
     await expect(teamError).toHaveText(
       "이 조직의 팀 분석을 조회할 권한이 없습니다.",
     );
-    await expect(teamError).not.toBeVisible();
+    await expect(teamError).toBeVisible();
     expect(navigationOnboardingRequests).toBe(1);
     expect(teamsRequests).toBe(1);
     expect(sessionRequests).toBe(3);
-    events.push("teams:error-hidden-after-session-recheck");
+    events.push("teams:error-visible-after-session-recheck");
 
     releaseOnboarding();
     // 같은 identity의 객체만 바뀌었으므로 온보딩의 성공을 버려
@@ -205,7 +205,7 @@ test("최초 온보딩 확인 중 다른 계정이 되면 그 계정의 온보�
   expect(sessionRequests).toBeLessThanOrEqual(3);
 });
 
-test("온보딩이 먼저 끝나도 진행 중인 같은 계정 세션 확인을 기다린 뒤 화면을 연다", async ({
+test("온보딩이 먼저 끝나도 같은 계정 재확인은 화면을 유지하고 업무 응답은 확인을 기다린다", async ({
   page,
 }, testInfo) => {
   await mockSession(page);
@@ -299,7 +299,10 @@ test("온보딩이 먼저 끝나도 진행 중인 같은 계정 세션 확인을
     events.push("onboarding:consumed-before-session-recheck");
     await expect(
       page.getByText("로그인 상태를 확인 중입니다…", { exact: true }),
-    ).toBeVisible();
+    ).toHaveCount(0);
+    await expect(page.getByLabel("로그인한 계정")).toContainText(
+      fixtureUser.email,
+    );
     expect(sessionRequests).toBe(3);
 
     releaseRecheck();
