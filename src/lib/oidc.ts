@@ -8,6 +8,8 @@ import {
   bffHeaders,
 } from "./api/session";
 
+import { safeRedirectUrl } from "./auth-redirect";
+
 const organizationsSchema = z.object({
   organizations: z.array(
     z.object({ organizationId: z.uuid(), organizationName: z.string() }),
@@ -23,6 +25,7 @@ const pendingSchema = z.object({
   organizationId: z.uuid(),
   redirectUri: z.url(),
   createdAt: z.number(),
+  returnTo: z.string().optional(),
 });
 export type PendingLogin = z.infer<typeof pendingSchema>;
 let callbackTask: {
@@ -58,6 +61,7 @@ export async function createLogin(
   redirectUri: string,
   loginHint?: string,
   now = Date.now(),
+  returnTo?: string | null,
 ) {
   const verifier = base64url(crypto.getRandomValues(new Uint8Array(32)));
   const state = base64url(crypto.getRandomValues(new Uint8Array(32)));
@@ -72,6 +76,7 @@ export async function createLogin(
     verifier,
     state,
     createdAt: now,
+    returnTo: safeRedirectUrl(returnTo) ?? undefined,
   });
   const url = new URL(`${enrollmentUrl()}/api/v1/auth/oidc/authorize`);
   url.search = new URLSearchParams({
@@ -94,6 +99,8 @@ export async function startOidcLogin(
     organizationId,
     `${window.location.origin}/auth/callback`,
     loginHint,
+    Date.now(),
+    new URL(window.location.href).searchParams.get("redirecturl"),
   );
   clearBackendSession();
   callbackTask = null;
@@ -157,12 +164,13 @@ async function finishCallback() {
   sessionStorage.removeItem(OIDC_PENDING_KEY);
   window.history.replaceState(window.history.state, "", "/auth/callback");
   const { pending, code } = validateCallback(href, rawPending);
-  return exchangeLogin(
+  const user = await exchangeLogin(
     code,
     pending.redirectUri,
     pending.verifier,
     pending.organizationId,
   );
+  return { user, returnTo: safeRedirectUrl(pending.returnTo) };
 }
 
 /** StrictMode 재실행은 한 교환을 공유한다. 새로고침 시 소비된 임시 정보로 재교환하지 않는다. */

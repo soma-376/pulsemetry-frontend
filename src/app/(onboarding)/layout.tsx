@@ -1,4 +1,3 @@
-import { RouteGuard } from "@/components/auth/RouteGuard";
 import { MotionProvider } from "@/components/ui/MotionProvider";
 
 export default function OnboardingLayout({
@@ -6,9 +5,5 @@ export default function OnboardingLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <RouteGuard>
-      <MotionProvider>{children}</MotionProvider>
-    </RouteGuard>
-  );
+  return <MotionProvider>{children}</MotionProvider>;
 }

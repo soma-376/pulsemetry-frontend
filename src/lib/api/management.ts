@@ -229,6 +229,7 @@ export const onboardingOptions = (org: string) =>
     queryKey: managementKey(org, "onboarding"),
     queryFn: ({ signal }) => fetchOnboarding(org, signal),
     ...readOptions,
+    staleTime: Infinity,
   });
 /** 수집 정책 저장의 응답. 원문 선택을 보내지 않은 저장이면 `collectRawContent`·`confirmedAt`은 지금 값(없으면 null)이다. */
 export const policySavedSchema = z.object({

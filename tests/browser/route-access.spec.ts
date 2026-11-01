@@ -150,7 +150,7 @@ test("최초 세션 확인은 개요 스켈레톤을 표시하고 사용자 화�
   }
 });
 
-test("로그인 상태 확인 중에는 폼을 숨기고 완료 사용자는 overview로 이동한다", async ({
+test("로그인 상태 확인 중에도 폼을 표시하고 완료 사용자는 overview로 이동한다", async ({
   page,
 }) => {
   const request = page.context().request;
@@ -166,8 +166,7 @@ test("로그인 상태 확인 중에는 폼을 숨기고 완료 사용자는 ove
     await route.fulfill({ json: { user: fixtureUser } });
   });
   await page.goto("/login");
-  await expect(page.getByRole("status")).toContainText("화면을 불러오는 중");
-  await expect(loginForm(page)).toHaveCount(0);
+  await expect(loginForm(page)).toBeVisible();
   release();
   await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
   await expect(dashboard(page)).toBeVisible();
@@ -195,7 +194,7 @@ test("온보딩 미완료 사용자는 login·루트·모든 보호 경로에서
     "/security",
   ]) {
     await page.goto(path);
-    await expect(page).toHaveURL(/\/onboarding$/);
+    await expect(page).toHaveURL(/\/onboarding(?:\?.*)?$/);
     await expect(
       page.getByRole("radio", { name: /^수집하지 않음/ }),
     ).toBeVisible();
@@ -207,7 +206,7 @@ test("온보딩 미완료 사용자는 login·루트·모든 보호 경로에서
   ).toBeVisible();
 });
 
-test("폐기된 세션은 쿠키가 남아 있어도 로그인 폼을 표시하며 순환하지 않는다", async ({
+test("폐기된 세션은 만료 안내에서 로그인 버튼으로 이동하며 순환하지 않는다", async ({
   page,
 }) => {
   const state = await sessionRoutes(page, { status: 401 });
@@ -217,12 +216,15 @@ test("폐기된 세션은 쿠키가 남아 있어도 로그인 폼을 표시하�
       organizationRequests.push(request.url());
   });
   await page.goto("/overview");
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(
+    page.getByRole("heading", { name: "세션이 만료되었습니다" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "로그인 페이지로 이동" }).click();
   await expect(loginForm(page)).toBeVisible();
-  expect(state.requests).toBe(2);
+  expect(state.requests).toBe(1);
   await page.reload();
   await expect(loginForm(page)).toBeVisible();
-  expect(state.requests).toBe(3);
+  expect(state.requests).toBe(2);
   await expect(dashboard(page)).toHaveCount(0);
   expect(organizationRequests).toEqual([]);
 });
@@ -284,7 +286,7 @@ test("로그인 페이지는 세션 네트워크 오류 화면을 중복 표시�
   await expect(page).toHaveURL(/\/overview(?:\?.*)?$/);
 });
 
-test("클라이언트 이동과 포커스 복귀에 재확인하며 동시 확인 요청을 공유한다", async ({
+test("클라이언트 이동은 캐시를 사용하고 포커스 복귀의 동시 확인 요청을 공유한다", async ({
   page,
   context,
 }) => {
@@ -295,7 +297,7 @@ test("클라이언트 이동과 포커스 복귀에 재확인하며 동시 확�
   await page.locator('nav a[href="/settings"]').click();
   await expect(page).toHaveURL(/\/settings(?:\?.*)?$/);
   await expect(dashboard(page)).toBeVisible();
-  expect(state.requests).toBe(initial + 1);
+  expect(state.requests).toBe(initial);
   let release!: () => void;
   const held = new Promise<void>((resolve) => {
     release = resolve;
@@ -325,7 +327,11 @@ test("클라이언트 이동과 포커스 복귀에 재확인하며 동시 확�
   await context.clearCookies({ name: "pulsemetry-session" });
   await page.bringToFront();
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(
+    page.getByRole("heading", { name: "세션이 만료되었습니다" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "로그인 페이지로 이동" }).click();
+  await expect(page).toHaveURL(/\/login(?:\?.*)?$/);
   await expect(loginForm(page)).toBeVisible();
   await expect(dashboard(page)).toHaveCount(0);
 });
@@ -408,7 +414,10 @@ test("보호 화면의 뒤로가기 캐시는 백그라운드 재검사 후 로�
       new PageTransitionEvent("pageshow", { persisted: true }),
     ),
   );
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(
+    page.getByRole("heading", { name: "세션이 만료되었습니다" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "로그인 페이지로 이동" }).click();
   await expect(loginForm(page)).toBeVisible();
   await expect(dashboard(page)).toHaveCount(0);
 });
@@ -486,7 +495,11 @@ for (const outcome of ["new-organization", "anonymous", "forbidden"] as const) {
       await expect(radio).toBeVisible();
       await expect(radio).not.toBeChecked();
     } else if (outcome === "anonymous") {
-      await expect(page).toHaveURL(/\/login$/);
+      await expect(
+        page.getByRole("heading", { name: "세션이 만료되었습니다" }),
+      ).toBeVisible();
+      await page.getByRole("link", { name: "로그인 페이지로 이동" }).click();
+      await expect(page).toHaveURL(/\/login(?:\?.*)?$/);
       await expect(loginForm(page)).toBeVisible();
       await expect(radio).toHaveCount(0);
     } else {

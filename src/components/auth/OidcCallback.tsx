@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { completeOidcCallback } from "@/lib/oidc";
 import type { BackendSession } from "@/lib/api/session";
-import { fetchOnboarding } from "@/lib/api/management";
+import { afterLoginHref, loginHref } from "@/lib/auth-redirect";
+import { onboardingOptions } from "@/lib/api/management";
 import { useOrganization } from "@/lib/organization-store";
 import { AuthFrame } from "./AuthFrame";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -16,13 +17,14 @@ export function OidcCallback() {
   const [login, setLogin] = useState<{
     user?: BackendSession["user"];
     error?: Error;
+    returnTo?: string | null;
   }>({});
   const attempt = useRef({});
   useEffect(() => {
     let active = true;
     completeOidcCallback(attempt.current).then(
-      (user) => {
-        if (active) setLogin({ user });
+      (result) => {
+        if (active) setLogin(result);
       },
       (error) => {
         if (active)
@@ -40,8 +42,7 @@ export function OidcCallback() {
   }, []);
   const user = login.user;
   const onboarding = useQuery({
-    queryKey: ["oidc-onboarding", user?.organizationId],
-    queryFn: () => fetchOnboarding(user!.organizationId),
+    ...onboardingOptions(user?.organizationId ?? ""),
     enabled: !!user,
     retry: false,
     refetchOnWindowFocus: false,
@@ -56,8 +57,8 @@ export function OidcCallback() {
         organizationId: user.organizationId,
       },
     }));
-    router.replace(onboarding.data.completed ? "/overview" : "/onboarding");
-  }, [user, onboarding.data, router, update]);
+    router.replace(afterLoginHref(onboarding.data.completed, login.returnTo));
+  }, [user, onboarding.data, login.returnTo, router, update]);
   const error = login.error ?? onboarding.error;
   return (
     <AuthFrame
@@ -76,7 +77,7 @@ export function OidcCallback() {
               온보딩 상태 다시 확인
             </Button>
           )}
-          <ButtonLink href="/login">다시 로그인</ButtonLink>
+          <ButtonLink href={loginHref(login.returnTo)}>다시 로그인</ButtonLink>
           <p className="text-xs text-text2">
             계속 실패하면 조직 관리자에게 계정 등록과 접근 권한을 확인해 주세요.
           </p>

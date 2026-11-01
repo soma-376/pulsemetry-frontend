@@ -275,7 +275,7 @@ for (const status of [200, 503]) {
           return { error };
         },
       );
-      // RouteGuard's hidden/visible sequence invalidates only the check; the account is unchanged.
+      // AppSession's hidden/visible sequence invalidates only the check; the account is unchanged.
       invalidateBackendSessionCheck();
       invalidateBackendSessionCheck();
       const checking = restoreBackendSession(true);
