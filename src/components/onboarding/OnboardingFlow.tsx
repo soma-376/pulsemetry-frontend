@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { afterLoginHref } from "@/lib/auth-redirect";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -56,9 +57,11 @@ export function OnboardingFlow() {
 function OnboardingQuery({ organizationId }: { organizationId: string }) {
   const query = useQuery(onboardingOptions(organizationId));
   const router = useRouter();
+  const search = useSearchParams();
+  const returnTo = afterLoginHref(true, search.get("redirecturl"));
   useEffect(() => {
-    if (query.data?.completed) router.replace("/overview");
-  }, [query.data?.completed, router]);
+    if (query.data?.completed) router.replace(returnTo);
+  }, [query.data?.completed, router, returnTo]);
   if (query.isPending)
     return (
       <p role="status" className="p-8 text-sm">
@@ -99,6 +102,8 @@ function OnboardingSteps({
 }) {
   const { update } = useOrganization();
   const router = useRouter();
+  const search = useSearchParams();
+  const returnTo = afterLoginHref(true, search.get("redirecturl"));
   const session = useBackendSession();
   const client = useQueryClient();
   const [post] = useState(createCommands);
@@ -171,7 +176,7 @@ function OnboardingSteps({
       post(organizationId, "/onboarding/complete", {}, onboardingSchema),
     onSuccess: (data) => {
       client.setQueryData(managementKey(organizationId, "onboarding"), data);
-      router.replace("/overview");
+      router.replace(returnTo);
     },
     onError: async () => {
       await client.invalidateQueries({

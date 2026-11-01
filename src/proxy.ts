@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { loginHref } from "@/lib/auth-redirect";
 import { routeAccess } from "./lib/route-access";
 import {
   createSessionReferenceCookie,
@@ -14,9 +15,10 @@ export function proxy(request: NextRequest) {
       request,
     );
     if (!session) {
-      const destination = request.nextUrl.clone();
-      destination.pathname = "/login";
-      destination.search = "";
+      const destination = new URL(
+        loginHref(request.nextUrl.pathname + request.nextUrl.search),
+        request.url,
+      );
       const response = NextResponse.redirect(destination);
       response.headers.set("Cache-Control", "no-store");
       return response;

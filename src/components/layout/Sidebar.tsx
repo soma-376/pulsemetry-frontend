@@ -162,7 +162,7 @@ export function Sidebar() {
       <div className="flex-1" />
 
       <div className="flex shrink-0 flex-col gap-2.5 border-t border-border pt-3">
-        {/* 계정 표시는 세션을 따른다. 대시보드의 인증 확인과 접근 제어는 RouteGuard가 담당한다. */}
+        {/* 계정 표시는 세션을 따른다. 세션 복원과 만료 안내는 앱 루트의 AppSession이 담당한다. */}
         {session && (
           <>
             {!collapsed && (

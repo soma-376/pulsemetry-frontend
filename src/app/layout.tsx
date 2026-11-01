@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+import { AppSession } from "@/components/auth/AppSession";
+import { SessionSkeleton } from "@/components/auth/SessionSkeleton";
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/lib/theme";
 import { QueryProvider } from "@/lib/query-provider";
@@ -22,7 +25,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-screen bg-bg text-text antialiased">
         <ThemeProvider>
           <OrganizationProvider>
-            <QueryProvider>{children}</QueryProvider>
+            <QueryProvider>
+              <Suspense fallback={<SessionSkeleton path="/" />}>
+                <AppSession>{children}</AppSession>
+              </Suspense>
+            </QueryProvider>
           </OrganizationProvider>
         </ThemeProvider>
       </body>

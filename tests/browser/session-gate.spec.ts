@@ -112,7 +112,7 @@ test("세션이 없으면 모든 보호 경로에서 로그인 페이지로 이�
     "/settings",
   ]) {
     await page.goto(path);
-    await expect(page).toHaveURL(/\/login$/);
+    await expect(page).toHaveURL(/\/login(?:\?.*)?$/);
     await expect(page.getByLabel("회사 이메일", { exact: true })).toBeVisible();
     await expect(page.getByLabel("로그인한 계정")).toHaveCount(0);
   }
@@ -141,9 +141,9 @@ test("로그아웃 후 뒤로 가도 보호 화면을 다시 표시하지 않는
     .click();
   await expect(page).toHaveURL(/\/security$/);
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(page).toHaveURL(/\/login(?:\?.*)?$/);
   await page.goBack();
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(page).toHaveURL(/\/login(?:\?.*)?$/);
   await expect(page.getByLabel("회사 이메일", { exact: true })).toBeVisible();
   await expect(page.getByLabel("로그인한 계정")).toHaveCount(0);
 });
@@ -170,7 +170,7 @@ test("세션 확인이 계속 실패해도 로그인 폼으로 이동할 수 있
     fullPage: true,
   });
   await page.getByRole("link", { name: "로그인 페이지로 이동" }).click();
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(page).toHaveURL(/\/login(?:\?.*)?$/);
   await expect(page.getByLabel("회사 이메일", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("alert").filter({ hasText: /세션을 확인하지 못했습니다/ }),

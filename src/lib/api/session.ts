@@ -10,7 +10,7 @@ let current: BackendSession | null = null;
 export type SessionState =
   | { status: "checking" }
   | { status: "authenticated"; session: BackendSession }
-  | { status: "anonymous" }
+  | { status: "anonymous"; reason?: "expired" }
   | { status: "error"; error: AuthError };
 const initialState: SessionState = { status: "checking" };
 let sessionState: SessionState = initialState;
@@ -45,13 +45,16 @@ function removeLegacyTokens() {
     }
   }
 }
-function save(value: BackendSession | null) {
+function save(value: BackendSession | null, expired = false) {
   const changed = identity(current) !== identity(value);
   current = value;
   restored = true;
   sessionState = value
     ? { status: "authenticated", session: value }
-    : { status: "anonymous" };
+    : {
+        status: "anonymous",
+        ...(expired ? { reason: "expired" as const } : {}),
+      };
   removeLegacyTokens();
   if (changed) {
     generation++;
@@ -95,7 +98,7 @@ export async function restoreBackendSession(force = false) {
     });
     if (epoch !== generation) return;
     if (response.status === 401) {
-      save(null);
+      save(null, true);
       return;
     }
     if (!response.ok)
@@ -110,7 +113,7 @@ export async function restoreBackendSession(force = false) {
     const body = await response.json();
     if (epoch !== generation) return;
     const user = authUserSchema.nullable().parse(body.user);
-    save(user ? { user } : null);
+    save(user ? { user } : null, !user && !!current);
   })().catch((error) => {
     if (epoch === generation) {
       sessionState = {
@@ -150,7 +153,7 @@ export function getBackendSessionGeneration() {
 export function useSessionState() {
   return useSyncExternalStore(subscribe, getSessionState, () => initialState);
 }
-/** 세션 확인은 공통 화면 가드가 소유한다. 각 소비자가 별도로 /me를 호출하지 않는다. */
+/** 공통 세션 관리가 최초 확인을 소유한다. 소비자는 사용자 상태만 구독한다. */
 export function useBackendSession() {
   return useSyncExternalStore(
     subscribe,
@@ -202,6 +205,8 @@ export async function exchangeLogin(
 export async function sessionFetch(url: string, init: RequestInit = {}) {
   if (!url.startsWith("/api/bff/"))
     throw new Error("인증 요청은 동일 출처 BFF 경로를 사용해야 합니다.");
+  if (sessionState.status === "anonymous" && sessionState.reason === "expired")
+    throw new AuthError("세션이 만료되었습니다. 다시 로그인해 주세요.", 401);
   const epoch = identityGeneration;
   let checkedGeneration = generation;
   const changedIdentity = () =>
