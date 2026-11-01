@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { routeAccess } from "./lib/route-access";
 import {
-  createSessionCookie,
+  createSessionReferenceCookie,
   sessionCookieConfig,
 } from "./lib/server/session-cookie";
 
@@ -10,7 +10,9 @@ export function proxy(request: NextRequest) {
   if (!["protected", "onboarding", "entry"].includes(access))
     return NextResponse.next();
   try {
-    const session = createSessionCookie(sessionCookieConfig()).read(request);
+    const session = createSessionReferenceCookie(sessionCookieConfig()).read(
+      request,
+    );
     if (!session) {
       const destination = request.nextUrl.clone();
       destination.pathname = "/login";

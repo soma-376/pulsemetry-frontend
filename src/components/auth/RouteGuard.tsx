@@ -174,7 +174,10 @@ export function RouteGuard({ children }: { children?: ReactNode }) {
   useEffect(() => {
     if (destination) router.replace(destination);
   }, [destination, router]);
-  const allowed = ready && !destination;
+  // 세션 확인 장애가 로그인 폼까지 막아 복구 경로를 없애지 않게 한다.
+  // 보호 화면의 접근 판정과 기존 세션은 그대로 유지한다.
+  const guestError = access === "guest" && !!error;
+  const allowed = (ready && !destination) || guestError;
   const forbidden =
     (error instanceof AuthError && error.status === 403) ||
     (!!error && "status" in error && error.status === 403);
@@ -196,8 +199,10 @@ export function RouteGuard({ children }: { children?: ReactNode }) {
         (auth.status === "checking" || auth.status === "anonymous")));
   return (
     <>
-      {!allowed && (
-        <div className="flex min-h-dvh w-full items-center justify-center p-8">
+      {(!allowed || guestError) && (
+        <div
+          className={`flex w-full items-center justify-center p-8 ${guestError ? "" : "min-h-dvh"}`}
+        >
           <div className="flex max-w-md flex-col gap-4 text-sm">
             {error ? (
               <>
@@ -210,6 +215,9 @@ export function RouteGuard({ children }: { children?: ReactNode }) {
                   onRetry={() => setAttempt((value) => value + 1)}
                   retryLabel="다시 시도"
                 />
+                {access !== "guest" && (
+                  <ButtonLink href="/login">로그인 페이지로 이동</ButtonLink>
+                )}
                 {forbidden && (
                   <Button
                     loading={loggingOut}

@@ -1,4 +1,4 @@
-// 무상태 쿠키 코덱. Proxy에서 BFF의 갱신 캐시를 참조하지 않는다.
+// 브라우저 쿠키에는 세션 참조만 저장한다. 토큰은 Valkey 암호문에만 포함한다.
 import {
   createCipheriv,
   createDecipheriv,
@@ -7,7 +7,7 @@ import {
 } from "node:crypto";
 import { z } from "zod";
 
-const sessionSchema = z.object({
+export const sessionSchema = z.object({
   id: z.uuid(),
   organizationId: z.uuid(),
   accessToken: z.string().min(1),
@@ -26,9 +26,12 @@ export function sessionCookieConfig() {
     keys: process.env.BFF_SESSION_KEYS.split(",").map((v) => v.trim()),
   };
 }
-export function createSessionCookie(
+function createCookie<T extends { sessionExpiresAt: number }>(
   config: { origin: string; keys: string[] },
-  now = Date.now,
+  now: () => number,
+  schema: z.ZodType<T>,
+  version: string,
+  maxLength = 3800,
 ) {
   const origin = new URL(config.origin).origin;
   const secure = new URL(origin).protocol === "https:";
@@ -55,8 +58,8 @@ export function createSessionCookie(
     throw new Error(
       "BFF_SESSION_KEYS는 현재 키와 이전 키를 최대 3개까지 지원합니다.",
     );
-  const aad = Buffer.from(`${origin}:${cookieName}:v1`);
-  function seal(session: Session) {
+  const aad = Buffer.from(`${origin}:${cookieName}:${version}`);
+  function seal(session: T) {
     const iv = randomBytes(12),
       active = keys[0];
     const cipher = createCipheriv("aes-256-gcm", active.key, iv);
@@ -66,28 +69,32 @@ export function createSessionCookie(
       cipher.final(),
     ]);
     const value = [
-      "v1",
+      version,
       active.id,
       iv.toString("base64url"),
       encrypted.toString("base64url"),
       cipher.getAuthTag().toString("base64url"),
     ].join(".");
-    if (value.length > 3800) throw new SessionCookieError("session_too_large");
+    if (value.length > maxLength)
+      throw new SessionCookieError("session_too_large");
     return value;
   }
-  function read(request: Request): Session | null {
+  function read(request: Request): T | null {
     const value = request.headers
       .get("cookie")
       ?.split(";")
       .map((v) => v.trim())
       .find((v) => v.startsWith(`${cookieName}=`))
       ?.slice(cookieName.length + 1);
-    if (!value || value.length > 3800) return null;
+    return unseal(value);
+  }
+  function unseal(value: string | undefined): T | null {
+    if (!value || value.length > maxLength) return null;
     try {
-      const [version, id, iv, encrypted, tag, extra] = value.split(".");
+      const [encodedVersion, id, iv, encrypted, tag, extra] = value.split(".");
       const key = keys.find((k) => k.id === id);
       if (
-        version !== "v1" ||
+        encodedVersion !== version ||
         !key ||
         extra !== undefined ||
         !iv ||
@@ -102,7 +109,7 @@ export function createSessionCookie(
       );
       decipher.setAAD(aad);
       decipher.setAuthTag(Buffer.from(tag, "base64url"));
-      const session = sessionSchema.parse(
+      const session = schema.parse(
         JSON.parse(
           Buffer.concat([
             decipher.update(Buffer.from(encrypted, "base64url")),
@@ -115,15 +122,59 @@ export function createSessionCookie(
       return null;
     }
   }
-  function write(response: Response, session: Session | null) {
+  function write(response: Response, session: T | null) {
     const maxAge = session
       ? Math.max(0, Math.floor((session.sessionExpiresAt - now()) / 1000))
       : 0;
+    const value = session ? seal(session) : "";
+    if (value.length > 3800) throw new SessionCookieError("session_too_large");
     response.headers.set(
       "Set-Cookie",
-      `${cookieName}=${session ? seal(session) : ""}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure ? "; Secure" : ""}`,
+      `${cookieName}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure ? "; Secure" : ""}`,
     );
     return response;
   }
-  return { read, write, seal, cookieName };
+  return { read, write, seal, unseal, cookieName };
+}
+
+export function createSessionPayloadCipher(
+  config: { origin: string; keys: string[] },
+  now = Date.now,
+  maxLength = 16384,
+) {
+  const { seal, unseal } = createCookie(
+    config,
+    now,
+    sessionSchema,
+    "payload-v1",
+    maxLength,
+  );
+  return { seal, unseal };
+}
+export const sessionReferenceSchema = z.object({
+  id: z.uuid(),
+  sessionExpiresAt: z.number(),
+});
+export function createSessionReferenceCookie(
+  config: { origin: string; keys: string[] },
+  now = Date.now,
+) {
+  const codec = createCookie(config, now, sessionReferenceSchema, "v2");
+  return {
+    ...codec,
+    seal(reference: { id: string; sessionExpiresAt: number }) {
+      return codec.seal(sessionReferenceSchema.parse(reference));
+    },
+    write(
+      response: Response,
+      session: { id: string; sessionExpiresAt: number } | null,
+    ) {
+      return codec.write(
+        response,
+        session
+          ? { id: session.id, sessionExpiresAt: session.sessionExpiresAt }
+          : null,
+      );
+    },
+  };
 }
