@@ -181,14 +181,6 @@ export function createBff(
   async function invalidate(id: string) {
     await store.remove(id);
   }
-  async function currentSession(session: Session) {
-    const current = await store.read(session.id);
-    if (!current) return fail(401, "session_reauthentication_required");
-    return current.accessToken === session.accessToken &&
-      current.refreshToken === session.refreshToken
-      ? session
-      : current;
-  }
   function refresh(session: Session): Promise<Session> {
     return store.refresh(
       session,
@@ -213,7 +205,8 @@ export function createBff(
     path: string,
     init: RequestInit,
   ) {
-    let active = await currentSession(session);
+    // 요청 진입 시 읽은 세션을 사용한다. 갱신 시에는 저장소가 최신 상태를 확인한다.
+    let active = session;
     if (active.accessTokenExpiresAt <= now() + 5000)
       active = await refresh(active);
     const send = (s: Session) => {

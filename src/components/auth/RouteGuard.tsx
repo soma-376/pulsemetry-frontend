@@ -17,7 +17,16 @@ import {
 import { onboardingOptions } from "@/lib/api/management";
 import { routeAccess, routeDestination } from "@/lib/route-access";
 import { useOrganization } from "@/lib/organization-store";
-import { LoadingState } from "@/components/ui/LoadingState";
+import {
+  Skeleton,
+  SkeletonRegion,
+  SkeletonRows,
+} from "@/components/ui/Skeleton";
+import { OverviewSkeleton } from "@/components/overview/OverviewSkeleton";
+import { TeamsSkeleton } from "@/components/teams/TeamsSkeleton";
+import { MembersSkeleton } from "@/components/members/MembersSkeleton";
+import { SettingsSkeleton } from "@/components/settings/SettingsSkeleton";
+import { PerformanceSkeleton } from "@/components/performance/PerformanceSkeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Button, ButtonLink } from "@/components/ui/Button";
 
@@ -50,8 +59,8 @@ export function RouteGuard({ children }: { children?: ReactNode }) {
   useEffect(() => {
     const focus = () => setAttempt((value) => value + 1);
     const visibility = () => {
-      // 같은 창의 탭 전환은 window focus 없이 일어난다. 숨겨질 때부터
-      // 이전 화면을 가리고, 다시 보이면 현재 쿠키로 확인한 뒤 복구한다.
+      // 같은 창의 탭 전환은 window focus 없이 일어난다. 확인 결과를
+      // 무효화하고 복귀 시 백그라운드에서 현재 쿠키를 다시 확인한다.
       invalidateBackendSessionCheck();
       if (document.visibilityState === "visible") focus();
     };
@@ -185,10 +194,11 @@ export function RouteGuard({ children }: { children?: ReactNode }) {
     // 권한 거부로 하위 화면을 해제할 때 메모리 초안도 다시 나타나지 않게 한다.
     if (forbidden) resetOrganization();
   }, [forbidden, resetOrganization]);
-  // 포커스 재확인 동안에는 입력 중인 하위 화면을 숨겨 보존한다. 계정 변경·거부 시에는 해제한다.
+  // 같은 신원의 재확인은 기존 화면·입력을 유지한다. 계정 변경·거부 시에는 해제한다.
   const preserve =
     !!check &&
     !error &&
+    !check.error &&
     ((!!identity &&
       check.identity === identity &&
       auth.status !== "anonymous") ||
@@ -197,63 +207,84 @@ export function RouteGuard({ children }: { children?: ReactNode }) {
         !check.identity &&
         !check.error &&
         (auth.status === "checking" || auth.status === "anonymous")));
+  const showContent =
+    allowed ||
+    (preserve &&
+      !destination &&
+      routeDestination(access, !!identity, check.completed) === null);
   return (
     <>
-      {!allowed && (
+      {!showContent && error && (
         <div className="flex min-h-dvh w-full items-center justify-center p-8">
           <div className="flex max-w-md flex-col gap-4 text-sm">
-            {error ? (
-              <>
-                <ErrorState
-                  message={
-                    forbidden
-                      ? "이 화면에 접근할 권한이 없습니다. 조직 관리자에게 문의해 주세요."
-                      : error.message
-                  }
-                  onRetry={() => setAttempt((value) => value + 1)}
-                  retryLabel="다시 시도"
-                />
-                {access !== "guest" && (
-                  <ButtonLink href="/login">로그인 페이지로 이동</ButtonLink>
-                )}
-                {forbidden && (
-                  <Button
-                    loading={loggingOut}
-                    loadingLabel="로그아웃 중…"
-                    onClick={() => {
-                      setLoggingOut(true);
-                      setLogoutError(undefined);
-                      void backendLogout()
-                        .then(
-                          () => router.replace("/login"),
-                          (error) => setLogoutError(error),
-                        )
-                        .finally(() => setLoggingOut(false));
-                    }}
-                  >
-                    로그아웃
-                  </Button>
-                )}
-                {logoutError && <p role="alert">{logoutError.message}</p>}
-                <ButtonLink href="/contact">관리자에게 문의</ButtonLink>
-              </>
-            ) : (
-              <LoadingState
-                message={
-                  destination
-                    ? "페이지로 이동 중입니다…"
-                    : "로그인 상태를 확인 중입니다…"
-                }
-              />
+            <ErrorState
+              message={
+                forbidden
+                  ? "이 화면에 접근할 권한이 없습니다. 조직 관리자에게 문의해 주세요."
+                  : error.message
+              }
+              onRetry={() => setAttempt((value) => value + 1)}
+              retryLabel="다시 시도"
+            />
+            {access !== "guest" && (
+              <ButtonLink href="/login">로그인 페이지로 이동</ButtonLink>
             )}
+            {forbidden && (
+              <Button
+                loading={loggingOut}
+                loadingLabel="로그아웃 중…"
+                onClick={() => {
+                  setLoggingOut(true);
+                  setLogoutError(undefined);
+                  void backendLogout()
+                    .then(
+                      () => router.replace("/login"),
+                      (error) => setLogoutError(error),
+                    )
+                    .finally(() => setLoggingOut(false));
+                }}
+              >
+                로그아웃
+              </Button>
+            )}
+            {logoutError && <p role="alert">{logoutError.message}</p>}
+            <ButtonLink href="/contact">관리자에게 문의</ButtonLink>
           </div>
         </div>
       )}
-      {(allowed || preserve) && (
-        <div hidden={!allowed} className={allowed ? "contents" : "hidden"}>
-          {children}
-        </div>
-      )}
+      {!showContent && !error && <RouteSkeleton path={path} />}
+      {showContent && <div className="contents">{children}</div>}
     </>
+  );
+}
+
+/** 최초 확인·계정 전환에는 사용자 데이터 없이 기존 페이지 스켈레톤만 표시한다. */
+function RouteSkeleton({ path }: { path: string }) {
+  const root = path.split("/")[1];
+  const pages: Record<string, { title: string; body: ReactNode }> = {
+    overview: { title: "개요", body: <OverviewSkeleton /> },
+    teams: { title: "팀 분석", body: <TeamsSkeleton /> },
+    members: { title: "구성원", body: <MembersSkeleton /> },
+    settings: { title: "설정", body: <SettingsSkeleton /> },
+    ops: { title: "성과", body: <PerformanceSkeleton /> },
+  };
+  const page = pages[root];
+  return (
+    <div className="min-h-dvh w-full bg-bg p-6 text-text @container">
+      {page ? (
+        <>
+          <h1 className="mb-6 text-[22px] font-semibold">{page.title}</h1>
+          {page.body}
+        </>
+      ) : (
+        <SkeletonRegion
+          message="화면을 불러오는 중입니다…"
+          className="mx-auto max-w-xl"
+        >
+          <Skeleton className="mb-6 h-7 w-40" />
+          <SkeletonRows />
+        </SkeletonRegion>
+      )}
+    </div>
   );
 }
