@@ -229,14 +229,14 @@ for (const status of [403, 429, 503]) {
   }
 }
 
-test("네트워크 오류는 로그아웃하지 않고 재시도 후 화면을 복구한다", async ({
+test("네트워크 오류에서도 로그인 폼을 제공하며 재시도 성공 시 기존 세션으로 복구한다", async ({
   page,
 }) => {
   await sessionRoutes(page);
   await page.route("**/api/bff/auth/session", (route) => route.abort("failed"));
   await page.goto("/login");
   await expect(page.getByRole("alert").first()).toContainText("연결 상태");
-  await expect(loginForm(page)).toHaveCount(0);
+  await expect(loginForm(page)).toBeVisible();
   await page.unroute("**/api/bff/auth/session");
   await page.route("**/api/bff/auth/session", (route) =>
     route.fulfill({ json: { user: fixtureUser } }),

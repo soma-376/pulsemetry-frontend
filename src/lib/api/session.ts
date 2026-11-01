@@ -80,25 +80,6 @@ export const bffHeaders = (headers?: HeadersInit) => {
   result.set("X-Pulsemetry-Request", "1");
   return result;
 };
-async function fetchWithCurrentCookie(
-  url: string,
-  init: RequestInit,
-  mayRetry: () => boolean | Promise<boolean>,
-) {
-  const response = await fetch(url, init);
-  if (
-    response.status !== 409 ||
-    response.headers.get("X-Pulsemetry-Session-Retry") !== "1" ||
-    // 소비한 스트림을 재전송하지 않는다. 현재 업무 명령은 재사용 가능한 JSON 문자열이다.
-    init.body instanceof ReadableStream ||
-    !(await mayRetry())
-  )
-    return response;
-  await response.body?.cancel();
-  // BFF가 업무 upstream을 호출하기 전에 거절한 경우에만 한 번 재시도한다.
-  // HttpOnly 쿠키는 읽지 않고 브라우저가 현재 쿠키를 다시 붙이게 한다.
-  return fetch(url, init);
-}
 export async function restoreBackendSession(force = false) {
   if (restoreTask) return restoreTask;
   if (restored && !force) return;
@@ -107,15 +88,11 @@ export async function restoreBackendSession(force = false) {
   sessionState = { status: "checking" };
   listeners.forEach((listener) => listener());
   const task = (async () => {
-    const response = await fetchWithCurrentCookie(
-      "/api/bff/auth/session",
-      {
-        headers: bffHeaders(),
-        credentials: "same-origin",
-        cache: "no-store",
-      },
-      () => epoch === generation,
-    );
+    const response = await fetch("/api/bff/auth/session", {
+      headers: bffHeaders(),
+      credentials: "same-origin",
+      cache: "no-store",
+    });
     if (epoch !== generation) return;
     if (response.status === 401) {
       save(null);
@@ -265,19 +242,11 @@ export async function sessionFetch(url: string, init: RequestInit = {}) {
       checkedGeneration = generation;
     }
   };
-  const response = await fetchWithCurrentCookie(
-    url,
-    {
-      ...init,
-      credentials: "same-origin",
-      headers: bffHeaders(init.headers),
-    },
-    async () => {
-      await confirmIdentity();
-      if (epoch !== identityGeneration) throw changedIdentity();
-      return true;
-    },
-  );
+  const response = await fetch(url, {
+    ...init,
+    credentials: "same-origin",
+    headers: bffHeaders(init.headers),
+  });
   await confirmIdentity();
   if (epoch !== identityGeneration) throw changedIdentity();
   if (response.status === 401) {

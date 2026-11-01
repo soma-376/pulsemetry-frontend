@@ -235,7 +235,7 @@ export type StoredSession = {
   };
 };
 async function cookieSession(page: Page) {
-  const { createSessionCookie } =
+  const { createSessionReferenceCookie } =
     await import("../../src/lib/server/session-cookie");
   const origin = new URL(test.info().project.use.baseURL!).origin;
   const keys = process.env.BFF_SESSION_KEYS?.split(",").map((key) =>
@@ -245,18 +245,45 @@ async function cookieSession(page: Page) {
     throw new PreparationError(
       "쿠키 검증 E2E에는 검증 서버와 동일한 BFF_SESSION_KEYS가 필요합니다.",
     );
-  const codec = createSessionCookie({ origin, keys });
+  const codec = createSessionReferenceCookie({ origin, keys });
   const cookie = (await page.context().cookies(origin)).find(
     (cookie) => cookie.name === codec.cookieName,
   );
-  const session = cookie
+  const reference = cookie
     ? codec.read(
         new Request(origin, {
           headers: { Cookie: `${cookie.name}=${cookie.value}` },
         }),
       )
     : null;
-  return { codec, session, origin };
+  const { createValkeySessionStore } =
+    await import("../../src/lib/server/valkey-session-store");
+  const { createValkeyCommands } =
+    await import("../../src/lib/server/valkey-connection");
+  const environment = process.env.BFF_SESSION_ENV;
+  const host = process.env.BFF_VALKEY_HOST;
+  const cacheName = process.env.BFF_VALKEY_CACHE_NAME;
+  const username = process.env.BFF_VALKEY_USERNAME;
+  if (
+    (environment !== "dev" && environment !== "prod") ||
+    !host ||
+    !cacheName ||
+    !username
+  )
+    throw new PreparationError(
+      "E2E에는 검증 서버와 동일한 Valkey 연결 설정과 IAM 자격증명이 필요합니다.",
+    );
+  const store = createValkeySessionStore(
+    createValkeyCommands({
+      host,
+      cacheName,
+      username,
+      region: process.env.AWS_REGION ?? "ap-northeast-2",
+    }),
+    { origin, keys, environment },
+  );
+  const session = reference ? await store.read(reference.id) : null;
+  return { codec, session, origin, store };
 }
 export async function storedSession(page: Page): Promise<StoredSession | null> {
   const { session } = await cookieSession(page);
@@ -277,37 +304,33 @@ export async function editStoredSession(
   page: Page,
   change: { access_token?: string; refresh_token?: string },
 ) {
-  const { codec, session, origin } = await cookieSession(page);
-  if (!session) throw new PreparationError("변경할 E2E 쿠키 세션이 없습니다.");
-  const value = codec.seal({
+  const { session, store } = await cookieSession(page);
+  if (!session)
+    throw new PreparationError("변경할 E2E Valkey 세션이 없습니다.");
+  // 격리된 테스트 세션만 교체한다. 운영 갱신은 store.refresh의 원자적 경로를 쓴다.
+  await store.remove(session.id);
+  await store.create({
     ...session,
     accessToken: change.access_token ?? session.accessToken,
     refreshToken: change.refresh_token ?? session.refreshToken,
   });
-  await page.context().addCookies([
-    {
-      name: codec.cookieName,
-      value,
-      url: origin,
-      httpOnly: true,
-      sameSite: "Lax",
-    },
-  ]);
 }
 export async function injectSession(
   page: Page,
   stored: StoredSession,
   landing = "/overview",
 ) {
-  const { codec, origin } = await cookieSession(page);
-  const value = codec.seal({
+  const { codec, origin, store } = await cookieSession(page);
+  const session = {
     id: crypto.randomUUID(),
     organizationId: stored.user.organizationId,
     accessToken: stored.tokens.access_token,
     refreshToken: stored.tokens.refresh_token,
     accessTokenExpiresAt: Date.now() + 300000,
     sessionExpiresAt: Date.now() + 86400000,
-  });
+  };
+  await store.create(session);
+  const value = codec.seal(session);
   await page.context().addCookies([
     {
       name: codec.cookieName,

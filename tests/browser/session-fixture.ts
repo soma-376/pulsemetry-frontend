@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Page } from "@playwright/test";
-import { createSessionCookie } from "../../src/lib/server/session-cookie";
+import { createSessionReferenceCookie } from "../../src/lib/server/session-cookie";
 
 export const fixtureOrg = "11111111-1111-4111-8111-111111111111";
 export const fixtureUser = {
@@ -36,13 +36,12 @@ export async function issueFixtureCookie(
   } = {},
 ) {
   const origin = "http://localhost:3107";
-  const codec = createSessionCookie({ origin, keys: ["ab".repeat(32)] });
+  const codec = createSessionReferenceCookie({
+    origin,
+    keys: ["ab".repeat(32)],
+  });
   const value = codec.seal({
     id: randomUUID(),
-    organizationId: options.organizationId ?? fixtureOrg,
-    accessToken: "fixture-at",
-    refreshToken: "fixture-rt",
-    accessTokenExpiresAt: Date.now() + 300000,
     sessionExpiresAt: Date.now() + (options.expired ? -1000 : 86400000),
   });
   await page.context().addCookies([

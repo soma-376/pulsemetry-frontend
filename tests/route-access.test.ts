@@ -6,7 +6,7 @@ import {
   routeDestination,
   type RouteAccess,
 } from "../src/lib/route-access";
-import { createSessionCookie } from "../src/lib/server/session-cookie";
+import { createSessionReferenceCookie } from "../src/lib/server/session-cookie";
 
 test("경로와 하위 경로를 분류하되 비슷한 이름·API·정적 파일은 제외한다", () => {
   for (const root of [
@@ -58,7 +58,10 @@ test("무상태 쿠키 검사는 AT 만료를 허용하고 무결성·절대 만
   const now = 1800000000000,
     origin = "https://app.example.test",
     key = "ab".repeat(32);
-  const codec = createSessionCookie({ origin, keys: [key] }, () => now);
+  const codec = createSessionReferenceCookie(
+    { origin, keys: [key] },
+    () => now,
+  );
   const session = {
     id: randomUUID(),
     organizationId: randomUUID(),
@@ -70,22 +73,29 @@ test("무상태 쿠키 검사는 AT 만료를 허용하고 무결성·절대 만
   const value = codec.seal(session);
   const request = (v: string) =>
     new Request(origin, { headers: { cookie: `${codec.cookieName}=${v}` } });
-  assert.deepEqual(codec.read(request(value)), session);
+  assert.deepEqual(codec.read(request(value)), {
+    id: session.id,
+    sessionExpiresAt: session.sessionExpiresAt,
+  });
   assert.equal(codec.read(request(value + ".tampered")), null);
   assert.equal(
     codec.read(request(codec.seal({ ...session, sessionExpiresAt: now }))),
     null,
   );
   assert.equal(codec.read(new Request(origin)), null);
-  const rotated = createSessionCookie(
+  const rotated = createSessionReferenceCookie(
     { origin, keys: ["cd".repeat(32), key] },
     () => now,
   );
-  assert.deepEqual(rotated.read(request(value)), session);
+  assert.deepEqual(rotated.read(request(value)), {
+    id: session.id,
+    sessionExpiresAt: session.sessionExpiresAt,
+  });
   assert.equal(
-    createSessionCookie({ origin, keys: ["cd".repeat(32)] }, () => now).read(
-      request(value),
-    ),
+    createSessionReferenceCookie(
+      { origin, keys: ["cd".repeat(32)] },
+      () => now,
+    ).read(request(value)),
     null,
   );
 });

@@ -1,3 +1,6 @@
+import { createValkeySessionStore } from "../src/lib/server/valkey-session-store";
+import { memorySessionCommands } from "./support/session-commands";
+import { createSessionReferenceCookie } from "../src/lib/server/session-cookie";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createBff, type BffConfig } from "../src/lib/server/bff";
@@ -12,7 +15,7 @@ const user = {
   displayName: null,
   role: "admin",
 };
-const config: BffConfig = {
+const config: Omit<BffConfig, "sessionStore"> = {
   origin,
   enrollmentUrl: "https://enrollment.example.test",
   dashboardUrl: "https://dashboard.example.test",
@@ -93,7 +96,17 @@ function fixture(options: Partial<BffConfig> = {}) {
       },
     );
   };
-  const bff = createBff({ ...config, ...options }, fetcher, () => time);
+  const memory = memorySessionCommands(() => time);
+  const store = createValkeySessionStore(
+    memory.commands,
+    { ...config, environment: "dev" },
+    () => time,
+  );
+  const bff = createBff(
+    { ...config, sessionStore: store, ...options },
+    fetcher,
+    () => time,
+  );
   const login = () =>
     bff.handle(
       request("/auth/token", "", {
@@ -105,6 +118,8 @@ function fixture(options: Partial<BffConfig> = {}) {
     );
   return {
     bff,
+    store,
+    memory,
     login,
     sent,
     fetcher,
@@ -132,7 +147,7 @@ test("로그인은 사용자만 반환하고 인증 암호화 HttpOnly 쿠키를
   assert.equal(result.status, 200);
   assert.deepEqual(await result.json(), { user });
   const saved = result.headers.get("set-cookie")!;
-  assert.match(saved, /^__Host-pulsemetry-session=v1\./);
+  assert.match(saved, /^__Host-pulsemetry-session=v2\./);
   for (const option of ["HttpOnly", "Secure", "SameSite=Lax", "Path=/"])
     assert.ok(saved.includes(option));
   assert.doesNotMatch(saved, /secret-at|secret-rt|Domain=/);
@@ -151,13 +166,13 @@ test("쿠키 변조·다른 키·다른 origin·절대 만료는 upstream 인증
     401,
   );
   const other = createBff(
-    { ...config, keys: ["b2".repeat(32)] },
+    { ...config, sessionStore: f.store, keys: ["b2".repeat(32)] },
     f.fetcher,
     f.clock,
   );
   assert.equal((await other.handle(request(api, saved))).status, 401);
   const otherOrigin = createBff(
-    { ...config, origin: "https://other.example.test" },
+    { ...config, sessionStore: f.store, origin: "https://other.example.test" },
     f.fetcher,
     f.clock,
   );
@@ -175,19 +190,24 @@ test("쿠키 변조·다른 키·다른 origin·절대 만료는 upstream 인증
   assert.equal((await f.bff.handle(request(api, saved))).status, 401);
 });
 
-test("이전 키 쿠키를 읽고 현재 키로 갱신하되 절대 수명은 연장하지 않는다", async () => {
+test("이전 키의 참조 쿠키로 토큰을 갱신하되 쿠키와 절대 수명은 바꾸지 않는다", async () => {
   const f = fixture(),
     saved = cookie(await f.login());
   const rotated = createBff(
-    { ...config, keys: ["b2".repeat(32), ...config.keys] },
+    {
+      ...config,
+      sessionStore: f.store,
+      keys: ["b2".repeat(32), ...config.keys],
+    },
     f.fetcher,
     f.clock,
   );
   f.advance(300000);
   const result = await rotated.handle(request(api, saved));
   assert.equal(result.status, 200);
-  assert.notEqual(cookie(result).split(".")[1], saved.split(".")[1]);
-  assert.match(result.headers.get("set-cookie")!, /Max-Age=2591700/);
+  assert.equal(result.headers.has("set-cookie"), false);
+  f.advance(30 * 86400000);
+  assert.equal((await rotated.handle(request(api, saved))).status, 401);
 });
 
 test("CSRF·임의 upstream·다른 조직·인증 proxy 경로를 거부한다", async () => {
@@ -272,7 +292,7 @@ test("본문 없는 벤더 삭제·계약 비우기는 빈 스트림이어도 If
     saved = cookie(await f.login());
   const sent: { url: string; init: RequestInit }[] = [];
   const bff = createBff(
-    config,
+    { ...config, sessionStore: f.store },
     async (input, init = {}) => {
       sent.push({ url: String(input), init });
       return new Response(null, { status: 204 });
@@ -436,7 +456,7 @@ test("토큰 갱신 재요청도 원문을 유지하고 백엔드의 본문 검�
     error: { code: "invalid_request", message: "잘못된 JSON" },
   };
   const bff = createBff(
-    config,
+    { ...config, sessionStore: f.store },
     async (input, init = {}) => {
       if (new URL(String(input)).pathname !== path)
         return f.fetcher(input, init);
@@ -497,46 +517,41 @@ test("동시 요청과 완료 직후의 이전 쿠키 요청은 갱신 한 번�
   release();
   const results = await Promise.all(pending);
   assert.ok(
-    results.every((r) => r.status === 200 && r.headers.has("set-cookie")),
+    results.every((r) => r.status === 200 && !r.headers.has("set-cookie")),
   );
   assert.equal((await f.bff.handle(request(api, saved))).status, 200);
   assert.equal(f.counts().refreshCount, 1);
-  const latest = await f.bff.handle(request(api, cookie(results[0])));
+  const latest = await f.bff.handle(request(api, saved));
   assert.equal(latest.status, 200);
   assert.equal(latest.headers.has("set-cookie"), false);
 });
 
-test("갱신 cache 포화는 진행 중 작업을 축출하지 않으며 TTL 뒤 용량을 회수한다", async () => {
-  const f = fixture({ maxRefreshEntries: 1 });
-  const a = cookie(await f.login()),
-    b = cookie(await f.login());
+test("Valkey 장애는 메모리로 우회하지 않고 복구 뒤 같은 세션을 읽는다", async () => {
+  const f = fixture();
+  const saved = cookie(await f.login());
   f.advance(300000);
-  assert.equal((await f.bff.handle(request(api, a))).status, 200);
-  assert.equal((await f.bff.handle(request(api, b))).status, 503);
+  f.memory.unavailable(true);
+  assert.equal((await f.bff.handle(request(api, saved))).status, 503);
+  assert.equal(f.counts().refreshCount, 0);
+  f.memory.unavailable(false);
+  assert.equal((await f.bff.handle(request(api, saved))).status, 200);
   assert.equal(f.counts().refreshCount, 1);
-  assert.equal((await f.bff.handle(request(api, a))).status, 200);
-  f.advance(5001);
-  assert.equal((await f.bff.handle(request(api, b))).status, 200);
-  assert.equal(f.counts().refreshCount, 2);
 });
-
-test("갱신 실패 작업은 제거하여 재시도할 수 있고 로그아웃은 공유 결과도 무효화한다", async () => {
-  const f = fixture(),
-    saved = cookie(await f.login());
+test("불확실한 갱신 실패는 세션을 폐기하고 재로그인을 요구한다", async () => {
+  const f = fixture();
+  const saved = cookie(await f.login());
   f.advance(300000);
   f.failRefresh(503);
-  assert.equal((await f.bff.handle(request(api, saved))).status, 502);
+  assert.equal((await f.bff.handle(request(api, saved))).status, 401);
   f.failRefresh(200);
-  const success = await f.bff.handle(request(api, saved));
-  assert.equal(success.status, 200);
-  assert.equal(f.counts().refreshCount, 2);
-  const logout = await f.bff.handle(
-    request("/auth/logout", cookie(success), {}),
-  );
+  assert.equal((await f.bff.handle(request(api, saved))).status, 401);
+  assert.equal(f.counts().refreshCount, 1);
+  const current = cookie(await f.login());
+  assert.equal((await f.bff.handle(request(api, current))).status, 200);
+  const logout = await f.bff.handle(request("/auth/logout", current, {}));
   assert.equal(logout.status, 204);
   assert.match(logout.headers.get("set-cookie")!, /Max-Age=0/);
-  assert.equal((await f.bff.handle(request(api, saved))).status, 401);
-  assert.equal(f.counts().refreshCount, 3);
+  assert.equal((await f.bff.handle(request(api, current))).status, 401);
 });
 
 test("다른 조직·비관리자는 새 토큰을 저장하지 않고 폐기한다", async () => {
@@ -573,7 +588,7 @@ test("갱신 도중 로그아웃은 완료되는 새 세션도 폐기한다", as
   assert.equal((await pending).status, 401);
 });
 
-test("upstream 401은 한 번만 갱신하고 재시도하며 작업 타임아웃 후 메모리를 회수한다", async () => {
+test("upstream 401은 한 번만 갱신하고 재시도하며 갱신 타임아웃 후 세션을 폐기한다", async () => {
   const f = fixture();
   let sends = 0,
     stall = false;
@@ -594,14 +609,14 @@ test("upstream 401은 한 번만 갱신하고 재시도하며 작업 타임아�
     return f.fetcher(input, init);
   };
   const bff = createBff(
-    { ...config, timeoutMs: 15, maxRefreshEntries: 1 },
+    { ...config, sessionStore: f.store, timeoutMs: 15 },
     fetcher,
     f.clock,
   );
   const saved = cookie(await f.login());
   const refreshed = await bff.handle(request(api, saved));
   assert.equal(refreshed.status, 200);
-  const current = cookie(refreshed);
+  const current = saved;
   assert.equal(sends, 2);
   assert.equal(f.counts().refreshCount, 1);
   f.advance(300000);
@@ -609,21 +624,21 @@ test("upstream 401은 한 번만 갱신하고 재시도하며 작업 타임아�
   // AbortSignal.timeout 타이머는 unref되므로 테스트 동안 이벤트 루프를 유지한다.
   const keepAlive = setTimeout(() => {}, 500);
   try {
-    assert.equal((await bff.handle(request(api, current))).status, 503);
+    assert.equal((await bff.handle(request(api, current))).status, 401);
   } finally {
     clearTimeout(keepAlive);
   }
   stall = false;
-  assert.equal((await bff.handle(request(api, current))).status, 200);
+  assert.equal((await bff.handle(request(api, current))).status, 401);
 });
 
 // 서버 갱신 요청은 브라우저 목으로 관찰할 수 없으므로 실제 BFF 경계를 검사한다.
-test("인증 경로의 429와 Retry-After를 보존하고 쿠키를 삭제하지 않는다", async () => {
+test("갱신 429는 재로그인을 요구하고 로그아웃 429는 Retry-After를 보존한다", async () => {
   const f = fixture(),
     saved = cookie(await f.login());
   f.advance(300000);
   const bff = createBff(
-    config,
+    { ...config, sessionStore: f.store },
     async (input, init) =>
       String(input).endsWith("/api/v1/auth/refresh") ||
       String(input).endsWith("/api/v1/auth/logout")
@@ -634,15 +649,14 @@ test("인증 경로의 429와 Retry-After를 보존하고 쿠키를 삭제하지
         : f.fetcher(input, init),
     f.clock,
   );
-  for (const requestValue of [
-    request("/auth/session", saved),
-    request("/auth/logout", saved, {}),
-  ]) {
-    const result = await bff.handle(requestValue);
-    assert.equal(result.status, 429);
-    assert.equal(result.headers.get("Retry-After"), "7");
-    assert.equal(result.headers.has("Set-Cookie"), false);
-  }
+  const result = await bff.handle(request("/auth/session", saved));
+  assert.equal(result.status, 401);
+  assert.equal(result.headers.has("Set-Cookie"), false);
+  const current = cookie(await f.login());
+  const logout = await bff.handle(request("/auth/logout", current, {}));
+  assert.equal(logout.status, 429);
+  assert.equal(logout.headers.get("Retry-After"), "7");
+  assert.equal((await bff.handle(request(api, current))).status, 401);
 });
 
 test("세션 갱신 후 역할 거부와 일시적인 me 실패도 회전한 RT를 보존한다", async () => {
@@ -651,7 +665,7 @@ test("세션 갱신 후 역할 거부와 일시적인 me 실패도 회전한 RT�
       saved = cookie(await f.login());
     f.advance(300000);
     const bff = createBff(
-      config,
+      { ...config, sessionStore: f.store },
       async (input, init) =>
         String(input).endsWith("/api/v1/auth/me")
           ? status === 403
@@ -662,12 +676,11 @@ test("세션 갱신 후 역할 거부와 일시적인 me 실패도 회전한 RT�
     );
     const result = await bff.handle(request("/auth/session", saved));
     assert.equal(result.status, status === 503 ? 502 : status);
-    assert.ok(result.headers.has("set-cookie"));
-    const { createSessionCookie } =
-      await import("../src/lib/server/session-cookie");
-    const session = createSessionCookie(config, f.clock).read(
-      request("/auth/session", cookie(result)),
-    );
+    assert.equal(result.headers.has("set-cookie"), false);
+    const ref = createSessionReferenceCookie(config, f.clock).read(
+      request("/auth/session", saved),
+    )!;
+    const session = await f.store.read(ref.id);
     assert.equal(session?.refreshToken, "new-secret-rt");
     assert.equal(f.counts().refreshCount, 1);
   }
@@ -679,7 +692,7 @@ for (const finalFailure of ["network", "unauthenticated"] as const) {
     const saved = cookie(await f.login());
     let resourceCalls = 0;
     const bff = createBff(
-      config,
+      { ...config, sessionStore: f.store },
       async (input, init) => {
         if (String(input).includes("/analytics/overview")) {
           resourceCalls++;
@@ -699,12 +712,9 @@ for (const finalFailure of ["network", "unauthenticated"] as const) {
       assert.equal(result.headers.has("set-cookie"), false);
     } else {
       assert.equal(result.status, 503);
-      assert.ok(result.headers.has("set-cookie"));
+      assert.equal(result.headers.has("set-cookie"), false);
       f.advance(6000);
-      assert.equal(
-        (await bff.handle(request(api, cookie(result)))).status,
-        200,
-      );
+      assert.equal((await bff.handle(request(api, saved))).status, 200);
       assert.equal(f.counts().refreshCount, 1);
     }
   });

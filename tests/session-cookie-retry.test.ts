@@ -31,7 +31,7 @@ afterEach(() => {
   clearBackendSession();
 });
 
-test("세션 확인은 전용 stale 응답만 현재 쿠키로 한 번 재요청한다", async () => {
+test("세션 확인은 구버전 stale 헤더에도 자동 재요청하지 않는다", async () => {
   clearBackendSession();
   let calls = 0;
   globalThis.fetch = async (_url, init) => {
@@ -40,12 +40,12 @@ test("세션 확인은 전용 stale 응답만 현재 쿠키로 한 번 재요청
     assert.equal(new Headers(init?.headers).has("Cookie"), false);
     return calls === 1 ? stale() : Response.json({ user });
   };
-  await restoreBackendSession(true);
-  assert.equal(calls, 2);
-  assert.equal(getSessionState().status, "authenticated");
+  await assert.rejects(restoreBackendSession(true));
+  assert.equal(calls, 1);
+  assert.equal(getSessionState().status, "error");
 });
 
-test("업무 명령은 BFF 미전달 stale만 같은 원문·멱등키로 한 번 재요청한다", async () => {
+test("업무 명령은 원문·멱등키를 보존하고 구버전 stale에도 재전송하지 않는다", async () => {
   await authenticated();
   const requests: RequestInit[] = [];
   globalThis.fetch = async (_url, init = {}) => {
@@ -61,8 +61,8 @@ test("업무 명령은 BFF 미전달 stale만 같은 원문·멱등키로 한 �
       "Idempotency-Key": "same-key",
     },
   });
-  assert.equal(result.status, 200);
-  assert.equal(requests.length, 2);
+  assert.equal(result.status, 409);
+  assert.equal(requests.length, 1);
   for (const init of requests) {
     assert.equal(init.body, body);
     assert.equal(new Headers(init.headers).get("Idempotency-Key"), "same-key");
@@ -70,7 +70,7 @@ test("업무 명령은 BFF 미전달 stale만 같은 원문·멱등키로 한 �
   }
 });
 
-test("반복 stale은 두 번에서 멈추고 일반 409·503은 자동 재요청하지 않는다", async () => {
+test("구버전 stale·일반 409·503 모두 자동 재요청하지 않는다", async () => {
   await authenticated();
   for (const mode of ["repeated", "conflict", "unavailable"]) {
     let calls = 0;
@@ -82,7 +82,7 @@ test("반복 stale은 두 번에서 멈추고 일반 409·503은 자동 재요�
     };
     const response = await sessionFetch(path);
     assert.equal(response.status, mode === "unavailable" ? 503 : 409);
-    assert.equal(calls, mode === "repeated" ? 2 : 1);
+    assert.equal(calls, 1);
     assert.equal(getSessionState().status, "authenticated");
   }
 });
@@ -94,7 +94,7 @@ test("세션 확인의 반복 stale도 무한 갱신 없이 확인 오류로 남
     return stale();
   };
   await assert.rejects(restoreBackendSession(true));
-  assert.equal(calls, 2);
+  assert.equal(calls, 1);
   assert.equal(getSessionState().status, "error");
 });
 

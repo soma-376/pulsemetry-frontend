@@ -1,13 +1,20 @@
 // Node 전용 모듈. 브라우저 모듈에서 가져오지 않는다.
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { authUserSchema } from "../auth-user";
 import { logger, type LogFields, type ServerLogger } from "./logger";
 import {
-  createSessionCookie,
+  createSessionReferenceCookie,
   SessionCookieError,
   type Session,
 } from "./session-cookie";
+
+import {
+  SessionStoreError,
+  type SessionStore,
+  createValkeySessionStore,
+} from "./valkey-session-store";
+import { createValkeyCommands } from "./valkey-connection";
 
 const tokensSchema = z.object({
   access_token: z.string().min(1),
@@ -15,21 +22,12 @@ const tokensSchema = z.object({
   token_type: z.literal("Bearer"),
   expires_in: z.number().positive().max(86400),
 });
-type Entry = {
-  sessionId: string;
-  task: Promise<Session>;
-  expiresAt: number;
-  invalidated: boolean;
-};
-type RefreshSession = { currentKey: string; expiresAt: number };
 export type BffConfig = {
+  sessionStore: SessionStore;
   origin: string;
   enrollmentUrl: string;
   dashboardUrl: string;
   keys: string[];
-  refreshGraceMs?: number;
-  maxRefreshEntries?: number;
-  maxRefreshSessions?: number;
   timeoutMs?: number;
 };
 class BffError extends Error {
@@ -58,7 +56,16 @@ export function createBff(
   log: ServerLogger = logger,
 ) {
   const origin = new URL(config.origin).origin;
-  const { read, write } = createSessionCookie(config, now);
+  const referenceCookie = createSessionReferenceCookie(config, now);
+  const store = config.sessionStore;
+  const write = referenceCookie.write;
+  async function read(request: Request) {
+    const reference = referenceCookie.read(request);
+    if (!reference) return null;
+    const session = await store.read(reference.id);
+    if (!session) fail(401, "session_reauthentication_required");
+    return session;
+  }
   const bases = {
     enrollment: new URL(config.enrollmentUrl),
     dashboard: new URL(config.dashboardUrl),
@@ -74,25 +81,10 @@ export function createBff(
     )
       throw new Error("BFF 업스트림에는 HTTP(S) origin만 설정하세요.");
   }
-  const grace = config.refreshGraceMs ?? 5000,
-    limit = config.maxRefreshEntries ?? 1000;
-  const refreshes = new Map<string, Entry>();
   const upstreamResponses = new WeakMap<
     Response,
     Pick<LogFields, "upstreamService" | "upstreamStatus">
   >();
-  // 자격증명이 아닌 최신 RT 해시만 세션당 하나 보관한다. 유예 뒤 구쿠키에
-  // 새 RT를 주거나 소비 RT를 다시 제출하지 않고 브라우저의 현재 쿠키를 요구한다.
-  const refreshSessions = new Map<string, RefreshSession>();
-  const sessionLimit = config.maxRefreshSessions ?? 1000;
-  const cacheKey = (session: Session) =>
-    createHash("sha256").update(session.refreshToken).digest("hex");
-  function prune() {
-    for (const [key, entry] of refreshes)
-      if (entry.expiresAt <= now()) refreshes.delete(key);
-    for (const [id, session] of refreshSessions)
-      if (session.expiresAt <= now()) refreshSessions.delete(id);
-  }
   function response(body: unknown, status = 200) {
     return new Response(status === 204 ? null : JSON.stringify(body), {
       status,
@@ -186,57 +178,21 @@ export function createBff(
         upstreamResponses.get(r),
       );
   }
-  function invalidate(id: string) {
-    refreshSessions.delete(id);
-    for (const [key, entry] of refreshes)
-      if (entry.sessionId === id) {
-        entry.invalidated = true;
-        refreshes.delete(key);
-      }
+  async function invalidate(id: string) {
+    await store.remove(id);
   }
   async function currentSession(session: Session) {
-    prune();
-    let active = session;
-    const visited = new Set<string>();
-    for (;;) {
-      const key = cacheKey(active);
-      const recent = refreshes.get(key);
-      if (!recent || visited.has(key)) break;
-      visited.add(key);
-      active = await recent.task;
-    }
-    const tracked = refreshSessions.get(session.id);
-    if (tracked && tracked.currentKey !== cacheKey(active))
-      fail(409, "session_refresh_required");
-    return active;
+    const current = await store.read(session.id);
+    if (!current) return fail(401, "session_reauthentication_required");
+    return current.accessToken === session.accessToken &&
+      current.refreshToken === session.refreshToken
+      ? session
+      : current;
   }
   function refresh(session: Session): Promise<Session> {
-    prune();
-    const key = cacheKey(session),
-      existing = refreshes.get(key);
-    if (existing) return existing.task;
-    let tracked = refreshSessions.get(session.id);
-    if (tracked && tracked.currentKey !== key)
-      return Promise.reject(new BffError(409, "session_refresh_required"));
-    if (refreshes.size >= limit)
-      return Promise.reject(new BffError(503, "refresh_busy"));
-    const newlyTracked = !tracked;
-    if (!tracked) {
-      if (refreshSessions.size >= sessionLimit)
-        return Promise.reject(new BffError(503, "refresh_busy"));
-      tracked = { currentKey: key, expiresAt: session.sessionExpiresAt };
-      refreshSessions.set(session.id, tracked);
-    }
-    const record = tracked;
-    const entry: Entry = {
-      sessionId: session.id,
-      task: undefined as unknown as Promise<Session>,
-      expiresAt: Infinity,
-      invalidated: false,
-    };
-    // microtask에서 시작하므로 Map 등록이 실제 갱신보다 먼저 완료된다.
-    entry.task = Promise.resolve()
-      .then(async () => {
+    return store.refresh(
+      session,
+      async () => {
         const issuedAt = now();
         const tokens = await json(
           await upstream(
@@ -246,45 +202,20 @@ export function createBff(
           ),
           tokensSchema,
         );
-        const next = tokenSession(tokens, session, issuedAt);
-        if (entry.invalidated) {
-          await revoke(next);
-          fail(401, "unauthenticated");
-        }
-        record.currentKey = cacheKey(next);
-        entry.expiresAt = now() + grace;
-        const timer = setTimeout(() => {
-          if (refreshes.get(key) === entry) refreshes.delete(key);
-        }, grace);
-        timer.unref();
-        return next;
-      })
-      .catch((error) => {
-        if (refreshes.get(key) === entry) refreshes.delete(key);
-        if (
-          newlyTracked &&
-          refreshSessions.get(session.id) === record &&
-          record.currentKey === key
-        )
-          refreshSessions.delete(session.id);
-        throw error;
-      });
-    refreshes.set(key, entry);
-    return entry.task;
+        return tokenSession(tokens, session, issuedAt);
+      },
+      revoke,
+    );
   }
   async function authorized(
     session: Session,
     service: keyof typeof bases,
     path: string,
     init: RequestInit,
-    rememberSession: (session: Session) => void,
   ) {
     let active = await currentSession(session);
-    // 후속 갱신·조회가 실패해도 이미 확보한 새 세션을 응답에 반영한다.
-    if (active !== session) rememberSession(active);
     if (active.accessTokenExpiresAt <= now() + 5000)
       active = await refresh(active);
-    if (active !== session) rememberSession(active);
     const send = (s: Session) => {
       const headers = new Headers(init.headers);
       headers.set("Authorization", `Bearer ${s.accessToken}`);
@@ -294,16 +225,15 @@ export function createBff(
     if (result.status === 401 && active === session) {
       await result.body?.cancel();
       active = await refresh(session);
-      rememberSession(active);
       result = await send(active);
     }
     if (result.status === 401) {
-      invalidate(session.id);
+      await invalidate(session.id);
       fail(401, "unauthenticated");
     }
     if (result.status >= 300 && result.status < 400)
       fail(502, "invalid_response");
-    return { result, session: active, renewed: active !== session };
+    return { result };
   }
   async function requestBytes(
     request: Request,
@@ -336,10 +266,6 @@ export function createBff(
     }
   }
   async function handle(request: Request): Promise<Response> {
-    let renewedSession: Session | null = null;
-    const rememberSession = (latest: Session) => {
-      renewedSession = latest;
-    };
     const startedAt = now();
     // Never log raw paths: they can contain identifiers or attacker input.
     const pathname = new URL(request.url).pathname;
@@ -357,12 +283,7 @@ export function createBff(
       code: string,
       upstream?: BffError["upstream"],
     ) {
-      const level =
-        status >= 500
-          ? "error"
-          : code === "session_refresh_required"
-            ? "info"
-            : "warn";
+      const level = status >= 500 ? "error" : "warn";
       try {
         log[level]("bff.request.failed", {
           source: upstream ? "upstream" : "bff",
@@ -381,7 +302,14 @@ export function createBff(
       checkRequest(request);
       const url = new URL(request.url),
         route = url.pathname.replace(/^\/api\/bff\//, "");
-      const session = read(request);
+      // 로그인 경로는 기존 세션 유실로 막지 않는다. 새 세션을 저장할 수 없으면 실패한다.
+      const reference = referenceCookie.read(request);
+      const session =
+        route === "auth/token" ||
+        route === "auth/organizations" ||
+        route === "auth/logout"
+          ? null
+          : await read(request);
       if (route === "auth/organizations" && request.method === "POST") {
         const body = z
           .object({ email: z.email() })
@@ -448,21 +376,22 @@ export function createBff(
             user.role !== "admin"
           )
             fail(403, "forbidden");
-          const result = write(response({ user }), next);
-          if (session) {
-            await revoke(session);
-            invalidate(session.id);
+          await store.create(next);
+          if (reference) {
+            const old = await store.remove(reference.id);
+            if (old) await revoke(old).catch(() => undefined);
           }
-          return result;
+          return write(response({ user }), next);
         } catch (error) {
+          await store.remove(next.id).catch(() => undefined);
           await revoke(next).catch(() => undefined);
           throw error;
         }
       }
       if (route === "auth/logout" && request.method === "POST") {
-        if (session) {
-          await revoke(session);
-          invalidate(session.id);
+        if (reference) {
+          const removed = await store.remove(reference.id);
+          if (removed) await revoke(removed);
         }
         return write(response(null, 204), null);
       }
@@ -473,7 +402,6 @@ export function createBff(
           "enrollment",
           "/api/v1/auth/me",
           {},
-          rememberSession,
         );
         const user = await json(auth.result, authUserSchema);
         if (
@@ -482,7 +410,7 @@ export function createBff(
         )
           fail(403, "forbidden");
         const result = response({ user });
-        return auth.renewed ? write(result, auth.session) : result;
+        return result;
       }
       // 임의 URL·인증 경로는 받지 않는다. 조직의 최종 인가는 backend가 수행한다.
       const match =
@@ -513,17 +441,11 @@ export function createBff(
       const contentType = request.headers.get("content-type");
       if (contentType) headers.set("Content-Type", contentType);
       const body = await requestBytes(request);
-      const auth = await authorized(
-        session!,
-        service,
-        path + url.search,
-        {
-          method: request.method,
-          headers,
-          body,
-        },
-        rememberSession,
-      );
+      const auth = await authorized(session!, service, path + url.search, {
+        method: request.method,
+        headers,
+        body,
+      });
       const result = new Response(auth.result.body, {
         status: auth.result.status,
         headers: {
@@ -536,17 +458,16 @@ export function createBff(
         const v = auth.result.headers.get(name);
         if (v) result.headers.set(name, v);
       }
-      const finalResponse = auth.renewed ? write(result, auth.session) : result;
       if (result.status >= 400)
         recordFailure(
           result.status,
           "upstream_http_error",
           upstreamResponses.get(auth.result),
         );
-      return finalResponse;
+      return result;
     } catch (error) {
       const status =
-        error instanceof BffError
+        error instanceof BffError || error instanceof SessionStoreError
           ? error.status
           : error instanceof z.ZodError
             ? 400
@@ -554,7 +475,7 @@ export function createBff(
               ? 502
               : 503;
       const code =
-        error instanceof BffError
+        error instanceof BffError || error instanceof SessionStoreError
           ? error.code
           : error instanceof z.ZodError
             ? "invalid_request"
@@ -566,7 +487,7 @@ export function createBff(
         code,
         error instanceof BffError ? error.upstream : undefined,
       );
-      // 늦은 실패 응답으로 새 로그인 쿠키를 지우지 않는다. 세션 폐기는 backend가 판정한다.
+      // 늦은 실패 응답으로 새 로그인 쿠키를 지우지 않는다. 웹 세션 폐기는 Valkey에 반영한다.
       const result = response(
         {
           error: {
@@ -581,12 +502,7 @@ export function createBff(
       );
       if (error instanceof BffError && error.retryAfter)
         result.headers.set("Retry-After", error.retryAfter);
-      if (code === "session_refresh_required")
-        result.headers.set("X-Pulsemetry-Session-Retry", "1");
-      // RT 회전 성공 후 권한 거부·일시 조회 실패가 와도 새 RT를 잃지 않는다.
-      return renewedSession && status !== 401
-        ? write(result, renewedSession)
-        : result;
+      return result;
     }
   }
   return { handle };
@@ -600,9 +516,31 @@ export function getBff() {
     const origin = process.env.BFF_ORIGIN;
     if (!origin || !process.env.BFF_SESSION_KEYS)
       throw new Error("BFF_ORIGIN과 BFF_SESSION_KEYS를 설정하세요.");
+    const keys = process.env.BFF_SESSION_KEYS.split(",").map((v) => v.trim());
+    const environment = process.env.BFF_SESSION_ENV;
+    const host = process.env.BFF_VALKEY_HOST;
+    const cacheName = process.env.BFF_VALKEY_CACHE_NAME;
+    const username = process.env.BFF_VALKEY_USERNAME;
+    if (
+      (environment !== "dev" && environment !== "prod") ||
+      !host ||
+      !cacheName ||
+      username !== `pulsemetry-bff-${environment}`
+    )
+      throw new Error("Valkey 환경별 연결 설정을 확인하세요.");
+    const sessionStore = createValkeySessionStore(
+      createValkeyCommands({
+        host,
+        cacheName,
+        username,
+        region: process.env.AWS_REGION ?? "ap-northeast-2",
+      }),
+      { origin, keys, environment },
+    );
     runtime.__pulsemetryBff = createBff({
+      sessionStore,
       origin,
-      keys: process.env.BFF_SESSION_KEYS.split(",").map((v) => v.trim()),
+      keys,
       enrollmentUrl: process.env.ENROLLMENT_API_URL ?? "http://localhost:8080",
       dashboardUrl: process.env.DASHBOARD_API_URL ?? "http://localhost:8081",
     });

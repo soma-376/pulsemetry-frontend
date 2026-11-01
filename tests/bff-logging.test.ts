@@ -1,7 +1,9 @@
+import { createValkeySessionStore } from "../src/lib/server/valkey-session-store";
+import { memorySessionCommands } from "./support/session-commands";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createBff } from "../src/lib/server/bff";
-import { createSessionCookie } from "../src/lib/server/session-cookie";
+import { createSessionReferenceCookie } from "../src/lib/server/session-cookie";
 import {
   createServerLogger,
   type ServerLogRecord,
@@ -15,7 +17,7 @@ const config = {
   enrollmentUrl: "https://enrollment.example.test",
   dashboardUrl: "https://dashboard.example.test",
 };
-function fixture(fetcher: typeof fetch) {
+async function fixture(fetcher: typeof fetch) {
   let time = 1_800_000_000_000;
   const records: ServerLogRecord[] = [];
   const logger = createServerLogger(
@@ -24,17 +26,29 @@ function fixture(fetcher: typeof fetch) {
     },
     () => undefined,
   );
-  const bff = createBff(config, fetcher, () => time, logger);
-  const codec = createSessionCookie(config, () => time);
+  const store = createValkeySessionStore(
+    memorySessionCommands(() => time).commands,
+    { ...config, environment: "dev" },
+    () => time,
+  );
+  const bff = createBff(
+    { ...config, sessionStore: store },
+    fetcher,
+    () => time,
+    logger,
+  );
+  const codec = createSessionReferenceCookie(config, () => time);
+  const session = {
+    id: org,
+    organizationId: org,
+    accessToken: "secret-at",
+    refreshToken: "secret-rt",
+    accessTokenExpiresAt: time + 300_000,
+    sessionExpiresAt: time + 86400_000,
+  };
+  await store.create(session);
   const saved = codec
-    .write(new Response(), {
-      id: org,
-      organizationId: org,
-      accessToken: "secret-at",
-      refreshToken: "secret-rt",
-      accessTokenExpiresAt: time + 300_000,
-      sessionExpiresAt: time + 86400_000,
-    })
+    .write(new Response(), session)
     .headers.get("set-cookie")!
     .split(";")[0];
   return {
@@ -56,7 +70,7 @@ function fixture(fetcher: typeof fetch) {
 }
 
 test("auth upstream 429 records provenance once, preserves retry response, omits secrets", async () => {
-  const f = fixture(async () =>
+  const f = await fixture(async () =>
     Response.json(
       { secret: "private upstream body" },
       { status: 429, headers: { "Retry-After": "8" } },
@@ -77,7 +91,7 @@ test("auth upstream 429 records provenance once, preserves retry response, omits
 test("business upstream failures retain body bytes and headers without logging the body", async () => {
   const body = '{"error":{"code":"version_conflict"},"sensitive":"private"}';
   for (const status of [409, 503]) {
-    const f = fixture(
+    const f = await fixture(
       async () => new Response(body, { status, headers: { ETag: '"v2"' } }),
     );
     const response = await f.request(
@@ -97,7 +111,7 @@ test("business upstream failures retain body bytes and headers without logging t
 });
 
 test("local auth rejection and upstream transport failure are distinguishable", async () => {
-  const f = fixture(async () => {
+  const f = await fixture(async () => {
     throw new Error("private URL token");
   });
   assert.equal((await f.request("unknown/private")).status, 404);
@@ -108,9 +122,9 @@ test("local auth rejection and upstream transport failure are distinguishable", 
   assert.doesNotMatch(JSON.stringify(f.records), /private|token/);
 });
 
-test("stale refresh cookie logs INFO without calling upstream again", async () => {
+test("stable session reference reads the shared rotated token without error logs", async () => {
   let calls = 0;
-  const f = fixture(async (input) => {
+  const f = await fixture(async (input) => {
     calls++;
     return String(input).endsWith("/auth/refresh")
       ? Response.json({
@@ -133,11 +147,8 @@ test("stale refresh cookie logs INFO without calling upstream again", async () =
   const before = calls;
   f.advance(6000);
   const response = await f.request("auth/session");
-  assert.equal(response.status, 409);
-  assert.equal(response.headers.get("X-Pulsemetry-Session-Retry"), "1");
-  assert.equal(calls, before);
-  assert.equal(f.records.length, 1);
-  assert.equal(f.records[0].level, "INFO");
-  assert.equal(f.records[0].code, "session_refresh_required");
-  assert.equal(f.records[0].source, "bff");
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.has("set-cookie"), false);
+  assert.equal(calls, before + 1);
+  assert.equal(f.records.length, 0);
 });

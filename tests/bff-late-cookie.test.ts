@@ -1,3 +1,5 @@
+import { createValkeySessionStore } from "../src/lib/server/valkey-session-store";
+import { memorySessionCommands } from "./support/session-commands";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createBff, type BffConfig } from "../src/lib/server/bff";
@@ -31,7 +33,10 @@ const cookie = (response: Response) =>
   response.headers.get("set-cookie")!.split(";")[0];
 
 /** 실제 BE 계약처럼 RT를 한 번만 소비하고 재사용이면 세션 전체를 폐기한다. */
-function rotatingBackend(options: Partial<BffConfig> = {}) {
+function rotatingBackend(
+  options: Partial<BffConfig> = {},
+  beforeRefresh: () => Promise<void> = async () => {},
+) {
   let time = 1_800_000_000_000;
   let generation = 0;
   let revoked = false;
@@ -56,6 +61,7 @@ function rotatingBackend(options: Partial<BffConfig> = {}) {
     if (pathname === "/api/v1/auth/token") return Response.json(issue());
     if (pathname === "/api/v1/auth/refresh") {
       refreshCalls++;
+      await beforeRefresh();
       const token = JSON.parse(String(init.body)).refresh_token as string;
       if (consumed.has(token)) revoked = true;
       if (revoked || token !== `test-refresh-${generation}`)
@@ -83,10 +89,16 @@ function rotatingBackend(options: Partial<BffConfig> = {}) {
     }
     return Response.json(pathname === "/api/v1/auth/me" ? user : { ok: true });
   };
+  const memory = memorySessionCommands(() => time);
   const makeBff = () =>
     createBff(
       {
         origin,
+        sessionStore: createValkeySessionStore(
+          memory.commands,
+          { origin, keys: ["a1".repeat(32)], environment: "dev" },
+          () => time,
+        ),
         enrollmentUrl: "https://enrollment.example.test",
         dashboardUrl: "https://dashboard.example.test",
         keys: ["a1".repeat(32)],
@@ -122,18 +134,18 @@ function rotatingBackend(options: Partial<BffConfig> = {}) {
   };
 }
 
-test("15초 늦은 이전 쿠키는 소비 RT를 재사용하지 않고 현재 쿠키 재요청을 요구한다", async () => {
+test("15초 늦은 이전 쿠키는 소비 RT를 재사용하지 않고 Valkey의 최신 토큰을 읽는다", async () => {
   const f = rotatingBackend();
   const old = cookie(await f.login());
   f.advance(300_000);
   const fresh = await f.bff.handle(request(path, old));
   assert.equal(fresh.status, 200);
-  const current = cookie(fresh);
+  const current = old;
   f.advance(15_000);
   const delayed = await f.bff.handle(request(path, old));
   assert.deepEqual(f.status(), { revoked: false, refreshCalls: 1 });
-  assert.equal(delayed.status, 409);
-  assert.equal(delayed.headers.get("X-Pulsemetry-Session-Retry"), "1");
+  assert.equal(delayed.status, 200);
+  assert.equal(delayed.headers.get("X-Pulsemetry-Session-Retry"), null);
   assert.equal(delayed.headers.has("set-cookie"), false);
   assert.equal((await f.bff.handle(request(path, current))).status, 200);
 });
@@ -142,7 +154,8 @@ test("5초 안 두 번 회전했어도 공유 결과의 최신 RT를 따라간�
   const f = rotatingBackend();
   const first = cookie(await f.login());
   f.advance(300_000);
-  const second = cookie(await f.bff.handle(request(path, first)));
+  assert.equal((await f.bff.handle(request(path, first))).status, 200);
+  const second = first;
   f.rejectNextResource();
   const third = await f.bff.handle(request(path, second));
   assert.equal(third.status, 200);
@@ -150,24 +163,17 @@ test("5초 안 두 번 회전했어도 공유 결과의 최신 RT를 따라간�
   assert.deepEqual(f.status(), { revoked: false, refreshCalls: 2 });
 });
 
-test("최신 해시 상한은 다른 세션 기록을 축출하지 않고 절대 만료 뒤 회수한다", async () => {
-  const f = rotatingBackend({ maxRefreshSessions: 1 });
-  const first = cookie(await f.login());
-  f.advance(300_000);
-  assert.equal((await f.bff.handle(request(path, first))).status, 200);
-  const second = cookie(await f.login());
-  f.advance(300_000);
-  assert.equal((await f.bff.handle(request(path, second))).status, 503);
-  assert.equal((await f.bff.handle(request(path, first))).status, 409);
-  assert.deepEqual(f.status(), { revoked: false, refreshCalls: 1 });
-  f.advance(30 * 86_400_000);
-  const later = cookie(await f.login());
-  f.advance(300_000);
-  assert.equal((await f.bff.handle(request(path, later))).status, 200);
-  assert.deepEqual(f.status(), { revoked: false, refreshCalls: 2 });
+test("세션 절대 만료 뒤에는 이전 참조로 갱신할 수 없다", async () => {
+  const f = rotatingBackend();
+  const old = cookie(await f.login());
+  f.advance(30 * 86400000);
+  assert.equal((await f.bff.handle(request(path, old))).status, 401);
+  assert.equal(f.status().refreshCalls, 0);
+  const current = cookie(await f.login());
+  assert.equal((await f.bff.handle(request(path, current))).status, 200);
 });
 
-test("캐시가 공유되지 않는 다른 프로세스의 구쿠키는 계속 재로그인 한계다", async () => {
+test("다른 프로세스도 동일한 세션 참조로 최신 토큰을 읽는다", async () => {
   const f = rotatingBackend();
   const first = cookie(await f.login());
   f.advance(300_000);
@@ -176,9 +182,9 @@ test("캐시가 공유되지 않는 다른 프로세스의 구쿠키는 계속 �
   const separateProcess = f.anotherProcess();
   assert.equal(
     (await separateProcess.handle(request(path, first))).status,
-    401,
+    200,
   );
-  assert.equal(f.status().revoked, true);
+  assert.equal(f.status().revoked, false);
 });
 
 test("지연 요청·실제 BFF·브라우저 현재 쿠키 재요청을 함께 연결하면 세션을 유지한다", async () => {
@@ -219,7 +225,7 @@ test("지연 요청·실제 BFF·브라우저 현재 쿠키 재요청을 함께 
     f.advance(15_000);
     release();
     assert.equal((await delayed).status, 200);
-    assert.deepEqual(statuses, [200, 409, 200]);
+    assert.deepEqual(statuses, [200, 200]);
     assert.deepEqual(f.status(), { revoked: false, refreshCalls: 1 });
     assert.equal(session.getSessionState().status, "authenticated");
   } finally {
@@ -233,13 +239,15 @@ test("여러 판 전의 쿠키도 최신 세션을 폐기하거나 새 자격증
   const f = rotatingBackend();
   const first = cookie(await f.login());
   f.advance(300_000);
-  const second = cookie(await f.bff.handle(request(path, first)));
+  assert.equal((await f.bff.handle(request(path, first))).status, 200);
+  const second = first;
   f.advance(300_000);
-  const latest = cookie(await f.bff.handle(request(path, second)));
+  assert.equal((await f.bff.handle(request(path, second))).status, 200);
+  const latest = second;
   f.advance(15_000);
   const delayed = await f.bff.handle(request(path, first));
   assert.deepEqual(f.status(), { revoked: false, refreshCalls: 2 });
-  assert.equal(delayed.status, 409);
+  assert.equal(delayed.status, 200);
   assert.equal(delayed.headers.has("set-cookie"), false);
   assert.equal(
     (await f.bff.handle(request("/auth/session", latest))).status,
@@ -251,7 +259,8 @@ test("회전 upstream fixture 자체는 실제 소비 RT 재사용을 계속 거
   const f = rotatingBackend();
   const first = cookie(await f.login());
   f.advance(300_000);
-  const current = cookie(await f.bff.handle(request(path, first)));
+  assert.equal((await f.bff.handle(request(path, first))).status, 200);
+  const current = first;
   const replay = await f.fetcher(
     "https://enrollment.example.test/api/v1/auth/refresh",
     {
@@ -265,7 +274,7 @@ test("회전 upstream fixture 자체는 실제 소비 RT 재사용을 계속 거
 });
 
 for (const route of [path, "/auth/session"]) {
-  test(`갱신 후 연결 실패 응답도 새 쿠키를 전달하고 유예 뒤 복구한다: ${route}`, async () => {
+  test(`갱신 후 연결 실패 응답도 쿠키 변경 없이 Valkey에 새 토큰을 보존하고 유예 뒤 복구한다: ${route}`, async () => {
     const f = rotatingBackend();
     const old = cookie(await f.login());
     f.advance(300_000);
@@ -273,8 +282,8 @@ for (const route of [path, "/auth/session"]) {
     const failed = await f.bff.handle(request(route, old));
     assert.equal(failed.status, 503);
     assert.equal((await failed.json()).error.code, "unavailable");
-    assert.ok(failed.headers.has("set-cookie"));
-    const current = cookie(failed);
+    assert.equal(failed.headers.has("set-cookie"), false);
+    const current = old;
     f.advance(6_000);
     const recovered = await f.bff.handle(request(route, current));
     assert.equal(recovered.status, 200);
@@ -282,7 +291,7 @@ for (const route of [path, "/auth/session"]) {
   });
 }
 
-test("다른 요청의 갱신 결과를 재사용한 뒤 연결 실패해도 새 쿠키를 전달한다", async () => {
+test("다른 요청의 갱신 결과를 재사용한 뒤 연결 실패해도 쿠키 변경 없이 Valkey에 새 토큰을 보존한다", async () => {
   const f = rotatingBackend();
   const old = cookie(await f.login());
   f.advance(300_000);
@@ -290,8 +299,81 @@ test("다른 요청의 갱신 결과를 재사용한 뒤 연결 실패해도 새
   f.failNextRead();
   const failed = await f.bff.handle(request(path, old));
   assert.equal(failed.status, 503);
-  assert.ok(failed.headers.has("set-cookie"));
+  assert.equal(failed.headers.has("set-cookie"), false);
   f.advance(6_000);
-  assert.equal((await f.bff.handle(request(path, cookie(failed)))).status, 200);
+  assert.equal((await f.bff.handle(request(path, old))).status, 200);
   assert.equal(f.status().refreshCalls, 1);
 });
+
+function refreshBarrier() {
+  const releases: Array<() => void> = [];
+  const arrivals: Array<() => void> = [];
+  return {
+    enter: () =>
+      new Promise<void>((resolve) => {
+        // 최초 동시 갱신 두 개만 제어한다. 이후 폐기 확인 요청은 통과시킨다.
+        if (releases.length >= 2) {
+          resolve();
+          return;
+        }
+        releases.push(resolve);
+        arrivals.splice(0).forEach((notify) => notify());
+      }),
+    async waitFor(count: number) {
+      while (releases.length < count)
+        await new Promise<void>((resolve) => arrivals.push(resolve));
+    },
+    release(index: number) {
+      releases[index]();
+    },
+  };
+}
+
+test(
+  "단일 BFF의 동시 요청은 갱신을 한 번만 수행하고 모두 성공한다",
+  { timeout: 3000 },
+  async () => {
+    const gate = refreshBarrier();
+    const f = rotatingBackend({}, gate.enter);
+    const old = cookie(await f.login());
+    f.advance(300_000);
+    const first = f.bff.handle(request(path, old));
+    const second = f.bff.handle(request(path, old));
+    await gate.waitFor(1);
+    gate.release(0);
+    const responses = await Promise.all([first, second]);
+    assert.deepEqual(
+      responses.map((r) => r.status),
+      [200, 200],
+    );
+    assert.deepEqual(f.status(), { revoked: false, refreshCalls: 1 });
+    assert.equal((await f.bff.handle(request(path, old))).status, 200);
+  },
+);
+
+test(
+  "두 BFF의 동시 갱신도 Valkey를 통해 한 번만 수행한다",
+  { timeout: 3000 },
+  async () => {
+    const gate = refreshBarrier();
+    const f = rotatingBackend({}, gate.enter);
+    const other = f.anotherProcess();
+    const old = cookie(await f.login());
+    f.advance(300_000);
+    const first = f.bff.handle(request(path, old));
+    await gate.waitFor(1);
+    const second = other.handle(request(path, old));
+    gate.release(0);
+    const responses = await Promise.all([first, second]);
+    assert.deepEqual(
+      responses.map((r) => r.status),
+      [200, 200],
+    );
+    assert.ok(responses.every((r) => !r.headers.has("set-cookie")));
+    assert.deepEqual(f.status(), { revoked: false, refreshCalls: 1 });
+    assert.equal(
+      (await other.handle(request("/auth/session", old))).status,
+      200,
+    );
+  },
+);
