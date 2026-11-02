@@ -737,3 +737,119 @@ for (const finalFailure of ["network", "unauthenticated"] as const) {
     }
   });
 }
+
+test("dev localhost 사전 요청·실제 요청·콜백을 허용하고 다른 출처는 거부한다", async () => {
+  const local = "http://localhost:3000";
+  const f = fixture({ environment: "dev", localOrigins: [local] });
+  const preflight = await f.bff.handle(
+    new Request(`${origin}/api/bff/auth/token`, {
+      method: "OPTIONS",
+      headers: {
+        Origin: local,
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type,x-pulsemetry-request",
+      },
+    }),
+  );
+  assert.equal(preflight.status, 204);
+  assert.equal(preflight.headers.get("access-control-allow-origin"), local);
+  assert.equal(
+    preflight.headers.get("access-control-allow-credentials"),
+    "true",
+  );
+  assert.equal(f.sent.length, 0);
+  const response = await f.bff.handle(
+    request(
+      "/auth/token",
+      "",
+      {
+        code: "uac_" + "c".repeat(43),
+        code_verifier: "v".repeat(43),
+        redirect_uri: local + "/auth/callback",
+        organizationId: org,
+      },
+      { Origin: local, "Sec-Fetch-Site": "cross-site" },
+    ),
+  );
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("access-control-allow-origin"), local);
+  assert.ok(response.headers.get("set-cookie"));
+  for (const other of [
+    "http://localhost:3001",
+    "http://localhost.evil.test:3000",
+    "null",
+  ]) {
+    const denied = await f.bff.handle(
+      request("/auth/session", "", undefined, {
+        Origin: other,
+        "Sec-Fetch-Site": "cross-site",
+      }),
+    );
+    assert.equal(denied.status, 403);
+    assert.equal(denied.headers.has("access-control-allow-origin"), false);
+  }
+  const mismatch = await f.bff.handle(
+    request(
+      "/auth/token",
+      "",
+      {
+        code: "uac_" + "c".repeat(43),
+        code_verifier: "v".repeat(43),
+        redirect_uri: origin + "/auth/callback",
+        organizationId: org,
+      },
+      { Origin: local },
+    ),
+  );
+  assert.equal(mismatch.status, 400);
+  assert.equal(mismatch.headers.get("access-control-allow-origin"), local);
+});
+
+test("localhost 허용 목록은 prod에서 설정할 수 없고 기본 정책은 localhost를 거부한다", async () => {
+  assert.throws(() =>
+    fixture({ environment: "prod", localOrigins: ["http://localhost:3000"] }),
+  );
+  assert.throws(() =>
+    fixture({ environment: "dev", localOrigins: ["https://evil.test"] }),
+  );
+  const f = fixture();
+  const response = await f.bff.handle(
+    request("/auth/session", "", undefined, {
+      Origin: "http://localhost:3000",
+      "Sec-Fetch-Site": "cross-site",
+    }),
+  );
+  assert.equal(response.status, 403);
+});
+
+test("사전 요청은 미허용 메서드·헤더·Origin을 거부하고 실제 요청의 공통 헤더는 필수다", async () => {
+  const local = "http://localhost:3000";
+  const f = fixture({ environment: "dev", localOrigins: [local] });
+  for (const [method, headers, source] of [
+    ["TRACE", "x-pulsemetry-request", local],
+    ["POST", "authorization,x-pulsemetry-request", local],
+    ["POST", "content-type", local],
+    ["POST", "x-pulsemetry-request", "https://evil.test"],
+  ]) {
+    const response = await f.bff.handle(
+      new Request(`${origin}/api/bff/auth/token`, {
+        method: "OPTIONS",
+        headers: {
+          Origin: source,
+          "Access-Control-Request-Method": method,
+          "Access-Control-Request-Headers": headers,
+        },
+      }),
+    );
+    assert.equal(response.status, 403);
+    assert.equal(response.headers.has("access-control-allow-origin"), false);
+  }
+  const denied = await f.bff.handle(
+    new Request(`${origin}/api/bff/auth/session`, {
+      headers: { Origin: local },
+    }),
+  );
+  assert.equal(denied.status, 403);
+  assert.equal(denied.headers.get("access-control-allow-origin"), local);
+  assert.equal(f.sent.length, 0);
+});

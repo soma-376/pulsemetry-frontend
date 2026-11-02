@@ -2,6 +2,7 @@
 import { useSyncExternalStore } from "react";
 import { AuthError, authErrorFrom } from "./auth-error";
 import { LEGACY_SESSION_STORAGE_KEY } from "./session-key";
+import { bffFetch } from "./bff-fetch";
 export { AuthError };
 import { authUserSchema, type AuthUser } from "../auth-user";
 
@@ -77,12 +78,6 @@ export function invalidateBackendSessionCheck() {
   sessionState = { status: "checking" };
   listeners.forEach((listener) => listener());
 }
-export const bffHeaders = (headers?: HeadersInit) => {
-  const result = new Headers(headers);
-  result.delete("Authorization");
-  result.set("X-Pulsemetry-Request", "1");
-  return result;
-};
 export async function restoreBackendSession(force = false) {
   if (restoreTask) return restoreTask;
   if (restored && !force) return;
@@ -91,9 +86,7 @@ export async function restoreBackendSession(force = false) {
   sessionState = { status: "checking" };
   listeners.forEach((listener) => listener());
   const task = (async () => {
-    const response = await fetch("/api/bff/auth/session", {
-      headers: bffHeaders(),
-      credentials: "same-origin",
+    const response = await bffFetch("/api/bff/auth/session", {
       cache: "no-store",
     });
     if (epoch !== generation) return;
@@ -174,10 +167,9 @@ export async function exchangeLogin(
 ) {
   clearBackendSession();
   const epoch = generation;
-  const response = await fetch("/api/bff/auth/token", {
+  const response = await bffFetch("/api/bff/auth/token", {
     method: "POST",
-    credentials: "same-origin",
-    headers: bffHeaders({ "Content-Type": "application/json" }),
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       code,
       redirect_uri: redirectUri,
@@ -201,10 +193,10 @@ export async function exchangeLogin(
   save({ user });
   return user;
 }
-/** 서비스 토큰은 BFF만 사용한다. 클라이언트는 동일 출처 쿠키 인증 요청만 보낸다. */
+/** 서비스 토큰은 BFF만 사용한다. 클라이언트는 공통 BFF 클라이언트로 쿠키 인증 요청을 보낸다. */
 export async function sessionFetch(url: string, init: RequestInit = {}) {
   if (!url.startsWith("/api/bff/"))
-    throw new Error("인증 요청은 동일 출처 BFF 경로를 사용해야 합니다.");
+    throw new Error("인증 요청은 /api/bff/ 경로를 사용해야 합니다.");
   if (sessionState.status === "anonymous" && sessionState.reason === "expired")
     throw new AuthError("세션이 만료되었습니다. 다시 로그인해 주세요.", 401);
   const epoch = identityGeneration;
@@ -247,11 +239,7 @@ export async function sessionFetch(url: string, init: RequestInit = {}) {
       checkedGeneration = generation;
     }
   };
-  const response = await fetch(url, {
-    ...init,
-    credentials: "same-origin",
-    headers: bffHeaders(init.headers),
-  });
+  const response = await bffFetch(url, init);
   await confirmIdentity();
   if (epoch !== identityGeneration) throw changedIdentity();
   if (response.status === 401) {
@@ -269,10 +257,8 @@ export async function sessionFetch(url: string, init: RequestInit = {}) {
   return response;
 }
 export async function backendLogout() {
-  const response = await fetch("/api/bff/auth/logout", {
+  const response = await bffFetch("/api/bff/auth/logout", {
     method: "POST",
-    credentials: "same-origin",
-    headers: bffHeaders(),
     cache: "no-store",
   });
   if (!response.ok)

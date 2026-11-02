@@ -15,7 +15,7 @@
 
 ## 요청 경계
 
-모든 BFF 호출은 `X-Pulsemetry-Request: 1`을 요구한다. Origin이 있으면 고정 origin과 일치해야 하고 변경 요청은 Origin이 필수다. cross-site 요청은 거부하고 CORS를 열지 않는다. 프록시는 조직 API·카탈로그만 허용하며 요청의 Cookie·Authorization·전달 헤더는 버린다. backend redirect와 Set-Cookie를 전달하지 않는다. 응답은 no-store다.
+모든 BFF 호출은 `X-Pulsemetry-Request: 1`을 요구한다. Origin이 있으면 기본 BFF origin 또는 dev 전용 `BFF_LOCAL_ORIGINS` 목록과 일치해야 하고 변경 요청은 Origin이 필수다. cross-site 요청은 dev 목록의 정확한 localhost origin만 허용한다. OPTIONS에서 요청 메서드·헤더를 검증하며 허용 출처의 실제 응답과 오류 응답에 credential CORS 헤더를 붙인다. 목록은 기본적으로 비어 있고 dev 이외 환경에 설정하면 초기화가 실패한다. 코드 교환의 redirect_uri는 요청 Origin의 `/auth/callback`과 정확히 일치해야 한다. 백엔드 콜백 허용 목록은 별도로 관리하며 쿠키 SameSite 정책은 그대로다. 프록시는 조직 API·카탈로그만 허용하며 요청의 Cookie·Authorization·전달 헤더는 버린다. backend redirect와 Set-Cookie를 전달하지 않는다. 응답은 no-store다.
 
 backend는 최종 권한·세션 검증을 유지한다. BFF는 사용자 JWT를 자체 인가 근거로 삼지 않는다. 동일 출처의 XSS는 쿠키를 읽을 수 없지만 피해자 브라우저로 요청할 수 있으므로 XSS 방어는 별도 유지한다.
 

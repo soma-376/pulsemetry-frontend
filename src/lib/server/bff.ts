@@ -1,3 +1,4 @@
+import { createBffOriginPolicy } from "./bff-origin";
 // Node 전용 모듈. 브라우저 모듈에서 가져오지 않는다.
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -29,6 +30,8 @@ export type BffConfig = {
   dashboardUrl: string;
   keys: string[];
   timeoutMs?: number;
+  environment?: string;
+  localOrigins?: string[];
 };
 class BffError extends Error {
   constructor(
@@ -55,7 +58,7 @@ export function createBff(
   now = Date.now,
   log: ServerLogger = logger,
 ) {
-  const origin = new URL(config.origin).origin;
+  const originPolicy = createBffOriginPolicy(config);
   const referenceCookie = createSessionReferenceCookie(config, now);
   const store = config.sessionStore;
   const write = referenceCookie.write;
@@ -96,16 +99,20 @@ export function createBff(
     });
   }
   function checkRequest(request: Request) {
-    // GET도 사용자 정의 헤더를 요구한다. CORS를 열지 않으므로 다른 출처의 스크립트는 통과하지 못한다.
+    // 실제 요청은 GET도 공통 헤더와 명시적인 출처 검증을 통과해야 한다.
     if (request.headers.get("x-pulsemetry-request") !== "1")
       fail(403, "forbidden");
     const requestOrigin = request.headers.get("origin");
     if (
-      (requestOrigin && requestOrigin !== origin) ||
-      request.headers.get("sec-fetch-site") === "cross-site"
+      (requestOrigin && !originPolicy.allowed(requestOrigin)) ||
+      (request.headers.get("sec-fetch-site") === "cross-site" &&
+        !originPolicy.allowsCrossSite(requestOrigin))
     )
       fail(403, "forbidden");
-    if (!["GET", "HEAD"].includes(request.method) && requestOrigin !== origin)
+    if (
+      !["GET", "HEAD"].includes(request.method) &&
+      !originPolicy.allowed(requestOrigin)
+    )
       fail(403, "forbidden");
   }
   async function upstream(
@@ -330,7 +337,14 @@ export function createBff(
         const input = z
           .object({
             code: z.string().regex(/^uac_[A-Za-z0-9_-]{43}$/),
-            redirect_uri: z.literal(`${origin}/auth/callback`),
+            redirect_uri: z
+              .string()
+              .refine((value) =>
+                originPolicy.allowsCallback(
+                  value,
+                  request.headers.get("origin"),
+                ),
+              ),
             code_verifier: z.string().regex(/^[A-Za-z0-9._~-]{43,128}$/),
             organizationId: z.uuid(),
           })
@@ -498,7 +512,12 @@ export function createBff(
       return result;
     }
   }
-  return { handle };
+  return {
+    handle: async (request: Request) => {
+      if (request.method === "OPTIONS") return originPolicy.preflight(request);
+      return originPolicy.cors(request, await handle(request));
+    },
+  };
 }
 
 const runtime = globalThis as typeof globalThis & {
@@ -532,6 +551,10 @@ export function getBff() {
     );
     runtime.__pulsemetryBff = createBff({
       sessionStore,
+      environment,
+      localOrigins: process.env.BFF_LOCAL_ORIGINS?.split(",")
+        .map((v) => v.trim())
+        .filter(Boolean),
       origin,
       keys,
       enrollmentUrl: process.env.ENROLLMENT_API_URL ?? "http://localhost:8080",
