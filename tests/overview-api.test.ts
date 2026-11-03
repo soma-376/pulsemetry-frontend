@@ -118,7 +118,7 @@ test("직접 호출에 필터와 취소 신호를 전달하고 응답 범위를 
       );
       assert.equal(url.searchParams.get("compare"), "prev_week");
       assert.equal(init.signal, controller.signal);
-      assert.equal(init.credentials, "same-origin");
+      assert.equal(init.credentials, "include");
       assert.equal(init.cache, "no-store");
       return Response.json(example);
     },

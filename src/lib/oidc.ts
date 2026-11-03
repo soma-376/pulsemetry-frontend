@@ -1,11 +1,11 @@
 "use client";
 import { z } from "zod";
 import { authErrorFrom } from "./api/auth-error";
+import { bffFetch } from "./api/bff-fetch";
 import {
   clearBackendSession,
   enrollmentUrl,
   exchangeLogin,
-  bffHeaders,
 } from "./api/session";
 
 import { safeRedirectUrl } from "./auth-redirect";
@@ -36,12 +36,11 @@ let callbackTask: {
 export async function discoverOrganizations(
   email: string,
 ): Promise<LoginOrganization[]> {
-  const response = await fetch("/api/bff/auth/organizations", {
+  const response = await bffFetch("/api/bff/auth/organizations", {
     method: "POST",
-    headers: bffHeaders({ "Content-Type": "application/json" }),
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
     cache: "no-store",
-    credentials: "same-origin",
   });
   if (!response.ok)
     throw await authErrorFrom(

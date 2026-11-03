@@ -286,3 +286,36 @@ Next.js API를 수정하기 전 [AGENTS.md](AGENTS.md)와 설치된 버전의
 node_modules/next/dist/docs 가이드를 확인합니다.
 
 A회사 시드·카탈로그와 화면 목 데이터의 출처 및 갱신 방법은 [src/mocks/README.md](src/mocks/README.md)를 참고하세요. `npm run fixtures:sync`는 DB 변경 없이 백엔드 시드에서 공개 JSON을 생성합니다.
+
+## 브라우저 BFF 호출 주소
+
+브라우저 BFF 요청은 `src/lib/api/bff-fetch.ts`의 `bffFetch()`를 사용한다.
+`NEXT_PUBLIC_BFF_ORIGIN`을 비우면 `/api/bff/...`로 동일 출처를 호출하고,
+`https://dev.pulsemetry.co.kr`처럼 origin을 지정하면 해당 서버의 절대주소로 요청한다.
+이 공개 변수는 빌드 시 반영되며 로컬 변경 후 개발 서버를 재시작한다.
+서버의 요청 출처 검증에 쓰이는 `BFF_ORIGIN`과는 별개다.
+
+`bffFetch()`가 `credentials: "include"`, `X-Pulsemetry-Request: 1` 및
+브라우저 Authorization 헤더 제거를 관리한다. `sessionFetch()`는 이 함수를 통해
+요청하되 기존 세션 상태 확인과 계정 변경 시 늦은 응답 폐기를 담당한다.
+
+원격 주소 설정만으로 cross-origin 로그인이 완성되지는 않는다. 서버 CORS·Origin 검증,
+쿠키 SameSite·브라우저 쿠키 정책 및 로그인 콜백 허용은 별도 조건이며 이 설정으로 바뀌지 않는다.
+
+### dev BFF의 로컬 웹 허용
+
+배포된 dev BFF에 `BFF_SESSION_ENV=dev`와
+`BFF_LOCAL_ORIGINS=http://localhost:3000`을 런타임 환경변수로 주입한다.
+여러 origin은 쉼표로 구분하며 scheme·포트까지 정확한 localhost origin만 허용한다.
+prod에는 이 목록을 설정하지 않는다. dev 이외 환경에 목록이 있으면 초기화가 실패한다.
+`BFF_ORIGIN`은 배포된 프론트 주소를 유지한다.
+
+BFF는 허용한 출처의 OPTIONS와 실제 응답(오류 포함)에 credential CORS 헤더를 붙인다.
+실제 요청은 `X-Pulsemetry-Request: 1`이 필수이며, 코드 교환의 redirect_uri는
+요청 Origin의 `/auth/callback`과 정확히 일치해야 한다.
+백엔드 `userAuth.allowedRedirectUris`에도 같은 콜백 등록이 필요하다.
+OIDC authorize는 브라우저가 공개 enrollment API로 직접 이동하므로 백엔드 WAF의
+로컬 callback query 예외는 여전히 별도 검토 대상이다(인프라 PR #108).
+
+이 설정은 세션 쿠키의 SameSite=Lax를 바꾸지 않는다. localhost → dev의 cross-site
+로그인 유지에는 쿠키 정책과 실제 브라우저 검증이 추가로 필요하다.

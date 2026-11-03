@@ -1,12 +1,15 @@
+import { runtimeBffOriginPolicy } from "@/lib/server/bff-origin";
 import { getBff } from "@/lib/server/bff";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 async function handle(request: Request) {
   try {
+    if (request.method === "OPTIONS")
+      return runtimeBffOriginPolicy().preflight(request);
     return await getBff().handle(request);
   } catch {
-    return Response.json(
+    const response = Response.json(
       {
         error: {
           code: "unavailable",
@@ -15,9 +18,15 @@ async function handle(request: Request) {
       },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
+    try {
+      return runtimeBffOriginPolicy().cors(request, response);
+    } catch {
+      return response;
+    }
   }
 }
 export {
+  handle as OPTIONS,
   handle as GET,
   handle as POST,
   handle as PUT,

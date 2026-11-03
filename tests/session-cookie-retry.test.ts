@@ -36,7 +36,7 @@ test("세션 확인은 구버전 stale 헤더에도 자동 재요청하지 않�
   let calls = 0;
   globalThis.fetch = async (_url, init) => {
     calls++;
-    assert.equal(init?.credentials, "same-origin");
+    assert.equal(init?.credentials, "include");
     assert.equal(new Headers(init?.headers).has("Cookie"), false);
     return calls === 1 ? stale() : Response.json({ user });
   };

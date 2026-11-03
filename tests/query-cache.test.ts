@@ -63,7 +63,7 @@ test("토큰 갱신은 캐시를 유지하고 로그아웃·같은 조직의 계
     globalThis,
     "fetch",
     async (input: string, init: RequestInit) => {
-      assert.equal(init.credentials, "same-origin");
+      assert.equal(init.credentials, "include");
       assert.equal(new Headers(init.headers).has("Authorization"), false);
       if (input.endsWith("/auth/token"))
         return Response.json({
