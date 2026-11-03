@@ -371,3 +371,54 @@ test("미확정 총 토큰은 단위와 확정값 설명을 붙이지 않고 실
   assert.equal(zero.caption, "기간 내 사용한 전체 토큰");
   assert.equal(zero.valueStatus, undefined);
 });
+
+test("벤더 배지는 기타 묶음 전에 분류하고 벤더 내 비중만 정규화한다", () => {
+  const d = data();
+  const template = d.modelMix!.models[0];
+  d.modelMix!.models = [
+    ["gpt-6.1-sol", 0.4],
+    ["gpt-6-astra", 0.2],
+    ["claude-opus-5-5", 0.15],
+    ["claude-haiku-5-5", 0.1],
+    ["codex-auto-review", 0.1],
+    ["custom-model", 0.05],
+  ].map(([id, share]) => ({
+    ...template,
+    modelId: String(id),
+    displayName: String(id),
+    equivalentCostUsd: value(String(Number(share) * 100)),
+    costShare: value(Number(share)),
+  }));
+  const snapshot = structuredClone(d);
+  const m = presentOverview(d);
+  assert.deepEqual(
+    m.vendorMixes.map((v) => v.label),
+    ["OpenAI", "Anthropic", "기타·미확인"],
+  );
+  const openai = m.vendorMixes[0].mix;
+  assert.equal(openai.count, 3);
+  assert.ok(openai.rows.some((row) => row.id === "codex-auto-review"));
+  assert.equal(openai.rows[0].shareText, "57.1%");
+  assert.ok(
+    Math.abs(openai.slices.reduce((sum, s) => sum + s.share, 0) - 100) <
+      0.00001,
+  );
+  assert.equal(m.vendorMixes[1].mix.rows[0].shareText, "60.0%");
+  assert.equal(m.vendorMixes[2].mix.rows[0].shareText, "100.0%");
+  assert.deepEqual(d, snapshot);
+});
+
+test("벤더 선택도 비중 null과 확인된 0에서 가짜 100%를 만들지 않는다", () => {
+  const d = data();
+  const template = d.modelMix!.models[0];
+  for (const share of [null, 0]) {
+    d.modelMix!.models = [
+      { ...template, modelId: "gpt-6.1-sol", costShare: value<number>(share) },
+    ];
+    const mixes = presentOverview(d).vendorMixes;
+    assert.deepEqual(mixes[0].mix.slices, []);
+    assert.equal(mixes[0].mix.rows[0].shareText, "-");
+    assert.equal(mixes[1].mix.count, 0);
+    assert.equal(mixes.length, 2);
+  }
+});

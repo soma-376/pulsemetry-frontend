@@ -9,15 +9,59 @@ import type { OverviewModel } from "@/lib/metrics/overview";
 /** W1.4 모델 구성 — 좌석료가 아니라 사용량의 구성을 봅니다 */
 export function ModelMixCard({
   model,
+  vendorMixes = [],
 }: {
+  vendorMixes?: {
+    id: string;
+    label: string;
+    color: string;
+    mix: OverviewModel["mix"];
+  }[];
   model: Pick<OverviewModel, "mix" | "observedTokens"> & {
     defs: Pick<OverviewModel["defs"], "w14">;
     mixStatus?: { label: string; reason: string };
   };
 }) {
-  const { mix, defs } = model;
+  const { defs } = model;
+  const [vendor, setVendor] = useState("all");
+  const selectedVendor = vendorMixes.find((item) => item.id === vendor);
+  const mix = selectedVendor?.mix ?? model.mix;
   const [hovered, setHovered] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const badges =
+    vendorMixes.length > 0 ? (
+      <div
+        role="group"
+        aria-label="모델 벤더"
+        className="mb-4 flex flex-wrap gap-2"
+      >
+        {[
+          { id: "all", label: "전체", color: "var(--text2)" },
+          ...vendorMixes,
+        ].map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            aria-pressed={(selectedVendor?.id ?? "all") === item.id}
+            onClick={() => {
+              setVendor(item.id);
+              setHovered(null);
+              setSelected(null);
+            }}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue aria-pressed:border-blue aria-pressed:bg-blue-tint aria-pressed:text-blue"
+          >
+            {item.id !== "all" && (
+              <span
+                aria-hidden="true"
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ background: item.color }}
+              />
+            )}
+            {item.label}
+          </button>
+        ))}
+      </div>
+    ) : null;
   // Refreshes can reorder or remove rows without changing the selected period.
   const selectedModel = mix.rows.find((row) => row.id === selected);
   const hoveredModel = mix.rows.find((row) => row.id === hovered);
@@ -26,7 +70,7 @@ export function ModelMixCard({
   const select = (id: string) =>
     setSelected((value) => (value === id ? null : id));
 
-  if (mix.count <= 1) {
+  if (mix.count === 0 || (mix.count === 1 && !selectedVendor)) {
     const only = mix.rows[0];
     return (
       <Widget
@@ -42,6 +86,7 @@ export function ModelMixCard({
         def={defs.w14}
         className="col-span-2 @max-[1023px]:col-span-full"
       >
+        {badges}
         {only ? (
           <div className="flex flex-1 flex-col justify-center gap-5 py-5">
             <div className="flex items-center gap-2.5">
@@ -89,32 +134,47 @@ export function ModelMixCard({
       def={defs.w14}
       className="col-span-2 @max-[1023px]:col-span-full"
     >
+      {badges}
       <div className="mb-3.5 min-w-0 [overflow-wrap:anywhere] flex flex-col gap-0.5 rounded-md border border-border bg-sub px-3 py-2.5">
         <span className="text-[12.5px] font-semibold">{mix.headline}</span>
         <span className="pretty text-[11.5px] text-text2">{mix.detail}</span>
       </div>
 
       <div className="grid grid-cols-[168px_minmax(0,1fr)] items-center gap-5 @max-[720px]:grid-cols-[minmax(0,1fr)]">
-        <div className="relative h-[168px] w-[168px] justify-self-center">
-          <Donut
-            slices={mix.slices}
-            activeIndex={activeIndex}
-            onHover={(index) =>
-              setHovered(index === null ? null : (mix.rows[index]?.id ?? null))
-            }
-            onSelect={(index) => {
-              const row = mix.rows[index];
-              if (row) select(row.id);
-            }}
-          />
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-px">
-            <span className="tnum text-[20px] font-semibold tracking-[-0.02em]">
-              {activeModel?.shareText ?? mix.topShare}
-            </span>
-            <span className="pretty max-w-[120px] text-center text-[10px] text-text3">
-              {activeModel?.name ?? mix.topName}
-            </span>
-          </div>
+        <div className="relative aspect-square w-full max-w-[168px] justify-self-center">
+          {mix.slices.some((slice) => slice.share > 0) ? (
+            <>
+              <Donut
+                key={selectedVendor?.id ?? "all"}
+                slices={mix.slices}
+                activeIndex={activeIndex}
+                onHover={(index) =>
+                  setHovered(
+                    index === null ? null : (mix.rows[index]?.id ?? null),
+                  )
+                }
+                onSelect={(index) => {
+                  const row = mix.rows[index];
+                  if (row) select(row.id);
+                }}
+              />
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-px">
+                <span className="tnum text-[20px] font-semibold tracking-[-0.02em]">
+                  {activeModel?.shareText ?? mix.topShare}
+                </span>
+                <span className="pretty max-w-[120px] text-center text-[10px] text-text3">
+                  {activeModel?.name ?? mix.topName}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div
+              role="status"
+              className="flex h-full items-center justify-center rounded-full border border-dashed border-border px-6 text-center text-xs text-text3"
+            >
+              비중을 표시할 수 없습니다
+            </div>
+          )}
         </div>
 
         <div className="flex min-w-0 flex-col gap-0.5">

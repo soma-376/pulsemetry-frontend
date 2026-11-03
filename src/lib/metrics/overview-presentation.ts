@@ -405,46 +405,8 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
     { today },
   );
   const models = groupModels(data.modelMix?.models ?? []);
-  const topName = models[0]?.displayName ?? "관측 없음";
-  const shareText = (v: number | null) =>
-    v === null ? "-" : `${(v * 100).toFixed(1)}%`;
-  const sharesAvailable =
-    models.length > 0 && models.every((m) => m.costShare.value !== null);
-  const mix: OverviewModel["mix"] = {
-    count: data.modelMix?.models.length ?? 0,
-    slices: sharesAvailable
-      ? models.map((m, i) => ({
-          v: m.modelId,
-          name: m.displayName,
-          cost: Number(m.equivalentCostUsd.value),
-          color: colors[i % colors.length],
-          sub: moneyText(m.effectiveCostPerMillionTokensUsd.value),
-          share: m.costShare.value! * 100,
-        }))
-      : [],
-    rows: models.map((m, i) => ({
-      id: m.modelId,
-      name: m.displayName,
-      color: colors[i % colors.length],
-      shareText: shareText(m.costShare.value),
-      perMText:
-        m.effectiveCostPerMillionTokensUsd.value === null
-          ? "-"
-          : `${moneyText(m.effectiveCostPerMillionTokensUsd.value)}/M`,
-      costText: moneyText(m.equivalentCostUsd.value),
-      tip: `${m.displayName} · 사용 환산액 ${moneyText(m.equivalentCostUsd.value)} · 토큰 ${numberText(m.totalTokens.value)} · ${reasonsText([...new Set([...m.equivalentCostUsd.reasons, ...m.totalTokens.reasons, ...m.effectiveCostPerMillionTokensUsd.reasons, ...m.costShare.reasons])])}`,
-    })),
-    topName,
-    topShare: shareText(models[0]?.costShare.value ?? null),
-    headline: sharesAvailable
-      ? `${topName} · 전체 환산액의 ${shareText(models[0]?.costShare.value ?? null)}`
-      : models.length
-        ? "사용 환산액 비중을 확인할 수 없습니다"
-        : "사용이 확인된 모델이 없습니다",
-    detail: sharesAvailable
-      ? "모델을 선택하면 사용 환산액 비중을 확인할 수 있습니다"
-      : "모델별 사용 정보만 확인할 수 있습니다",
-  };
+  const mix = presentModelMix(data.modelMix?.models ?? []);
+  const vendorMixes = presentVendorMixes(data.modelMix?.models ?? []);
   const teams = data.teamUsage;
   const unmapped = teams?.unassigned;
   const productNames = (
@@ -517,6 +479,7 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
     kpis,
     chart,
     mix,
+    vendorMixes,
     attribution,
     compareLabel,
     periodLabel: `${data.meta.startDate} ~ ${data.meta.endDate}`,
@@ -537,4 +500,94 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
       w17: "이벤트 당시 팀별 사용 환산액",
     },
   };
+}
+
+type ModelRows = NonNullable<Overview["modelMix"]>["models"];
+
+/** 모델 이름 계열을 위한 표시 분류. 과금 경로나 조직 계약 벤더를 추정하지 않는다. */
+export function modelVendor(
+  modelId: string,
+): "openai" | "anthropic" | "unknown" {
+  if (/^(gpt-|chatgpt-|codex(?:-|$)|o[134](?:-|$))/i.test(modelId))
+    return "openai";
+  if (/^claude-/i.test(modelId)) return "anthropic";
+  return "unknown";
+}
+
+function presentModelMix(source: ModelRows): OverviewModel["mix"] {
+  const models = groupModels(source);
+  const topName = models[0]?.displayName ?? "관측 없음";
+  const shareText = (v: number | null) =>
+    v === null ? "-" : `${(v * 100).toFixed(1)}%`;
+  const sharesAvailable =
+    models.length > 0 && models.every((m) => m.costShare.value !== null);
+  const mix: OverviewModel["mix"] = {
+    count: source.length,
+    slices: sharesAvailable
+      ? models.map((m, i) => ({
+          v: m.modelId,
+          name: m.displayName,
+          cost: Number(m.equivalentCostUsd.value),
+          color: colors[i % colors.length],
+          sub: moneyText(m.effectiveCostPerMillionTokensUsd.value),
+          share: m.costShare.value! * 100,
+        }))
+      : [],
+    rows: models.map((m, i) => ({
+      id: m.modelId,
+      name: m.displayName,
+      color: colors[i % colors.length],
+      shareText: shareText(m.costShare.value),
+      perMText:
+        m.effectiveCostPerMillionTokensUsd.value === null
+          ? "-"
+          : `${moneyText(m.effectiveCostPerMillionTokensUsd.value)}/M`,
+      costText: moneyText(m.equivalentCostUsd.value),
+      tip: `${m.displayName} · 사용 환산액 ${moneyText(m.equivalentCostUsd.value)} · 토큰 ${numberText(m.totalTokens.value)} · ${reasonsText([...new Set([...m.equivalentCostUsd.reasons, ...m.totalTokens.reasons, ...m.effectiveCostPerMillionTokensUsd.reasons, ...m.costShare.reasons])])}`,
+    })),
+    topName,
+    topShare: shareText(models[0]?.costShare.value ?? null),
+    headline: sharesAvailable
+      ? `${topName} · 전체 환산액의 ${shareText(models[0]?.costShare.value ?? null)}`
+      : models.length
+        ? "사용 환산액 비중을 확인할 수 없습니다"
+        : "사용이 확인된 모델이 없습니다",
+    detail: sharesAvailable
+      ? "모델을 선택하면 사용 환산액 비중을 확인할 수 있습니다"
+      : "모델별 사용 정보만 확인할 수 있습니다",
+  };
+  return mix;
+}
+
+/** 서버 비중이 확인된 경우에만 선택 그룹 안에서 시각적 비율을 정규화한다. */
+export function presentVendorMixes(source: ModelRows) {
+  return [
+    { id: "openai", label: "OpenAI", color: "var(--orange-ink)" },
+    { id: "anthropic", label: "Anthropic", color: "var(--purple)" },
+    { id: "unknown", label: "기타·미확인", color: "var(--text3)" },
+  ]
+    .map((vendor) => {
+      const rows = source.filter(
+        (row) => modelVendor(row.modelId) === vendor.id,
+      );
+      const known = rows.every((row) => row.costShare.value !== null);
+      const total = known
+        ? rows.reduce((sum, row) => sum + row.costShare.value!, 0)
+        : 0;
+      const mix = presentModelMix(
+        rows.map((row) => ({
+          ...row,
+          costShare: {
+            ...row.costShare,
+            value: known && total > 0 ? row.costShare.value! / total : null,
+          },
+        })),
+      );
+      if (mix.slices.length) {
+        mix.headline = `${mix.topName} · ${vendor.label} 환산액의 ${mix.topShare}`;
+        mix.detail = `선택한 벤더 내 비중 · ${vendor.label} 모델만 표시합니다`;
+      }
+      return { ...vendor, mix };
+    })
+    .filter((vendor) => vendor.id !== "unknown" || vendor.mix.count > 0);
 }
