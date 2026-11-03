@@ -589,5 +589,5 @@ export function presentVendorMixes(source: ModelRows) {
       }
       return { ...vendor, mix };
     })
-    .filter((vendor) => vendor.id !== "unknown" || vendor.mix.count > 0);
+    .filter((vendor) => vendor.mix.count > 0);
 }

@@ -24,12 +24,18 @@ export function ModelMixCard({
 }) {
   const { defs } = model;
   const [vendor, setVendor] = useState("all");
-  const selectedVendor = vendorMixes.find((item) => item.id === vendor);
+  const visibleVendors = vendorMixes.filter(
+    (item) => item.id !== "unknown" && item.mix.count > 0,
+  );
+  const selectedVendor =
+    visibleVendors.length > 1
+      ? visibleVendors.find((item) => item.id === vendor)
+      : undefined;
   const mix = selectedVendor?.mix ?? model.mix;
   const [hovered, setHovered] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const badges =
-    vendorMixes.length > 0 ? (
+    visibleVendors.length > 1 ? (
       <div
         role="group"
         aria-label="모델 벤더"
@@ -37,7 +43,7 @@ export function ModelMixCard({
       >
         {[
           { id: "all", label: "전체", color: "var(--text2)" },
-          ...vendorMixes,
+          ...visibleVendors,
         ].map((item) => (
           <button
             key={item.id}
@@ -135,11 +141,6 @@ export function ModelMixCard({
       className="col-span-2 @max-[1023px]:col-span-full"
     >
       {badges}
-      <div className="mb-3.5 min-w-0 [overflow-wrap:anywhere] flex flex-col gap-0.5 rounded-md border border-border bg-sub px-3 py-2.5">
-        <span className="text-[12.5px] font-semibold">{mix.headline}</span>
-        <span className="pretty text-[11.5px] text-text2">{mix.detail}</span>
-      </div>
-
       <div className="grid grid-cols-[168px_minmax(0,1fr)] items-center gap-5 @max-[720px]:grid-cols-[minmax(0,1fr)]">
         <div className="relative aspect-square w-full max-w-[168px] justify-self-center">
           {mix.slices.some((slice) => slice.share > 0) ? (
@@ -218,25 +219,6 @@ export function ModelMixCard({
             </button>
           ))}
         </div>
-      </div>
-      <div className="mt-3 flex min-h-5 items-center justify-between gap-2 text-[11px] text-text3">
-        <span>
-          {!selectedModel
-            ? "모델을 클릭하면 선택이 유지됩니다"
-            : `${selectedModel.name} 선택됨`}
-        </span>
-        {selectedModel && (
-          <button
-            type="button"
-            onClick={() => {
-              setSelected(null);
-              setHovered(null);
-            }}
-            className="cursor-pointer whitespace-nowrap text-blue hover:underline"
-          >
-            선택 해제
-          </button>
-        )}
       </div>
     </Widget>
   );
