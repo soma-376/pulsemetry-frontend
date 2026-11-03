@@ -1,4 +1,5 @@
 import {
+  modelVendor,
   valueStatus,
   reasonsText,
 } from "../src/lib/metrics/overview-presentation";
@@ -414,4 +415,37 @@ test("벤더 선택도 비중 null과 확인된 0에서 가짜 100%를 만들지
     assert.equal(mixes[0].mix.rows[0].shareText, "-");
     assert.equal(mixes.length, 1);
   }
+});
+
+test("API의 공급자·미확인 복합 ID에서 모델 벤더 배지를 구성한다", () => {
+  const cases = [
+    ["openai/gpt-6-astra", "openai"],
+    ["anthropic/claude-fable-5-1", "anthropic"],
+    ["unknown/codex/gpt-6.1-sol", "openai"],
+    ["unknown/claude_code/claude-sonnet-5-5", "anthropic"],
+    ["unknown/codex/custom-model", "unknown"],
+    ["unknown/claude_code/~", "unknown"],
+    ["unknown/codex/%invalid", "unknown"],
+    ["custom/gpt-6-astra", "unknown"],
+    ["openai/~", "unknown"],
+  ];
+  for (const [id, vendor] of cases) assert.equal(modelVendor(id), vendor, id);
+  const d = data();
+  const template = d.modelMix!.models[0];
+  d.modelMix!.models = cases.slice(0, 4).map(([id]) => ({
+    ...template,
+    modelId: id,
+    displayName: id.split("/").at(-1)!,
+    costShare: value(0.25),
+  }));
+  const mixes = presentOverview(d).vendorMixes;
+  assert.deepEqual(
+    mixes.map((v) => [v.id, v.mix.count]),
+    [
+      ["openai", 2],
+      ["anthropic", 2],
+    ],
+  );
+  for (const vendor of mixes)
+    assert.equal(vendor.mix.rows[0].shareText, "50.0%");
 });

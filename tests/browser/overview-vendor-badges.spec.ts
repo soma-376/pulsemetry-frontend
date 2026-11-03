@@ -22,7 +22,7 @@ test("벤더 배지 전환·모델 선택 초기화·키보드·좁은 화면", 
       ["claude-haiku-5-5", 0.2],
     ].map(([id, share]) => ({
       ...template,
-      modelId: String(id),
+      modelId: `unknown/${String(id).startsWith("claude-") ? "claude_code" : "codex"}/${id}`,
       displayName: String(id),
       equivalentCostUsd: {
         ...template.equivalentCostUsd,

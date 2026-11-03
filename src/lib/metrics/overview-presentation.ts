@@ -497,9 +497,25 @@ type ModelRows = NonNullable<Overview["modelMix"]>["models"];
 export function modelVendor(
   modelId: string,
 ): "openai" | "anthropic" | "unknown" {
-  if (/^(gpt-|chatgpt-|codex(?:-|$)|o[134](?:-|$))/i.test(modelId))
+  const parts = modelId.split("/");
+  if (parts.length === 2 && parts[1] && parts[1] !== "~") {
+    if (parts[0] === "openai") return "openai";
+    if (parts[0] === "anthropic") return "anthropic";
+  }
+  // unknown은 과금 공급자 미확인이다. 제품명이 아닌 원래 모델명으로 표시 계열을 분류한다.
+  let name = modelId;
+  if (parts.length === 3 && parts[0] === "unknown") {
+    try {
+      name = decodeURIComponent(parts[2]);
+    } catch {
+      return "unknown";
+    }
+  } else if (parts.length !== 1) {
+    return "unknown";
+  }
+  if (/^(gpt-|chatgpt-|codex(?:-|$)|o[134](?:-|$))/i.test(name))
     return "openai";
-  if (/^claude-/i.test(modelId)) return "anthropic";
+  if (/^claude-/i.test(name)) return "anthropic";
   return "unknown";
 }
 
