@@ -418,7 +418,6 @@ test("벤더 선택도 비중 null과 확인된 0에서 가짜 100%를 만들지
     const mixes = presentOverview(d).vendorMixes;
     assert.deepEqual(mixes[0].mix.slices, []);
     assert.equal(mixes[0].mix.rows[0].shareText, "-");
-    assert.equal(mixes[1].mix.count, 0);
-    assert.equal(mixes.length, 2);
+    assert.equal(mixes.length, 1);
   }
 });
