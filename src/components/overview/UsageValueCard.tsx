@@ -23,7 +23,7 @@ export function UsageValueCard({
       id="w12"
       label="사용 환산액 추이"
       title={
-        chart.knownCostNote ? "확인된 사용 환산액 추이" : "사용 환산액 추이"
+        chart.showKnownCost ? "확인된 사용 환산액 추이" : "사용 환산액 추이"
       }
       note="일별 · 포인터 또는 방향키로 탐색"
       action={
@@ -34,11 +34,6 @@ export function UsageValueCard({
       def={defs.w12}
       className="col-span-3 @max-[1023px]:col-span-full"
     >
-      {chart.knownCostNote && (
-        <p className="mb-3 text-xs leading-5 text-text2">
-          {chart.knownCostNote}
-        </p>
-      )}
       <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-text2">
         {chart.series.length > 1 && (
           <span className="flex items-center gap-2">

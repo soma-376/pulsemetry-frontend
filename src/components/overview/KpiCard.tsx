@@ -27,7 +27,6 @@ export type KpiCardProps = {
   supportingValue?: {
     label: string;
     value: string;
-    description: string;
     exactValue: string;
   };
   /** 카드에서 여는 상세(예: 알림 목록) */
@@ -39,8 +38,6 @@ export function KpiCard({
   value,
   unit,
   def,
-  caption,
-  captionTitle,
   delta,
   up,
   good,
@@ -102,7 +99,6 @@ export function KpiCard({
           >
             {supportingValue.label} {supportingValue.value}
           </span>
-          <p className="mt-1 text-text3">{supportingValue.description}</p>
         </div>
       )}
 
@@ -132,13 +128,6 @@ export function KpiCard({
           {compareLabel && <span className="text-text3">{compareLabel}</span>}
         </div>
       )}
-
-      <div
-        title={captionTitle}
-        className="pretty text-[11px] leading-[1.45] text-text3"
-      >
-        {caption}
-      </div>
     </div>
   );
 }

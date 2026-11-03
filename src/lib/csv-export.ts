@@ -212,13 +212,15 @@ export function overviewCsv(
       ["dataState", data.meta.dataState],
       [
         "trendValueBasis",
-        presentOverview(data).chart.knownCostNote
+        presentOverview(data).chart.showKnownCost
           ? "known_observed_subtotal"
           : "strict_total",
       ],
       [
         "trendValueBasisNote",
-        presentOverview(data).chart.knownCostNote ?? null,
+        presentOverview(data).chart.showKnownCost
+          ? "확인된 금액 · 일부 집계"
+          : null,
       ],
       ["generatedAt", data.meta.generatedAt],
       ["exportedAt", exportedAt],

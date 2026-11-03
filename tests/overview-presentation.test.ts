@@ -69,23 +69,17 @@ test("확인된 금액은 공식 KPI·평균을 대체하지 않고 일별 부�
   assert.equal(m.kpis[1].value, "-");
   assert.equal(m.kpis[3].value, "-");
   assert.equal(m.kpis[1].supportingValue?.value, "$0.0008");
-  assert.match(
-    m.kpis[1].supportingValue?.description ?? "",
-    /확정 금액이 아닙니다/,
-  );
-  assert.match(
-    m.kpis[1].supportingValue?.description ?? "",
-    /환산 완료 3건 · 환산 미확인 1건/,
-  );
+  assert.equal(m.kpis[1].supportingValue?.exactValue, "USD 0.000800");
+  assert.equal("description" in m.kpis[1].supportingValue!, false);
   assert.deepEqual(m.chart.cost, [null, null, null, null]);
   assert.deepEqual(m.chart.series[0].values, [0.0008, null, 0.0008, null]);
   assert.equal(m.chart.series[0].name, "확인된 금액 · 일부 집계");
-  assert.match(m.chart.knownCostNote ?? "", /부분합/);
+  assert.equal(m.chart.showKnownCost, true);
 });
 
 test("부분합 계약이 없는 기존 응답과 부분합도 미확인인 응답은 0을 만들지 않는다", () => {
   const d = data();
-  assert.equal(presentOverview(d).chart.knownCostNote, undefined);
+  assert.equal(presentOverview(d).chart.showKnownCost, undefined);
   assert.equal(presentOverview(d).kpis[1].supportingValue, undefined);
   d.summary!.equivalentCostUsd = {
     ...value<string>(null, ["pricing_missing"]),
@@ -100,7 +94,7 @@ test("부분합 계약이 없는 기존 응답과 부분합도 미확인인 응�
   assert.equal(m.kpis[1].value, "-");
   assert.equal(m.kpis[1].supportingValue, undefined);
   assert.ok(m.chart.series[0].values.every((v) => v === null));
-  assert.equal(m.chart.knownCostNote, undefined);
+  assert.equal(m.chart.showKnownCost, undefined);
 });
 
 test("KPI 5개는 파생값을 재계산하지 않고 서버 값을 표시한다", () => {

@@ -18,11 +18,7 @@ import {
 } from "@/lib/api/overview-format";
 import { signedUsd } from "@/lib/format";
 import { costAxisLabel, trendAxisMax } from "./chart-axis";
-import {
-  KNOWN_COST_NOTE,
-  knownMoneyText,
-  pricingRowsText,
-} from "./known-usage";
+import { knownMoneyText, pricingRowsText } from "./known-usage";
 import type { OverviewModel } from "./overview";
 export type OverviewChart = Omit<
   OverviewModel["chart"],
@@ -30,7 +26,7 @@ export type OverviewChart = Omit<
 > & {
   ticks: (OverviewModel["chart"]["ticks"][number] & { status?: string })[];
   feedback?: TrendFeedback;
-  knownCostNote?: string;
+  showKnownCost?: boolean;
   cost: (number | null)[];
   series: {
     id: string;
@@ -260,9 +256,6 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
               ? {
                   label: "확인된 금액",
                   value: knownMoneyText(summary.knownEquivalentCostUsd.value),
-                  description: [KNOWN_COST_NOTE, pricingRowsText(summary)]
-                    .filter(Boolean)
-                    .join(" · "),
                   exactValue: `USD ${summary.knownEquivalentCostUsd.value}`,
                 }
               : undefined,
@@ -367,7 +360,7 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
   }));
   const chart: OverviewChart = {
     cost,
-    knownCostNote: showKnownCost ? KNOWN_COST_NOTE : undefined,
+    showKnownCost: showKnownCost || undefined,
     yMax,
     topLabel: costAxisLabel(yMax, yMax),
     midLabel: costAxisLabel(yMax / 2, yMax),
@@ -391,11 +384,7 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
           ? ("partial" as const)
           : p.observation,
       ),
-      reasons: ticks.map((tick) =>
-        [showKnownCost ? KNOWN_COST_NOTE : "", tick.status]
-          .filter(Boolean)
-          .join(" · "),
-      ),
+      reasons: ticks.map((tick) => tick.status),
       extras: ticks.map((tick, i) =>
         [`토큰 ${tick.tokens}`, showKnownCost ? pricingRowsText(points[i]) : ""]
           .filter(Boolean)

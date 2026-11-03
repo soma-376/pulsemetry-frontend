@@ -27,7 +27,6 @@ export function StatCard({
   label,
   value,
   unit,
-  caption,
   tone = "var(--text)",
   size = "md",
   badge,
@@ -79,10 +78,6 @@ export function StatCard({
           </span>
         )}
       </span>
-
-      {caption && (
-        <span className="pretty text-[11px] text-text3">{caption}</span>
-      )}
     </div>
   );
 }
