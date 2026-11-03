@@ -9,7 +9,7 @@ import {
 export function PerformanceSkeleton() {
   return (
     <SkeletonRegion message="성과를 불러오는 중입니다…">
-      <div className="flex max-w-[1100px] flex-col gap-6">
+      <div className="flex w-full min-w-0 flex-col gap-6">
         <SkeletonPanel className="p-5">
           <Skeleton className="mb-5 h-4 w-40" />
           <div className="grid grid-cols-3 gap-3">

@@ -138,7 +138,7 @@ function OrganizationPerformance({
           {trend ? (
             <PerformanceTrendChart trend={trend} />
           ) : (
-            <p className="max-w-[1100px] rounded-[10px] border border-border bg-card p-5 text-[12px] text-text3">
+            <p className="w-full min-w-0 rounded-[10px] border border-border bg-card p-5 text-[12px] text-text3">
               이 지표는 선택한 범위에서 추이를 계산할 수 없습니다.
             </p>
           )}

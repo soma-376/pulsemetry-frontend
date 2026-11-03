@@ -27,7 +27,7 @@ export function PerformanceSummary({
   return (
     <section
       aria-labelledby="perf-summary-title"
-      className="flex max-w-[1100px] flex-col gap-[18px] rounded-[10px] border border-border bg-card p-5"
+      className="flex w-full min-w-0 flex-col gap-[18px] rounded-[10px] border border-border bg-card p-5"
     >
       <div>
         <h2

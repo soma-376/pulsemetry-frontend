@@ -5,7 +5,7 @@ export function PerformanceTrendChart({ trend }: { trend: TrendView }) {
   return (
     <section
       aria-labelledby="perf-trend-title"
-      className="flex max-w-[1100px] flex-col gap-3.5 rounded-[10px] border border-border bg-card p-5"
+      className="flex w-full min-w-0 flex-col gap-3.5 rounded-[10px] border border-border bg-card p-5"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
         <div>
