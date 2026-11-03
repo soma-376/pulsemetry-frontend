@@ -63,9 +63,6 @@ export function PerformanceKpiButton({
           {kpi.previous && ` · 이전 ${kpi.previous}`}
         </span>
       )}
-      {kpi.caption && (
-        <span className="text-[11px] text-text3">{kpi.caption}</span>
-      )}
     </button>
   );
 }

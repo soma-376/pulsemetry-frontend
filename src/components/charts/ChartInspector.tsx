@@ -24,7 +24,7 @@ export function ChartInspector({ chart }: { chart: OverviewChart }) {
       format={(value) =>
         value === null
           ? "-"
-          : chart.knownCostNote
+          : chart.showKnownCost
             ? knownMoneyText(String(value))
             : usd(value)
       }

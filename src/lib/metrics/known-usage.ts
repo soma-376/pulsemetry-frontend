@@ -1,7 +1,3 @@
-/** 부분 보관·단가 미확인을 선택 기간 전체의 확정값과 구별한다. */
-export const KNOWN_COST_NOTE =
-  "보관된 자료 중 계산 가능한 금액의 부분합입니다. 선택 기간 전체의 확정 금액이 아닙니다.";
-
 export function pricingRowsText(value: {
   pricedUsageRows?: number;
   unpricedUsageRows?: number;
