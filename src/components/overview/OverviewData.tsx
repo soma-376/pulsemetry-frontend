@@ -57,7 +57,11 @@ export function OverviewBody({ data }: { data: Overview }) {
             </div>
           )}
           {data.modelMix ? (
-            <ModelMixCard key={`mix-${model.periodLabel}`} model={model} />
+            <ModelMixCard
+              key={`mix-${model.periodLabel}`}
+              model={model}
+              vendorMixes={model.vendorMixes}
+            />
           ) : (
             <div className="col-span-2 @max-[560px]:col-span-1">
               <ErrorState message="모델별 사용량을 불러오지 못했습니다" />
