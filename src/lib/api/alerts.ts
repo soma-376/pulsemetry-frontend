@@ -44,7 +44,7 @@ const alertSchema = z.object({
   alertId: z.string(),
   version: z.number().int().min(1),
   ruleId: z.string(),
-  category: z.enum(["security", "cost"]),
+  category: z.enum(["security", "cost", "collection"]),
   status: z.enum(["open", "closed"]),
   occurredAt: z.string(),
   lastSeenAt: z.string(),
@@ -66,6 +66,18 @@ const alertSchema = z.object({
         currentCostUsd: z.string().regex(/^\d+(\.\d+)?$/),
         previousCostUsd: z.string().regex(/^\d+(\.\d+)?$/),
         increaseRatio: z.number().finite(),
+      }),
+      z.object({
+        kind: z.literal("installation_report_gap"),
+        installationId: z.string(),
+        deviceName: z.string().nullable(),
+        basisAt: z.iso.datetime({ offset: true }),
+        thresholdReachedAt: z.iso.datetime({ offset: true }),
+        lastReceivedAt: z.iso.datetime({ offset: true }).nullable(),
+        resolutionDetectedAt: z.iso.datetime({ offset: true }).nullable(),
+        resolutionReason: z
+          .enum(["report_resumed", "installation_revoked"])
+          .nullable(),
       }),
     ])
     .nullable(),
@@ -92,7 +104,7 @@ export const alertsResponseSchema = z.object({
 });
 export type AlertsPage = z.infer<typeof alertsResponseSchema>;
 export type AlertStatus = "unacknowledged" | "acknowledged" | "all";
-export type AlertCategory = "security" | "cost";
+export type AlertCategory = "security" | "cost" | "collection";
 
 /** 알림 목록 한 페이지(`GET O/alerts`). 범주를 주면 서버가 그 범주만 준다. */
 export async function fetchAlerts(
@@ -172,6 +184,10 @@ export const alertQueryKeys = (org: string) =>
 
 export const ALERT_RULE_TEXT: Record<string, { title: string; note: string }> =
   {
+    installation_report_gap: {
+      title: "설치 보고 공백 알림",
+      note: "활성 설치의 마지막 보고 수신 또는 등록 후 168시간이 지났을 때",
+    },
     spend_spike: {
       title: "비용 급증 알림",
       note: "직전 완전한 7일 비용이 그 앞 7일보다 크게 늘었을 때",
@@ -220,6 +236,11 @@ const usdText = (value: unknown) =>
 /** 알림 한 줄 요약 — 서버가 준 값만 쓴다. */
 export function alertSummary(alert: Alert): string {
   const evidence = alert.evidence;
+  if (alert.ruleId === "installation_report_gap") {
+    if (evidence?.kind !== "installation_report_gap")
+      return "설치 보고 근거를 확인할 수 없습니다";
+    return `${evidence.deviceName ?? evidence.installationId} · ${reportGapStatus(alert)}`;
+  }
   if (alert.ruleId === "spend_spike") {
     if (evidence?.kind !== "spend") return "비용 정보를 확인할 수 없습니다";
     return `${evidence.startDate}~${evidence.endDate} ${usdText(evidence.currentCostUsd)} · 앞 7일 ${usdText(evidence.previousCostUsd)} · +${Math.round(evidence.increaseRatio * 100)}%`;
@@ -233,4 +254,16 @@ export function alertSummary(alert: Alert): string {
   const target =
     evidence?.kind === "usage" ? evidence.targetName : (alert.subject ?? "-");
   return `${what} ${target} · ${alert.eventCount ?? "-"}건 · 구성원 ${alert.memberCount ?? "-"}명`;
+}
+
+/** 공백 해소와 사용자의 확인은 독립된 상태다. */
+export function reportGapStatus(alert: Alert) {
+  if (alert.status === "open") return "보고 공백 지속";
+  const reason =
+    alert.evidence?.kind === "installation_report_gap"
+      ? alert.evidence.resolutionReason
+      : null;
+  if (reason === "installation_revoked") return "설치 폐기로 종료";
+  if (reason === "report_resumed") return "보고 재개로 해소";
+  return "보고 공백 종료";
 }
