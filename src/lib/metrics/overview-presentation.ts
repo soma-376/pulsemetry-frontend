@@ -395,7 +395,6 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
   );
   const models = groupModels(data.modelMix?.models ?? []);
   const mix = presentModelMix(data.modelMix?.models ?? []);
-  const vendorMixes = presentVendorMixes(data.modelMix?.models ?? []);
   const teams = data.teamUsage;
   const unmapped = teams?.unassigned;
   const productNames = (
@@ -468,7 +467,6 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
     kpis,
     chart,
     mix,
-    vendorMixes,
     attribution,
     compareLabel,
     periodLabel: `${data.meta.startDate} ~ ${data.meta.endDate}`,
@@ -492,16 +490,6 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
 }
 
 type ModelRows = NonNullable<Overview["modelMix"]>["models"];
-
-/** 모델 이름 계열을 위한 표시 분류. 과금 경로나 조직 계약 벤더를 추정하지 않는다. */
-export function modelVendor(
-  modelId: string,
-): "openai" | "anthropic" | "unknown" {
-  if (/^(gpt-|chatgpt-|codex(?:-|$)|o[134](?:-|$))/i.test(modelId))
-    return "openai";
-  if (/^claude-/i.test(modelId)) return "anthropic";
-  return "unknown";
-}
 
 function presentModelMix(source: ModelRows): OverviewModel["mix"] {
   const models = groupModels(source);
@@ -546,37 +534,4 @@ function presentModelMix(source: ModelRows): OverviewModel["mix"] {
       : "모델별 사용 정보만 확인할 수 있습니다",
   };
   return mix;
-}
-
-/** 서버 비중이 확인된 경우에만 선택 그룹 안에서 시각적 비율을 정규화한다. */
-export function presentVendorMixes(source: ModelRows) {
-  return [
-    { id: "openai", label: "OpenAI", color: "var(--orange-ink)" },
-    { id: "anthropic", label: "Anthropic", color: "var(--purple)" },
-    { id: "unknown", label: "기타·미확인", color: "var(--text3)" },
-  ]
-    .map((vendor) => {
-      const rows = source.filter(
-        (row) => modelVendor(row.modelId) === vendor.id,
-      );
-      const known = rows.every((row) => row.costShare.value !== null);
-      const total = known
-        ? rows.reduce((sum, row) => sum + row.costShare.value!, 0)
-        : 0;
-      const mix = presentModelMix(
-        rows.map((row) => ({
-          ...row,
-          costShare: {
-            ...row.costShare,
-            value: known && total > 0 ? row.costShare.value! / total : null,
-          },
-        })),
-      );
-      if (mix.slices.length) {
-        mix.headline = `${mix.topName} · ${vendor.label} 환산액의 ${mix.topShare}`;
-        mix.detail = `선택한 벤더 내 비중 · ${vendor.label} 모델만 표시합니다`;
-      }
-      return { ...vendor, mix };
-    })
-    .filter((vendor) => vendor.mix.count > 0);
 }
