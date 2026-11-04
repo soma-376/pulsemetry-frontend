@@ -1,9 +1,11 @@
 "use client";
 
+import { configuredTrendBucket } from "@/lib/api/trend-aggregation";
+
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -39,7 +41,7 @@ import { useFilters, useDashboardHref } from "@/lib/filters";
 import {
   presentTeams,
   teamDetail,
-  type AxisKey,
+  type TrendAxisKey,
 } from "@/lib/metrics/teams-presentation";
 import { downloadCsv, teamsCsv } from "@/lib/csv-export";
 
@@ -79,6 +81,7 @@ function OrganizationTeams({
     startDate: dates.start,
     endDate: dates.end ?? dates.start,
     compare,
+    bucket: configuredTrendBucket(),
   };
   const query = useQuery({
     ...teamsOptions(organizationId, period),
@@ -87,7 +90,7 @@ function OrganizationTeams({
   const data = denied(query.error) ? undefined : query.data;
   const model = useMemo(() => data && presentTeams(data), [data]);
 
-  const [axis, setAxis] = useState<AxisKey>("cost");
+  const [axis, setAxis] = useState<TrendAxisKey>("cost");
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<string | null>(
     initialTeamId ?? null,
@@ -101,6 +104,7 @@ function OrganizationTeams({
       selected ?? "",
       period,
       model?.snapshotId ?? "",
+      data?.meta,
     ),
     enabled: !!model && !!selected && !listed && detailOpen,
   });
@@ -114,6 +118,18 @@ function OrganizationTeams({
     () => void client.invalidateQueries({ queryKey: teamsKey(organizationId) }),
     [client, organizationId],
   );
+  const detailExpired =
+    detailQuery.error instanceof ManagementError &&
+    detailQuery.error.code === "snapshot_expired";
+  const detailRecovery = useRef<string | null>(null);
+  const detailContext = `${organizationId}:${period.startDate}:${period.endDate}:${period.bucket}:${selected}`;
+  useEffect(() => {
+    if (detailQuery.isSuccess) detailRecovery.current = null;
+    else if (detailExpired && detailRecovery.current !== detailContext) {
+      detailRecovery.current = detailContext;
+      refreshList();
+    }
+  }, [detailExpired, detailContext, detailQuery.isSuccess, refreshList]);
   useDashboardPageRefresh(
     () => void query.refetch({ cancelRefetch: false }),
     query.isFetching,
@@ -145,6 +161,10 @@ function OrganizationTeams({
               period,
               view.meta.snapshotId,
               offset,
+              undefined,
+              undefined,
+              undefined,
+              view.meta,
             );
             users.push(...page.users.items);
             offset = page.users.nextOffset;
@@ -253,12 +273,26 @@ function OrganizationTeams({
                   endDate: period.endDate,
                 }}
                 snapshotId={model.snapshotId}
+                snapshotContext={data?.meta}
                 teams={model.teams}
                 onSnapshotExpired={refreshList}
                 onTeamChange={setUsersTeam}
               />
             </div>
           ))}
+        {model?.isEmpty && model.timeline && (
+          <TeamAxisPanel
+            model={model}
+            axis={axis}
+            onAxisChange={setAxis}
+            hidden={hidden}
+            onToggleTeam={toggleTeam}
+            onOpenTeam={(key) => {
+              setSelected(key);
+              setDetailOpen(true);
+            }}
+          />
+        )}
       </PageContainer>
       <TeamDetailDrawer
         team={detail}
@@ -287,7 +321,11 @@ function OrganizationTeams({
               : detailQuery.error.message
             : undefined
         }
-        onRetry={() => void detailQuery.refetch({ cancelRefetch: false })}
+        onRetry={() =>
+          detailExpired
+            ? refreshList()
+            : void detailQuery.refetch({ cancelRefetch: false })
+        }
       />
     </>
   );

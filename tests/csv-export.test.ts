@@ -213,12 +213,13 @@ test("팀 CSV는 선택한 누적 모드와 부분합을 내보내고 세션에 
     section(teamsCsv(view, "조직", "now", null), "chart_trend")[1].value,
     "",
   );
-  const sessions = teamsCsv(view, "조직", "now", null, {
-    axis: "session",
-    mode: "known",
+  const tokens = teamsCsv(view, "조직", "now", null, {
+    axis: "token",
+    mode: "strict",
   });
-  assert.match(sessions, /누적 집계 기준,전체 누적/);
-  assert.equal(section(sessions, "chart_trend")[1].mode, "strict");
+  assert.equal(section(tokens, "chart_trend")[1].axis, "token");
+  assert.ok(section(tokens, "teams")[0].sessionCount !== undefined);
+  assert.ok(section(tokens, "trend")[1].cumulativeSessionCount !== undefined);
 });
 
 test("팀: 목록 전 팀과 미배정, 고른 팀이 있으면 그 팀의 사용자 전부", () => {
@@ -249,7 +250,9 @@ test("팀: 목록 전 팀과 미배정, 고른 팀이 있으면 그 팀의 사�
     teams[0].equivalentCostUsd_comparisonStatus,
     view.teams[0].metrics.equivalentCostUsd.comparison.status,
   );
-  assert.equal(section(csv, "trend")[0].status, view.teams[0].trend[0].status);
+  const dayPoint = view.teams[0].trend[0];
+  assert.ok("date" in dayPoint);
+  assert.equal(section(csv, "trend")[0].status, dayPoint.status);
   assert.equal(
     section(csv, "models")[0].status,
     view.modelScatter.data!.models[0].status,

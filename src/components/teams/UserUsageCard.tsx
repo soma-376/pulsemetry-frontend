@@ -12,7 +12,11 @@ import {
   SkeletonRows,
 } from "@/components/ui/Skeleton";
 import { ManagementError } from "@/lib/api/management";
-import { TEAM_USERS_PAGE, teamUsersOptions } from "@/lib/api/teams";
+import {
+  TEAM_USERS_PAGE,
+  teamUsersOptions,
+  type SnapshotContext,
+} from "@/lib/api/teams";
 import {
   presentUsers,
   type TeamsModel,
@@ -53,6 +57,7 @@ export function UserUsageCard({
   organizationId,
   period,
   snapshotId,
+  snapshotContext,
   teams,
   onSnapshotExpired,
   onTeamChange,
@@ -60,6 +65,7 @@ export function UserUsageCard({
   organizationId: string;
   period: { startDate: string; endDate: string };
   snapshotId: string;
+  snapshotContext?: SnapshotContext;
   teams: TeamsModel["teams"];
   /** 사용자 조회 중 snapshot이 만료되면 목록부터 다시 읽는다(다른 snapshot의 값을 섞지 않는다). */
   onSnapshotExpired: () => void;
@@ -94,7 +100,14 @@ export function UserUsageCard({
   const ordering = { sort: sortKeys[sort.key], order: sort.direction };
 
   const query = useInfiniteQuery({
-    ...teamUsersOptions(organizationId, team, period, snapshotId, ordering),
+    ...teamUsersOptions(
+      organizationId,
+      team,
+      period,
+      snapshotId,
+      ordering,
+      snapshotContext,
+    ),
     enabled: !!team,
   });
   const pages = useMemo(() => query.data?.pages ?? [], [query.data]);
@@ -110,9 +123,15 @@ export function UserUsageCard({
   const expired =
     query.error instanceof ManagementError &&
     query.error.code === "snapshot_expired";
+  const expiryRecovery = useRef<string | null>(null);
+  const expiryContext = `${organizationId}:${period.startDate}:${period.endDate}:${team}`;
   useEffect(() => {
-    if (expired) onSnapshotExpired();
-  }, [expired, onSnapshotExpired]);
+    if (query.isSuccess) expiryRecovery.current = null;
+    else if (expired && expiryRecovery.current !== expiryContext) {
+      expiryRecovery.current = expiryContext;
+      onSnapshotExpired();
+    }
+  }, [expired, expiryContext, query.isSuccess, onSnapshotExpired]);
   useEffect(() => {
     if (team) onTeamChange?.(team);
   }, [team, onTeamChange]);

@@ -50,6 +50,7 @@ export function nullableLinePath(
   values: (number | null)[],
   domain: Domain,
   observedFrom = 0,
+  positions?: number[],
 ) {
   let connected = false;
   return values
@@ -60,7 +61,7 @@ export function nullableLinePath(
       }
       const command = connected ? "L" : "M";
       connected = true;
-      return `${command}${Number(xAt(index, values.length).toFixed(2))},${Number(yAt(value, domain).toFixed(2))}`;
+      return `${command}${Number((positions?.[index] ?? xAt(index, values.length)).toFixed(2))},${Number(yAt(value, domain).toFixed(2))}`;
     })
     .filter(Boolean)
     .join(" ");

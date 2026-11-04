@@ -1,3 +1,4 @@
+import { trendTimeline, type TrendTimeline } from "./trend-timeline";
 import {
   trendFeedback,
   trendBadge,
@@ -11,6 +12,7 @@ import type {
   OverviewMetric,
 } from "@/lib/api/overview";
 import {
+  exactMoneyText,
   groupModels,
   moneyText,
   numberText,
@@ -26,6 +28,7 @@ export type OverviewChart = Omit<
 > & {
   ticks: (OverviewModel["chart"]["ticks"][number] & { status?: string })[];
   feedback?: TrendFeedback;
+  timeline?: TrendTimeline;
   showKnownCost?: boolean;
   cost: (number | null)[];
   series: {
@@ -323,22 +326,42 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
           : undefined,
     };
   });
-  const points = data.trend?.points ?? [];
+  const timeline =
+    data.trend?.bucket === "auto" && data.meta.trendAggregation
+      ? trendTimeline(data.meta.trendAggregation, data.trend.points)
+      : undefined;
+  const points = (data.trend?.points ?? []).map((p) =>
+    "bucketStart" in p
+      ? {
+          ...p,
+          date: p.bucketStart,
+          future: p.temporalState === "upcoming",
+          observation:
+            p.equivalentCostUsd.status === "complete"
+              ? ("complete" as const)
+              : p.equivalentCostUsd.status === "partial"
+                ? ("partial" as const)
+                : p.usageRows !== null && p.usageRows > 0
+                  ? ("partial" as const)
+                  : ("unobserved" as const),
+        }
+      : { ...p, future: p.date > today },
+  );
   const cost = points.map((p) =>
-    p.date > today || p.observation === "unobserved"
+    p.future || (!timeline && p.observation === "unobserved")
       ? null
       : numeric(p.equivalentCostUsd.value),
   );
   const showKnownCost = points.some(
     (p, i) =>
-      p.date <= today &&
-      p.observation !== "unobserved" &&
+      !p.future &&
+      (timeline || p.observation !== "unobserved") &&
       cost[i] === null &&
       p.knownEquivalentCostUsd?.value != null,
   );
   const displayedCost = showKnownCost
     ? points.map((p) =>
-        p.date > today || p.observation === "unobserved"
+        p.future || (!timeline && p.observation === "unobserved")
           ? null
           : numeric(
               p.knownEquivalentCostUsd === undefined
@@ -348,8 +371,10 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
       )
     : cost;
   const yMax = trendAxisMax(displayedCost, 1.15);
-  const ticks = points.map((p) => ({
-    label: `${Number(p.date.slice(5, 7))}.${Number(p.date.slice(8))}`,
+  const ticks = points.map((p, i) => ({
+    label:
+      timeline?.ticks[i] ??
+      `${Number(p.date.slice(5, 7))}.${Number(p.date.slice(8))}`,
     date: p.date,
     preObserved: p.observation === "unobserved",
     tokens: numberText(p.totalTokens.value),
@@ -359,6 +384,7 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
     ]),
   }));
   const chart: OverviewChart = {
+    timeline,
     cost,
     showKnownCost: showKnownCost || undefined,
     yMax,
@@ -379,6 +405,17 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
     points.map((p) => p.date),
     chart.series.map((series) => ({
       ...series,
+      formattedValues: timeline
+        ? points.map((p) =>
+            exactMoneyText(
+              p.future
+                ? null
+                : showKnownCost
+                  ? p.knownEquivalentCostUsd?.value
+                  : p.equivalentCostUsd.value,
+            ),
+          )
+        : undefined,
       observations: points.map((p, i) =>
         showKnownCost && displayedCost[i] !== null
           ? ("partial" as const)
@@ -391,7 +428,7 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
           .join(" · "),
       ),
     })),
-    { today },
+    { today, timeline },
   );
   const models = groupModels(data.modelMix?.models ?? []);
   const mix = presentModelMix(data.modelMix?.models ?? []);

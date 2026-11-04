@@ -1,3 +1,12 @@
+import {
+  collectionPolicySchema,
+  validCollectionPolicy,
+  autoPointFields,
+  trendAggregationSchema,
+  upcomingValuesValid,
+  validAutoTrend,
+  type TrendBucket,
+} from "./trend-aggregation";
 import { organizationKey } from "./query-keys";
 import { AuthError, sessionFetch } from "./session";
 import { retryAfterMs } from "./retry-after";
@@ -100,6 +109,31 @@ const teamValues = {
   activeUsers: valueSchema(count),
   equivalentCostUsd: moneyMetric,
 };
+export const overviewDayPointSchema = z.strictObject({
+  date: z.iso.date(),
+  observation: z.enum(["complete", "partial", "unobserved"]),
+  equivalentCostUsd: valueSchema(money),
+  knownEquivalentCostUsd: valueSchema(money).optional(),
+  pricedUsageRows: z.number().int().nonnegative().optional(),
+  unpricedUsageRows: z.number().int().nonnegative().optional(),
+  totalTokens: valueSchema(count),
+});
+export const overviewAutoPointSchema = z
+  .strictObject({
+    ...autoPointFields,
+    equivalentCostUsd: valueSchema(money),
+    knownEquivalentCostUsd: valueSchema(money),
+    totalTokens: valueSchema(count),
+  })
+  .refine(
+    (p) =>
+      upcomingValuesValid(p, [
+        p.equivalentCostUsd,
+        p.knownEquivalentCostUsd,
+        p.totalTokens,
+      ]),
+    "미도래 값은 비어 있어야 합니다",
+  );
 export const overviewSchema = z
   .object({
     meta: z.object({
@@ -113,6 +147,9 @@ export const overviewSchema = z
       dayCount: z.number().int().min(1).max(366),
       dataState: z.enum(["ready", "partial", "no_data", "never_observed"]),
       currentCoverage: coverage,
+      snapshotId: z.string().optional(),
+      trendAggregation: trendAggregationSchema.optional(),
+      collectionPolicy: collectionPolicySchema.optional(),
     }),
     comparison: z.object({
       mode: z.enum(["none", "prev_week", "prev_period"]),
@@ -135,20 +172,16 @@ export const overviewSchema = z
       })
       .nullable(),
     trend: z
-      .object({
-        bucket: z.literal("day"),
-        points: z.array(
-          z.object({
-            date: z.iso.date(),
-            observation: z.enum(["complete", "partial", "unobserved"]),
-            equivalentCostUsd: valueSchema(money),
-            knownEquivalentCostUsd: valueSchema(money).optional(),
-            pricedUsageRows: z.number().int().nonnegative().optional(),
-            unpricedUsageRows: z.number().int().nonnegative().optional(),
-            totalTokens: valueSchema(count),
-          }),
-        ),
-      })
+      .discriminatedUnion("bucket", [
+        z.object({
+          bucket: z.literal("day"),
+          points: z.array(overviewDayPointSchema),
+        }),
+        z.object({
+          bucket: z.literal("auto"),
+          points: z.array(overviewAutoPointSchema).max(60),
+        }),
+      ])
       .nullable(),
     modelMix: z
       .object({
@@ -187,6 +220,26 @@ export const overviewSchema = z
     ),
   })
   .superRefine((v, ctx) => {
+    const aggregation = v.meta.trendAggregation;
+    if (
+      aggregation
+        ? !validCollectionPolicy(v.meta.collectionPolicy, aggregation) ||
+          !v.meta.snapshotId ||
+          !validAutoTrend(
+            v.meta,
+            aggregation,
+            "interval",
+            v.trend?.bucket === "auto" ? v.trend.points : undefined,
+          ) ||
+          (v.trend !== null && v.trend.bucket !== "auto")
+        : v.trend?.bucket === "auto" ||
+          !!v.meta.collectionPolicy ||
+          !!v.meta.snapshotId
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "집계 모드와 시간축이 일치하지 않습니다",
+      });
     const empty =
       v.meta.dataState === "no_data" || v.meta.dataState === "never_observed";
     const failed = v.errors.map((e) => e.section);
@@ -203,7 +256,9 @@ export const overviewSchema = z
     ] as const) {
       if (
         empty
-          ? v[section] !== null
+          ? section === "trend" && aggregation
+            ? v.trend?.bucket !== "auto"
+            : v[section] !== null
           : (v[section] === null) !== failed.includes(section)
       )
         ctx.addIssue({
@@ -229,11 +284,19 @@ export type OverviewMetric<T> = OverviewValue<T> & {
 };
 
 export type Overview = z.infer<typeof overviewSchema>;
+export const dailyOverviewSchema = overviewSchema.transform((data, ctx) => {
+  if (data.meta.trendAggregation || data.trend?.bucket === "auto") {
+    ctx.addIssue({ code: "custom", message: "일별 응답이 아닙니다" });
+    return z.NEVER;
+  }
+  return { ...data, trend: data.trend };
+});
 export type OverviewParams = {
   organizationId: string;
   startDate: string;
   endDate: string;
   timeZone: "Asia/Seoul";
+  bucket?: TrendBucket;
   compare: "none" | "prev_week" | "prev_period";
 };
 
@@ -291,7 +354,8 @@ export async function fetchOverview(
     data.meta.startDate !== params.startDate ||
     data.meta.endDate !== params.endDate ||
     data.meta.timeZone !== params.timeZone ||
-    data.comparison.mode !== params.compare
+    data.comparison.mode !== params.compare ||
+    (data.meta.trendAggregation?.mode ?? "day") !== (params.bucket ?? "day")
   ) {
     throw new DashboardError(
       "서버 응답의 조직 또는 조회 조건이 요청과 다릅니다.",
@@ -302,7 +366,7 @@ export async function fetchOverview(
   const days = (Date.parse(params.endDate) - start) / 86_400_000 + 1;
   if (
     data.meta.dayCount !== days ||
-    (data.trend !== null &&
+    (data.trend?.bucket === "day" &&
       (data.trend.points.length !== days ||
         data.trend.points.some(
           (point, index) =>

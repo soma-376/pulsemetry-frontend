@@ -23,20 +23,35 @@ export function TrendFeedback({
   const count = model.dates.length;
   if (!count || !model.series.length) return null;
   const index = Math.min(selected ?? 0, count - 1);
-  const x = xAt(index, count);
+  const xOf = (i: number) => model.timeline?.positions[i] ?? xAt(i, count);
+  const x = xOf(index);
+  const labelOf = (i: number) => model.timeline?.labels[i] ?? model.dates[i];
+  const selectAt = (clientX: number, rect: DOMRect) => {
+    const position = ((clientX - rect.left) / rect.width) * 100;
+    let closest = 0;
+    for (let i = 1; i < count; i++)
+      if (Math.abs(xOf(i) - position) < Math.abs(xOf(closest) - position))
+        closest = i;
+    setSelected(closest);
+  };
+  const valueOf = (series: Feedback["series"][number], i: number) =>
+    series.formattedValues?.[i] ?? format(series.values[i]);
   const description = [
-    model.dates[index],
+    labelOf(index),
     ...model.series.map(
       (s) =>
-        `${s.name} ${format(s.values[index])}. ${s.notes[index]} ${s.extras?.[index] ?? ""}`,
+        `${s.name} ${valueOf(s, index)}. ${s.notes[index]} ${s.extras?.[index] ?? ""}`,
     ),
   ].join(" · ");
   return (
     <>
       {trendGaps(model).map((gap) => {
-        const left = count === 1 ? 0 : Math.max(0, xAt(gap.start - 0.5, count));
+        const left =
+          model.timeline?.bounds[gap.start][0] ??
+          (count === 1 ? 0 : Math.max(0, xAt(gap.start - 0.5, count)));
         const right =
-          count === 1 ? 100 : Math.min(100, xAt(gap.end + 0.5, count));
+          model.timeline?.bounds[gap.end][1] ??
+          (count === 1 ? 100 : Math.min(100, xAt(gap.end + 0.5, count)));
         return (
           <div
             key={gap.start}
@@ -60,10 +75,10 @@ export function TrendFeedback({
             <span
               key={`${s.id}-${i}`}
               role="img"
-              aria-label={`${s.name} ${i === last ? "마지막 표시" : "구간 끝"} ${model.dates[i]} ${format(value)}`}
+              aria-label={`${s.name} ${i === last ? "마지막 표시" : "구간 끝"} ${labelOf(i)} ${valueOf(s, i)}`}
               className="pointer-events-none absolute z-[1] h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-card"
               style={{
-                left: `${xAt(i, count)}%`,
+                left: `${xOf(i)}%`,
                 top: `${yAt(value, { max })}%`,
                 backgroundColor: s.color,
               }}
@@ -83,32 +98,12 @@ export function TrendFeedback({
         onBlur={() => setSelected(null)}
         onPointerMove={(event) => {
           const rect = event.currentTarget.getBoundingClientRect();
-          setSelected(
-            Math.max(
-              0,
-              Math.min(
-                count - 1,
-                Math.round(
-                  ((event.clientX - rect.left) / rect.width) * (count - 1),
-                ),
-              ),
-            ),
-          );
+          selectAt(event.clientX, rect);
         }}
         onPointerDown={(event) => {
           event.currentTarget.focus();
           const rect = event.currentTarget.getBoundingClientRect();
-          setSelected(
-            Math.max(
-              0,
-              Math.min(
-                count - 1,
-                Math.round(
-                  ((event.clientX - rect.left) / rect.width) * (count - 1),
-                ),
-              ),
-            ),
-          );
+          selectAt(event.clientX, rect);
         }}
         onPointerLeave={(event) => {
           if (document.activeElement !== event.currentTarget) setSelected(null);
@@ -161,7 +156,7 @@ export function TrendFeedback({
                 right: x > 50 ? 0 : undefined,
               }}
             >
-              <p className="mb-2 font-semibold">{model.dates[index]}</p>
+              <p className="mb-2 font-semibold">{labelOf(index)}</p>
               {model.series.map((s) => (
                 <div key={s.id} className="mb-2 last:mb-0">
                   <div className="flex items-start justify-between gap-3">
@@ -169,7 +164,7 @@ export function TrendFeedback({
                       {s.name}
                     </span>
                     <span className="tnum shrink-0 font-semibold">
-                      {format(s.values[index])}
+                      {valueOf(s, index)}
                     </span>
                   </div>
                   {s.extras?.[index] && (

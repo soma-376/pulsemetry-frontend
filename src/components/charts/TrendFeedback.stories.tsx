@@ -1,7 +1,10 @@
 import { overviewSchema } from "@/lib/api/overview";
 import { teamsResponseSchema } from "@/lib/api/teams";
 import { presentOverview } from "@/lib/metrics/overview-presentation";
-import { presentTeams, type AxisKey } from "@/lib/metrics/teams-presentation";
+import {
+  presentTeams,
+  type TrendAxisKey,
+} from "@/lib/metrics/teams-presentation";
 import { UsageValueCard } from "../overview/UsageValueCard";
 import { TeamAxisPanel } from "../teams/TeamAxisPanel";
 import overviewExample from "../../../docs/api/overview-response.example.json";
@@ -154,7 +157,7 @@ export const Future: Story = {
 };
 
 function DashboardExamples() {
-  const [axis, setAxis] = useState<AxisKey>("cost");
+  const [axis, setAxis] = useState<TrendAxisKey>("cost");
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
   const overview = overviewSchema.parse(overviewExample);
   overview.trend!.points = dates.map((date, i) => ({

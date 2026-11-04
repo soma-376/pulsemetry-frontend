@@ -5,10 +5,13 @@ import {
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import example from "../docs/api/overview-response.example.json";
-import { overviewSchema, type OverviewValue } from "../src/lib/api/overview";
+import {
+  dailyOverviewSchema,
+  type OverviewValue,
+} from "../src/lib/api/overview";
 import { presentOverview } from "../src/lib/metrics/overview-presentation";
 import { nullableLinePath } from "../src/components/charts/scale";
-const data = () => overviewSchema.parse(example);
+const data = () => dailyOverviewSchema.parse(example);
 const value = <T>(v: T | null, reasons: string[] = []): OverviewValue<T> => ({
   value: v,
   status: v === null ? "unavailable" : reasons.length ? "partial" : "complete",
@@ -64,7 +67,7 @@ test("확인된 금액은 공식 KPI·평균을 대체하지 않고 일별 부�
     pricedUsageRows: index === 1 ? 0 : 3,
     unpricedUsageRows: 1,
   }));
-  const parsed = overviewSchema.parse(d);
+  const parsed = dailyOverviewSchema.parse(d);
   const m = presentOverview(parsed, d.trend!.points[2].date);
   assert.equal(m.kpis[1].value, "-");
   assert.equal(m.kpis[3].value, "-");
@@ -90,7 +93,7 @@ test("부분합 계약이 없는 기존 응답과 부분합도 미확인인 응�
     p.equivalentCostUsd = value<string>(null, ["pricing_missing"]);
     p.knownEquivalentCostUsd = value<string>(null, ["pricing_missing"]);
   });
-  const m = presentOverview(overviewSchema.parse(d));
+  const m = presentOverview(dailyOverviewSchema.parse(d));
   assert.equal(m.kpis[1].value, "-");
   assert.equal(m.kpis[1].supportingValue, undefined);
   assert.ok(m.chart.series[0].values.every((v) => v === null));
@@ -287,7 +290,7 @@ test("추이 부분 실패는 다른 지표를 보존하고 빈 기간은 팀 �
   d.errors = [
     { section: "trend", code: "source_unavailable", retryable: true },
   ];
-  assert.equal(overviewSchema.safeParse(d).success, true);
+  assert.equal(dailyOverviewSchema.safeParse(d).success, true);
   const m = presentOverview(d);
   assert.equal(m.kpis.length, 5);
   assert.equal(m.mix.count, 5);
@@ -297,7 +300,7 @@ test("추이 부분 실패는 다른 지표를 보존하고 빈 기간은 팀 �
   d.modelMix = null;
   d.teamUsage = null;
   d.errors = [];
-  assert.equal(overviewSchema.safeParse(d).success, true);
+  assert.equal(dailyOverviewSchema.safeParse(d).success, true);
   assert.equal(presentOverview(d).attribution.show, false);
 });
 

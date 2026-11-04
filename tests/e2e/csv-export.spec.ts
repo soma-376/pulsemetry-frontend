@@ -113,6 +113,7 @@ test("CSV-OVERVIEW-A @p1 @read 개요 CSV 는 화면과 같은 기간의 응답�
   expect(csv.sections.trend).toHaveLength(api.meta.dayCount);
   csv.sections.trend.forEach((row, index) => {
     const point = api.trend!.points[index];
+    if (!("date" in point)) throw new Error("일별 E2E 응답이 아닙니다");
     expect(row.date).toBe(point.date);
     expect(row.equivalentCostUsd).toBe(point.equivalentCostUsd.value ?? "");
     expect(row.totalTokens).toBe(
