@@ -117,6 +117,47 @@ function recorder(page: Page, width: number, group: string) {
       await target.evaluate((el) => el.scrollIntoView({ block: "center" }));
     } else await page.locator("main").evaluate((el) => el.scrollTo(0, 0));
     await page.evaluate(() => document.fonts.ready);
+    for (const axis of await page.getByTestId("trend-time-axis").all()) {
+      await expect(axis).toHaveAttribute("data-ready", "true");
+      await expect
+        .poll(
+          () =>
+            axis.evaluate((element) => {
+              const boundary = element.getBoundingClientRect();
+              const ticks = Array.from(
+                element.querySelectorAll<HTMLElement>("[data-tick-index]"),
+              ).map((tick) => tick.getBoundingClientRect());
+              return ticks.every((tick, index) => {
+                const inside =
+                  tick.left >= boundary.left - 0.01 &&
+                  tick.right <= boundary.right + 0.01;
+                return (
+                  inside &&
+                  ticks
+                    .slice(0, index)
+                    .every(
+                      (other) =>
+                        tick.top >= other.bottom ||
+                        other.top >= tick.bottom ||
+                        Math.round(
+                          Math.max(
+                            tick.left - other.right,
+                            other.left - tick.right,
+                          ) * 1000,
+                        ) /
+                          1000 >=
+                          8,
+                    )
+                );
+              });
+            }),
+          {
+            message:
+              "실제 API 차트의 눈금이 겹치거나 축 경계를 벗어나지 않아야 한다",
+          },
+        )
+        .toBe(true);
+    }
     const file = `screenshots/real-${mode}-${width}-${slug}.png`;
     await mkdir(path.join(report, "screenshots"), { recursive: true });
     await page.screenshot({
@@ -134,6 +175,7 @@ function recorder(page: Page, width: number, group: string) {
       checks: [
         "실제 Spring API · PostgreSQL · ClickHouse 응답",
         "화면 핵심 값과 동작 단언 후 촬영",
+        "차트 시간 눈금의 실제 DOM 간격·경계 확인",
       ],
     });
     await writeFile(
