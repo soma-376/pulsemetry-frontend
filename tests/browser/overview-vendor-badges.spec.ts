@@ -22,7 +22,10 @@ test("벤더 배지 전환·모델 선택 초기화·키보드·좁은 화면", 
       ["claude-haiku-5-5", 0.2],
     ].map(([id, share]) => ({
       ...template,
-      modelId: String(id),
+      modelId: `unknown/tool/${id}`,
+      modelVendor: String(id).startsWith("claude-")
+        ? { id: "anthropic", name: "Anthropic" }
+        : { id: "openai", name: "OpenAI" },
       displayName: String(id),
       equivalentCostUsd: {
         ...template.equivalentCostUsd,
@@ -93,7 +96,12 @@ test("관측 벤더만 표시하고 새로고침으로 한 벤더가 남으면 �
     const template = data.modelMix!.models[0];
     data.modelMix!.models = ids.map((id) => ({
       ...template,
-      modelId: id,
+      modelId: `unknown/tool/${id}`,
+      modelVendor: id.startsWith("claude-")
+        ? { id: "anthropic", name: "Anthropic" }
+        : id === "custom-model"
+          ? null
+          : { id: "openai", name: "OpenAI" },
       displayName: id,
       costShare: { ...template.costShare, value: 1 / ids.length },
     }));

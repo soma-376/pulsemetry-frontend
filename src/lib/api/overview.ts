@@ -156,6 +156,10 @@ export const overviewSchema = z
           z.object({
             modelId: z.string(),
             displayName: z.string(),
+            modelVendor: z
+              .object({ id: z.string().min(1), name: z.string().min(1) })
+              .nullable()
+              .optional(),
             equivalentCostUsd: valueSchema(money),
             totalTokens: valueSchema(count),
             effectiveCostPerMillionTokensUsd: valueSchema(money),

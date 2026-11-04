@@ -227,7 +227,8 @@
           "value": 0.46,
           "status": "complete",
           "reasons": []
-        }
+        },
+        "modelVendor": null
       },
       {
         "modelId": "vendor-a/model-standard",
@@ -251,7 +252,8 @@
           "value": 0.34,
           "status": "complete",
           "reasons": []
-        }
+        },
+        "modelVendor": null
       },
       {
         "modelId": "vendor-b/model-code",
@@ -275,7 +277,8 @@
           "value": 0.12,
           "status": "complete",
           "reasons": []
-        }
+        },
+        "modelVendor": null
       },
       {
         "modelId": "vendor-a/model-fast",
@@ -299,7 +302,8 @@
           "value": 0.05,
           "status": "complete",
           "reasons": []
-        }
+        },
+        "modelVendor": null
       },
       {
         "modelId": "vendor-b/model-mini",
@@ -323,7 +327,8 @@
           "value": 0.03,
           "status": "complete",
           "reasons": []
-        }
+        },
+        "modelVendor": null
       }
     ]
   },

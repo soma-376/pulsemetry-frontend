@@ -380,6 +380,11 @@ test("벤더 배지는 기타 묶음 전에 분류하고 벤더 내 비중만 �
     ...template,
     modelId: String(id),
     displayName: String(id),
+    modelVendor: String(id).startsWith("claude-")
+      ? { id: "anthropic", name: "Anthropic" }
+      : id === "custom-model"
+        ? null
+        : { id: "openai", name: "OpenAI" },
     equivalentCostUsd: value(String(Number(share) * 100)),
     costShare: value(Number(share)),
   }));
@@ -407,11 +412,39 @@ test("벤더 선택도 비중 null과 확인된 0에서 가짜 100%를 만들지
   const template = d.modelMix!.models[0];
   for (const share of [null, 0]) {
     d.modelMix!.models = [
-      { ...template, modelId: "gpt-6.1-sol", costShare: value<number>(share) },
+      {
+        ...template,
+        modelId: "gpt-6.1-sol",
+        modelVendor: { id: "openai", name: "OpenAI" },
+        costShare: value<number>(share),
+      },
     ];
     const mixes = presentOverview(d).vendorMixes;
     assert.deepEqual(mixes[0].mix.slices, []);
     assert.equal(mixes[0].mix.rows[0].shareText, "-");
     assert.equal(mixes.length, 1);
   }
+});
+
+test("벤더는 서버 필드만 사용하고 이름과 ID에서는 추정하지 않는다", () => {
+  const d = data();
+  const template = d.modelMix!.models[0];
+  d.modelMix!.models = [
+    {
+      ...template,
+      modelId: "unknown/codex/custom",
+      displayName: "custom",
+      modelVendor: { id: "anthropic", name: "Anthropic" },
+    },
+    { ...template, modelId: "anthropic/claude-sonnet-5-5", modelVendor: null },
+    { ...template, modelId: "gpt-6-astra", modelVendor: undefined },
+  ];
+  const mixes = presentOverview(d).vendorMixes;
+  assert.deepEqual(
+    mixes.map((v) => [v.id, v.mix.count]),
+    [
+      ["anthropic", 1],
+      ["unknown", 2],
+    ],
+  );
 });
