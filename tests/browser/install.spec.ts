@@ -25,7 +25,10 @@ test("설치 링크는 세션·BFF 없이 정규화한 코드로 운영체제별
     page.getByLabel("PowerShell 설치 명령", { exact: true }),
   ).toHaveText("irm 'http://localhost:3110/windows?code=ABCD-EFGH-JKMN' | iex");
   await expect(page.getByRole("link")).toHaveCount(0);
-  expect(apiRequests).toEqual([]);
+  // 공개 RUM 설정 조회는 인증·설치 API 호출이 아니다. 다른 API 호출은 여전히 금지한다.
+  expect(
+    apiRequests.filter((url) => new URL(url).pathname !== "/api/rum/config"),
+  ).toEqual([]);
 });
 
 test("코드가 없거나 형식이 틀리면 명령 대신 안내만 보여준다", async ({

@@ -173,7 +173,7 @@ test("team comparison sorts numbers, keeps chart selections and resets on axis c
       );
   const model = teamsModel();
   const by = (
-    axis: "cost" | "token" | "session",
+    axis: "cost" | "token",
     key: "totalValue" | "perUserValue" | "unitValue" | "deltaValue",
     direction = -1,
   ) =>
@@ -214,10 +214,7 @@ test("team comparison sorts numbers, keeps chart selections and resets on axis c
   await expect(
     page.getByRole("dialog", { name: "플랫폼 팀", exact: true }),
   ).not.toBeVisible();
-  for (const [label, axis] of [
-    ["토큰", "token"],
-    ["세션", "session"],
-  ] as const) {
+  for (const [label, axis] of [["토큰", "token"]] as const) {
     await panel.getByRole("tab", { name: label, exact: true }).click();
     expect(await names()).toEqual(by(axis, "totalValue"));
   }
@@ -230,7 +227,10 @@ test("team comparison sorts numbers, keeps chart selections and resets on axis c
   await expect(
     panel.getByRole("button", { name: "증감 정렬", exact: true }),
   ).toBeDisabled();
-  expect(await names()).toEqual(by("session", "totalValue"));
+  expect(await names()).toEqual(by("token", "totalValue"));
+  await expect(
+    panel.getByRole("tab", { name: "세션", exact: true }),
+  ).toHaveCount(0);
   await panel.screenshot({ path: "test-results/team-sorting.png" });
 });
 
