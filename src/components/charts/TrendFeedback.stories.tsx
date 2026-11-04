@@ -164,20 +164,23 @@ function DashboardExamples({
   const [axis, setAxis] = useState<TrendAxisKey>("cost");
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
   const overview = overviewSchema.parse(overviewExample);
-  overview.trend!.points = dates.map((date, i) => ({
-    date,
-    observation: i >= 4 ? "unobserved" : "complete",
-    equivalentCostUsd: {
-      value: i >= 4 ? null : String([10, 20, 0, 30][i]),
-      status: i >= 4 ? "unavailable" : "complete",
-      reasons: [],
-    },
-    totalTokens: {
-      value: i >= 4 ? null : [100, 200, 0, 300][i],
-      status: i >= 4 ? "unavailable" : "complete",
-      reasons: [],
-    },
-  }));
+  overview.trend = {
+    bucket: "day",
+    points: dates.map((date, i) => ({
+      date,
+      observation: i >= 4 ? "unobserved" : "complete",
+      equivalentCostUsd: {
+        value: i >= 4 ? null : String([10, 20, 0, 30][i]),
+        status: i >= 4 ? "unavailable" : "complete",
+        reasons: [],
+      },
+      totalTokens: {
+        value: i >= 4 ? null : [100, 200, 0, 300][i],
+        status: i >= 4 ? "unavailable" : "complete",
+        reasons: [],
+      },
+    })),
+  };
   const teams = teamsResponseSchema.parse(teamsExample);
   teams.teams.items = teams.teams.items.slice(0, 2).map((team, teamIndex) => ({
     ...team,

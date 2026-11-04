@@ -1,5 +1,6 @@
 import { LineAreaChart } from "@/components/charts/LineAreaChart";
 import { ChartInspector } from "@/components/charts/ChartInspector";
+import { TimeAxis } from "@/components/charts/TimeAxis";
 import { Widget } from "@/components/ui/Card";
 import type { OverviewChart } from "@/lib/metrics/overview-presentation";
 import type { OverviewModel } from "@/lib/metrics/overview";
@@ -77,32 +78,10 @@ export function UsageValueCard({
           <ChartInspector chart={chart} />
         </div>
         <div />
-        <div className="tnum relative h-5 text-[11px] text-text3">
-          {chart.ticks.map(
-            (tick, index) =>
-              (index === 0 ||
-                index === chart.ticks.length - 1 ||
-                index % Math.max(1, Math.ceil(chart.ticks.length / 5)) ===
-                  0) && (
-                <span
-                  key={tick.date}
-                  className="absolute whitespace-nowrap"
-                  style={{
-                    left: `${chart.timeline?.positions[index] ?? (chart.ticks.length === 1 ? 50 : (index / (chart.ticks.length - 1)) * 100)}%`,
-                    transform:
-                      index === 0 && chart.ticks.length > 1
-                        ? undefined
-                        : index === chart.ticks.length - 1 &&
-                            chart.ticks.length > 1
-                          ? "translateX(-100%)"
-                          : "translateX(-50%)",
-                  }}
-                >
-                  {tick.label}
-                </span>
-              ),
-          )}
-        </div>
+        <TimeAxis
+          labels={chart.ticks.map((tick) => tick.label)}
+          positions={chart.timeline?.positions}
+        />
       </div>
     </Widget>
   );
