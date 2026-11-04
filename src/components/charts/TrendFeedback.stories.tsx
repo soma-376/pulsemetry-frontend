@@ -11,7 +11,7 @@ import overviewExample from "../../../docs/api/overview-response.example.json";
 import teamsExample from "../../../docs/api/teams-response.example.json";
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, userEvent } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import { trendFeedback } from "@/lib/metrics/trend-feedback";
 import { LineAreaChart } from "./LineAreaChart";
 import { TrendFeedback } from "./TrendFeedback";
@@ -156,7 +156,11 @@ export const Future: Story = {
   },
 };
 
-function DashboardExamples() {
+function DashboardExamples({
+  missingSessions = false,
+}: {
+  missingSessions?: boolean;
+}) {
   const [axis, setAxis] = useState<TrendAxisKey>("cost");
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
   const overview = overviewSchema.parse(overviewExample);
@@ -189,6 +193,24 @@ function DashboardExamples() {
       reasons: i >= teamIndex + 3 ? ["no_data"] : [],
     })),
   }));
+  if (missingSessions) {
+    for (const team of teams.teams.items) {
+      Object.assign(team.metrics.sessionCount, {
+        value: null,
+        status: "unavailable",
+        reasons: ["session_identity_missing"],
+      });
+      for (const point of team.trend) {
+        Object.assign(point, {
+          cumulativeSessionCount: null,
+          status: "partial",
+          reasons: ["session_identity_missing"],
+        });
+      }
+    }
+  }
+  teams.unassigned.metrics.pricedUsageRows = 0;
+  teams.unassigned.metrics.unpricedUsageRows = 0;
   for (const value of Object.values(teams.unassigned.metrics)) {
     if (typeof value !== "object" || !value) continue;
     value.value = null;
@@ -218,4 +240,23 @@ function DashboardExamples() {
 export const DashboardCards: Story = {
   name: "개요·팀 분석 적용",
   render: () => <DashboardExamples />,
+};
+export const SessionsMissing: Story = {
+  name: "세션 식별 결손 · 비용과 토큰 보존",
+  render: () => <DashboardExamples missingSessions />,
+  async play({ canvas }) {
+    const tabs = within(canvas.getByRole("tablist", { name: "지표 축" }));
+    await expect(
+      tabs.queryByRole("tab", { name: "세션" }),
+    ).not.toBeInTheDocument();
+    await userEvent.click(tabs.getByRole("tab", { name: "토큰" }));
+    await expect(tabs.getByRole("tab", { name: "토큰" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await userEvent.click(tabs.getByRole("tab", { name: "비용" }));
+    await expect(
+      canvas.getByRole("button", { name: "세션당 정렬" }),
+    ).toBeVisible();
+  },
 };

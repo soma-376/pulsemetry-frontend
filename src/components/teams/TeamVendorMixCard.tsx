@@ -1,5 +1,8 @@
 import { StackedBar } from "@/components/charts/StackedBar";
-import type { AxisKey, TeamsModel } from "@/lib/metrics/teams-presentation";
+import type {
+  TrendAxisKey,
+  TeamsModel,
+} from "@/lib/metrics/teams-presentation";
 
 /**
  * 팀별 벤더(등록 제품) 비중.
@@ -15,7 +18,7 @@ export function TeamVendorMixCard({
   axis,
 }: {
   model: TeamsModel;
-  axis: AxisKey;
+  axis: TrendAxisKey;
 }) {
   const { yTop, yMid, columns, legend } = model.productMix(axis);
 

@@ -98,27 +98,11 @@ export function metric(
       : usage.sessionCount.value;
 }
 
-/** 완전 관측된 기간에 사용이 없으면 서버가 0을 준다 — 미배정 행은 실제 사용이 있을 때만 그린다. */
-function hasUsage(usage: Usage | null) {
-  if (!usage) return false;
-  const values = [
-    usage.activeUsers,
-    usage.sessionCount,
-    usage.totalTokens,
-    usage.equivalentCostUsd,
-  ];
-  if (
-    values.every(
-      (metric) => metric.value === null && metric.reasons.includes("no_data"),
-    )
-  )
-    return false;
-  return !(
-    usage.activeUsers.value === 0 &&
-    usage.sessionCount.value === 0 &&
-    usage.totalTokens.value === 0 &&
-    numeric(usage.equivalentCostUsd.value) === 0
-  );
+/** 사용 관측은 사용 행 수로 판정한다. 구버전 응답의 누락은 미사용을 뜻하지 않는다. */
+function hasRecordedUsage(usage: Usage | null): boolean | null {
+  if (usage?.pricedUsageRows == null || usage.unpricedUsageRows == null)
+    return null;
+  return usage.pricedUsageRows + usage.unpricedUsageRows > 0;
 }
 
 const changeColor = (value: number | null) =>
@@ -521,7 +505,9 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
   const reason = comparisonReason(view);
   const entries = [
     ...view.teams,
-    ...(hasUsage(view.unassigned.metrics) ? [view.unassigned] : []),
+    ...(hasRecordedUsage(view.unassigned.metrics) !== false
+      ? [view.unassigned]
+      : []),
   ].map(entryOf);
 
   // 선 색은 비용 내림차순(값 없음은 뒤, 동률은 이름)으로 배정한다 — 축을 바꿔도 같은 팀은 같은 색이다.
