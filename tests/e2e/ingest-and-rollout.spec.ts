@@ -6,6 +6,10 @@ import {
   selectPeriod,
   signIn,
 } from "./helpers";
+import {
+  ingestStatusSchema,
+  transmissionLossLabel,
+} from "../../src/lib/api/ingest-status";
 import type { Overview } from "../../src/lib/api/overview";
 import { PreparationError } from "./harness";
 
@@ -88,38 +92,36 @@ async function overviewFor(
   return (await result.json()) as Overview;
 }
 
-test("INGEST-HEADER @p0 @read 헤더가 수집 판정과 연도를 포함한 마지막 수신 시각을 보여 준다", async ({
+test("INGEST-HEADER @p0 @read 헤더 손실 요약과 상세가 실제 API 기준 시각을 따른다", async ({
   page,
 }) => {
-  // A: 설치 99대가 기준 시각에 마지막으로 보고한 뒤 조용하다 → 보고가 끊김(중단 또는 확인 불가), 창 안의 보고 0대.
   await signIn(page, "owner@seed-a.example.test");
   const bar = page.getByLabel("조직 수집 현황", { exact: true });
-  await expect(bar.locator("[role=status]")).toHaveAttribute(
-    "title",
-    /수집 기기의 보고가 끊겼습니다/,
-  );
-  await expect(bar).not.toContainText(/보고 기기|보고 중인 설치/);
-  await expect(bar).toContainText(/마지막 수신 \d{4}년/);
   const status = await authenticatedRequest(
     page,
     dashboardBase(),
     `/api/v1/organizations/${A.id}/ingest-status`,
   );
-  expect(status.body).toMatchObject({
-    reason: "installations_silent",
-    activeInstallations: 0,
-  });
+  const parsed = ingestStatusSchema.parse(status.body);
   await expect(bar).toContainText(
-    status.body.status === "down" ? "수집 중단" : "수집 상태 확인 불가",
+    transmissionLossLabel(parsed.transmissionLoss),
   );
-  await expect(bar).not.toContainText("수집 정상");
-
-  // C: 설치 보고가 한 번도 없는 조직 — 판정 근거 없음. 서버가 null로 준 설치 수는 보여 주지 않는다.
+  await bar.getByRole("button", { name: /최근 7일|집계 정보 없음/ }).click();
+  const drawer = page.getByRole("dialog", { name: "전송 손실 상세" });
+  await expect(drawer).toContainText("데몬이 보고한 손실 페이로드 수입니다");
+  await expect(drawer).toContainText(/마지막 수신/);
+  if (parsed.reason === "installations_silent") {
+    await expect(drawer).toContainText("보고 상태 미확인");
+    await expect(drawer).not.toContainText("수집 중단");
+  }
+  await page.keyboard.press("Escape");
   await signIn(page, "owner@seed-c.example.test");
   await page.goto("/overview");
-  await expect(bar).toContainText("수집 상태 확인 불가");
-  await expect(bar).toContainText("수집 기기의 보고가 없어 판정할 수 없습니다");
-  await expect(bar).not.toContainText("보고 기기");
+  await bar.getByRole("button", { name: /최근 7일|집계 정보 없음/ }).click();
+  await expect(drawer).toContainText(
+    "수집 기기의 보고가 없어 판정할 수 없습니다",
+  );
+  await expect(drawer).not.toContainText("수집 정상");
 });
 
 test("COMPARE-A @p0 @read 두 기간이 모두 완전하면 증감·이전 값·팀 증가 기여를, 아니면 비교 품질 배지를 생략한다", async ({

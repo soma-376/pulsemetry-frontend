@@ -159,7 +159,11 @@ export function DashboardHeaderProvider({
           >
             <PageContainer className="flex min-h-16 flex-wrap items-center justify-between gap-x-6 gap-y-2 py-3">
               <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-                <IngestStatusBar query={ingest} enabled={!!organizationId} />
+                <IngestStatusBar
+                  key={organizationId}
+                  query={ingest}
+                  enabled={!!organizationId}
+                />
                 {!contractDenied &&
                   contractInput.data &&
                   contractInput.data.requiredCount > 0 && (

@@ -212,7 +212,7 @@ for (const target of pages) {
         page.getByLabel("수집 상태 갱신 중", { exact: true }),
       ).toHaveCount(0);
       await expect(page.getByLabel("조직 수집 현황")).toContainText(
-        "수집 상태 확인 불가",
+        "집계 정보 없음",
       );
 
       // 수집 현황이 먼저 끝나도 본문 요청이 남아 있으면 진행 표시를 유지한다.
