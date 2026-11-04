@@ -610,6 +610,50 @@ test("period values keep state and reasons in the screen and CSV, including conf
   );
 });
 
+test("구성원 활성 관측은 periodUsage 존재로 판정하고 세션 결손·0원·미환산을 비활성으로 바꾸지 않는다", () => {
+  const roster = [
+    member(1, { periodUsage: usage("0.000000", 0) }),
+    member(2, {
+      periodUsage: {
+        equivalentCostUsd: value("12.345678"),
+        sessionCount: value<number>(null, ["session_identity_missing"]),
+      },
+    }),
+    member(3, {
+      periodUsage: {
+        equivalentCostUsd: value<string>(null, ["pricing_missing"]),
+        sessionCount: value<number>(null, ["session_identity_missing"]),
+      },
+    }),
+    member(4, { periodUsage: null }),
+    member(5, { periodUsage: null, lastUsedAt: null }),
+  ];
+  assert.deepEqual(
+    roster.map((row) => memberActivity(row, new Set())),
+    ["active", "active", "active", "idle", "unobserved"],
+  );
+  const model = buildMembersView(
+    { ...dashboard(roster, 5, null), members: roster, unassigned: [] },
+    [],
+  );
+  assert.equal(model.memberRows[1].sessionCount, null);
+  assert.equal(model.memberRows[1].costText, "$12.35");
+  assert.equal(model.memberRows[1].sessionState, "unavailable");
+  assert.deepEqual(model.memberRows[1].sessionReasons, [
+    "session_identity_missing",
+  ]);
+  const csv = membersCsv(model.memberRows);
+  assert.match(csv, /활성,0,0,.*complete,,complete,/);
+  assert.match(
+    csv,
+    /활성,12.345678,,.*complete,,unavailable,session_identity_missing/,
+  );
+  assert.match(
+    csv,
+    /활성,,,.*unavailable,pricing_missing,unavailable,session_identity_missing/,
+  );
+});
+
 test("pagination rejects changed periods and total counts even when snapshot matches", async () => {
   const original = global.fetch;
   try {

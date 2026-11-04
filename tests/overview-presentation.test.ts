@@ -25,6 +25,25 @@ const unavailable = {
   percentChange: null,
   change: null,
 };
+test("개요 카드 순서와 세션 파생값은 유지하고 세션 결손이 비용·토큰·추이를 숨기지 않는다", () => {
+  const d = data();
+  const before = presentOverview(d);
+  assert.deepEqual(
+    before.kpis.map((card) => card.label),
+    ["사용자 수", "사용 환산액", "세션 수", "사용자당 환산액", "총 토큰 수"],
+  );
+  assert.match(before.kpis[2].caption, /사용자당 .*회 · 세션당 \$/);
+  d.summary!.sessionCount = {
+    ...d.summary!.sessionCount,
+    ...value<number>(null, ["session_identity_missing"]),
+  };
+  const after = presentOverview(d);
+  assert.equal(after.kpis[2].value, "-");
+  assert.match(after.kpis[2].valueStatus?.reason ?? "", /세션/);
+  assert.equal(after.kpis[1].value, before.kpis[1].value);
+  assert.equal(after.kpis[4].value, before.kpis[4].value);
+  assert.deepEqual(after.chart, before.chart);
+});
 test("소액 환산액 추이는 실제 최댓값에 맞추고 0·미가격 날짜를 유지한다", () => {
   const d = data();
   const amounts = ["0.000800", "0", null];
