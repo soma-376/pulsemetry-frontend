@@ -366,7 +366,7 @@ test("미확정 총 토큰은 단위와 확정값 설명을 붙이지 않고 실
   assert.equal(zero.valueStatus, undefined);
 });
 
-test("공급자 구분 없이 모델별 전체 비중과 환산액을 보존한다", () => {
+test("벤더 배지는 기타 묶음 전에 분류하고 벤더 내 비중만 정규화한다", () => {
   const d = data();
   const template = d.modelMix!.models[0];
   d.modelMix!.models = [
@@ -385,34 +385,33 @@ test("공급자 구분 없이 모델별 전체 비중과 환산액을 보존한�
   }));
   const snapshot = structuredClone(d);
   const m = presentOverview(d);
-  assert.equal("vendorMixes" in m, false);
-  assert.equal(m.mix.count, 6);
-  assert.equal(m.mix.rows[0].shareText, "40.0%");
+  assert.deepEqual(
+    m.vendorMixes.map((v) => v.label),
+    ["OpenAI", "Anthropic", "기타·미확인"],
+  );
+  const openai = m.vendorMixes[0].mix;
+  assert.equal(openai.count, 3);
+  assert.ok(openai.rows.some((row) => row.id === "codex-auto-review"));
+  assert.equal(openai.rows[0].shareText, "57.1%");
   assert.ok(
-    Math.abs(m.mix.slices.reduce((sum, slice) => sum + slice.share, 0) - 100) <
+    Math.abs(openai.slices.reduce((sum, s) => sum + s.share, 0) - 100) <
       0.00001,
   );
-  assert.equal(
-    m.mix.slices.reduce((sum, slice) => sum + slice.cost, 0),
-    100,
-  );
+  assert.equal(m.vendorMixes[1].mix.rows[0].shareText, "60.0%");
+  assert.equal(m.vendorMixes[2].mix.rows[0].shareText, "100.0%");
   assert.deepEqual(d, snapshot);
 });
 
-test("모델 비중 null과 확인된 0을 공급자 추정 없이 보존한다", () => {
+test("벤더 선택도 비중 null과 확인된 0에서 가짜 100%를 만들지 않는다", () => {
   const d = data();
   const template = d.modelMix!.models[0];
   for (const share of [null, 0]) {
     d.modelMix!.models = [
-      {
-        ...template,
-        modelId: "unknown/codex/custom-model",
-        costShare: value<number>(share),
-      },
+      { ...template, modelId: "gpt-6.1-sol", costShare: value<number>(share) },
     ];
-    const mix = presentOverview(d).mix;
-    assert.equal(mix.count, 1);
-    assert.equal(mix.rows[0].shareText, share === null ? "-" : "0.0%");
-    assert.ok(mix.slices.every((slice) => slice.share === 0));
+    const mixes = presentOverview(d).vendorMixes;
+    assert.deepEqual(mixes[0].mix.slices, []);
+    assert.equal(mixes[0].mix.rows[0].shareText, "-");
+    assert.equal(mixes.length, 1);
   }
 });
