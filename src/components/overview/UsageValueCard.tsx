@@ -1,4 +1,3 @@
-import { MetricStatusBadge } from "./KpiCard";
 import { LineAreaChart } from "@/components/charts/LineAreaChart";
 import { ChartInspector } from "@/components/charts/ChartInspector";
 import { Widget } from "@/components/ui/Card";
@@ -26,11 +25,6 @@ export function UsageValueCard({
         chart.showKnownCost ? "확인된 사용 환산액 추이" : "사용 환산액 추이"
       }
       note="일별 · 포인터 또는 방향키로 탐색"
-      action={
-        model.chartStatus ? (
-          <MetricStatusBadge {...model.chartStatus} />
-        ) : undefined
-      }
       def={defs.w12}
       className="col-span-3 @max-[1023px]:col-span-full"
     >

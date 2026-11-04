@@ -1,12 +1,10 @@
 "use client";
-
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { memberPagesOptions } from "@/lib/api/members";
 import { ManagementError } from "@/lib/api/management";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { useEffect, useRef, useState } from "react";
-import { MetricStatusBadge } from "@/components/overview/KpiCard";
 import { MemberStatusBadges } from "./MemberStatusBadges";
 import { Button } from "@/components/ui/Button";
 import { Widget } from "@/components/ui/Card";
@@ -302,7 +300,6 @@ export function MemberListCard({
                   <span className="text-[12px] text-text2">{m.roleLabel}</span>
                   <span className="tnum flex min-w-0 flex-col items-end gap-1 text-right text-[12px]">
                     {m.costText}
-                    {m.costStatus && <MetricStatusBadge {...m.costStatus} />}
                   </span>
                   <span className="tnum text-right text-[12px] whitespace-nowrap text-text3">
                     {m.lastSeen}

@@ -1,6 +1,4 @@
 "use client";
-
-import { MetricStatusBadge } from "@/components/overview/KpiCard";
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import { DetailDrawer } from "@/components/ui/DetailDrawer";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -135,14 +133,13 @@ export function TeamDetailDrawer({
                         }
                       : undefined,
               },
-            ].map(({ label, value, status, comparison, change }) => (
+            ].map(({ label, value, comparison, change }) => (
               <div
                 key={label}
                 className="relative min-w-0 rounded-lg border border-border p-3 [overflow-wrap:anywhere]"
               >
                 <div className="flex flex-wrap items-center gap-1.5">
                   <p className="text-[11px] text-text3">{label}</p>
-                  {status && <MetricStatusBadge {...status} />}
                 </div>
                 <p className="tnum mt-1 text-xl font-semibold">{value}</p>
                 {comparison &&
@@ -152,10 +149,7 @@ export function TeamDetailDrawer({
                       {showDelta && comparison.status === "available" ? (
                         <span className="tnum">{change}</span>
                       ) : (
-                        <MetricStatusBadge
-                          label="비교 불가"
-                          reason={comparison.reason || comparisonReason}
-                        />
+                        "-"
                       )}
                       {compareLabel && <span>{compareLabel}</span>}
                     </div>

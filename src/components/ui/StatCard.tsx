@@ -1,5 +1,3 @@
-import { MetricStatusBadge } from "@/components/overview/KpiCard";
-
 export type StatCardProps = {
   label: string;
   status?: { label: string; reason: string };
@@ -30,7 +28,6 @@ export function StatCard({
   tone = "var(--text)",
   size = "md",
   badge,
-  status,
 }: StatCardProps) {
   const big = size === "md";
 
@@ -52,7 +49,7 @@ export function StatCard({
         >
           {label}
         </span>
-        {status && <MetricStatusBadge {...status} />}
+
         {badge && (
           <span
             className="rounded-[3px] px-1 text-[10px] leading-[15px] font-semibold whitespace-nowrap"

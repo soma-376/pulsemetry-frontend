@@ -1,7 +1,5 @@
 "use client";
-
 import { useState } from "react";
-import { MetricStatusBadge } from "./KpiCard";
 import { Donut } from "@/components/charts/Donut";
 import { Widget } from "@/components/ui/Card";
 import type { OverviewModel } from "@/lib/metrics/overview";
@@ -84,11 +82,6 @@ export function ModelMixCard({
         label="모델별 사용 환산액 비중"
         title="모델별 사용 환산액 비중"
         note="선택 기간 기준"
-        action={
-          model.mixStatus ? (
-            <MetricStatusBadge {...model.mixStatus} />
-          ) : undefined
-        }
         def={defs.w14}
         className="col-span-2 @max-[1023px]:col-span-full"
       >
@@ -134,9 +127,6 @@ export function ModelMixCard({
       label="모델별 사용 환산액 비중"
       title="모델별 사용 환산액 비중"
       note="선택 기간 기준"
-      action={
-        model.mixStatus ? <MetricStatusBadge {...model.mixStatus} /> : undefined
-      }
       def={defs.w14}
       className="col-span-2 @max-[1023px]:col-span-full"
     >

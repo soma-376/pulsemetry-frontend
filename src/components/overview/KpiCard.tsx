@@ -45,10 +45,7 @@ export function KpiCard({
   showDelta,
   showArrow = true,
   previousText,
-  noDelta,
   compareLabel,
-  noDeltaReason,
-  valueStatus,
   supportingValue,
   action,
 }: KpiCardProps) {
@@ -62,12 +59,7 @@ export function KpiCard({
         <span title={def} className="min-w-0 text-[12px] text-text2">
           {label}
         </span>
-        {valueStatus && (
-          <MetricStatusBadge
-            label={valueStatus.label}
-            reason={valueStatus.reason}
-          />
-        )}
+
         {action && (
           <button
             type="button"
@@ -121,38 +113,6 @@ export function KpiCard({
           )}
         </div>
       )}
-
-      {noDelta && value !== "-" && (
-        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-          <MetricStatusBadge label="비교 불가" reason={noDeltaReason} />
-          {compareLabel && <span className="text-text3">{compareLabel}</span>}
-        </div>
-      )}
     </div>
-  );
-}
-
-/** 짧은 상태를 항상 표시하고, 사유는 포인터·키보드 초점에서 확인한다. */
-export function MetricStatusBadge({
-  label,
-  reason,
-}: {
-  label: string;
-  reason: string;
-}) {
-  return (
-    <span
-      tabIndex={0}
-      aria-label={`${label}: ${reason}`}
-      className="group inline-flex shrink-0 cursor-help rounded-[3px] bg-gray-tint px-1.5 py-0.5 text-[10.5px] leading-[14px] font-semibold whitespace-nowrap text-text2 outline-offset-2"
-    >
-      {label}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute top-full right-0 left-0 z-20 mt-1 hidden rounded-md border border-border bg-card p-2.5 text-left text-xs leading-5 font-normal whitespace-normal text-text2 shadow-lg group-hover:block group-focus-visible:block"
-      >
-        {reason}
-      </span>
-    </span>
   );
 }
