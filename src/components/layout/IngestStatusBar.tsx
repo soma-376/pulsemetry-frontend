@@ -27,7 +27,7 @@ export function IngestStatusBar({
   return (
     <div
       aria-label="조직 수집 현황"
-      className="flex min-h-8 min-w-0 flex-1 items-center gap-2 text-xs text-text2"
+      className="flex min-h-12 min-w-0 flex-1 items-center gap-2 text-xs text-text2"
     >
       {!enabled ? (
         <span>로그인 후 전송 손실을 확인할 수 있습니다</span>
@@ -72,14 +72,12 @@ export function IngestStatusBar({
                 집계 시작 {lossTime(loss.availableFrom)}
               </span>
             )}
-            {loss && (
-              <span
-                className={`block text-[11px] ${query.isError ? "text-orange-ink" : "text-text3"}`}
-              >
-                {query.isError ? "갱신 실패 · " : ""}
-                {lossTime(loss.windowEnd)} 기준
-              </span>
-            )}
+            <span
+              className={`block text-[11px] leading-4 ${query.isError ? "text-orange-ink" : "text-text3"}`}
+            >
+              {query.isError ? "갱신 실패 · " : ""}
+              {lossTime(loss?.windowEnd ?? data.asOf)} 기준
+            </span>
           </button>
           <TransmissionLossDrawer
             data={data}

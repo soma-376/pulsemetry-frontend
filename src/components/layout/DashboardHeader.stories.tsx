@@ -237,7 +237,7 @@ export const Loading: Story = {
     await canvas.findByText("전송 손실 확인 중…");
     await expect(
       canvas.getByLabelText("공통 헤더").getBoundingClientRect().height,
-    ).toBe(65);
+    ).toBe(73);
   },
 };
 export const Retry: Story = {
@@ -250,10 +250,10 @@ export const Retry: Story = {
       { timeout: 10000 },
     );
     const bar = canvas.getByLabelText("공통 헤더");
-    await expect(bar.getBoundingClientRect().height).toBe(65);
+    await expect(bar.getBoundingClientRect().height).toBe(73);
     await userEvent.click(retry);
     await canvas.findByText("집계 정보 없음");
-    await expect(bar.getBoundingClientRect().height).toBe(65);
+    await expect(bar.getBoundingClientRect().height).toBe(73);
   },
 };
 export const Refreshing: Story = {

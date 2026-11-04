@@ -183,6 +183,35 @@ test("부분 집계의 제한과 갱신 실패를 표시하고 마지막 정상 
   await expect(drawer).toContainText("마지막으로 확인한 집계");
 });
 
+test("구버전 집계 정보 없음도 갱신 실패와 마지막 응답 기준 시각을 유지한다", async ({
+  page,
+}) => {
+  await prepare(page);
+  await page.goto("/overview");
+  const trigger = page.getByRole("button", { name: /집계 정보 없음/ });
+  await expect(trigger).toContainText("2026. 11. 4.");
+  await expect(trigger).toContainText("기준");
+  const headerHeight = (await page
+    .getByLabel("공통 헤더", { exact: true })
+    .boundingBox())!.height;
+  await page.route(ingestStatusUrl, (route) =>
+    route.fulfill({ status: 503, json: { error: { code: "unavailable" } } }),
+  );
+  await page.getByRole("button", { name: "새로고침", exact: true }).click();
+  await expect(trigger).toContainText("갱신 실패");
+  await expect(trigger).toContainText("2026. 11. 4.");
+  await expect(trigger).not.toContainText("0건");
+  expect(
+    (await page.getByLabel("공통 헤더", { exact: true }).boundingBox())!.height,
+  ).toBe(headerHeight);
+  await trigger.click();
+  const drawer = page.getByRole("dialog", { name: "전송 손실 상세" });
+  await expect(drawer).toContainText("2026. 11. 4.");
+  await expect(drawer).toContainText(
+    "갱신 실패 · 마지막으로 확인한 집계를 표시합니다",
+  );
+});
+
 for (const scenario of [
   {
     name: "확인된 0",

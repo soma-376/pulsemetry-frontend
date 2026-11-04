@@ -9,6 +9,14 @@ import {
   lossInstallationsOptions,
 } from "../src/lib/api/ingest-status";
 import { ManagementError } from "../src/lib/api/management";
+import {
+  QueryClient,
+  QueryClientProvider,
+  QueryObserver,
+} from "@tanstack/react-query";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { IngestStatusBar } from "../src/components/layout/IngestStatusBar";
 
 const response = {
   organizationId: "org-a",
@@ -17,6 +25,46 @@ const response = {
   asOf: "2026-09-29T00:00:00Z",
   lastReceivedAt: null,
 };
+
+test("구버전 응답 재조회 실패도 캐시의 기준시각과 갱신 실패를 렌더링한다", async () => {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const options = ingestStatusOptions("org-a");
+  client.setQueryData(options.queryKey, ingestStatusSchema.parse(response));
+  const observer = new QueryObserver(client, {
+    ...options,
+    retry: false,
+    queryFn: async () => {
+      throw new Error("조회 실패");
+    },
+  });
+  try {
+    await observer.refetch();
+    const query = observer.getCurrentResult();
+    assert.equal(query.isError, true);
+    const html = renderToStaticMarkup(
+      createElement(
+        QueryClientProvider,
+        { client },
+        createElement(IngestStatusBar, { query, enabled: true }),
+      ),
+    );
+    assert.match(html, /집계 정보 없음/);
+    assert.match(html, /갱신 실패 · /);
+    assert.ok(
+      html.includes(
+        new Date(response.asOf).toLocaleString("ko-KR", {
+          timeZone: "Asia/Seoul",
+        }),
+      ),
+    );
+    assert.doesNotMatch(html, /전송 손실 0건/);
+  } finally {
+    observer.destroy();
+    client.clear();
+  }
+});
 test("header query is scoped to organization and does not invent healthy status or a receipt time", async () => {
   const original = global.fetch;
   const controller = new AbortController();
