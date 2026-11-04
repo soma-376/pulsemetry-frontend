@@ -1,11 +1,9 @@
 "use client";
-
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { PeriodEmptyState } from "@/components/ui/PeriodEmptyState";
-import { MetricStatusBadge } from "@/components/overview/KpiCard";
 import { StatCard } from "@/components/ui/StatCard";
 import { SortHeader } from "@/components/ui/SortHeader";
 import {
@@ -318,25 +316,12 @@ export function UserUsageCard({
                   </span>
                   <span className="tnum flex min-w-0 flex-col items-end gap-1 text-right text-[12px] text-text2">
                     {u.sessions}
-                    {u.sessionStatus && (
-                      <MetricStatusBadge
-                        label={u.sessionCount === null ? "확인 불가" : "일부"}
-                        reason={u.sessionStatus.reason}
-                      />
-                    )}
                   </span>
                   <span className="tnum flex min-w-0 flex-col items-end gap-1 text-right text-[12px] text-text2">
                     {u.tokens}
-                    {u.tokenStatus && (
-                      <MetricStatusBadge
-                        label={u.tokenValue === null ? "확인 불가" : "일부"}
-                        reason={u.tokenStatus.reason}
-                      />
-                    )}
                   </span>
                   <span className="tnum flex flex-col items-end gap-1 text-right text-[12px] font-semibold">
                     {u.cost}
-                    {u.status && <MetricStatusBadge {...u.status} />}
                   </span>
                   <span
                     className="tnum text-right text-[12px] font-semibold"
@@ -352,12 +337,6 @@ export function UserUsageCard({
                     style={{ color: u.cacheColor }}
                   >
                     {u.cache}
-                    {u.cacheStatus && (
-                      <MetricStatusBadge
-                        label={u.cacheValue === null ? "확인 불가" : "일부"}
-                        reason={u.cacheStatus.reason}
-                      />
-                    )}
                   </span>
                   <span
                     className="tnum text-right text-[12px]"

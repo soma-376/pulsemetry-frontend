@@ -1,12 +1,9 @@
 "use client";
-
 import { useState } from "react";
 import { SortHeader } from "@/components/ui/SortHeader";
 import { nextSort, sortRows, type SortState } from "@/lib/sort";
 import { LineAreaChart } from "@/components/charts/LineAreaChart";
 import { TrendFeedback } from "@/components/charts/TrendFeedback";
-import { MetricStatusBadge } from "@/components/overview/KpiCard";
-import { trendBadge } from "@/lib/metrics/trend-feedback";
 import { costAxisLabel, trendAxisMax } from "@/lib/metrics/chart-axis";
 import { xAt } from "@/components/charts/scale";
 import { ProgressBar } from "@/components/charts/ProgressBar";
@@ -68,7 +65,7 @@ export function TeamAxisPanel({
     ...model.trendFeedback[axis],
     series: model.trendFeedback[axis].series.filter((s) => !hidden[s.id]),
   };
-  const status = trendBadge(feedback);
+
   const isEmpty = shown.length === 0;
   // 누적선의 값은 서버 값의 합이라 0보다 작지 않다. 값이 하나도 없으면(모든 날이 확인 불가) 선을 그리지 않는다.
   const known = shown
@@ -126,16 +123,11 @@ export function TeamAxisPanel({
           >
             {ax.delta}
           </span>
-          {ax.status && <MetricStatusBadge {...ax.status} />}
-          {model.compareLabel && ax.delta === "-" && ax.deltaReason && (
-            <MetricStatusBadge label="비교 불가" reason={ax.deltaReason} />
-          )}
         </div>
       </div>
 
       <div className="relative mb-3 flex flex-wrap items-baseline justify-between gap-3">
         <span className="text-[13px] font-semibold">팀별 누적 추이</span>
-        {status && <MetricStatusBadge {...status} />}
       </div>
       <div className="mb-[18px] grid grid-cols-[minmax(56px,max-content)_minmax(0,1fr)] gap-2">
         <div className="tnum flex h-[196px] flex-col justify-between text-right text-[11px] text-text3">
@@ -296,54 +288,21 @@ export function TeamAxisPanel({
                   />
                   <span className="tnum flex min-w-[70px] shrink-0 flex-col items-end gap-1 text-right text-[12px] font-semibold">
                     {r.v1}
-                    {r.status && (
-                      <span className="pointer-events-auto z-10">
-                        <MetricStatusBadge {...r.status} />
-                      </span>
-                    )}
                   </span>
                 </div>
 
                 <span className="pointer-events-none tnum flex min-w-0 flex-col items-end gap-1 text-right text-[12px] text-text2">
                   {r.v2}
-                  {r.perUserStatus && (
-                    <span className="pointer-events-auto z-10">
-                      <MetricStatusBadge
-                        label={r.perUserValue === null ? "확인 불가" : "일부"}
-                        reason={r.perUserStatus.reason}
-                      />
-                    </span>
-                  )}
                 </span>
                 <span className="pointer-events-none tnum flex min-w-0 flex-col items-end gap-1 text-right text-[12px] text-text2">
                   {r.v3}
-                  {r.unitStatus && (
-                    <span className="pointer-events-auto z-10">
-                      <MetricStatusBadge
-                        label={r.unitValue === null ? "확인 불가" : "일부"}
-                        reason={r.unitStatus.reason}
-                      />
-                    </span>
-                  )}
                 </span>
                 <span
                   title={r.deltaReason}
                   className="pointer-events-none tnum inline-flex justify-end text-right text-[12px] font-semibold whitespace-nowrap"
                   style={{ color: r.deltaColor }}
                 >
-                  {model.compareLabel &&
-                  r.totalValue !== null &&
-                  r.delta === "-" &&
-                  r.deltaReason ? (
-                    <span className="pointer-events-auto z-10">
-                      <MetricStatusBadge
-                        label="비교 불가"
-                        reason={r.deltaReason}
-                      />
-                    </span>
-                  ) : (
-                    r.delta
-                  )}
+                  {r.delta}
                 </span>
                 <span
                   aria-hidden="true"

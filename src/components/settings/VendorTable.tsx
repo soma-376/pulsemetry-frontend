@@ -1,6 +1,4 @@
 "use client";
-
-import { MetricStatusBadge } from "@/components/overview/KpiCard";
 import { Button } from "@/components/ui/Button";
 import type { VendorRow } from "@/lib/settings";
 
@@ -84,18 +82,12 @@ export function VendorTable({
             <span className="tnum text-[12px] [overflow-wrap:anywhere]">
               {v.seatsText}
             </span>
-            {v.seatsStatus && <MetricStatusBadge {...v.seatsStatus} />}
           </span>
           <span
             className="tnum min-w-0 text-right text-[13px] leading-5 font-semibold [overflow-wrap:anywhere]"
             style={{ color: v.spendFg }}
           >
             {v.spendText}
-            {v.spendStatus && (
-              <span className="mt-1 flex justify-end">
-                <MetricStatusBadge {...v.spendStatus} />
-              </span>
-            )}
           </span>
           <span className="flex items-center justify-center text-text3">›</span>
         </div>

@@ -70,8 +70,12 @@ export const UnavailableComparison: Story = {
   args: { data: partial },
   async play({ canvas }) {
     const card = within(canvas.getByRole("region", { name: "사용 환산액" }));
-    await expect(card.getByText("일부 관측", { exact: true })).toBeVisible();
-    await expect(card.getByText("비교 불가", { exact: true })).toBeVisible();
+    await expect(
+      card.queryByText("일부 관측", { exact: true }),
+    ).not.toBeInTheDocument();
+    await expect(
+      card.queryByText("비교 불가", { exact: true }),
+    ).not.toBeInTheDocument();
   },
 };
 const noUsers = structuredClone(data);

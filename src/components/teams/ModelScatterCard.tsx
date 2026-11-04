@@ -1,4 +1,3 @@
-import { MetricStatusBadge } from "@/components/overview/KpiCard";
 import { ScatterPlot } from "@/components/charts/ScatterPlot";
 import { usd } from "@/lib/format";
 import { tokenText, type TeamsModel } from "@/lib/metrics/teams-presentation";
@@ -20,7 +19,6 @@ export function ModelScatterCard({ model }: { model: TeamsModel }) {
     >
       <div className="relative mb-6 flex flex-wrap items-center justify-between gap-2">
         <span className="text-[12px] font-semibold">모델별 토큰 대비 비용</span>
-        {scatter.status && <MetricStatusBadge {...scatter.status} />}
       </div>
 
       <div className="grid grid-cols-[56px_minmax(0,1fr)] gap-2">

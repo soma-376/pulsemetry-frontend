@@ -9,10 +9,9 @@ import teamsExample from "../../../docs/api/teams-response.example.json";
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, userEvent } from "storybook/test";
-import { trendFeedback, trendBadge } from "@/lib/metrics/trend-feedback";
+import { trendFeedback } from "@/lib/metrics/trend-feedback";
 import { LineAreaChart } from "./LineAreaChart";
 import { TrendFeedback } from "./TrendFeedback";
-import { MetricStatusBadge } from "../overview/KpiCard";
 
 const dates = Array.from(
   { length: 7 },
@@ -72,12 +71,11 @@ function Example({
     inputs[scenario].filter((_, i) => !hidden || i === 1),
     { today, cumulative: scenario === "cumulative" },
   );
-  const badge = trendBadge(model);
+
   return (
     <section className="relative w-full max-w-[800px] rounded-lg border border-border bg-card p-6 text-text">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
         <h2>사용 추이</h2>
-        {badge && <MetricStatusBadge {...badge} />}
       </div>
       <div className="relative mx-1 h-[240px] border-b border-border">
         <LineAreaChart domain={{ max: 50 }} series={model.series} />

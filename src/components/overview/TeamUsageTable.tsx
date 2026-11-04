@@ -1,11 +1,8 @@
 "use client";
-
 import { useDashboardHref } from "@/lib/filters";
-
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MetricStatusBadge } from "./KpiCard";
 import { Widget } from "@/components/ui/Card";
 import type { OverviewTeamSummary } from "@/lib/metrics/overview-presentation";
 
@@ -135,33 +132,16 @@ export function TeamUsageTable({
                   </th>
                   <td className="relative tnum py-3">
                     {row.users === "-" ? "-" : `${row.users}명`}{" "}
-                    {row.userStatus && (
-                      <MetricStatusBadge {...row.userStatus} />
-                    )}
                   </td>
                   <td className="py-3 text-text2">
                     {row.vendors === null
                       ? "-"
                       : row.vendors.join(" · ") || "미관측"}
                   </td>
-                  <td className="relative tnum py-3">
-                    {row.costText}{" "}
-                    {row.costStatus && (
-                      <MetricStatusBadge {...row.costStatus} />
-                    )}
-                  </td>
+                  <td className="relative tnum py-3">{row.costText} </td>
                   {attribution.comparable && (
                     <>
-                      <td className="relative tnum py-3">
-                        {row.comparisonReason ? (
-                          <MetricStatusBadge
-                            label="비교 불가"
-                            reason={row.comparisonReason}
-                          />
-                        ) : (
-                          row.changeText
-                        )}
-                      </td>
+                      <td className="relative tnum py-3">{row.changeText}</td>
                       <td className="relative tnum py-3">{row.contribText}</td>
                     </>
                   )}
@@ -183,9 +163,6 @@ export function TeamUsageTable({
                   {attribution.unmappedUsers === "-"
                     ? "-"
                     : `${attribution.unmappedUsers}명`}{" "}
-                  {attribution.unmapped.userStatus && (
-                    <MetricStatusBadge {...attribution.unmapped.userStatus} />
-                  )}
                 </td>
                 <td>
                   {attribution.unmappedVendors === null
@@ -194,21 +171,11 @@ export function TeamUsageTable({
                 </td>
                 <td className="relative tnum">
                   {attribution.unattributedCostText}{" "}
-                  {attribution.unmapped.costStatus && (
-                    <MetricStatusBadge {...attribution.unmapped.costStatus} />
-                  )}
                 </td>
                 {attribution.comparable && (
                   <>
                     <td className="relative tnum">
-                      {attribution.unmapped.comparisonReason ? (
-                        <MetricStatusBadge
-                          label="비교 불가"
-                          reason={attribution.unmapped.comparisonReason}
-                        />
-                      ) : (
-                        attribution.unmapped.changeText
-                      )}
+                      {attribution.unmapped.changeText}
                     </td>
                     <td className="relative tnum">
                       {attribution.unmapped.contribText}

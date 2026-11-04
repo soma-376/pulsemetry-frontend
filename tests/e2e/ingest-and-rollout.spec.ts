@@ -122,7 +122,7 @@ test("INGEST-HEADER @p0 @read 헤더가 수집 판정과 연도를 포함한 마
   await expect(bar).not.toContainText("보고 기기");
 });
 
-test("COMPARE-A @p0 @read 두 기간이 모두 완전하면 증감·이전 값·팀 증가 기여를, 아니면 비교 불가 사유를 보여 준다", async ({
+test("COMPARE-A @p0 @read 두 기간이 모두 완전하면 증감·이전 값·팀 증가 기여를, 아니면 비교 품질 배지를 생략한다", async ({
   page,
 }) => {
   await signIn(page, "owner@seed-a.example.test");
@@ -181,7 +181,7 @@ test("COMPARE-A @p0 @read 두 기간이 모두 완전하면 증감·이전 값·
   expect(partial.summary!.equivalentCostUsd.comparison.status).toBe(
     "unavailable",
   );
-  await expect(cost).toContainText("비교 불가");
+  await expect(cost).not.toContainText("비교 불가");
   await expect(page.getByRole("note", { name: "데이터 안내" })).toHaveCount(0);
   await expect(cost).not.toContainText("0.0%");
   await expect(
