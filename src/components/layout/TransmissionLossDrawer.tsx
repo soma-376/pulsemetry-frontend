@@ -27,11 +27,15 @@ export function TransmissionLossDrawer({
   open,
   onClose,
   refreshFailed,
+  refreshingSummary,
+  onRefreshSummary,
 }: {
   data: IngestStatus;
   open: boolean;
   onClose: () => void;
   refreshFailed: boolean;
+  refreshingSummary: boolean;
+  onRefreshSummary: () => void;
 }) {
   const loss = data.transmissionLoss;
   const canRead = !!loss && loss.availability !== "unavailable";
@@ -42,6 +46,9 @@ export function TransmissionLossDrawer({
   const denied =
     query.error instanceof ManagementError &&
     [401, 403, 404].includes(query.error.status);
+  const expired =
+    query.error instanceof ManagementError &&
+    query.error.code === "snapshot_expired";
   const pages = denied ? [] : (query.data?.pages ?? []);
   const first = pages[0];
   const items = pages.flatMap((page) => page.installations.items);
@@ -134,15 +141,22 @@ export function TransmissionLossDrawer({
             )}
             {query.error && (
               <ErrorState
-                variant="inline"
+                variant={expired ? "panel" : "inline"}
                 message={
-                  first
-                    ? "영향 기기 갱신에 실패했습니다. 이전 목록을 표시합니다."
-                    : "영향 기기를 불러오지 못했습니다."
+                  expired
+                    ? "집계 기준이 만료되었습니다. 최신 집계를 다시 조회하세요."
+                    : first
+                      ? "영향 기기 갱신에 실패했습니다. 이전 목록을 표시합니다."
+                      : "영향 기기를 불러오지 못했습니다."
                 }
-                description={query.error.message}
-                retrying={query.isFetching}
-                onRetry={() => void query.refetch({ cancelRefetch: false })}
+                description={expired ? undefined : query.error.message}
+                retrying={expired ? refreshingSummary : query.isFetching}
+                retryLabel={expired ? "최신 집계 조회" : "다시 조회"}
+                onRetry={
+                  expired
+                    ? onRefreshSummary
+                    : () => void query.refetch({ cancelRefetch: false })
+                }
               />
             )}
             {first && items.length === 0 && (

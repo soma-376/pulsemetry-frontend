@@ -288,3 +288,84 @@ test("영향 기기 상세는 조회 중·실패에도 닫고 다시 시도할 �
   await drawer.getByRole("button", { name: "다시 조회" }).click();
   await expect(drawer).toContainText("개발 노트북");
 });
+
+test("만료된 손실 기준은 요약을 다시 읽고 열린 상세에서 새 기준으로 복구한다", async ({
+  page,
+}) => {
+  await prepare(page, loss);
+  let summaryFails = true;
+  let summaryRequests = 0;
+  const newEnd = "2026-11-04T00:11:00Z";
+  const nextLoss = {
+    ...loss,
+    payloadCount: 12,
+    affectedInstallationCount: 1,
+    windowStart: "2026-10-28T00:11:00Z",
+    windowEnd: newEnd,
+  };
+  const windows: (string | null)[] = [];
+  await page.route("**/ingest-status/loss-installations?*", (route) => {
+    const end = new URL(route.request().url()).searchParams.get("windowEnd");
+    windows.push(end);
+    return route.fulfill(
+      end === loss.windowEnd
+        ? {
+            status: 409,
+            json: { error: { code: "snapshot_expired", message: "만료" } },
+          }
+        : {
+            json: {
+              ...affected(null),
+              meta: {
+                ...affected(null).meta,
+                snapshotId: "new-snapshot",
+                asOf: newEnd,
+              },
+              windowStart: nextLoss.windowStart,
+              windowEnd: newEnd,
+              installations: {
+                items: [
+                  {
+                    ...affected(null).installations.items[0],
+                    payloadCount: 12,
+                  },
+                ],
+                totalCount: 1,
+                nextCursor: null,
+              },
+            },
+          },
+    );
+  });
+  await page.goto("/overview");
+  await page
+    .getByRole("button", { name: /최근 7일 보고된 전송 손실 10건/ })
+    .click();
+  const drawer = page.getByRole("dialog", { name: "전송 손실 상세" });
+  await expect(drawer).toContainText(
+    "집계 기준이 만료되었습니다. 최신 집계를 다시 조회하세요",
+  );
+  await page.route(ingestStatusUrl, (route) => {
+    summaryRequests++;
+    return route.fulfill(
+      summaryFails
+        ? { status: 503, json: { error: { code: "unavailable" } } }
+        : { json: { ...status(nextLoss), asOf: newEnd } },
+    );
+  });
+  await drawer.getByRole("button", { name: "최신 집계 조회" }).click();
+  await expect(drawer).toContainText(
+    "갱신 실패 · 마지막으로 확인한 집계를 표시합니다",
+  );
+  await expect(drawer).toContainText("최근 7일 보고된 전송 손실 10건");
+  await expect(drawer).toBeVisible();
+  expect(summaryRequests).toBeGreaterThan(0);
+  expect(windows).toEqual([loss.windowEnd]);
+  summaryFails = false;
+  await drawer.getByRole("button", { name: "최신 집계 조회" }).click();
+  await expect(drawer).toContainText("최근 7일 보고된 전송 손실 12건");
+  await expect(drawer).toContainText("개발 노트북");
+  await expect(drawer).not.toContainText("집계 기준이 만료되었습니다");
+  await expect(drawer).not.toContainText("갱신 실패");
+  expect(windows).toEqual([loss.windowEnd, newEnd]);
+});

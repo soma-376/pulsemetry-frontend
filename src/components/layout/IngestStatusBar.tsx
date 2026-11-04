@@ -84,6 +84,10 @@ export function IngestStatusBar({
             open={open}
             onClose={() => setOpen(false)}
             refreshFailed={query.isError}
+            refreshingSummary={query.isFetching}
+            onRefreshSummary={() =>
+              void query.refetch({ cancelRefetch: false })
+            }
           />
         </>
       ) : null}
