@@ -493,16 +493,6 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
 
 type ModelRows = NonNullable<Overview["modelMix"]>["models"];
 
-/** 모델 이름 계열을 위한 표시 분류. 과금 경로나 조직 계약 벤더를 추정하지 않는다. */
-export function modelVendor(
-  modelId: string,
-): "openai" | "anthropic" | "unknown" {
-  if (/^(gpt-|chatgpt-|codex(?:-|$)|o[134](?:-|$))/i.test(modelId))
-    return "openai";
-  if (/^claude-/i.test(modelId)) return "anthropic";
-  return "unknown";
-}
-
 function presentModelMix(source: ModelRows): OverviewModel["mix"] {
   const models = groupModels(source);
   const topName = models[0]?.displayName ?? "관측 없음";
@@ -550,14 +540,31 @@ function presentModelMix(source: ModelRows): OverviewModel["mix"] {
 
 /** 서버 비중이 확인된 경우에만 선택 그룹 안에서 시각적 비율을 정규화한다. */
 export function presentVendorMixes(source: ModelRows) {
-  return [
-    { id: "openai", label: "OpenAI", color: "var(--orange-ink)" },
-    { id: "anthropic", label: "Anthropic", color: "var(--purple)" },
-    { id: "unknown", label: "기타·미확인", color: "var(--text3)" },
-  ]
+  const vendors = new Map<
+    string,
+    { id: string; label: string; color: string }
+  >();
+  for (const row of source) {
+    const id = row.modelVendor?.id ?? "unknown";
+    if (!vendors.has(id))
+      vendors.set(id, {
+        id,
+        label: row.modelVendor?.name ?? "기타·미확인",
+        color:
+          id === "openai"
+            ? "var(--orange-ink)"
+            : id === "anthropic"
+              ? "var(--purple)"
+              : "var(--text3)",
+      });
+  }
+  const order = (id: string) =>
+    id === "openai" ? 0 : id === "anthropic" ? 1 : id === "unknown" ? 3 : 2;
+  return [...vendors.values()]
+    .sort((a, b) => order(a.id) - order(b.id) || a.id.localeCompare(b.id))
     .map((vendor) => {
       const rows = source.filter(
-        (row) => modelVendor(row.modelId) === vendor.id,
+        (row) => (row.modelVendor?.id ?? "unknown") === vendor.id,
       );
       const known = rows.every((row) => row.costShare.value !== null);
       const total = known

@@ -115,3 +115,7 @@ type Metric<T> = Value<T> & { comparison: Change<T> };
 | collection_gap            | 손실 없는 수집 보고 구간으로 하루를 덮지 못함; 실제 사용량 손실을 단정하지 않음 |
 
 미확정 날짜는 `period_pending`으로 판정하고, 확정 시각이 지난 날짜에 나머지 근거를 판정한다. 현재 기간이 대기뿐이면 ‘집계 중’, 수집 근거 문제를 포함하면 ‘수집 불완전’이다. CSV는 같은 상세 사유를 유지한다. 계약 미입력은 이 판정에 영향을 주지 않는다. snapshot query contract는 `dashboard-v5`이며 이전 계약은 409로 다시 조회한다.
+
+### 모델 제작사
+
+`modelMix.models[].modelVendor`는 `{id, name} | null`인 모델 제작사다. 백엔드 카탈로그가 권위이며 프론트는 modelId·displayName을 파싱하지 않는다. 구 응답에서 필드가 없으면 미확인으로 취급한다. 미확인 모델은 전체 목록에 유지하고 확인된 제작사가 둘 이상일 때만 선택 배지를 표시한다. 백엔드를 먼저 배포한다.
