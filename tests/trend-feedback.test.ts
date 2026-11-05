@@ -5,6 +5,8 @@ import {
   trendFeedback,
   trendGaps,
   UNKNOWN_USAGE,
+  NO_OBSERVED_USAGE,
+  hasNoObservedUsage,
 } from "../src/lib/metrics/trend-feedback";
 import { overviewSchema } from "../src/lib/api/overview";
 import { presentOverview } from "../src/lib/metrics/overview-presentation";
@@ -13,6 +15,67 @@ import example from "../docs/api/overview-response.example.json";
 
 const dates = ["2026-10-09", "2026-10-10", "2026-10-11", "2026-10-12"];
 const base = { id: "team", name: "플랫폼", color: "purple" };
+
+test("기록 0건은 명시된 근거로만 판정하고 계산 결손을 가리지 않는다", () => {
+  const missing = { value: null, reasons: ["no_data"] };
+  assert.equal(hasNoObservedUsage(0, missing), true);
+  assert.equal(hasNoObservedUsage(null, missing), false);
+  assert.equal(hasNoObservedUsage(undefined, missing), false);
+  assert.equal(hasNoObservedUsage(1, missing), false);
+  assert.equal(hasNoObservedUsage(0, { value: null, reasons: [] }), false);
+  for (const reason of [
+    "pricing_missing",
+    "token_data_incomplete",
+    "source_unavailable",
+  ]) {
+    assert.equal(
+      hasNoObservedUsage(0, { ...missing, reasons: ["no_data", reason] }),
+      false,
+    );
+    assert.equal(
+      hasNoObservedUsage(0, { value: "1", reasons: [reason] }),
+      false,
+    );
+  }
+  assert.equal(hasNoObservedUsage(0, { value: "1", reasons: [] }), true);
+});
+
+test("기록 없는 구간과 실제 결손을 다른 음영·배지로 구분하고 null을 유지한다", () => {
+  const series = {
+    ...base,
+    values: [1, null, null, null],
+    observations: [
+      "complete",
+      "unobserved",
+      "unobserved",
+      "unobserved",
+    ] as const,
+    noUsage: [false, true, true, false],
+  };
+  const model = trendFeedback(
+    dates,
+    [{ ...series, observations: [...series.observations] }],
+    { today: dates[2] },
+  );
+  assert.deepEqual(trendGaps(model), [
+    { start: 1, end: 2, label: NO_OBSERVED_USAGE },
+  ]);
+  assert.equal(trendBadge(model), undefined);
+  assert.match(model.series[0].notes[1], /관측된 사용 기록이 없습니다/);
+  assert.doesNotMatch(model.series[0].notes[1], /확인할 근거가 부족/);
+  assert.deepEqual(model.series[0].values, [1, null, null, null]);
+  const mixed = trendFeedback(
+    dates,
+    [
+      { ...series, observations: [...series.observations] },
+      { ...base, id: "broken", values: [1, null, 2, null] },
+    ],
+    { today: dates[2] },
+  );
+  assert.equal(trendGaps(mixed)[0].label, "일부 값 확인 불가");
+  assert.equal(trendGaps(mixed)[1].label, "일부 사용 기록 없음");
+  assert.equal(trendBadge(mixed)?.label, "일부 날짜 확인 불가");
+});
 
 test("휴일의 확인된 0과 사용 여부를 모르는 날을 구분한다", () => {
   const zero = trendFeedback(

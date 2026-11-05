@@ -3,6 +3,19 @@ import { currentDateIso } from "../date";
 
 export const UNKNOWN_USAGE =
   "사용 여부를 확인할 근거가 부족합니다. 미사용과 수집 공백을 구분할 수 없습니다.";
+export const NO_OBSERVED_USAGE = "관측된 사용 없음";
+
+/** 기록 0건은 수집 정상이나 실제 미사용의 증거가 아니다. 다른 계산 결손도 가리지 않는다. */
+export function hasNoObservedUsage(
+  usageRows: number | null | undefined,
+  metric: { value: unknown; reasons: string[] },
+) {
+  return (
+    usageRows === 0 &&
+    (metric.value !== null || metric.reasons.length > 0) &&
+    metric.reasons.every((reason) => reason === "no_data")
+  );
+}
 
 export type TrendSeriesInput = {
   id: string;
@@ -10,6 +23,8 @@ export type TrendSeriesInput = {
   color: string;
   values: (number | null)[];
   observations?: ("complete" | "partial" | "unobserved")[];
+  /** 서버가 사용 행 0건을 명시하고 표시값에 다른 결손이 없는 구간. */
+  noUsage?: boolean[];
   reasons?: string[];
   /** 금액·토큰 등 추가 상세. 날짜별로 이미 포맷된 문자열. */
   extras?: string[];
@@ -51,7 +66,11 @@ export function trendFeedback(
         const observation = s.observations?.[index];
         const reason = s.reasons?.[index];
         let note: string;
-        if (value === null) {
+        if (s.noUsage?.[index]) {
+          note = "이 구간에 관측된 사용 기록이 없습니다.";
+          if (cumulative && value !== null)
+            note += " 이전까지의 누적값을 유지합니다.";
+        } else if (value === null) {
           note =
             cumulative && earlierMissing && !resumeAfterGap && !timeline
               ? "이전 날짜의 값을 확인할 수 없어 누적값을 계산할 수 없습니다."
@@ -105,14 +124,19 @@ export function trendGaps(model: TrendFeedback) {
       !model.series.length
     )
       return;
-    const missing = model.series.filter((s) => s.values[index] == null).length;
-    if (!missing) return;
+    const missingSeries = model.series.filter((s) => s.values[index] == null);
+    if (!missingSeries.length) return;
+    const missing = missingSeries.filter((s) => !s.noUsage?.[index]).length;
     const label =
-      missing === model.series.length
-        ? model.cumulative
-          ? "누적값 확인 불가"
-          : "사용량 확인 불가"
-        : "일부 값 확인 불가";
+      missing === 0
+        ? missingSeries.length === model.series.length
+          ? NO_OBSERVED_USAGE
+          : "일부 사용 기록 없음"
+        : missing === model.series.length
+          ? model.cumulative
+            ? "누적값 확인 불가"
+            : "사용량 확인 불가"
+          : "일부 값 확인 불가";
     const last = regions.at(-1);
     if (last && last.end === index - 1 && last.label === label)
       last.end = index;
@@ -123,13 +147,24 @@ export function trendGaps(model: TrendFeedback) {
 
 export function trendBadge(model: TrendFeedback) {
   if (!model.series.length) return undefined;
-  const missing = trendGaps(model).length > 0;
+  const missing = model.series.some((s) =>
+    s.values.some(
+      (value, i) =>
+        value === null &&
+        !s.noUsage?.[i] &&
+        (model.timeline
+          ? model.timeline.states[i] !== "upcoming"
+          : model.dates[i] <= model.today),
+    ),
+  );
   const partial = model.series.some((s) =>
     s.observations?.some(
       (state, i) =>
+        !s.noUsage?.[i] &&
         (model.timeline
           ? model.timeline.states[i] !== "upcoming"
-          : model.dates[i] <= model.today) && state === "partial",
+          : model.dates[i] <= model.today) &&
+        state === "partial",
     ),
   );
   if (!missing && !partial) return undefined;

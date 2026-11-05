@@ -6,6 +6,7 @@ import {
 import {
   trendFeedback,
   trendBadge,
+  hasNoObservedUsage,
   type TrendFeedback,
 } from "./trend-feedback";
 import { currentDateIso } from "../date";
@@ -374,6 +375,16 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
             ),
       )
     : cost;
+  const noUsage = points.map(
+    (p) =>
+      "usageRows" in p &&
+      hasNoObservedUsage(
+        p.usageRows,
+        showKnownCost
+          ? (p.knownEquivalentCostUsd ?? p.equivalentCostUsd)
+          : p.equivalentCostUsd,
+      ),
+  );
   const yMax = trendAxisMax(displayedCost, 1.15);
   const ticks = points.map((p, i) => ({
     label:
@@ -412,6 +423,7 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
     points.map((p) => p.date),
     chart.series.map((series) => ({
       ...series,
+      noUsage,
       formattedValues: timeline
         ? points.map((p) =>
             exactMoneyText(
@@ -428,7 +440,7 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
           ? ("partial" as const)
           : p.observation,
       ),
-      reasons: ticks.map((tick) => tick.status),
+      reasons: ticks.map((tick, i) => (noUsage[i] ? "" : tick.status)),
       extras: ticks.map((tick, i) =>
         [`토큰 ${tick.tokens}`, showKnownCost ? pricingRowsText(points[i]) : ""]
           .filter(Boolean)

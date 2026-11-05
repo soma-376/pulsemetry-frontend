@@ -34,6 +34,11 @@ import { overviewCsv, teamsCsv } from "../src/lib/csv-export";
 import { TeamAxisPanel } from "../src/components/teams/TeamAxisPanel";
 import { TrendFeedback } from "../src/components/charts/TrendFeedback";
 import { ManagementError } from "../src/lib/api/management";
+import {
+  NO_OBSERVED_USAGE,
+  trendGaps,
+  trendBadge,
+} from "../src/lib/metrics/trend-feedback";
 const DAY = 86_400_000;
 const iso = (time: number) => new Date(time).toISOString();
 const period = {
@@ -42,6 +47,69 @@ const period = {
   compare: "none" as const,
 };
 const org = "11111111-1111-4111-8111-111111111111";
+
+test("개요의 기록 없는 자동 구간과 기록된 0·미환산을 구분한다", () => {
+  const data = autoOverview();
+  const chart = presentOverview(data).chart;
+  assert.equal(chart.feedback!.series[0].noUsage?.[1], true);
+  assert.match(
+    chart.feedback!.series[0].notes[1],
+    /관측된 사용 기록이 없습니다/,
+  );
+  assert.doesNotMatch(
+    chart.feedback!.series[0].notes[1],
+    /계산에 필요한 데이터/,
+  );
+  assert.deepEqual(trendGaps(chart.feedback!), [
+    { start: 1, end: 1, label: NO_OBSERVED_USAGE },
+  ]);
+  assert.equal(trendBadge(chart.feedback!), undefined);
+  assert.match(chart.feedback!.series[0].notes[3], /확인된 0/);
+  assert.equal(chart.feedback!.series[0].values[1], null);
+  if (data.trend?.bucket !== "auto") throw Error();
+  const point = data.trend.points[1];
+  point.usageRows = 1;
+  point.pricedUsageRows = 0;
+  point.unpricedUsageRows = 1;
+  point.equivalentCostUsd = {
+    value: null,
+    status: "unavailable",
+    reasons: ["pricing_missing"],
+  };
+  point.knownEquivalentCostUsd = { ...point.equivalentCostUsd };
+  const broken = presentOverview(data).chart.feedback!;
+  assert.equal(broken.series[0].noUsage?.[1], false);
+  assert.equal(trendGaps(broken)[0].label, "사용량 확인 불가");
+  assert.match(broken.series[0].notes[1], /단가/);
+});
+
+test("팀의 빈 구간은 누적값을 유지하고 이전 미환산에 의한 누적 결손은 보존한다", () => {
+  const view = autoTeams();
+  const model = presentTeams(view);
+  for (const feedback of [
+    model.trendFeedback.cost,
+    model.trendFeedback.token,
+    model.knownTrendFeedback.cost,
+  ]) {
+    assert.equal(feedback.series[0].noUsage?.[1], true);
+    assert.match(
+      feedback.series[0].notes[1],
+      /관측된 사용 기록이 없습니다.*누적값을 유지/,
+    );
+    assert.equal(feedback.series[0].values[1], feedback.series[0].values[0]);
+  }
+  const point = view.teams[0].trend[1];
+  if (!("bucketStart" in point)) throw Error();
+  point.cumulativeEquivalentCostUsd = {
+    value: null,
+    status: "unavailable",
+    reasons: ["pricing_missing"],
+  };
+  const broken = presentTeams(view).trendFeedback.cost;
+  assert.equal(broken.series[0].noUsage?.[1], false);
+  assert.match(broken.series[0].notes[1], /단가/);
+  assert.ok(trendGaps(broken).some((gap) => gap.label.includes("확인 불가")));
+});
 for (const [days, hours, count] of [
   [1, 3, 8],
   [2, 6, 8],

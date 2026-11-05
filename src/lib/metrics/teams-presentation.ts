@@ -1,5 +1,5 @@
 import { trendDateLabel, trendTimeline } from "./trend-timeline";
-import { trendFeedback } from "./trend-feedback";
+import { hasNoObservedUsage, trendFeedback } from "./trend-feedback";
 import { pricingRowsText } from "./known-usage";
 import { currentDateIso } from "../date";
 import {
@@ -232,6 +232,7 @@ function trendPointState(point: TeamAnalytics["trend"][number], axis: AxisKey) {
           ? point.cumulativeTotalTokens
           : point.cumulativeSessionCount;
     return {
+      noUsage: hasNoObservedUsage(point.usageRows, value),
       observation:
         value.status === "complete"
           ? ("complete" as const)
@@ -240,7 +241,9 @@ function trendPointState(point: TeamAnalytics["trend"][number], axis: AxisKey) {
             : (point.pricedUsageRows ?? 0) + (point.unpricedUsageRows ?? 0) > 0
               ? ("partial" as const)
               : ("unobserved" as const),
-      reason: reasonsText(value.reasons),
+      reason: hasNoObservedUsage(point.usageRows, value)
+        ? ""
+        : reasonsText(value.reasons),
     };
   }
   const selectedValue =
@@ -261,6 +264,7 @@ function trendPointState(point: TeamAnalytics["trend"][number], axis: AxisKey) {
     return true;
   });
   return {
+    noUsage: false,
     observation:
       selectedValue !== null && reasons.length > 0
         ? ("partial" as const)
@@ -617,6 +621,9 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
       observations: entry.analytics.trend.map(
         (point) => trendPointState(point, axis).observation,
       ),
+      noUsage: entry.analytics.trend.map(
+        (point) => trendPointState(point, axis).noUsage,
+      ),
       reasons: entry.analytics.trend.map(
         (point) => trendPointState(point, axis).reason,
       ),
@@ -631,6 +638,16 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
       key: entry.key,
       team: entry.team,
       color: colorOf(entry.key),
+      noUsage: entry.analytics.trend.map(
+        (point) =>
+          "bucketStart" in point &&
+          hasNoObservedUsage(
+            point.usageRows,
+            axis === "cost"
+              ? point.cumulativeKnownEquivalentCostUsd
+              : point.cumulativeTotalTokens,
+          ),
+      ),
       formattedValues:
         timeline && axis === "cost"
           ? entry.analytics.trend.map((p) =>
@@ -771,6 +788,14 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
           name: "사용량",
           color: "var(--purple)",
           values: dates.map(() => null),
+          noUsage: sample.map(
+            (point) =>
+              "bucketStart" in point &&
+              hasNoObservedUsage(
+                point.usageRows,
+                point.cumulativeEquivalentCostUsd,
+              ),
+          ),
           observations: dates.map(() => "unobserved" as const),
         },
       ],
