@@ -18,7 +18,7 @@ type Harness = {
   endDate: string;
 };
 
-test("실제 자동 집계 API → 60개 시간축 → 팀 상세·사용자 → 같은 snapshot CSV", async ({
+test("실제 자동 집계 API → 10개 시간축 → 팀 상세·사용자 → 같은 snapshot CSV", async ({
   page,
   context,
 }) => {
@@ -78,16 +78,16 @@ test("실제 자동 집계 API → 60개 시간축 → 팀 상세·사용자 →
   );
   await page.goto(`/overview?${filter}`);
   const overview = overviewSchema.parse(await (await overviewResponse).json());
-  expect(overview.meta.trendAggregation?.intervalSeconds).toBe(43200);
-  expect(overview.trend?.points).toHaveLength(60);
+  expect(overview.meta.trendAggregation?.intervalSeconds).toBe(259200);
+  expect(overview.trend?.points).toHaveLength(10);
   expect(overview.summary?.equivalentCostUsd.value).toBe("6.123459");
   expect(overview.summary?.sessionCount.value).toBe(2);
-  const slider = page.getByRole("slider", { name: /12시간별 사용 환산액/ });
-  await expect(slider).toHaveAttribute("aria-valuemax", "60");
+  const slider = page.getByRole("slider", { name: /3일별 사용 환산액/ });
+  await expect(slider).toHaveAttribute("aria-valuemax", "10");
   await slider.focus();
   await expect(slider).toHaveAttribute(
     "aria-valuetext",
-    /2026-09-01 00:00 ~ 2026-09-01 12:00 KST/,
+    /2026-09-01 00:00 ~ 2026-09-04 00:00 KST/,
   );
   const overviewDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "CSV", exact: true }).click();
@@ -104,7 +104,7 @@ test("실제 자동 집계 API → 60개 시간축 → 팀 상세·사용자 →
   await page.goto(`/teams?${filter}`);
   const teams = teamsResponseSchema.parse(await (await teamsResponse).json());
   const team = teams.teams.items.find((t) => t.teamId === harness.teamId)!;
-  expect(team.trend).toHaveLength(60);
+  expect(team.trend).toHaveLength(10);
   const last = team.trend.at(-1)!;
   if (!("bucketStart" in last)) throw Error("auto expected");
   expect(last.cumulativeEquivalentCostUsd.value).toBe("6.123459");
@@ -116,7 +116,7 @@ test("실제 자동 집계 API → 60개 시간축 → 팀 상세·사용자 →
   ).toHaveCount(0);
   await expect(panel.getByRole("slider")).toHaveAttribute(
     "aria-valuemax",
-    "60",
+    "10",
   );
   await panel.getByRole("button", { name: team.teamName, exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText("6.12");

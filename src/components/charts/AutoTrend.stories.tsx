@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect } from "storybook/test";
-import { autoOverview } from "../../../tests/fixtures/auto-trend";
+import example from "../../../docs/api/overview-response.example.json";
 import { plannedTrendBuckets } from "@/lib/api/trend-aggregation";
 import { overviewSchema } from "@/lib/api/overview";
 import { presentOverview } from "@/lib/metrics/overview-presentation";
@@ -13,23 +13,36 @@ function Example({
   startDate: string;
   endDate: string;
 }) {
-  const data = autoOverview();
+  const data = overviewSchema.parse(example);
   const plan = plannedTrendBuckets(startDate, endDate);
   const iso = (time: number) => new Date(time).toISOString();
   Object.assign(data.meta, { startDate, endDate, dayCount: plan.days });
-  Object.assign(data.meta.trendAggregation!, {
+  data.meta.trendAggregation = {
+    mode: "auto",
+    policyVersion: "calendar-buckets-v2",
+    valueMode: "interval",
     rangeStart: iso(plan.start),
     rangeEnd: iso(plan.end),
     effectiveEnd: iso(plan.end),
     asOf: iso(plan.end),
     intervalSeconds: plan.seconds,
     intervalMonths: plan.seconds === null ? 1 : null,
-  });
-  data.meta.collectionPolicy!.asOf = iso(plan.end);
-  Object.assign(data.meta.collectionPolicy!.annotations[0], {
-    rangeStart: iso(plan.start),
-    rangeEnd: iso(plan.end),
-  });
+  };
+  data.meta.collectionPolicy = {
+    policyVersion: "proj-315-pending",
+    asOf: iso(plan.end),
+    status: "pending",
+    annotations: [
+      {
+        scope: "period",
+        rangeStart: iso(plan.start),
+        rangeEnd: iso(plan.end),
+        teamId: null,
+        reasons: ["policy_integration_pending"],
+        evidenceRefs: [],
+      },
+    ],
+  };
   const value = <T,>(v: T) => ({
     value: v,
     status: "complete" as const,
