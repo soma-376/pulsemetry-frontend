@@ -747,7 +747,7 @@ test("317 자동 시간 구간의 현재·미래·기록 없음", async ({ page 
   });
   await region.scrollIntoViewIfNeeded();
   const slider = region.getByRole("slider");
-  await expect(slider).toHaveAttribute("aria-valuemax", "24");
+  await expect(slider).toHaveAttribute("aria-valuemax", "4");
   await slider.focus();
   await slider.press("Home");
   await slider.press("ArrowRight");
@@ -775,24 +775,21 @@ test("317 자동 시간 구간의 현재·미래·기록 없음", async ({ page 
     [
       "집계 중인 실제 시간 구간",
       "명시적 0과 기록 없는 구간 구분",
-      "미래는 빈 영역으로 유지",
+      "미래 구간은 반환하지 않음",
     ],
     region,
   );
   await slider.press("End");
   await expect(slider).toHaveAttribute(
     "aria-valuetext",
-    /2026-11-05 00:00 KST.*미도래/,
+    /2026-11-04 10:30 KST.*집계 중/,
   );
   await capture(
     page,
     "auto-upcoming",
-    "자동 추이 · 아직 도래하지 않은 구간",
+    "자동 추이 · 현재 시각으로 잘린 마지막 구간",
     "PROJ-317",
-    [
-      "24개 연속 구간의 마지막까지 탐색",
-      "미도래 값은 null이며 수집 공백으로 단정하지 않음",
-    ],
+    ["4개 연속 구간의 마지막까지 탐색", "현재 시각 뒤 구간을 탐색하지 않음"],
     region,
   );
 });
@@ -821,16 +818,16 @@ test("317 빈 자동 기간의 개요·팀은 시간축을 유지한다", async 
     page.getByText("선택한 기간에 데이터가 없습니다", { exact: true }),
   ).toBeVisible();
   const slider = page.getByRole("slider");
-  await expect(slider).toHaveAttribute("aria-valuemax", "24");
+  await expect(slider).toHaveAttribute("aria-valuemax", "4");
   await slider.focus();
   await slider.press("End");
-  await expect(slider).toHaveAttribute("aria-valuetext", /미도래/);
+  await expect(slider).toHaveAttribute("aria-valuetext", /집계 중/);
   await capture(
     page,
     "auto-overview-empty",
     "개요 · 빈 자동 기간도 시간축 유지",
     "PROJ-317",
-    ["기간 빈 안내", "24개 시간 구간", "미도래 방향키 탐색 유지"],
+    ["기간 빈 안내", "4개 시간 구간", "현재까지 방향키 탐색 유지"],
     page.getByRole("main"),
   );
   const teams = autoTeamsResponse();
@@ -865,16 +862,16 @@ test("317 빈 자동 기간의 개요·팀은 시간축을 유지한다", async 
     page.getByText("선택한 기간에 데이터가 없습니다", { exact: true }),
   ).toBeVisible();
   const teamSlider = page.getByRole("slider");
-  await expect(teamSlider).toHaveAttribute("aria-valuemax", "24");
+  await expect(teamSlider).toHaveAttribute("aria-valuemax", "4");
   await teamSlider.focus();
   await teamSlider.press("End");
-  await expect(teamSlider).toHaveAttribute("aria-valuetext", /미도래/);
+  await expect(teamSlider).toHaveAttribute("aria-valuetext", /집계 중/);
   await capture(
     page,
     "auto-teams-empty",
     "팀 분석 · 빈 자동 기간도 시간축 유지",
     "PROJ-317",
-    ["팀이 없을 때도 24개 시간축과 미도래 탐색 유지", "비용·토큰 선택 유지"],
+    ["팀이 없을 때도 4개 시간축과 현재까지 탐색 유지", "비용·토큰 선택 유지"],
     page.getByRole("main"),
   );
 });

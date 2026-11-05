@@ -108,6 +108,9 @@ export function sessionPreservationTests(bucket: "day" | "auto") {
               : { meta: source.meta, comparison: source.comparison, team },
           });
         }
+        const selected = url.pathname.includes("/unassigned/users")
+          ? source.unassigned
+          : team;
         const sort = url.searchParams.get("sort") ?? "cost";
         sorts.push(sort);
         const rows =
@@ -115,13 +118,13 @@ export function sessionPreservationTests(bucket: "day" | "auto") {
         return route.fulfill({
           json: {
             meta: source.meta,
-            team: { teamId: team.teamId, teamName: team.teamName },
+            team: { teamId: selected.teamId, teamName: selected.teamName },
             summary: {
               usage: {
-                activeUsers: team.metrics.activeUsers,
-                equivalentCostUsd: team.metrics.equivalentCostUsd,
-                sessionCount: team.metrics.sessionCount,
-                totalTokens: team.metrics.totalTokens,
+                activeUsers: selected.metrics.activeUsers,
+                equivalentCostUsd: selected.metrics.equivalentCostUsd,
+                sessionCount: selected.metrics.sessionCount,
+                totalTokens: selected.metrics.totalTokens,
               },
               averageEquivalentCostUsd: "2.000000",
               cacheHitRatio: complete(0.5),

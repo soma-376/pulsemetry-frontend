@@ -1,3 +1,4 @@
+import { plannedTrendBuckets } from "../../src/lib/api/trend-aggregation";
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
@@ -30,18 +31,25 @@ const missing = (future: boolean) => ({
 });
 const scenarios = [
   {
-    id: "24h",
-    count: 24,
-    intervalSeconds: 3600,
+    id: "today-4",
+    count: 4,
+    intervalSeconds: 10800,
     startDate: "2026-11-04",
     endDate: "2026-11-04",
   },
   {
-    id: "60-halfdays",
-    count: 60,
-    intervalSeconds: 43200,
+    id: "30days-10",
+    count: 10,
+    intervalSeconds: 259200,
     startDate: "2026-09-01",
     endDate: "2026-09-30",
+  },
+  {
+    id: "year-12",
+    count: 12,
+    intervalSeconds: null,
+    startDate: "2025-11-01",
+    endDate: "2026-10-31",
   },
 ] as const;
 type Scenario = (typeof scenarios)[number];
@@ -79,7 +87,7 @@ function updateRange(
     | ReturnType<typeof autoTeamsResponse>["meta"],
   startDate: string,
   endDate: string,
-  intervalSeconds: number,
+  intervalSeconds: number | null,
 ) {
   const start = Date.parse(`${startDate}T00:00:00+09:00`);
   const end = Date.parse(`${endDate}T00:00:00+09:00`) + 86400_000;
@@ -94,6 +102,10 @@ function updateRange(
     rangeStart: new Date(start).toISOString(),
     rangeEnd: new Date(end).toISOString(),
     intervalSeconds,
+    intervalMonths: intervalSeconds === null ? 1 : null,
+    effectiveEnd: new Date(
+      Math.max(start, Math.min(end, Date.parse(meta.trendAggregation.asOf))),
+    ).toISOString(),
   });
   Object.assign(meta.collectionPolicy.annotations[0], {
     rangeStart: new Date(start).toISOString(),
@@ -105,10 +117,10 @@ function updateRange(
 function fixtures(scenario: Scenario) {
   const overview = autoOverview();
   const teams = autoTeamsResponse();
-  if (scenario.count === 60) {
-    // 시간축 레이아웃 전용 명시 fixture: 각 12시간 구간에 비용 1 USD/토큰 10의 기록 하나.
+  if (scenario.count !== 4) {
+    // 시간축 레이아웃 전용 명시 fixture: 각 자동 구간에 비용 1 USD/토큰 10의 기록 하나.
     // 실제 SQL 집계 검증은 별도의 실제 API suite가 담당한다.
-    const { start } = updateRange(
+    updateRange(
       overview.meta,
       scenario.startDate,
       scenario.endDate,
@@ -122,11 +134,18 @@ function fixtures(scenario: Scenario) {
     );
     overview.meta.dataState = "ready";
     teams.meta.dataState = "ready";
-    overview.meta.currentCoverage = { status: "complete", observedDays: 30 };
-    teams.meta.currentCoverage = { status: "complete", observedDays: 30 };
-    const boundaries = Array.from({ length: 60 }, (_, i) => ({
-      bucketStart: new Date(start + i * 43200_000).toISOString(),
-      bucketEnd: new Date(start + (i + 1) * 43200_000).toISOString(),
+    overview.meta.currentCoverage = {
+      status: "complete",
+      observedDays: overview.meta.dayCount,
+    };
+    teams.meta.currentCoverage = {
+      status: "complete",
+      observedDays: overview.meta.dayCount,
+    };
+    const plan = plannedTrendBuckets(scenario.startDate, scenario.endDate);
+    const boundaries = plan.starts.map((boundary, i) => ({
+      bucketStart: new Date(boundary).toISOString(),
+      bucketEnd: new Date(plan.starts[i + 1] ?? plan.end).toISOString(),
       temporalState: "elapsed" as const,
       usageRows: 1,
     }));
@@ -142,18 +161,25 @@ function fixtures(scenario: Scenario) {
       })),
     };
     if (!overview.summary) throw Error("summary fixture expected");
-    Object.assign(overview.summary.equivalentCostUsd, complete("60.000000"));
-    Object.assign(overview.summary.totalTokens, complete(600));
+    Object.assign(
+      overview.summary.equivalentCostUsd,
+      complete(`${scenario.count}.000000`),
+    );
+    Object.assign(overview.summary.totalTokens, complete(scenario.count * 10));
     Object.assign(overview.summary.activeUsers, complete(1));
     Object.assign(overview.summary.sessionCount, complete(1));
     Object.assign(
       overview.summary.equivalentCostPerUserUsd,
-      complete("60.000000"),
+      complete(`${scenario.count}.000000`),
     );
-    overview.summary.equivalentCostPerSessionUsd = complete("60.000000");
+    overview.summary.equivalentCostPerSessionUsd = complete(
+      `${scenario.count}.000000`,
+    );
     overview.summary.sessionsPerUser = complete(1);
-    overview.summary.knownEquivalentCostUsd = complete("60.000000");
-    overview.summary.pricedUsageRows = 60;
+    overview.summary.knownEquivalentCostUsd = complete(
+      `${scenario.count}.000000`,
+    );
+    overview.summary.pricedUsageRows = scenario.count;
     overview.summary.unpricedUsageRows = 0;
     const trend = boundaries.map((point, i) => ({
       ...point,
@@ -170,18 +196,26 @@ function fixtures(scenario: Scenario) {
       teams.totals,
       ...teams.teams.items.map((team) => team.metrics),
     ]) {
-      Object.assign(metrics.equivalentCostUsd, complete("60.000000"));
-      Object.assign(metrics.totalTokens, complete(600));
+      Object.assign(
+        metrics.equivalentCostUsd,
+        complete(`${scenario.count}.000000`),
+      );
+      Object.assign(metrics.totalTokens, complete(scenario.count * 10));
       Object.assign(metrics.activeUsers, complete(1));
       Object.assign(metrics.sessionCount, complete(1));
-      Object.assign(metrics.equivalentCostPerUserUsd, complete("60.000000"));
-      metrics.equivalentCostPerSessionUsd = complete("60.000000");
+      Object.assign(
+        metrics.equivalentCostPerUserUsd,
+        complete(`${scenario.count}.000000`),
+      );
+      metrics.equivalentCostPerSessionUsd = complete(
+        `${scenario.count}.000000`,
+      );
       metrics.sessionsPerUser = complete(1);
-      metrics.tokensPerUser = complete(600);
-      metrics.tokensPerSession = complete(600);
+      metrics.tokensPerUser = complete(scenario.count * 10);
+      metrics.tokensPerSession = complete(scenario.count * 10);
       metrics.effectiveCostPerMillionTokensUsd = complete("100000.000000");
-      metrics.knownEquivalentCostUsd = complete("60.000000");
-      metrics.pricedUsageRows = 60;
+      metrics.knownEquivalentCostUsd = complete(`${scenario.count}.000000`);
+      metrics.pricedUsageRows = scenario.count;
       metrics.unpricedUsageRows = 0;
     }
   }
@@ -281,6 +315,8 @@ async function layout(axis: Locator): Promise<Layout> {
 }
 function violations(measured: Layout, count: number) {
   const issues: string[] = [];
+  if (count === 0)
+    return measured.ticks.length === 0 ? [] : ["미래 구간 눈금이 존재함"];
   if (measured.width <= 0) issues.push("축의 너비가 0이다");
   if (measured.ticks.length < 2) issues.push("양끝 눈금이 없다");
   if (measured.ticks[0]?.index !== 0) issues.push("첫 구간 눈금이 없다");
@@ -504,7 +540,7 @@ for (const scenario of scenarios)
           // 좁은 화면의 펼친 사이드바는 본문 위에 겹치는 기존 동작이므로 캡처는 접은 상태를 쓴다.
           const photograph =
             (width === 1440 && expanded) ||
-            ((width === 390 || (width === 320 && scenario.count === 24)) &&
+            ((width === 390 || (width === 320 && scenario.count === 4)) &&
               !expanded);
           const id = `${surface}-${scenario.id}-${width}`;
           if (photograph && !captured.has(id)) {
@@ -520,19 +556,19 @@ for (const scenario of scenarios)
           }
           if (
             surface === "overview" &&
-            scenario.count === 24 &&
+            scenario.count === 4 &&
             width === 390 &&
             !expanded
           ) {
             const slider = region.getByRole("slider");
             await slider.focus();
             await slider.press("End");
-            await expect(slider).toHaveAttribute("aria-valuetext", /미도래/);
+            await expect(slider).toHaveAttribute("aria-valuetext", /집계 중/);
             await capture(
               page,
               region,
-              "overview-24h-390-tooltip",
-              "개요 · 모바일 양끝 눈금과 미도래 구간 탐색",
+              "overview-today-390-tooltip",
+              "개요 · 모바일 양끝 눈금과 현재 구간 탐색",
               scenario.count,
               entries,
             );
@@ -545,7 +581,7 @@ for (const scenario of scenarios)
   }
 
 for (const state of ["empty", "future"] as const) {
-  test(`${state}: 빈 기간·전체 미래의 개요와 팀에서도 양끝 시간축 보존`, async ({
+  test(`${state}: 빈 기간은 현재까지 탐색하고 전체 미래는 빈 시간축으로 표시`, async ({
     page,
   }) => {
     const data = fixtures(scenarios[0]);
@@ -554,9 +590,9 @@ for (const state of ["empty", "future"] as const) {
       data.overview.meta,
       startDate,
       startDate,
-      3600,
+      10800,
     );
-    updateRange(data.teams.meta, startDate, startDate, 3600);
+    updateRange(data.teams.meta, startDate, startDate, 10800);
     data.overview.meta.dataState = "no_data";
     data.overview.meta.currentCoverage = { status: "none", observedDays: 0 };
     data.overview.summary = null;
@@ -571,8 +607,10 @@ for (const state of ["empty", "future"] as const) {
       const future = state === "future" || point.temporalState === "upcoming";
       return {
         ...point,
-        bucketStart: new Date(start + i * 3600_000).toISOString(),
-        bucketEnd: new Date(start + (i + 1) * 3600_000).toISOString(),
+        bucketStart: new Date(start + i * 10800_000).toISOString(),
+        bucketEnd: new Date(
+          Math.min(start + (i + 1) * 10800_000, Date.parse(contract.asOf)),
+        ).toISOString(),
         temporalState: future ? ("upcoming" as const) : point.temporalState,
         usageRows: future ? null : 0,
         pricedUsageRows: future ? null : 0,
@@ -588,8 +626,10 @@ for (const state of ["empty", "future"] as const) {
         const future = state === "future" || point.temporalState === "upcoming";
         return {
           ...point,
-          bucketStart: new Date(start + i * 3600_000).toISOString(),
-          bucketEnd: new Date(start + (i + 1) * 3600_000).toISOString(),
+          bucketStart: new Date(start + i * 10800_000).toISOString(),
+          bucketEnd: new Date(
+            Math.min(start + (i + 1) * 10800_000, Date.parse(contract.asOf)),
+          ).toISOString(),
           temporalState: future ? ("upcoming" as const) : point.temporalState,
           usageRows: future ? null : 0,
           pricedUsageRows: future ? null : 0,
@@ -601,6 +641,11 @@ for (const state of ["empty", "future"] as const) {
         };
       },
     );
+    if (state === "future") {
+      data.overview.trend.points = [];
+      data.teams.unassigned.trend = [];
+    }
+    const count = state === "future" ? 0 : 4;
     for (const metrics of [data.teams.totals, data.teams.unassigned.metrics]) {
       metrics.pricedUsageRows = 0;
       metrics.unpricedUsageRows = 0;
@@ -618,24 +663,28 @@ for (const state of ["empty", "future"] as const) {
       for (const width of [1440, 390, 320]) {
         await page.setViewportSize({ width, height: 1200 });
         await sidebar(page, width === 1440);
-        await assertLayout(page, timeAxis(region), 24);
+        await assertLayout(page, timeAxis(region), count);
         if (width === 390)
           await capture(
             page,
             region,
             `${surface}-${state}-390`,
             `${surface === "overview" ? "개요" : "팀 누적"} · ${state === "future" ? "전체 미래" : "빈 기간"} · 모바일`,
-            24,
+            count,
             entries,
           );
       }
       const slider = region.getByRole("slider");
-      await slider.focus();
-      await slider.press("Home");
-      await expect(slider).toHaveAttribute("aria-valuenow", "1");
-      await slider.press("End");
-      await expect(slider).toHaveAttribute("aria-valuenow", "24");
-      await expect(slider).toHaveAttribute("aria-valuetext", /미도래/);
+      if (state === "future") {
+        await expect(slider).toHaveCount(0);
+      } else {
+        await slider.focus();
+        await slider.press("Home");
+        await expect(slider).toHaveAttribute("aria-valuenow", "1");
+        await slider.press("End");
+        await expect(slider).toHaveAttribute("aria-valuenow", "4");
+        await expect(slider).toHaveAttribute("aria-valuetext", /집계 중/);
+      }
     }
     await saveEntries(state, entries);
   });

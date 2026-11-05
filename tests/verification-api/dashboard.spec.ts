@@ -313,8 +313,8 @@ for (const width of [1440, 390]) {
       page.getByRole("region", { name: "세션 수", exact: true }),
     ).toContainText("6개");
     if (mode === "auto") {
-      expect(data.trend!.points).toHaveLength(60);
-      expect(data.meta.trendAggregation?.intervalSeconds).toBe(43200);
+      expect(data.trend!.points).toHaveLength(10);
+      expect(data.meta.trendAggregation?.intervalSeconds).toBe(259200);
     }
     await capture(
       "overview",
@@ -328,7 +328,7 @@ for (const width of [1440, 390]) {
     await expect(slider).toHaveAttribute("aria-valuetext", /2026-09-01/);
     await capture(
       "overview-tooltip",
-      mode === "auto" ? "개요: 12시간 · 60구간 탐색" : "개요: 일별 호환 모드",
+      mode === "auto" ? "개요: 3일 · 10구간 탐색" : "개요: 일별 호환 모드",
       "PROJ-317",
       slider,
     );
@@ -579,7 +579,8 @@ for (const width of [1440, 390]) {
       );
       const data = overviewSchema.parse(await (await pending).json());
       expect(data.summary!.equivalentCostUsd.value).toBe("0.750000");
-      expect(data.trend!.points).toHaveLength(24);
+      expect(data.trend!.points.length).toBeGreaterThan(0);
+      expect(data.trend!.points.length).toBeLessThanOrEqual(8);
       const slider = page.getByRole("slider").first();
       await slider.scrollIntoViewIfNeeded();
       await slider.focus();
@@ -587,7 +588,7 @@ for (const width of [1440, 390]) {
       await expect(slider).toHaveAttribute("aria-valuetext", /KST/);
       await capture(
         "today-future-tail",
-        "오늘: 시간별 관측과 미도래 구간",
+        "오늘: 3시간별 관측과 현재 시각 종료",
         "PROJ-317",
         slider,
       );
@@ -610,18 +611,13 @@ for (const width of [1440, 390]) {
         `/overview?startDate=${h.futureDate}&endDate=${h.futureDate}&compare=none`,
       );
       const future = overviewSchema.parse(await (await futurePending).json());
-      expect(future.trend!.points).toHaveLength(24);
-      for (const point of future.trend!.points) {
-        expect("temporalState" in point && point.temporalState).toBe(
-          "upcoming",
-        );
-        expect(point.equivalentCostUsd.value).toBeNull();
-      }
+      expect(future.trend!.points).toHaveLength(0);
+      await expect(page.getByRole("slider")).toHaveCount(0);
       await capture(
         "future-overview",
-        "미래 조회: 값은 비우고 시간축 보존",
+        "미래 조회: 빈 구간으로 표시",
         "PROJ-317",
-        page.getByRole("slider").first(),
+        page.getByRole("main"),
       );
     });
 }
