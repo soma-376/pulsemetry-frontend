@@ -96,7 +96,8 @@ test("실제 자동 집계 API → 10개 시간축 → 팀 상세·사용자 →
     "utf8",
   );
   expect(overviewCsv).toContain(`snapshot,${overview.meta.snapshotId}`);
-  expect(overviewCsv).toContain("1.123456");
+  // 첫 3일 버킷은 1.123456 + 2.000001을 정확히 합산한다.
+  expect(overviewCsv).toContain("3.123457");
   expect(overviewCsv).toContain("6.123459");
   const teamsResponse = page.waitForResponse((r) =>
     /\/analytics\/teams\?/.test(r.url()),
