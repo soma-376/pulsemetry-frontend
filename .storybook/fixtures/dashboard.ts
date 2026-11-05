@@ -1,3 +1,4 @@
+import { automaticOverviewFixture, automaticTeamsFixture } from "./auto-trend";
 import { delay, http, HttpResponse } from "msw";
 import { dailyOverviewSchema } from "@/lib/api/overview";
 import { teamsResponseSchema, teamUsersSchema } from "@/lib/api/teams";
@@ -108,7 +109,7 @@ function teams(url: URL) {
           change: null,
         };
     }
-  return data;
+  return automaticTeamsFixture(data);
 }
 
 /** 실제 API 클라이언트를 통과하는 응답. 상태는 주 조회에만 적용하고 공통 헤더는 정상으로 둔다. */
@@ -242,7 +243,7 @@ export function dashboardHandlers(
         data.teamUsage = null;
         data.errors = [];
       }
-      return HttpResponse.json(data);
+      return HttpResponse.json(automaticOverviewFixture(data));
     }),
     http.get(`${api}/analytics/teams`, ({ request }) =>
       HttpResponse.json(teams(new URL(request.url))),

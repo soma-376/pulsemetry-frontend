@@ -1,7 +1,5 @@
 "use client";
 
-import { configuredTrendBucket } from "@/lib/api/trend-aggregation";
-
 import { PageHeader } from "@/components/layout/PageHeader";
 
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -34,7 +32,7 @@ export function OverviewContent() {
       endDate: dates.end ?? dates.start,
       compare,
       timeZone: "Asia/Seoul",
-      bucket: configuredTrendBucket(),
+      bucket: "auto",
     }),
     enabled: configured,
     refetchInterval: (state) => {

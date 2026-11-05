@@ -1,3 +1,4 @@
+import { automaticOverviewFixture } from "../../.storybook/fixtures/auto-trend";
 import { dailyOverviewSchema } from "../../src/lib/api/overview";
 import type { Page } from "@playwright/test";
 import example from "../../docs/api/overview-response.example.json";
@@ -66,7 +67,13 @@ export async function mockOverview(
   await page.route(overviewUrl, async (route) => {
     const data = overviewFixture(route.request().url());
     modify?.(data);
-    await route.fulfill({ json: data, headers: corsHeaders(page) });
+    await route.fulfill({
+      json:
+        new URL(route.request().url()).searchParams.get("bucket") === "auto"
+          ? automaticOverviewFixture(data)
+          : data,
+      headers: corsHeaders(page),
+    });
   });
 }
 

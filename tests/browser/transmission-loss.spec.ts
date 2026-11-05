@@ -79,7 +79,7 @@ test("헤더 최초 조회는 로딩·실패·재시도를 0건과 구분한다"
   await expect(bar).not.toContainText("0건");
   failed = false;
   await bar.getByRole("button", { name: "다시 조회" }).click();
-  await expect(bar).toContainText("최근 7일 보고된 전송 손실 10건");
+  await expect(bar).toContainText("최근 7일 전송 손실 10건");
 });
 
 test("현재 전송 상태 조회 실패가 독립적인 손실 수량을 덮어쓰지 않는다", async ({
@@ -100,12 +100,12 @@ test("현재 전송 상태 조회 실패가 독립적인 손실 수량을 덮어
     route.fulfill({ json: affected(null) }),
   );
   await page.goto("/overview");
-  await page
-    .getByRole("button", { name: /최근 7일 보고된 전송 손실 10건/ })
-    .click();
-  const drawer = page.getByRole("dialog", { name: "전송 손실 상세" });
-  await expect(drawer).toContainText("최근 7일 보고된 전송 손실 10건");
-  await expect(drawer).toContainText("현재 전송 상태를 조회하지 못했습니다");
+  await page.getByRole("button", { name: /최근 7일 전송 손실 10건/ }).click();
+  const drawer = page.getByRole("dialog", { name: "전송 손실" });
+  await expect(drawer.getByLabel("전송 손실 집계")).toContainText("10건");
+  await expect(
+    page.getByLabel("조직 수집 현황", { exact: true }),
+  ).toContainText("수집 상태 확인 불가");
   await expect(drawer).toContainText("개발 노트북");
 });
 
@@ -131,13 +131,15 @@ for (const width of [1440, 390])
       "/overview?startDate=2026-09-01&endDate=2026-09-07&compare=none",
     );
     const trigger = page.getByRole("button", {
-      name: /최근 7일 보고된 전송 손실 10건/,
+      name: /최근 7일 전송 손실 10건/,
     });
     await trigger.focus();
     await page.keyboard.press("Enter");
-    const drawer = page.getByRole("dialog", { name: "전송 손실 상세" });
-    await expect(drawer).toContainText("데몬이 보고한 손실 페이로드 수입니다");
-    await expect(drawer).toContainText("보고 상태 미확인");
+    const drawer = page.getByRole("dialog", { name: "전송 손실" });
+    await expect(drawer).not.toContainText("데몬이 보고한");
+    await expect(
+      page.getByLabel("조직 수집 현황", { exact: true }),
+    ).toContainText("보고 상태 미확인");
     await expect(drawer).not.toContainText("수집 중단");
     await expect(drawer).toContainText("개발 노트북");
     await drawer.getByRole("button", { name: "더 보기" }).click();
@@ -167,30 +169,36 @@ test("부분 집계의 제한과 갱신 실패를 표시하고 마지막 정상 
   );
   await page.goto("/overview");
   const trigger = page.getByRole("button", {
-    name: /최근 7일 보고된 전송 손실 10건 · 일부 집계/,
+    name: /최근 7일 전송 손실 10건 · 일부 집계/,
   });
-  await expect(trigger).toContainText("집계 시작");
+  await expect(trigger).toContainText("일부 집계");
   await page.route(ingestStatusUrl, (route) =>
     route.fulfill({ status: 503, json: { error: { code: "unavailable" } } }),
   );
   await page.getByRole("button", { name: "새로고침", exact: true }).click();
-  await expect(trigger).toContainText("갱신 실패", { timeout: 15000 });
-  await expect(trigger).toContainText("2026. 11. 4.");
+  await expect(
+    page.getByLabel("조직 수집 현황", { exact: true }),
+  ).toContainText("갱신 실패", { timeout: 15000 });
+  await expect(
+    page.getByLabel("조직 수집 현황", { exact: true }),
+  ).toContainText("마지막 수신: 2026년 10월 27일 09:00");
   await trigger.click();
-  const drawer = page.getByRole("dialog", { name: "전송 손실 상세" });
+  const drawer = page.getByRole("dialog", { name: "전송 손실" });
   await expect(drawer).toContainText("같은 실행의 손실 누계가 감소한 보고");
   await expect(drawer).toContainText("최근 7일 중 일부 기간부터 집계");
   await expect(drawer).toContainText("마지막으로 확인한 집계");
 });
 
-test("구버전 집계 정보 없음도 갱신 실패와 마지막 응답 기준 시각을 유지한다", async ({
+test("구버전 집계 정보 없음도 갱신 실패와 마지막 수신 시각을 유지한다", async ({
   page,
 }) => {
   await prepare(page);
   await page.goto("/overview");
   const trigger = page.getByRole("button", { name: /집계 정보 없음/ });
-  await expect(trigger).toContainText("2026. 11. 4.");
-  await expect(trigger).toContainText("기준");
+  await expect(
+    page.getByLabel("조직 수집 현황", { exact: true }),
+  ).toContainText("마지막 수신: 2026년 10월 27일 09:00");
+  await expect(trigger).not.toContainText("기준");
   const headerHeight = (await page
     .getByLabel("공통 헤더", { exact: true })
     .boundingBox())!.height;
@@ -198,15 +206,19 @@ test("구버전 집계 정보 없음도 갱신 실패와 마지막 응답 기준
     route.fulfill({ status: 503, json: { error: { code: "unavailable" } } }),
   );
   await page.getByRole("button", { name: "새로고침", exact: true }).click();
-  await expect(trigger).toContainText("갱신 실패");
-  await expect(trigger).toContainText("2026. 11. 4.");
+  await expect(
+    page.getByLabel("조직 수집 현황", { exact: true }),
+  ).toContainText("갱신 실패");
+  await expect(
+    page.getByLabel("조직 수집 현황", { exact: true }),
+  ).toContainText("마지막 수신: 2026년 10월 27일 09:00");
   await expect(trigger).not.toContainText("0건");
   expect(
     (await page.getByLabel("공통 헤더", { exact: true }).boundingBox())!.height,
   ).toBe(headerHeight);
   await trigger.click();
-  const drawer = page.getByRole("dialog", { name: "전송 손실 상세" });
-  await expect(drawer).toContainText("2026. 11. 4.");
+  const drawer = page.getByRole("dialog", { name: "전송 손실" });
+  await expect(drawer).not.toContainText("기준 시각");
   await expect(drawer).toContainText(
     "갱신 실패 · 마지막으로 확인한 집계를 표시합니다",
   );
@@ -216,7 +228,7 @@ for (const scenario of [
   {
     name: "확인된 0",
     value: { ...loss, payloadCount: 0, affectedInstallationCount: 0 },
-    label: "최근 7일 보고된 전송 손실 0건",
+    label: "최근 7일 전송 손실 0건",
   },
   {
     name: "집계 불가",
@@ -249,7 +261,7 @@ for (const scenario of [
     ).toBeVisible();
     if (scenario.name !== "확인된 0")
       await expect(
-        page.getByText("최근 7일 보고된 전송 손실 0건", { exact: true }),
+        page.getByText("최근 7일 전송 손실 0건", { exact: true }),
       ).toHaveCount(0);
   });
 
@@ -272,10 +284,10 @@ test("영향 기기 상세는 조회 중·실패에도 닫고 다시 시도할 �
   });
   await page.goto("/overview");
   const trigger = page.getByRole("button", {
-    name: /최근 7일 보고된 전송 손실 10건/,
+    name: /최근 7일 전송 손실 10건/,
   });
   await trigger.click();
-  const drawer = page.getByRole("dialog", { name: "전송 손실 상세" });
+  const drawer = page.getByRole("dialog", { name: "전송 손실" });
   await expect(drawer).toContainText("영향 기기를 불러오는 중");
   await page.keyboard.press("Escape");
   release();
@@ -338,10 +350,8 @@ test("만료된 손실 기준은 요약을 다시 읽고 열린 상세에서 새
     );
   });
   await page.goto("/overview");
-  await page
-    .getByRole("button", { name: /최근 7일 보고된 전송 손실 10건/ })
-    .click();
-  const drawer = page.getByRole("dialog", { name: "전송 손실 상세" });
+  await page.getByRole("button", { name: /최근 7일 전송 손실 10건/ }).click();
+  const drawer = page.getByRole("dialog", { name: "전송 손실" });
   await expect(drawer).toContainText(
     "집계 기준이 만료되었습니다. 최신 집계를 다시 조회하세요",
   );
@@ -357,15 +367,48 @@ test("만료된 손실 기준은 요약을 다시 읽고 열린 상세에서 새
   await expect(drawer).toContainText(
     "갱신 실패 · 마지막으로 확인한 집계를 표시합니다",
   );
-  await expect(drawer).toContainText("최근 7일 보고된 전송 손실 10건");
+  await expect(drawer.getByLabel("전송 손실 집계")).toContainText("10건");
   await expect(drawer).toBeVisible();
   expect(summaryRequests).toBeGreaterThan(0);
   expect(windows).toEqual([loss.windowEnd]);
   summaryFails = false;
   await drawer.getByRole("button", { name: "최신 집계 조회" }).click();
-  await expect(drawer).toContainText("최근 7일 보고된 전송 손실 12건");
+  await expect(drawer.getByLabel("전송 손실 집계")).toContainText("12건");
   await expect(drawer).toContainText("개발 노트북");
   await expect(drawer).not.toContainText("집계 기준이 만료되었습니다");
   await expect(drawer).not.toContainText("갱신 실패");
   expect(windows).toEqual([loss.windowEnd, newEnd]);
+});
+
+test("정상 수집과 과거 손실을 함께 표시하고 popover 바깥 클릭으로 닫는다", async ({
+  page,
+}) => {
+  await prepare(page, loss);
+  await page.route(ingestStatusUrl, (route) =>
+    route.fulfill({
+      json: {
+        ...status(loss),
+        status: "healthy",
+        reason: null,
+        lastReceivedAt: "2026-11-05T05:02:00Z",
+      },
+    }),
+  );
+  await page.route("**/ingest-status/loss-installations?*", (route) =>
+    route.fulfill({ json: affected(null) }),
+  );
+  await page.goto("/overview");
+  const bar = page.getByLabel("조직 수집 현황", { exact: true });
+  await expect(bar).toContainText("수집 정상");
+  await expect(bar).toContainText("마지막 수신: 2026년 11월 5일 14:02");
+  const trigger = bar.getByRole("button", { name: /최근 7일 전송 손실 10건/ });
+  await trigger.click();
+  const popup = page.getByRole("dialog", { name: "전송 손실", exact: true });
+  await expect(popup).toBeVisible();
+  await expect(popup).toHaveAttribute("popover", "auto");
+  await expect(popup).not.toContainText("데몬이 보고한");
+  await expect(popup).not.toContainText("보고 공백이나 전송 대기");
+  await page.getByRole("heading", { name: "개요", exact: true }).click();
+  await expect(popup).not.toBeVisible();
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
 });
