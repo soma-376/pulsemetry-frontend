@@ -94,7 +94,14 @@ test("개요 자동 현재까지 4개 축 · KST 범위 키보드 · Decimal CSV
   );
   await expect(slider).toHaveAttribute("aria-valuetext", /\$0\.000000000003/);
   await slider.press("ArrowRight");
-  await expect(slider).toHaveAttribute("aria-valuetext", /확인할 근거가 부족/);
+  await expect(slider).toHaveAttribute(
+    "aria-valuetext",
+    /관측된 사용 기록이 없습니다/,
+  );
+  await expect(slider).not.toHaveAttribute(
+    "aria-valuetext",
+    /확인할 근거가 부족/,
+  );
   await slider.press("ArrowRight");
   await slider.press("ArrowRight");
   await expect(slider).toHaveAttribute("aria-valuetext", /집계 중/);
@@ -239,6 +246,18 @@ test("자동 빈 기간은 현재까지 4개 구간과 키보드 탐색을 유�
   await overviewSlider.focus();
   await overviewSlider.press("End");
   await expect(overviewSlider).toHaveAttribute("aria-valuetext", /집계 중/);
+  await expect(overviewSlider).toHaveAttribute(
+    "aria-valuetext",
+    /관측된 사용 기록이 없습니다/,
+  );
+  await expect(overviewSlider).not.toHaveAttribute(
+    "aria-valuetext",
+    /확인할 근거가 부족|확인 불가/,
+  );
+  await expect(page.locator('[data-trend-gap="관측된 사용 없음"]')).toHaveCount(
+    1,
+  );
+  await expect(page.locator('[data-trend-gap*="확인 불가"]')).toHaveCount(0);
   const data = autoTeamsResponse();
   data.meta.dataState = "no_data";
   data.teams = { items: [], nextOffset: null, totalCount: 0 };
@@ -272,6 +291,18 @@ test("자동 빈 기간은 현재까지 4개 구간과 키보드 탐색을 유�
   await teamSlider.focus();
   await teamSlider.press("End");
   await expect(teamSlider).toHaveAttribute("aria-valuetext", /집계 중/);
+  await expect(teamSlider).toHaveAttribute(
+    "aria-valuetext",
+    /관측된 사용 기록이 없습니다/,
+  );
+  await expect(teamSlider).not.toHaveAttribute(
+    "aria-valuetext",
+    /확인할 근거가 부족|확인 불가/,
+  );
+  await expect(page.locator('[data-trend-gap="관측된 사용 없음"]')).toHaveCount(
+    1,
+  );
+  await expect(page.locator('[data-trend-gap*="확인 불가"]')).toHaveCount(0);
 });
 
 test("30일 10개 자동 구간은 좁은 화면에서도 실제 시간과 명시적 0을 설명한다", async ({
