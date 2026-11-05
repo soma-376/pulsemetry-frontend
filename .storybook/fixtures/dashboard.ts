@@ -1,5 +1,5 @@
 import { delay, http, HttpResponse } from "msw";
-import { overviewSchema } from "@/lib/api/overview";
+import { dailyOverviewSchema } from "@/lib/api/overview";
 import { teamsResponseSchema, teamUsersSchema } from "@/lib/api/teams";
 import { membersDashboardSchema } from "@/lib/api/members";
 import { COMPANY_A } from "@/mocks/company-a";
@@ -74,7 +74,10 @@ function teams(url: URL) {
   data.teams.totalCount = data.teams.items.length;
   data.teams.nextOffset = null;
   for (const team of [...data.teams.items, data.unassigned]) {
-    team.trend = daily(team.trend, url).map((point, i, points) => ({
+    team.trend = daily(
+      team.trend.filter((p) => "date" in p),
+      url,
+    ).map((point, i, points) => ({
       ...point,
       cumulativeSessionCount: Math.round(
         ((team.metrics.sessionCount.value ?? 0) * (i + 1)) / points.length,
@@ -148,7 +151,7 @@ export function dashboardHandlers(
         ]),
     http.get(`${api}/analytics/overview`, async ({ request }) => {
       const url = new URL(request.url),
-        data = overviewSchema.parse(overviewExample);
+        data = dailyOverviewSchema.parse(overviewExample);
       Object.assign(data.meta, period(url));
       Object.assign(data.comparison, comparison(url));
       if (data.trend) data.trend.points = daily(data.trend.points, url);

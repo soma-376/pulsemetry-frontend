@@ -34,6 +34,7 @@ export type Band = {
 export type LineAreaChartProps = {
   domain: Domain;
   series: Series[];
+  positions?: number[];
   band?: Band;
   /**
    * 관측 이전 구간. 이 인덱스 앞쪽은 선을 그리지 않고 해칭으로 막습니다.
@@ -50,6 +51,7 @@ export type LineAreaChartProps = {
 export function LineAreaChart({
   domain,
   series,
+  positions,
   band,
   observedFrom = 0,
   className,
@@ -139,7 +141,7 @@ export function LineAreaChart({
       {series.map((s, i) => (
         <path
           key={i}
-          d={nullableLinePath(s.values, domain, observedFrom)}
+          d={nullableLinePath(s.values, domain, observedFrom, positions)}
           style={{
             fill: "none",
             stroke: s.color,
@@ -158,7 +160,7 @@ export function LineAreaChart({
             s.values[0] !== null && (
               <ellipse
                 key={`point-${i}`}
-                cx={xAt(0, count)}
+                cx={positions?.[0] ?? xAt(0, count)}
                 cy={yAt(s.values[0], domain)}
                 rx={0.8}
                 ry={1.2}

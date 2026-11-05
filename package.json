@@ -22,7 +22,9 @@
     "test:browser:mock": "playwright test --config=playwright.mock.config.ts",
     "storybook": "storybook dev -p 6006 --no-open --disable-telemetry",
     "build-storybook": "storybook build --disable-telemetry",
-    "fixtures:sync": "node scripts/sync-seed-fixtures.mjs"
+    "fixtures:sync": "node scripts/sync-seed-fixtures.mjs",
+    "test:browser:auto": "playwright test --config=playwright.auto.config.ts",
+    "test:e2e:auto": "playwright test --config=playwright.auto-api.config.ts"
   },
   "dependencies": {
     "@aws-crypto/sha256-js": "^5.2.0",

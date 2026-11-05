@@ -127,7 +127,9 @@ test("TEAMS-A-PARTIAL @p0 @read 팀 목록·제품 비중·드로어·사용자 
 
   // 누적 세션: 기준일 4일 전까지는 값, 그 뒤는 null — 안내 문구 없이도 누락 구간은 연결하지 않는다.
   for (const team of [...body.teams.items, body.unassigned]) {
-    const known = team.trend
+    const daily = team.trend.filter((point) => "date" in point);
+    expect(daily).toHaveLength(team.trend.length);
+    const known = daily
       .filter((point) => point.date <= day(-4))
       .map((point) => point.cumulativeSessionCount);
     expect(
@@ -139,16 +141,15 @@ test("TEAMS-A-PARTIAL @p0 @read 팀 목록·제품 비중·드로어·사용자 
       team.teamName,
     ).toEqual(known);
     expect(
-      team.trend
+      daily
         .filter((point) => point.date >= day(-3))
         .every((point) => point.cumulativeSessionCount === null),
       team.teamName,
     ).toBe(true);
   }
-  await panel.getByRole("tab", { name: "세션", exact: true }).click();
-  await expect(panel).toContainText(
-    "누적 세션은 시작일부터 완전하게 수집된 날까지만 그립니다",
-  );
+  await expect(
+    panel.getByRole("tab", { name: "세션", exact: true }),
+  ).toHaveCount(0);
 
   // 제품 비중: 두 도구가 섞인 팀은 조각 둘, 한 도구 팀은 한 조각(100%)이다.
   const mix = page.getByRole("region", { name: "팀별 벤더 비중", exact: true });
@@ -310,7 +311,9 @@ test("TEAMS-A-COMPLETE @p0 @read 완전한 두 기간이면 증감과 끊기지 
       team.metrics.sessionCount.value,
     );
   }
-  await panel.getByRole("tab", { name: "세션", exact: true }).click();
+  await expect(
+    panel.getByRole("tab", { name: "세션", exact: true }),
+  ).toHaveCount(0);
   await expect(panel).not.toContainText("누적 세션은 시작일부터");
   // 증감 열은 비율·신규·변화 없음 중 하나다("-"가 아니다).
   const deltas = await panel

@@ -8,14 +8,13 @@ import { costAxisLabel, trendAxisMax } from "@/lib/metrics/chart-axis";
 import { xAt } from "@/components/charts/scale";
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import {
-  type AxisKey,
+  type TrendAxisKey,
   type TeamsModel,
 } from "@/lib/metrics/teams-presentation";
 
-const AXIS_TABS: { key: AxisKey; label: string }[] = [
+const AXIS_TABS: { key: TrendAxisKey; label: string }[] = [
   { key: "cost", label: "비용" },
   { key: "token", label: "토큰" },
-  { key: "session", label: "세션" },
 ];
 
 const COLS =
@@ -43,8 +42,8 @@ export function TeamAxisPanel({
   onOpenTeam,
 }: {
   model: TeamsModel;
-  axis: AxisKey;
-  onAxisChange: (next: AxisKey) => void;
+  axis: TrendAxisKey;
+  onAxisChange: (next: TrendAxisKey) => void;
   /** 팀 키(팀 ID 또는 `unassigned`) → 선 숨김 */
   hidden: Record<string, boolean>;
   onToggleTeam: (key: string) => void;
@@ -61,12 +60,15 @@ export function TeamAxisPanel({
     (row) => row.team,
   );
   const shown = model.trend[axis].filter((s) => !hidden[s.key]);
-  const feedback = {
-    ...model.trendFeedback[axis],
-    series: model.trendFeedback[axis].series.filter((s) => !hidden[s.id]),
-  };
+  const feedback =
+    model.isEmpty && model.timeline
+      ? model.emptyFeedback
+      : {
+          ...model.trendFeedback[axis],
+          series: model.trendFeedback[axis].series.filter((s) => !hidden[s.id]),
+        };
 
-  const isEmpty = shown.length === 0;
+  const isEmpty = shown.length === 0 && !(model.isEmpty && model.timeline);
   // 누적선의 값은 서버 값의 합이라 0보다 작지 않다. 값이 하나도 없으면(모든 날이 확인 불가) 선을 그리지 않는다.
   const known = shown
     .flatMap((s) => s.values)
@@ -126,8 +128,16 @@ export function TeamAxisPanel({
         </div>
       </div>
 
+      {model.timeline && (
+        <p className="mb-2 text-[11px] text-text3">
+          선택 기간의 수집 상태는 아직 확인되지 않았습니다.
+        </p>
+      )}
       <div className="relative mb-3 flex flex-wrap items-baseline justify-between gap-3">
-        <span className="text-[13px] font-semibold">팀별 누적 추이</span>
+        <span className="text-[13px] font-semibold">
+          팀별 누적 추이
+          {model.timeline ? ` · ${model.timeline.intervalLabel}` : ""}
+        </span>
       </div>
       <div className="mb-[18px] grid grid-cols-[minmax(56px,max-content)_minmax(0,1fr)] gap-2">
         <div className="tnum flex h-[196px] flex-col justify-between text-right text-[11px] text-text3">
@@ -145,6 +155,7 @@ export function TeamAxisPanel({
             <>
               <LineAreaChart
                 domain={{ max }}
+                positions={model.timeline?.positions}
                 series={shown.map((s) => ({
                   values: s.values,
                   color: s.color,
@@ -155,7 +166,11 @@ export function TeamAxisPanel({
                 model={feedback}
                 max={max}
                 format={ax.format}
-                label="팀별 누적 사용량. 좌우 방향키로 날짜를 이동하세요"
+                label={
+                  model.timeline
+                    ? `팀별 누적 사용량 · ${model.timeline.intervalLabel}. KST 시간 범위를 좌우 방향키로 이동하세요`
+                    : "팀별 누적 사용량. 좌우 방향키로 날짜를 이동하세요"
+                }
               />
             </>
           )}
@@ -178,7 +193,7 @@ export function TeamAxisPanel({
                   key={i}
                   className={`absolute whitespace-nowrap ${i !== 0 && i !== model.dayLabels.length - 1 ? "@max-[300px]:hidden" : ""}`}
                   style={{
-                    left: `${xAt(i, model.dayLabels.length)}%`,
+                    left: `${model.timeline?.positions[i] ?? xAt(i, model.dayLabels.length)}%`,
                     transform:
                       model.dayLabels.length === 1
                         ? "translateX(-50%)"

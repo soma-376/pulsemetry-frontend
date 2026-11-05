@@ -3,6 +3,12 @@ import type { Overview, OverviewValue } from "./overview";
 export const numeric = (
   value: string | number | null | undefined,
 ): number | null => (value == null ? null : Number(value));
+/** 자동 추이 상세는 Number 변환 없이 서버 Decimal 자릿수를 그대로 표시한다. */
+export const exactMoneyText = (value: string | null | undefined) => {
+  if (value == null) return "-";
+  const [whole, fraction] = value.split(".");
+  return `$${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}${fraction === undefined ? "" : `.${fraction}`}`;
+};
 export const numberText = (value: number | null | undefined) =>
   value == null
     ? "-"
@@ -38,7 +44,13 @@ export function trendSegments(
   const segments: { index: number; value: number }[][] = [];
   let segment: { index: number; value: number }[] = [];
   points.forEach((p, index) => {
-    const v = p.observation === "unobserved" ? null : numeric(p[field].value);
+    const v = (
+      "bucketStart" in p
+        ? p.temporalState === "upcoming"
+        : p.observation === "unobserved"
+    )
+      ? null
+      : numeric(p[field].value);
     if (v === null) {
       if (segment.length) segments.push(segment);
       segment = [];

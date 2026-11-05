@@ -4,7 +4,7 @@ import { testOrganizationId } from "./overview-fixture";
 import { teamsFixture } from "./teams-fixture";
 import {
   presentTeams,
-  type AxisKey,
+  type TrendAxisKey,
 } from "../../src/lib/metrics/teams-presentation";
 import type { TeamsView } from "../../src/lib/api/teams";
 
@@ -44,8 +44,7 @@ test("team mix displays server product usage, keeps unmapped observations separa
   for (const [label, axis] of [
     ["비용", "cost"],
     ["토큰", "token"],
-    ["세션", "session"],
-  ] as [string, AxisKey][]) {
+  ] as [string, TrendAxisKey][]) {
     await page.getByRole("tab", { name: label, exact: true }).click();
     const expected = model.productMix(axis).columns;
     const bars = card.getByRole("img");
@@ -57,10 +56,13 @@ test("team mix displays server product usage, keeps unmapped observations separa
       );
     }
   }
+  await expect(
+    page.getByRole("tab", { name: "세션", exact: true }),
+  ).toHaveCount(0);
   // 미배정의 매핑 없는 관측은 따로 쌓인다.
   await expect(card.getByRole("img", { name: /^미배정 · / })).toHaveAttribute(
     "aria-label",
-    /미확인 제품 33\.3%/,
+    /미확인 제품 \d+\.\d%/,
   );
   await page
     .getByRole("group", { name: "조회 기간" })

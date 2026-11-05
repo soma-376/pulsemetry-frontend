@@ -1,5 +1,7 @@
 # 개요 화면 API
 
+자동 집계(`bucket=auto`)의 별도 DTO·시간축·snapshot 계약은 [자동 추이](auto-trend.md)를 따른다. 아래 일별 계약은 옵션 생략/`bucket=day`에서 유지한다.
+
 `GET /api/v1/organizations/{organizationId}/analytics/overview`
 
 브라우저는 동일 출처 BFF `/api/bff/dashboard`를 통해 호출한다. 인증·조직 인가와 기간 쿼리 계약은 유지한다.

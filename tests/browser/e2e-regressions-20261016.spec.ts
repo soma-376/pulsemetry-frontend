@@ -25,9 +25,11 @@ test("확인할 수 없는 총 토큰은 확정된 토큰 단위·설명을 표�
   });
   await page.goto("/overview");
   const tokens = page.getByRole("region", { name: "총 토큰 수", exact: true });
-  await expect(tokens).toContainText("전체 토큰 수를 확인할 수 없습니다");
+  await expect(tokens.getByText("-", { exact: true })).toBeVisible();
   await expect(tokens.getByText("토큰", { exact: true })).toHaveCount(0);
-  await expect(tokens).toContainText("값 확인 불가");
+  await expect(tokens.getByText("값 확인 불가", { exact: true })).toHaveCount(
+    0,
+  );
   await expect(tokens.getByText("비교 불가", { exact: true })).toHaveCount(0);
 });
 
@@ -47,16 +49,16 @@ test("비중을 확인할 수 없는 모델을 선택해도 확인 가능하다�
     name: "모델별 사용 환산액 비중",
     exact: true,
   });
-  await expect(mix).toContainText("사용 환산액 비중을 확인할 수 없습니다");
-  await expect(mix).toContainText("모델별 사용 정보만 확인할 수 있습니다");
+  await expect(mix.getByRole("status")).toHaveText("비중을 표시할 수 없습니다");
   await expect(mix).not.toContainText(
     "모델을 선택하면 사용 환산액 비중을 확인할 수 있습니다",
   );
-  const option = mix.getByRole("button").first();
+  const option = mix.locator("button[title]").first();
   await option.click();
   await expect(option).toHaveAttribute("aria-pressed", "true");
-  await expect(mix).toContainText("모델별 사용 정보만 확인할 수 있습니다");
-  await mix.getByRole("button", { name: "선택 해제", exact: true }).click();
+  await expect(mix.getByRole("status")).toHaveText("비중을 표시할 수 없습니다");
+  await expect(option).not.toContainText("%");
+  await option.click();
   await expect(option).toHaveAttribute("aria-pressed", "false");
 });
 

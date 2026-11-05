@@ -182,7 +182,7 @@ async function rejectSession(page: import("@playwright/test").Page) {
   );
 }
 
-test("업무 API 401 뒤 로그인으로 이동하고 조직 데이터를 숨긴다", async ({
+test("업무 API 401 뒤 세션 만료 안내와 로그인 링크를 표시하고 조직 데이터를 숨긴다", async ({
   page,
 }) => {
   let calls = 0;
@@ -197,8 +197,12 @@ test("업무 API 401 뒤 로그인으로 이동하고 조직 데이터를 숨긴
   await page.goto(
     "/overview?startDate=2026-09-07&endDate=2026-09-13&compare=prev_week",
   );
-  await expect(page).toHaveURL(/\/login$/);
-  await expect(page.getByLabel("회사 이메일", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "세션이 만료되었습니다" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "로그인 페이지로 이동" }),
+  ).toHaveAttribute("href", /^\/login\?redirecturl=/);
   await expect(
     page.getByRole("region", { name: "사용 환산액", exact: true }),
   ).toHaveCount(0);
@@ -277,8 +281,12 @@ test("세션이 끝나면 재조회 이전의 데이터도 숨기고 공통 로�
   );
   await rejectSession(page);
   await page.getByRole("button", { name: "새로고침", exact: true }).click();
-  await expect(page).toHaveURL(/\/login$/);
-  await expect(page.getByLabel("회사 이메일", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "세션이 만료되었습니다" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "로그인 페이지로 이동" }),
+  ).toHaveAttribute("href", /^\/login\?redirecturl=/);
   await expect(cost).toHaveCount(0);
 });
 

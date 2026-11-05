@@ -35,6 +35,11 @@ export function OverviewBody({ data }: { data: Overview }) {
       ) : !model.hasData ? (
         <PeriodEmptyState />
       ) : null}
+      {!model.hasData && model.chart.timeline && (
+        <div className="grid grid-cols-3">
+          <UsageValueCard model={model} />
+        </div>
+      )}
       {model.hasData && (
         <div className="grid grid-cols-5 gap-4 @max-[1023px]:grid-cols-2 @max-[560px]:grid-cols-1">
           {!data.summary && (

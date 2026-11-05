@@ -10,10 +10,14 @@ import { presentOverview } from "./metrics/overview-presentation";
 import {
   presentTeams,
   knownTrendNote,
-  type AxisKey,
+  type TrendAxisKey,
   type TrendMode,
 } from "./metrics/teams-presentation";
 import type { Overview, OverviewValue, OverviewMetric } from "./api/overview";
+import type {
+  TrendAggregation,
+  CollectionPolicy,
+} from "./api/trend-aggregation";
 import type { Settings } from "./api/settings";
 import type { TeamAnalytics, TeamsView, TeamUser } from "./api/teams";
 
@@ -72,6 +76,44 @@ const compareText = (comparison: {
 }) =>
   `${COMPARE_LABEL[comparison.mode] ?? comparison.mode} · ${comparison.status}${comparison.reason ? ` (${comparison.reason})` : ""}`;
 
+function aggregationMeta(
+  aggregation?: TrendAggregation,
+  policy?: CollectionPolicy,
+): CsvMeta {
+  return [
+    ["aggregationMode", aggregation?.mode ?? "day"],
+    ["intervalSeconds", aggregation ? aggregation.intervalSeconds : 86400],
+    ["intervalMonths", aggregation?.intervalMonths],
+    ["bucketPolicyVersion", aggregation?.policyVersion],
+    ["effectiveEnd", aggregation?.effectiveEnd],
+    ["valueMode", aggregation?.valueMode ?? "day"],
+    ["timeZone", "Asia/Seoul"],
+    ["asOf", aggregation?.asOf],
+    ["rangeStart", aggregation?.rangeStart],
+    ["rangeEnd", aggregation?.rangeEnd],
+    ["collectionPolicyVersion", policy?.policyVersion],
+    ["collectionPolicyAsOf", policy?.asOf],
+    ["collectionPolicyStatus", policy?.status],
+    [
+      "collectionAnnotations",
+      policy ? JSON.stringify(policy.annotations) : null,
+    ],
+  ];
+}
+/** 서버 Decimal 문자열의 자릿수를 보존하는 일별 CSV 누적. 차트 좌표의 Number를 내보내지 않는다. */
+function addDecimal(a: string, b: string) {
+  const scale = Math.max(
+    a.split(".")[1]?.length ?? 0,
+    b.split(".")[1]?.length ?? 0,
+  );
+  const integer = (v: string) => {
+    const [whole, fraction = ""] = v.split(".");
+    return BigInt(whole + fraction.padEnd(scale, "0"));
+  };
+  const digits = String(integer(a) + integer(b)).padStart(scale + 1, "0");
+  return scale ? `${digits.slice(0, -scale)}.${digits.slice(-scale)}` : digits;
+}
+
 export function overviewCsv(
   data: Overview,
   organization: string,
@@ -113,12 +155,14 @@ export function overviewCsv(
           : Array(6).fill(null)),
       ]),
     });
-  if (data.trend)
+  if (data.trend) {
+    const auto = data.trend.bucket === "auto";
     sections.push({
       name: "trend",
       columns: [
-        "date",
-        "observation",
+        ...(auto
+          ? ["bucketStart", "bucketEnd", "temporalState", "usageRows"]
+          : ["date", "observation"]),
         ...valueColumns("equivalentCostUsd"),
         ...valueColumns("totalTokens"),
         ...valueColumns("knownEquivalentCostUsd"),
@@ -126,8 +170,9 @@ export function overviewCsv(
         "unpricedUsageRows",
       ],
       rows: data.trend.points.map((p) => [
-        p.date,
-        p.observation,
+        ...("bucketStart" in p
+          ? [p.bucketStart, p.bucketEnd, p.temporalState, p.usageRows]
+          : [p.date, p.observation]),
         ...values(p.equivalentCostUsd),
         ...values(p.totalTokens),
         ...values(p.knownEquivalentCostUsd),
@@ -135,6 +180,7 @@ export function overviewCsv(
         p.unpricedUsageRows,
       ]),
     });
+  }
   if (data.modelMix)
     sections.push({
       name: "modelMix",
@@ -223,6 +269,11 @@ export function overviewCsv(
           : null,
       ],
       ["generatedAt", data.meta.generatedAt],
+      ...aggregationMeta(
+        data.meta.trendAggregation,
+        data.meta.collectionPolicy,
+      ),
+      ["snapshot", data.meta.snapshotId],
       ["exportedAt", exportedAt],
     ],
     sections,
@@ -247,10 +298,13 @@ export function teamsCsv(
   organization: string,
   exportedAt: string,
   selected: { teamId: string; teamName: string; users: TeamUser[] } | null,
-  chart: { axis: AxisKey; mode: TrendMode } = { axis: "cost", mode: "strict" },
+  chart: { axis: TrendAxisKey; mode: TrendMode } = {
+    axis: "cost",
+    mode: "strict",
+  },
 ) {
-  // 세션은 날짜 간 중복을 제거한 서버 값만 사용한다.
-  const mode = chart.axis === "session" ? "strict" : chart.mode;
+  const mode = chart.mode;
+  const auto = view.meta.trendAggregation?.mode === "auto";
   const comparedMetrics = new Set<string>([
     "equivalentCostUsd",
     "totalTokens",
@@ -317,31 +371,61 @@ export function teamsCsv(
       columns: [
         "teamId",
         "teamName",
-        "date",
-        "observation",
-        "equivalentCostUsd",
-        "totalTokens",
-        "cumulativeSessionCount",
-        "status",
-        "reasons",
-        "knownEquivalentCostUsd",
-        "pricedUsageRows",
-        "unpricedUsageRows",
+        ...(auto
+          ? [
+              "bucketStart",
+              "bucketEnd",
+              "temporalState",
+              "usageRows",
+              ...valueColumns("cumulativeEquivalentCostUsd"),
+              ...valueColumns("cumulativeKnownEquivalentCostUsd"),
+              ...valueColumns("cumulativeTotalTokens"),
+              ...valueColumns("cumulativeSessionCount"),
+              "pricedUsageRows",
+              "unpricedUsageRows",
+            ]
+          : [
+              "date",
+              "observation",
+              "equivalentCostUsd",
+              "totalTokens",
+              "cumulativeSessionCount",
+              "status",
+              "reasons",
+              "knownEquivalentCostUsd",
+              "pricedUsageRows",
+              "unpricedUsageRows",
+            ]),
       ],
       rows: teams.flatMap((t) =>
         t.trend.map((p) => [
           t.teamId ?? "unassigned",
           t.teamName,
-          p.date,
-          p.observation,
-          p.equivalentCostUsd,
-          p.totalTokens,
-          p.cumulativeSessionCount,
-          p.status,
-          p.reasons.join("|"),
-          p.knownEquivalentCostUsd,
-          p.pricedUsageRows,
-          p.unpricedUsageRows,
+          ...("bucketStart" in p
+            ? [
+                p.bucketStart,
+                p.bucketEnd,
+                p.temporalState,
+                p.usageRows,
+                ...valueCells(p.cumulativeEquivalentCostUsd),
+                ...valueCells(p.cumulativeKnownEquivalentCostUsd),
+                ...valueCells(p.cumulativeTotalTokens),
+                ...valueCells(p.cumulativeSessionCount),
+                p.pricedUsageRows,
+                p.unpricedUsageRows,
+              ]
+            : [
+                p.date,
+                p.observation,
+                p.equivalentCostUsd,
+                p.totalTokens,
+                p.cumulativeSessionCount,
+                p.status,
+                p.reasons.join("|"),
+                p.knownEquivalentCostUsd,
+                p.pricedUsageRows,
+                p.unpricedUsageRows,
+              ]),
         ]),
       ),
     },
@@ -392,22 +476,75 @@ export function teamsCsv(
   ];
   const presentation = presentTeams(view);
   const chartSeries =
-    mode === "known" && chart.axis !== "session"
+    mode === "known"
       ? presentation.knownTrend[chart.axis]
       : presentation.trend[chart.axis];
   sections.push({
     name: "chart_trend",
-    columns: ["teamId", "teamName", "date", "axis", "mode", "value"],
-    rows: chartSeries.flatMap((series) =>
-      series.values.map((value, index) => [
-        series.key,
-        series.team,
-        (view.teams[0] ?? view.unassigned).trend[index].date,
-        chart.axis,
-        mode,
-        value,
-      ]),
-    ),
+    columns: [
+      "teamId",
+      "teamName",
+      ...(auto
+        ? ["bucketStart", "bucketEnd", "temporalState", "usageRows"]
+        : ["date"]),
+      "axis",
+      "mode",
+      "value",
+      "status",
+      "reasons",
+    ],
+    rows: chartSeries.flatMap((series) => {
+      const team = teams.find(
+        (team) => (team.teamId ?? "unassigned") === series.key,
+      )!;
+      let running: string | null = "0";
+      return team.trend.map((point, index) => {
+        if ("bucketStart" in point) {
+          const value =
+            chart.axis === "token"
+              ? point.cumulativeTotalTokens
+              : mode === "known"
+                ? point.cumulativeKnownEquivalentCostUsd
+                : point.cumulativeEquivalentCostUsd;
+          return [
+            series.key,
+            series.team,
+            point.bucketStart,
+            point.bucketEnd,
+            point.temporalState,
+            point.usageRows,
+            chart.axis,
+            mode,
+            value.value,
+            value.status,
+            value.reasons.join("|"),
+          ];
+        }
+        const amount =
+          mode === "known" && point.knownEquivalentCostUsd !== undefined
+            ? point.knownEquivalentCostUsd
+            : point.equivalentCostUsd;
+        if (chart.axis === "cost") {
+          if (amount !== null && running !== null)
+            running = addDecimal(running, amount);
+          else if (mode === "strict") running = null;
+        }
+        return [
+          series.key,
+          series.team,
+          point.date,
+          chart.axis,
+          mode,
+          series.values[index] === null
+            ? null
+            : chart.axis === "cost"
+              ? running
+              : series.values[index],
+          point.status,
+          point.reasons.join("|"),
+        ];
+      });
+    }),
   });
   if (selected)
     sections.push({
@@ -476,16 +613,15 @@ export function teamsCsv(
       ["데이터 상태", view.meta.dataState],
       ["누적 지표", chart.axis],
       ["누적 집계 기준", mode === "known" ? "확인된 값 누적" : "전체 누적"],
-      [
-        "누적 집계 안내",
-        mode === "known" && chart.axis !== "session"
-          ? knownTrendNote(chart.axis)
-          : null,
-      ],
+      ["누적 집계 안내", mode === "known" ? knownTrendNote(chart.axis) : null],
       ["데이터 확정 시각", view.meta.dataThrough],
       ["snapshot", view.meta.snapshotId],
       ["팀 수", view.teams.length],
       ["고른 팀", selected?.teamName ?? null],
+      ...aggregationMeta(
+        view.meta.trendAggregation,
+        view.meta.collectionPolicy,
+      ),
       ["내보낸 시각", exportedAt],
     ],
     sections,
