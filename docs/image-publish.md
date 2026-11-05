@@ -6,7 +6,8 @@
 ## 실행 조건
 
 `ci.yml`은 lint·typecheck·format·test·build와 ARM64 컨테이너 빌드 검증만 수행한다.
-`cd.yml`은 develop/main push에서 같은 커밋의 `ci.yml`을 재사용 워크플로로 호출하고, 모든 검사가 통과한 뒤 이미지를 게시한다.
+`cd.yml`은 develop/main push에서 같은 커밋의 `ci.yml`을 재사용해 lint·typecheck·format·test를 실행한다.
+이때만 `skip-build-jobs=true`를 전달하며, 이어지는 실제 환경의 ARM64 Docker 빌드가 Next.js 빌드와 컨테이너 빌드 검증을 함께 맡는다. 모든 검증과 이미지 빌드가 성공해야 게시한다.
 PR과 수동 검증은 `ci.yml`을 직접 실행한다. push 검증을 두 워크플로가 중복 실행하지 않는다.
 해당 GitHub Environment의 `ECS_DEPLOY_ENABLED=true`이면 이어서 자동 배포한다. PR과 workflow_dispatch는 검증만 한다.
 
@@ -17,6 +18,31 @@ PR과 수동 검증은 `ci.yml`을 직접 실행한다. push 검증을 두 워�
 
 각 Environment의 deployment branch 제한은 dev=`develop`, prod=`main`이다. OIDC 신뢰가 Environment를 기준으로 하므로 이 제한을 반드시 설정한다.
 Environment에 required reviewer가 설정되어 있으면 승인 후 진행한다. 승인 없는 자동 배포가 필요하면 해당 Environment 정책을 별도로 검토한다.
+
+## 빌드 캐시와 중복 실행
+
+PR·수동 CI의 `build`, `container build (ARM64)` 검사는 그대로 실행된다. CD에서는 검증용 주소의 이미지를 별도로 만들지 않고, 실제 `NEXT_PUBLIC_ENROLLMENT_API_URL`을 넣은 배포 이미지를 한 번 빌드한다.
+
+Docker Buildx의 GitHub Actions 캐시(`scope=frontend-arm64`, `mode=max`)에 중간 단계까지 저장한다. Dockerfile은 package.json·lockfile 복사와 `npm ci`를 소스 복사보다 먼저 실행하므로, 앱 코드나 공개 API 주소만 바뀌면 의존성 레이어를 재사용한다. lockfile이 바뀌면 설치 레이어부터 다시 실행한다.
+캐시는 GitHub의 브랜치 접근 규칙을 따르며 PR에서 저장한 캐시가 develop/main 캐시를 덮어쓰지 않는다. 캐시에는 빌드 입력만 포함하고 런타임 시크릿은 전달하지 않는다. 캐시 저장 실패는 빌드 성공을 실패로 바꾸지 않으며, 저장 제한 시간은 2분이다. 로그의 캐시 저장 경고는 별도로 확인한다.
+
+일반 CI의 `setup-node` npm 캐시는 다운로드한 패키지를 재사용하며 `node_modules` 설치를 생략하지 않는다. Next.js 작업의 `.next/cache`도 Docker 캐시와 별개다. Docker에는 레이어 캐시를 적용하므로 소스가 바뀌면 Next.js 빌드 단계는 다시 실행한다.
+
+CD는 Docker 빌드 전에 최신 브랜치 HEAD를 확인하고, 오래된 실행이면 빌드·게시·배포를 건너뛴다. 빌드 중 새 커밋이 생길 수 있어 ECR 게시 직전과 배포 태그 갱신 직전의 재확인도 유지한다.
+
+## 소요 시간 비교
+
+CD의 `Report CD timings` 작업은 실패·건너뜀을 포함해 현재 실행 시도의 GitHub Actions 시간을 요약한다. 별도 `npm ci` 없이 Node.js와 GitHub CLI로 읽는다. `actions: read`는 이 보고 작업에만 부여한다.
+
+- 첫 작업 시작 전 대기: 현재 시도의 시작부터 첫 CI 작업 시작까지. 동시 실행 제한과 러너 대기를 포함한다.
+- CI 검증: 병렬 작업의 최초 시작부터 마지막 종료까지. 개별 작업 시간을 더하지 않는다.
+- Docker 빌드: 캐시 복원·저장과 로컬 이미지 로드를 포함한다.
+- ECR 업로드와 ECS 교체: 기존 단계의 시작·종료 시간을 각각 기록한다.
+- 전체 시간: 준비·작업 간 대기·Environment 승인·정리를 포함하고 보고 작업 자체는 제외한다. 따라서 단계 합계와 다를 수 있다.
+
+2026-11-04 기준 실행 [41790737890](https://github.com/soma-376/pulsemetry-frontend/actions/runs/41790737890)은 9분 16초(CI 2분 5초, Docker 1분 50초, 업로드 24초, ECS 4분 42초, 기타 15초)였다. 첫 캐시 생성과 캐시가 준비된 후속 실행을 구분해 비교한다. 후속 dev 배포 3회 이상의 중앙값을 기록한 뒤 단축 효과를 판단한다.
+
+ECS 동시 기동 비율·배치 제약·드레이닝 변경은 이 캐시 변경에 포함하지 않는다. 2026-11-04 dev 실측은 desired=2, min=50%, max=100%, distinctInstance로 순차 교체했다. 추가 단축은 실제 EC2 여유와 BFF 종료·세션 안전성 검증을 근거로 별도 결정한다.
 
 ## 환경 변수와 비밀 값
 
@@ -31,7 +57,7 @@ Environment에 required reviewer가 설정되어 있으면 승인 후 진행한�
 
 공개 API 주소는 빌드 시 브라우저 코드에 포함되므로 변경 후 재빌드가 필요하다. DNS·인증서·CORS·로그인 callback도 확인한다.
 `ENROLLMENT_API_URL`, `DASHBOARD_API_URL`, `BFF_ORIGIN`은 Terraform 실행 설정이고 `BFF_SESSION_KEYS`는 Secrets Manager에서 ECS 실행 역할이 주입한다.
-`.env*`와 로컬 인증 파일은 Docker build context에서 제외한다. BFF 갱신 조율은 프로세스 내부이므로 태스크와 Node 프로세스는 한 개다.
+`.env*`와 로컬 인증 파일은 Docker build context에서 제외한다. 태스크 수와 BFF 갱신 조율 설정은 해당 환경의 Terraform·인증 계약을 따른다.
 
 ## 최초 활성화 순서
 
@@ -62,7 +88,7 @@ RegisterTaskDefinition, iam:PassRole, Terraform state, secret 값 조회는 허�
 - 긴급 복구는 CD를 비활성화하고 진행 중 실행 종료를 기다린 뒤, 정상 digest의 manifest를 `deploy`로 복원하고 서비스를 강제 재배포한다. ECS 완료와 실제 digest를 검증한 뒤 다시 활성화한다.
 - 이미지 digest 고정 모드로 돌아가려면 CD를 끄고 runtime의 `automatic_image_deployment=false`, `image_digest=<정상 digest>`를 Terraform PR로 적용한다.
 - Terraform apply 전에는 해당 환경 CD를 비활성화하고 기존 실행이 끝날 때까지 기다린다. 두 저장소의 concurrency는 공유되지 않는다. apply 완료·서비스 정상 확인 후 다시 켠다.
-- desired=1, min=0%, max=100%이므로 배포 중 짧은 중단이 있다.
+- desired=1, min=0%, max=100%인 환경은 배포 중 짧은 중단이 있다. dev의 다중 태스크 설정과 구분해 실제 서비스 설정을 확인한다.
 
 ## 로컬 검증
 
