@@ -106,8 +106,82 @@ const meta = {
             asOf: "2026-09-29T00:00:00Z",
             lastReceivedAt:
               parameters.scenario === "empty" ? null : "2026-09-28T23:58:00Z",
+            transmissionLoss: parameters.lossScenario
+              ? {
+                  payloadCount:
+                    parameters.lossScenario === "unavailable"
+                      ? null
+                      : parameters.lossScenario === "zero"
+                        ? 0
+                        : 10,
+                  affectedInstallationCount:
+                    parameters.lossScenario === "unavailable"
+                      ? null
+                      : parameters.lossScenario === "zero"
+                        ? 0
+                        : 2,
+                  windowStart: "2026-10-28T00:00:00Z",
+                  windowEnd: "2026-11-04T00:00:00Z",
+                  availableFrom:
+                    parameters.lossScenario === "partial"
+                      ? "2026-11-01T00:00:00Z"
+                      : "2026-10-28T00:00:00Z",
+                  availability:
+                    parameters.lossScenario === "unavailable"
+                      ? "unavailable"
+                      : parameters.lossScenario === "partial"
+                        ? "partial"
+                        : "complete",
+                  reasons:
+                    parameters.lossScenario === "unavailable"
+                      ? ["query_failed"]
+                      : parameters.lossScenario === "partial"
+                        ? ["history_incomplete", "counter_decreased"]
+                        : [],
+                }
+              : undefined,
           });
         },
+      ),
+      http.get(
+        "*/api/v1/organizations/:org/ingest-status/loss-installations",
+        ({ params }) =>
+          HttpResponse.json({
+            meta: {
+              organizationId: params.org,
+              snapshotId: "loss",
+              asOf: "2026-11-04T00:00:00Z",
+            },
+            windowStart: "2026-10-28T00:00:00Z",
+            windowEnd: "2026-11-04T00:00:00Z",
+            installations: {
+              items:
+                parameters.lossScenario === "zero"
+                  ? []
+                  : [
+                      {
+                        installationId: "installation-a",
+                        deviceName: "개발 노트북",
+                        memberId: "member-a",
+                        account: "member@example.test",
+                        payloadCount: 7,
+                        lastObservedAt: "2026-11-03T00:00:00Z",
+                        status: "active",
+                      },
+                      {
+                        installationId: "installation-b",
+                        deviceName: "폐기 기기",
+                        memberId: "member-b",
+                        account: null,
+                        payloadCount: 3,
+                        lastObservedAt: "2026-11-02T00:00:00Z",
+                        status: "revoked",
+                      },
+                    ],
+              totalCount: parameters.lossScenario === "zero" ? 0 : 2,
+              nextCursor: null,
+            },
+          }),
       ),
       ...onboardingHandlers("teams"),
     );
@@ -125,10 +199,30 @@ const meta = {
 } satisfies Meta<typeof Pages>;
 export default meta;
 type Story = StoryObj<typeof meta>;
+export const ReportedLoss: Story = {
+  name: "보고된 전송 손실 10건",
+  parameters: { lossScenario: "complete" },
+};
+export const ZeroLoss: Story = {
+  name: "확인된 전송 손실 0건",
+  parameters: { lossScenario: "zero" },
+};
+export const PartialLoss: Story = {
+  name: "손실 일부 집계 · 시작과 제한",
+  parameters: { lossScenario: "partial" },
+};
+export const UnavailableLoss: Story = {
+  name: "손실 집계 불가",
+  parameters: { lossScenario: "unavailable" },
+};
+export const LossRefreshFailed: Story = {
+  name: "손실 갱신 실패 · 마지막 기준 유지",
+  parameters: { lossScenario: "complete", scenario: "refresh-error" },
+};
 export const Unknown: Story = {
-  name: "수신 이력 있음·정상 여부 판단 불가",
+  name: "구버전 API · 집계 정보 없음",
   async play({ canvas }) {
-    await canvas.findByText("수집 상태 확인 불가");
+    await canvas.findByText("집계 정보 없음");
     await expect(canvas.queryByText("수집 정상")).not.toBeInTheDocument();
   },
 };
@@ -140,10 +234,10 @@ export const Loading: Story = {
   name: "로딩 중에도 헤더 높이 유지",
   parameters: { scenario: "loading" },
   async play({ canvas }) {
-    await canvas.findByText("수집 상태 확인 중…");
+    await canvas.findByText("전송 손실 확인 중…");
     await expect(
       canvas.getByLabelText("공통 헤더").getBoundingClientRect().height,
-    ).toBe(65);
+    ).toBe(73);
   },
 };
 export const Retry: Story = {
@@ -156,17 +250,17 @@ export const Retry: Story = {
       { timeout: 10000 },
     );
     const bar = canvas.getByLabelText("공통 헤더");
-    await expect(bar.getBoundingClientRect().height).toBe(65);
+    await expect(bar.getBoundingClientRect().height).toBe(73);
     await userEvent.click(retry);
-    await canvas.findByText("수집 상태 확인 불가");
-    await expect(bar.getBoundingClientRect().height).toBe(65);
+    await canvas.findByText("집계 정보 없음");
+    await expect(bar.getBoundingClientRect().height).toBe(73);
   },
 };
 export const Refreshing: Story = {
   name: "재조회 중 기존 수집 현황 유지",
   parameters: { scenario: "refreshing" },
   async play({ canvas, userEvent }) {
-    await canvas.findByText("수집 상태 확인 불가");
+    await canvas.findByText("집계 정보 없음");
     await userEvent.click(canvas.getByRole("button", { name: "새로고침" }));
     const refreshing = await canvas.findByRole("button", { name: "조회 중…" });
     await expect(refreshing).toBeDisabled();
@@ -174,14 +268,14 @@ export const Refreshing: Story = {
     await expect(
       canvas.queryByLabelText("수집 상태 갱신 중"),
     ).not.toBeInTheDocument();
-    await expect(canvas.getByText("수집 상태 확인 불가")).toBeVisible();
+    await expect(canvas.getByText("집계 정보 없음")).toBeVisible();
   },
 };
 export const RefreshFailed: Story = {
   name: "갱신 실패·기존 현황과 본문 위치 유지",
   parameters: { scenario: "refresh-error" },
   async play({ canvas, userEvent }) {
-    const status = await canvas.findByText("수집 상태 확인 불가");
+    const status = await canvas.findByText("집계 정보 없음");
     const heading = canvas.getByRole("heading", { name: "개요" });
     const top = heading.getBoundingClientRect().top;
     await userEvent.click(canvas.getByRole("button", { name: "새로고침" }));
@@ -205,7 +299,7 @@ export const RefreshFailed: Story = {
 export const PageChange: Story = {
   name: "본문 교체에도 공통 영역 유지",
   async play({ canvas, userEvent }) {
-    await canvas.findByText("수집 상태 확인 불가");
+    await canvas.findByText("집계 정보 없음");
     const bar = canvas.getByLabelText("조직 수집 현황");
     await userEvent.click(canvas.getByRole("button", { name: "설정 보기" }));
     await waitFor(() =>

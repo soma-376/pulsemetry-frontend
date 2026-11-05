@@ -3,8 +3,20 @@ import assert from "node:assert/strict";
 import {
   fetchIngestStatus,
   ingestStatusOptions,
+  ingestStatusSchema,
+  transmissionLossLabel,
+  fetchLossInstallations,
+  lossInstallationsOptions,
 } from "../src/lib/api/ingest-status";
 import { ManagementError } from "../src/lib/api/management";
+import {
+  QueryClient,
+  QueryClientProvider,
+  QueryObserver,
+} from "@tanstack/react-query";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { IngestStatusBar } from "../src/components/layout/IngestStatusBar";
 
 const response = {
   organizationId: "org-a",
@@ -13,6 +25,46 @@ const response = {
   asOf: "2026-09-29T00:00:00Z",
   lastReceivedAt: null,
 };
+
+test("구버전 응답 재조회 실패도 캐시의 기준시각과 갱신 실패를 렌더링한다", async () => {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const options = ingestStatusOptions("org-a");
+  client.setQueryData(options.queryKey, ingestStatusSchema.parse(response));
+  const observer = new QueryObserver(client, {
+    ...options,
+    retry: false,
+    queryFn: async () => {
+      throw new Error("조회 실패");
+    },
+  });
+  try {
+    await observer.refetch();
+    const query = observer.getCurrentResult();
+    assert.equal(query.isError, true);
+    const html = renderToStaticMarkup(
+      createElement(
+        QueryClientProvider,
+        { client },
+        createElement(IngestStatusBar, { query, enabled: true }),
+      ),
+    );
+    assert.match(html, /집계 정보 없음/);
+    assert.match(html, /갱신 실패 · /);
+    assert.ok(
+      html.includes(
+        new Date(response.asOf).toLocaleString("ko-KR", {
+          timeZone: "Asia/Seoul",
+        }),
+      ),
+    );
+    assert.doesNotMatch(html, /전송 손실 0건/);
+  } finally {
+    observer.destroy();
+    client.clear();
+  }
+});
 test("header query is scoped to organization and does not invent healthy status or a receipt time", async () => {
   const original = global.fetch;
   const controller = new AbortController();
@@ -40,6 +92,175 @@ test("header query is scoped to organization and does not invent healthy status 
     await assert.rejects(
       fetchIngestStatus("org-a"),
       (e) => e instanceof ManagementError && e.status === 403,
+    );
+  } finally {
+    global.fetch = original;
+  }
+});
+
+const loss = {
+  payloadCount: 10,
+  affectedInstallationCount: 2,
+  windowStart: "2026-10-28T00:00:00Z",
+  windowEnd: "2026-11-04T00:00:00Z",
+  availableFrom: "2026-10-28T00:00:00Z",
+  availability: "complete" as const,
+  reasons: [],
+};
+
+test("손실 집계는 확인된 0·부분·불가·구버전 누락을 구분한다", () => {
+  assert.equal(ingestStatusSchema.parse(response).transmissionLoss, undefined);
+  assert.equal(transmissionLossLabel(undefined), "집계 정보 없음");
+  const zero = ingestStatusSchema.parse({
+    ...response,
+    transmissionLoss: {
+      ...loss,
+      payloadCount: 0,
+      affectedInstallationCount: 0,
+    },
+  });
+  assert.equal(
+    transmissionLossLabel(zero.transmissionLoss),
+    "최근 7일 보고된 전송 손실 0건",
+  );
+  const partial = ingestStatusSchema.parse({
+    ...response,
+    transmissionLoss: {
+      ...loss,
+      availability: "partial",
+      reasons: ["counter_decreased"],
+    },
+  });
+  assert.equal(
+    transmissionLossLabel(partial.transmissionLoss),
+    "최근 7일 보고된 전송 손실 10건 · 일부 집계",
+  );
+  const unavailable = ingestStatusSchema.parse({
+    ...response,
+    transmissionLoss: {
+      ...loss,
+      payloadCount: null,
+      affectedInstallationCount: null,
+      availability: "unavailable",
+      reasons: ["query_failed"],
+    },
+  });
+  assert.equal(
+    transmissionLossLabel(unavailable.transmissionLoss),
+    "최근 7일 전송 손실 집계 불가",
+  );
+  for (const invalid of [
+    { ...loss, payloadCount: null },
+    { ...loss, availability: "unavailable" },
+    { ...loss, payloadCount: -1 },
+  ])
+    assert.equal(
+      ingestStatusSchema.safeParse({ ...response, transmissionLoss: invalid })
+        .success,
+      false,
+    );
+});
+
+test("손실 기기는 헤더 시각과 조직·snapshot을 고정하고 분석 필터를 보내지 않는다", async () => {
+  const original = global.fetch;
+  const controller = new AbortController();
+  const page = {
+    meta: {
+      organizationId: "org-a",
+      snapshotId: "snapshot",
+      asOf: loss.windowEnd,
+    },
+    windowStart: loss.windowStart,
+    windowEnd: loss.windowEnd,
+    installations: {
+      items: [
+        {
+          installationId: "i1",
+          deviceName: "개발 기기",
+          memberId: "m1",
+          account: "member@example.test",
+          payloadCount: 10,
+          lastObservedAt: "2026-11-03T01:00:00Z",
+          status: "revoked",
+        },
+      ],
+      totalCount: 1,
+      nextCursor: null,
+    },
+  };
+  global.fetch = async (url, init) => {
+    const query = new URL(String(url), "https://example.test").searchParams;
+    assert.deepEqual([...query.keys()].sort(), [
+      "cursor",
+      "limit",
+      "snapshotId",
+      "windowEnd",
+    ]);
+    assert.equal(query.get("windowEnd"), loss.windowEnd);
+    assert.equal(query.get("snapshotId"), "snapshot");
+    assert.equal(init?.signal, controller.signal);
+    return Response.json(page);
+  };
+  try {
+    assert.deepEqual(
+      await fetchLossInstallations(
+        "org-a",
+        loss.windowEnd,
+        { cursor: "next", snapshotId: "snapshot" },
+        controller.signal,
+      ),
+      page,
+    );
+    global.fetch = async () => Response.json(page);
+    await assert.rejects(
+      fetchLossInstallations("org-b", loss.windowEnd, null),
+      ManagementError,
+    );
+    await assert.rejects(
+      fetchLossInstallations("org-a", "2026-11-03T00:00:00Z", null),
+      ManagementError,
+    );
+    await assert.rejects(
+      fetchLossInstallations("org-a", loss.windowEnd, {
+        cursor: "next",
+        snapshotId: "different",
+      }),
+      ManagementError,
+    );
+    global.fetch = async () =>
+      Response.json({
+        ...page,
+        installations: { ...page.installations, nextCursor: "next" },
+      });
+    await assert.rejects(
+      fetchLossInstallations("org-a", loss.windowEnd, {
+        cursor: "next",
+        snapshotId: "snapshot",
+      }),
+      (error: unknown) =>
+        error instanceof ManagementError && error.code === "invalid_response",
+    );
+    global.fetch = async () =>
+      Response.json({
+        ...page,
+        installations: { ...page.installations, nextCursor: "following" },
+      });
+    assert.equal(
+      (
+        await fetchLossInstallations("org-a", loss.windowEnd, {
+          cursor: "next",
+          snapshotId: "snapshot",
+        })
+      ).installations.nextCursor,
+      "following",
+    );
+    assert.notDeepEqual(
+      lossInstallationsOptions("org-a", loss.windowEnd).queryKey,
+      lossInstallationsOptions("org-b", loss.windowEnd).queryKey,
+    );
+    assert.notDeepEqual(
+      lossInstallationsOptions("org-a", loss.windowEnd).queryKey,
+      lossInstallationsOptions("org-a", loss.windowStart).queryKey,
     );
   } finally {
     global.fetch = original;

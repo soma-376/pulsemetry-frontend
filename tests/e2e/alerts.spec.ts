@@ -46,6 +46,7 @@ const overviewAlerts = async (page: Page) => {
     unacknowledgedTotal: number | null;
     security: number | null;
     cost: number | null;
+    collection: number | null;
   };
 };
 
@@ -142,7 +143,9 @@ test("ALERTS-ACK @p0 @write 개요의 알림 건수는 서버의 미확인 수�
     throw new PreparationError(
       "미확인 알림이 있는 격리 테스트 데이터가 필요합니다. 새 시드 A는 관측 제품이 모두 등록되어 자동으로 보안 알림을 만들지 않습니다.",
     );
-  expect(before.security! + before.cost!).toBe(before.unacknowledgedTotal);
+  expect(before.security! + before.cost! + before.collection!).toBe(
+    before.unacknowledgedTotal,
+  );
 
   const { start, end } = seedPeriod();
   await page.goto("/overview");

@@ -53,9 +53,11 @@ test("DAEMON-FLOW @p0 @write 데몬의 등록·전달·업데이트 확인이 �
   await signIn(page, `owner@seed-${E.seed}.example.test`);
   await page.goto("/settings");
   await expect(page.getByText(ROLLOUT, { exact: true })).toBeVisible();
-  await expect(bar).toContainText("수신 대기");
-  await expect(bar).toContainText("아직 수집된 데이터가 없습니다");
-  await expect(bar).not.toContainText("보고 중인 설치");
+  await bar.getByRole("button", { name: /최근 7일|집계 정보 없음/ }).click();
+  const lossDrawer = page.getByRole("dialog", { name: "전송 손실 상세" });
+  await expect(lossDrawer).toContainText("수신 대기");
+  await expect(lossDrawer).toContainText("아직 수집된 데이터가 없습니다");
+  await page.keyboard.press("Escape");
   const dialog = await openRollout(page);
   await dialog.getByRole("button", { name: /^확인 불가 1$/ }).click();
   const row = dialog
@@ -75,11 +77,15 @@ test("DAEMON-FLOW @p0 @write 데몬의 등록·전달·업데이트 확인이 �
   await reached("collecting");
   await expect(async () => {
     await page.reload();
-    await expect(bar).toContainText("마지막 수신", { timeout: 5_000 });
+    await bar.getByRole("button", { name: /최근 7일|집계 정보 없음/ }).click();
+    await expect(lossDrawer).toContainText("마지막 수신", { timeout: 5_000 });
   }).toPass({ timeout: 60_000 });
-  await expect(bar).toContainText("수집 상태 확인 불가");
-  await expect(bar).toContainText("수집 기기의 보고가 없어 판정할 수 없습니다");
-  await expect(bar).not.toContainText("수집 정상");
+  await expect(lossDrawer).toContainText("수집 상태 확인 불가");
+  await expect(lossDrawer).toContainText(
+    "수집 기기의 보고가 없어 판정할 수 없습니다",
+  );
+  await expect(lossDrawer).not.toContainText("수집 정상");
+  await page.keyboard.press("Escape");
   await expect(page.getByText(ROLLOUT, { exact: true })).toBeVisible();
   seen("collecting");
 

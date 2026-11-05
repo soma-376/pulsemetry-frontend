@@ -5,6 +5,7 @@ import {
   alertReasonText,
   alertsResponseSchema,
   alertSummary,
+  reportGapStatus,
 } from "../src/lib/api/alerts";
 import { overviewSchema } from "../src/lib/api/overview";
 import { settingsSchema } from "../src/lib/api/settings";
@@ -32,6 +33,86 @@ const item = (overrides: Record<string, unknown>) => ({
   evidence: { kind: "usage", targetName: "claude-opus-4" },
   acknowledgement: null,
   ...overrides,
+});
+
+test("보고 공백은 collection 근거를 읽고 확인과 해소를 구분한다", () => {
+  const page = alertsResponseSchema.parse({
+    meta: {
+      organizationId: "o",
+      snapshotId: "s",
+      asOf: "2026-11-04T00:00:00Z",
+    },
+    evaluation: {
+      status: "complete",
+      reasons: [],
+      asOf: "2026-11-04T00:00:00Z",
+    },
+    alerts: {
+      items: [
+        item({
+          ruleId: "installation_report_gap",
+          category: "collection",
+          subject: "i1",
+          eventCount: null,
+          evidence: {
+            kind: "installation_report_gap",
+            installationId: "i1",
+            deviceName: "개발 노트북",
+            basisAt: "2026-10-28T00:00:00Z",
+            thresholdReachedAt: "2026-11-04T00:00:00Z",
+            lastReceivedAt: null,
+            resolutionDetectedAt: null,
+            resolutionReason: null,
+          },
+        }),
+      ],
+      totalCount: 1,
+      nextCursor: null,
+    },
+  });
+  const alert = page.alerts.items[0];
+  assert.equal(alertSummary(alert), "개발 노트북 · 보고 공백 지속");
+  assert.equal(alert.eventCount, null);
+  assert.equal(
+    reportGapStatus({
+      ...alert,
+      acknowledgement: { acknowledgedAt: "2026-11-04T00:00:01Z" },
+    }),
+    "보고 공백 지속",
+  );
+  assert.equal(
+    reportGapStatus({ ...alert, status: "closed" }),
+    "보고 공백 종료",
+  );
+  assert.equal(alert.acknowledgement, null);
+  assert.equal(
+    reportGapStatus({
+      ...alert,
+      status: "closed",
+      evidence: {
+        ...alert.evidence!,
+        kind: "installation_report_gap",
+        installationId: "i1",
+        deviceName: null,
+        basisAt: "2026-10-28T00:00:00Z",
+        thresholdReachedAt: "2026-11-04T00:00:00Z",
+        lastReceivedAt: null,
+        resolutionDetectedAt: "2026-11-04T00:01:00Z",
+        resolutionReason: "installation_revoked",
+      },
+    }),
+    "설치 폐기로 종료",
+  );
+  assert.equal(
+    alertsResponseSchema.safeParse({
+      ...page,
+      alerts: {
+        ...page.alerts,
+        items: [{ ...alert, evidence: { kind: "installation_report_gap" } }],
+      },
+    }).success,
+    false,
+  );
 });
 
 test("알림 목록 응답을 읽고 요약은 서버 값만 쓴다", () => {

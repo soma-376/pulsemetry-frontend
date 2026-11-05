@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   apiJson,
@@ -9,6 +9,27 @@ import {
 } from "./management";
 
 const count = z.number().int().nonnegative().nullable();
+const instant = z.iso.datetime({ offset: true });
+export const transmissionLossSchema = z
+  .object({
+    payloadCount: count,
+    windowStart: instant,
+    windowEnd: instant,
+    availableFrom: instant.nullable(),
+    availability: z.enum(["complete", "partial", "unavailable"]),
+    reasons: z.array(z.string()),
+    affectedInstallationCount: count,
+  })
+  .refine(
+    (value) =>
+      value.availability === "unavailable"
+        ? value.payloadCount === null &&
+          value.affectedInstallationCount === null
+        : value.payloadCount !== null &&
+          value.affectedInstallationCount !== null,
+    { message: "손실 집계 가용성과 수량이 일치해야 합니다" },
+  );
+export type TransmissionLoss = z.infer<typeof transmissionLossSchema>;
 export const ingestStatusSchema = z.object({
   organizationId: z.string(),
   status: z.enum(["healthy", "delayed", "down", "empty", "unknown"]),
@@ -21,6 +42,8 @@ export const ingestStatusSchema = z.object({
   observedMembers: count.optional(),
   eligibleMembers: count.optional(),
   coverageRatio: z.number().min(0).max(1).nullable().optional(),
+  // 먼저 배포한 화면은 구버전 서버의 누락을 확인된 0으로 바꾸지 않는다.
+  transmissionLoss: transmissionLossSchema.optional(),
 });
 export type IngestStatus = z.infer<typeof ingestStatusSchema>;
 
@@ -36,9 +59,29 @@ export const INGEST_STATES = {
 const REASONS: Record<string, string> = {
   delivery_stalled: "수집 중인 모든 기기의 전달이 멈췄습니다",
   delivery_delayed: "일부 기기의 전달이 늦어지고 있습니다",
-  installations_silent: "수집 기기의 보고가 끊겼습니다",
+  installations_silent: "보고 상태 미확인",
   source_not_available: "수집 기기의 보고가 없어 판정할 수 없습니다",
+  source_query_failed: "현재 전송 상태를 조회하지 못했습니다",
 };
+
+const LOSS_REASONS: Record<string, string> = {
+  tracking_not_started: "손실 집계가 아직 시작되지 않았습니다",
+  history_incomplete: "최근 7일 중 일부 기간부터 집계했습니다",
+  tracking_interrupted: "손실 추적이 중단된 기간이 있습니다",
+  counter_decreased: "같은 실행의 손실 누계가 감소한 보고가 있습니다",
+  no_observation: "전송 손실을 관측할 수 있는 설치 보고가 없습니다",
+  source_not_available: "손실 집계 근거를 확인할 수 없습니다",
+  query_failed: "손실 원장을 조회하지 못했습니다",
+};
+export const transmissionLossReasonText = (reason: string) =>
+  LOSS_REASONS[reason] ?? reason;
+
+export function transmissionLossLabel(loss: TransmissionLoss | undefined) {
+  if (!loss) return "집계 정보 없음";
+  if (loss.availability === "unavailable")
+    return "최근 7일 전송 손실 집계 불가";
+  return `최근 7일 보고된 전송 손실 ${loss.payloadCount!.toLocaleString("ko-KR")}건${loss.availability === "partial" ? " · 일부 집계" : ""}`;
+}
 
 const time = (value: string) =>
   new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
@@ -97,5 +140,83 @@ export const ingestStatusOptions = (organizationId: string) =>
     queryKey: managementKey(organizationId, "ingest-status"),
     queryFn: ({ signal }) => fetchIngestStatus(organizationId, signal),
     enabled: !!organizationId,
+    ...readOptions,
+  });
+
+export const lossInstallationsSchema = z.object({
+  meta: z.object({
+    organizationId: z.string(),
+    snapshotId: z.string(),
+    asOf: instant,
+  }),
+  windowStart: instant,
+  windowEnd: instant,
+  installations: z.object({
+    items: z.array(
+      z.object({
+        installationId: z.string(),
+        deviceName: z.string().nullable(),
+        memberId: z.string().nullable(),
+        account: z.string().nullable(),
+        payloadCount: z.number().int().positive(),
+        lastObservedAt: instant,
+        status: z.enum(["active", "revoked"]),
+      }),
+    ),
+    totalCount: z.number().int().nonnegative(),
+    nextCursor: z.string().nullable(),
+  }),
+});
+type LossPageParam = { cursor: string; snapshotId: string } | null;
+
+/** 헤더의 서버 집계 기준 시각을 고정한다. 분석 날짜·팀·벤더는 전달하지 않는다. */
+export async function fetchLossInstallations(
+  organizationId: string,
+  windowEnd: string,
+  page: LossPageParam,
+  signal?: AbortSignal,
+) {
+  const query = new URLSearchParams({ windowEnd, limit: "20" });
+  if (page) {
+    query.set("cursor", page.cursor);
+    query.set("snapshotId", page.snapshotId);
+  }
+  const result = await apiJson(
+    "dashboard",
+    orgPath(organizationId, `/ingest-status/loss-installations?${query}`),
+    lossInstallationsSchema,
+    { signal },
+  );
+  if (
+    result.meta.organizationId !== organizationId ||
+    Date.parse(result.windowEnd) !== Date.parse(windowEnd) ||
+    (page &&
+      (result.meta.snapshotId !== page.snapshotId ||
+        result.installations.nextCursor === page.cursor))
+  )
+    throw new ManagementError("invalid_response", 422);
+  return result;
+}
+
+export const lossInstallationsOptions = (
+  organizationId: string,
+  windowEnd: string,
+) =>
+  infiniteQueryOptions({
+    queryKey: [
+      ...managementKey(organizationId, "loss-installations"),
+      windowEnd,
+    ],
+    queryFn: ({ pageParam, signal }) =>
+      fetchLossInstallations(organizationId, windowEnd, pageParam, signal),
+    initialPageParam: null as LossPageParam,
+    getNextPageParam: (last): LossPageParam =>
+      last.installations.nextCursor
+        ? {
+            cursor: last.installations.nextCursor,
+            snapshotId: last.meta.snapshotId,
+          }
+        : null,
+    enabled: !!organizationId && !!windowEnd,
     ...readOptions,
   });
