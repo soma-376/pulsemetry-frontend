@@ -153,6 +153,7 @@ export function AlertsPanel({
         <ul aria-label="알림 목록" className="flex flex-col gap-2">
           {items.map((alert) => {
             const title = ALERT_RULE_TEXT[alert.ruleId]?.title ?? alert.ruleId;
+            const isReportGap = alert.ruleId === "installation_report_gap";
             const gap =
               alert.evidence?.kind === "installation_report_gap"
                 ? alert.evidence
@@ -170,7 +171,7 @@ export function AlertsPanel({
                       {CATEGORY_TEXT[alert.category]}
                     </span>
                     <span className="rounded bg-gray-tint px-1.5">
-                      {gap
+                      {isReportGap
                         ? reportGapStatus(alert)
                         : alert.status === "open"
                           ? "진행 중"
@@ -203,19 +204,21 @@ export function AlertsPanel({
                     <dd>{alert.ruleId}</dd>
                     <dt className="text-text3">대상</dt>
                     <dd>{alert.subject ?? "-"}</dd>
-                    {gap ? (
-                      <>
-                        <dt className="text-text3">설치 ID</dt>
-                        <dd>{gap.installationId}</dd>
-                        <dt className="text-text3">공백 기준</dt>
-                        <dd>{alertTime(gap.basisAt)}</dd>
-                        <dt className="text-text3">168시간 도달</dt>
-                        <dd>{alertTime(gap.thresholdReachedAt)}</dd>
-                        <dt className="text-text3">마지막 보고 수신</dt>
-                        <dd>{alertTime(gap.lastReceivedAt)}</dd>
-                        <dt className="text-text3">해소 확인</dt>
-                        <dd>{alertTime(gap.resolutionDetectedAt)}</dd>
-                      </>
+                    {isReportGap ? (
+                      gap && (
+                        <>
+                          <dt className="text-text3">설치 ID</dt>
+                          <dd>{gap.installationId}</dd>
+                          <dt className="text-text3">공백 기준</dt>
+                          <dd>{alertTime(gap.basisAt)}</dd>
+                          <dt className="text-text3">168시간 도달</dt>
+                          <dd>{alertTime(gap.thresholdReachedAt)}</dd>
+                          <dt className="text-text3">마지막 보고 수신</dt>
+                          <dd>{alertTime(gap.lastReceivedAt)}</dd>
+                          <dt className="text-text3">해소 확인</dt>
+                          <dd>{alertTime(gap.resolutionDetectedAt)}</dd>
+                        </>
+                      )
                     ) : (
                       <>
                         <dt className="text-text3">묶음 구간</dt>
@@ -247,7 +250,7 @@ export function AlertsPanel({
                         : "미확인"}
                     </dd>
                   </dl>
-                  {gap && (
+                  {isReportGap && (
                     <p className="mt-2 text-text3">
                       단순 보고 공백은 전송 손실이나 사용 이벤트 수가 아닙니다.
                       해소 확인은 평가기가 보고 재개 또는 설치 폐기를 확인한

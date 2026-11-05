@@ -190,7 +190,9 @@ export async function fetchLossInstallations(
   if (
     result.meta.organizationId !== organizationId ||
     Date.parse(result.windowEnd) !== Date.parse(windowEnd) ||
-    (page && result.meta.snapshotId !== page.snapshotId)
+    (page &&
+      (result.meta.snapshotId !== page.snapshotId ||
+        result.installations.nextCursor === page.cursor))
   )
     throw new ManagementError("invalid_response", 422);
   return result;

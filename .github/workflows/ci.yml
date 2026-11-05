@@ -3,6 +3,11 @@ name: Frontend CI
 on:
   pull_request:
   workflow_call:
+    inputs:
+      skip-build-jobs:
+        description: Caller validates Next.js and ARM64 in its release image build
+        type: boolean
+        default: false
   workflow_dispatch:
 
 permissions:
@@ -104,6 +109,7 @@ jobs:
         run: npm test
 
   build:
+    if: ${{ !inputs.skip-build-jobs }}
     name: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -137,6 +143,7 @@ jobs:
         run: npm run build
 
   container:
+    if: ${{ !inputs.skip-build-jobs }}
     name: container build (ARM64)
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 20
@@ -146,8 +153,15 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
       - name: Build validation image (never published)
-        run: >-
-          docker build --platform linux/arm64
-          --build-arg NEXT_PUBLIC_ENROLLMENT_API_URL=https://enrollment.example.invalid
-          --tag frontend-validation .
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/arm64
+          push: false
+          build-args: NEXT_PUBLIC_ENROLLMENT_API_URL=https://enrollment.example.invalid
+          cache-from: type=gha,scope=frontend-arm64
+          cache-to: type=gha,scope=frontend-arm64,mode=max,ignore-error=true,timeout=2m
