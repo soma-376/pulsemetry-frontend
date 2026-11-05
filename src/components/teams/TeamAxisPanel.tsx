@@ -4,8 +4,8 @@ import { SortHeader } from "@/components/ui/SortHeader";
 import { nextSort, sortRows, type SortState } from "@/lib/sort";
 import { LineAreaChart } from "@/components/charts/LineAreaChart";
 import { TrendFeedback } from "@/components/charts/TrendFeedback";
+import { TimeAxis } from "@/components/charts/TimeAxis";
 import { costAxisLabel, trendAxisMax } from "@/lib/metrics/chart-axis";
-import { xAt } from "@/components/charts/scale";
 import { ProgressBar } from "@/components/charts/ProgressBar";
 import {
   type TrendAxisKey,
@@ -183,32 +183,10 @@ export function TeamAxisPanel({
         </div>
 
         <div />
-        <div className="tnum relative h-5 @container text-[11px] text-text3">
-          {model.dayLabels.map(
-            (label, i) =>
-              (i % Math.max(1, Math.ceil((model.dayLabels.length - 1) / 6)) ===
-                0 ||
-                i === model.dayLabels.length - 1) && (
-                <span
-                  key={i}
-                  className={`absolute whitespace-nowrap ${i !== 0 && i !== model.dayLabels.length - 1 ? "@max-[300px]:hidden" : ""}`}
-                  style={{
-                    left: `${model.timeline?.positions[i] ?? xAt(i, model.dayLabels.length)}%`,
-                    transform:
-                      model.dayLabels.length === 1
-                        ? "translateX(-50%)"
-                        : i === 0
-                          ? undefined
-                          : i === model.dayLabels.length - 1
-                            ? "translateX(-100%)"
-                            : "translateX(-50%)",
-                  }}
-                >
-                  {label}
-                </span>
-              ),
-          )}
-        </div>
+        <TimeAxis
+          labels={model.dayLabels}
+          positions={model.timeline?.positions}
+        />
       </div>
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
