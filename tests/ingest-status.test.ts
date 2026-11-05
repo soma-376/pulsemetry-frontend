@@ -227,6 +227,33 @@ test("손실 기기는 헤더 시각과 조직·snapshot을 고정하고 분석 
       }),
       ManagementError,
     );
+    global.fetch = async () =>
+      Response.json({
+        ...page,
+        installations: { ...page.installations, nextCursor: "next" },
+      });
+    await assert.rejects(
+      fetchLossInstallations("org-a", loss.windowEnd, {
+        cursor: "next",
+        snapshotId: "snapshot",
+      }),
+      (error: unknown) =>
+        error instanceof ManagementError && error.code === "invalid_response",
+    );
+    global.fetch = async () =>
+      Response.json({
+        ...page,
+        installations: { ...page.installations, nextCursor: "following" },
+      });
+    assert.equal(
+      (
+        await fetchLossInstallations("org-a", loss.windowEnd, {
+          cursor: "next",
+          snapshotId: "snapshot",
+        })
+      ).installations.nextCursor,
+      "following",
+    );
     assert.notDeepEqual(
       lossInstallationsOptions("org-a", loss.windowEnd).queryKey,
       lossInstallationsOptions("org-b", loss.windowEnd).queryKey,
