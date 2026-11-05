@@ -95,6 +95,68 @@ test("개요 CSV는 화면의 7개 지표·추이·모델 묶음·상위 팀만 
   ])
     assert.ok(!csv.includes(removed));
 });
+
+test("세션 탭 없이도 개요·팀·사용자 CSV는 세션 값·상태·사유와 파생값을 보존한다", () => {
+  const overview = overviewSchema.parse(overviewExample);
+  Object.assign(overview.summary!.sessionCount, {
+    value: null,
+    status: "unavailable",
+    reasons: ["session_identity_missing"],
+  });
+  const summary = section(overviewCsv(overview, "조직", "now"), "summary");
+  const sessions = summary.find((row) => row.metric === "sessionCount")!;
+  assert.equal(sessions.value, "");
+  assert.equal(sessions.valueStatus, "unavailable");
+  assert.equal(sessions.valueReasons, "session_identity_missing");
+  for (const key of ["sessionsPerUser", "equivalentCostPerSessionUsd"])
+    assert.ok(summary.some((row) => row.metric === key));
+
+  const source = structuredClone(teamsExample);
+  const view = { ...source, teams: source.teams.items } as unknown as TeamsView;
+  const team = view.teams[0];
+  Object.assign(team.metrics.sessionCount, {
+    value: null,
+    status: "unavailable",
+    reasons: ["session_identity_missing"],
+  });
+  const users = structuredClone(usersExample.users.items) as TeamUser[];
+  Object.assign(users[0].usage.sessionCount, {
+    value: null,
+    status: "unavailable",
+    reasons: ["session_identity_missing"],
+  });
+  for (const axis of ["cost", "token"] as const) {
+    const csv = teamsCsv(
+      view,
+      "조직",
+      "now",
+      {
+        teamId: team.teamId!,
+        teamName: team.teamName,
+        users,
+      },
+      { axis, mode: "strict" },
+    );
+    const row = section(csv, "teams")[0];
+    assert.equal(row.sessionCount, "");
+    assert.equal(row.sessionCount_status, "unavailable");
+    assert.equal(row.sessionCount_reasons, "session_identity_missing");
+    for (const key of [
+      "sessionsPerUser",
+      "tokensPerSession",
+      "equivalentCostPerSessionUsd",
+    ])
+      assert.ok(key in row);
+    assert.ok(
+      section(csv, "trend").every((row) => "cumulativeSessionCount" in row),
+    );
+    assert.ok(section(csv, "chart_trend").every((row) => row.axis === axis));
+    const user = section(csv, "team_users")[0];
+    assert.equal(user.sessionCount, "");
+    assert.equal(user.sessionCount_status, "unavailable");
+    assert.equal(user.sessionCount_reasons, "session_identity_missing");
+  }
+});
 test("개요 CSV는 null·0·부분 관측·조회 실패를 구분한다", () => {
   const data = overviewSchema.parse(overviewExample);
   data.trend!.points[0].equivalentCostUsd = {
@@ -213,12 +275,13 @@ test("팀 CSV는 선택한 누적 모드와 부분합을 내보내고 세션에 
     section(teamsCsv(view, "조직", "now", null), "chart_trend")[1].value,
     "",
   );
-  const sessions = teamsCsv(view, "조직", "now", null, {
-    axis: "session",
-    mode: "known",
+  const tokens = teamsCsv(view, "조직", "now", null, {
+    axis: "token",
+    mode: "strict",
   });
-  assert.match(sessions, /누적 집계 기준,전체 누적/);
-  assert.equal(section(sessions, "chart_trend")[1].mode, "strict");
+  assert.equal(section(tokens, "chart_trend")[1].axis, "token");
+  assert.ok(section(tokens, "teams")[0].sessionCount !== undefined);
+  assert.ok(section(tokens, "trend")[1].cumulativeSessionCount !== undefined);
 });
 
 test("팀: 목록 전 팀과 미배정, 고른 팀이 있으면 그 팀의 사용자 전부", () => {
@@ -249,7 +312,9 @@ test("팀: 목록 전 팀과 미배정, 고른 팀이 있으면 그 팀의 사�
     teams[0].equivalentCostUsd_comparisonStatus,
     view.teams[0].metrics.equivalentCostUsd.comparison.status,
   );
-  assert.equal(section(csv, "trend")[0].status, view.teams[0].trend[0].status);
+  const dayPoint = view.teams[0].trend[0];
+  assert.ok("date" in dayPoint);
+  assert.equal(section(csv, "trend")[0].status, dayPoint.status);
   assert.equal(
     section(csv, "models")[0].status,
     view.modelScatter.data!.models[0].status,

@@ -28,7 +28,11 @@ export function ChartInspector({ chart }: { chart: OverviewChart }) {
             ? knownMoneyText(String(value))
             : usd(value)
       }
-      label="날짜별 사용 환산액. 좌우 방향키로 날짜를 이동하세요"
+      label={
+        chart.timeline
+          ? `${chart.timeline.intervalLabel}별 사용 환산액. KST 시간 범위를 좌우 방향키로 이동하세요`
+          : "날짜별 사용 환산액. 좌우 방향키로 날짜를 이동하세요"
+      }
     />
   );
 }

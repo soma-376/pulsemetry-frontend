@@ -1,9 +1,8 @@
 export function pricingRowsText(value: {
-  pricedUsageRows?: number;
-  unpricedUsageRows?: number;
+  pricedUsageRows?: number | null;
+  unpricedUsageRows?: number | null;
 }) {
-  return value.pricedUsageRows === undefined ||
-    value.unpricedUsageRows === undefined
+  return value.pricedUsageRows == null || value.unpricedUsageRows == null
     ? ""
     : `환산 완료 ${value.pricedUsageRows.toLocaleString("ko-KR")}건 · 환산 미확인 ${value.unpricedUsageRows.toLocaleString("ko-KR")}건`;
 }

@@ -1,4 +1,4 @@
-import { overviewSchema } from "../../src/lib/api/overview";
+import { dailyOverviewSchema } from "../../src/lib/api/overview";
 import type { Page } from "@playwright/test";
 import example from "../../docs/api/overview-response.example.json";
 
@@ -12,7 +12,7 @@ export const corsHeaders = (page: Page) => ({
 /** 일자와 조직은 실제 브라우저 요청을 따른다. 운영 코드에는 fixture를 주입하지 않는다. */
 export function overviewFixture(url: string) {
   const request = new URL(url);
-  const data = overviewSchema.parse(example);
+  const data = dailyOverviewSchema.parse(example);
   data.meta.organizationId = request.pathname
     .split("/organizations/")[1]
     .split("/")[0];
@@ -31,7 +31,7 @@ export function overviewFixture(url: string) {
   data.trend!.points = Array.from(
     { length: data.meta.dayCount },
     (_, index) => ({
-      ...overviewSchema.parse(example).trend!.points[index % 7],
+      ...dailyOverviewSchema.parse(example).trend!.points[index % 7],
       date: new Date(Date.parse(data.meta.startDate) + index * 86_400_000)
         .toISOString()
         .slice(0, 10),

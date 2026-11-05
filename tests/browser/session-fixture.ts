@@ -33,9 +33,10 @@ export async function issueFixtureCookie(
     expired?: boolean;
     tampered?: boolean;
     organizationId?: string;
+    origin?: string;
   } = {},
 ) {
-  const origin = "http://localhost:3107";
+  const origin = options.origin ?? "http://localhost:3107";
   const codec = createSessionReferenceCookie({
     origin,
     keys: ["ab".repeat(32)],

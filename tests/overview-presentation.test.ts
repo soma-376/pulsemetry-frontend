@@ -5,10 +5,13 @@ import {
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import example from "../docs/api/overview-response.example.json";
-import { overviewSchema, type OverviewValue } from "../src/lib/api/overview";
+import {
+  dailyOverviewSchema,
+  type OverviewValue,
+} from "../src/lib/api/overview";
 import { presentOverview } from "../src/lib/metrics/overview-presentation";
 import { nullableLinePath } from "../src/components/charts/scale";
-const data = () => overviewSchema.parse(example);
+const data = () => dailyOverviewSchema.parse(example);
 const value = <T>(v: T | null, reasons: string[] = []): OverviewValue<T> => ({
   value: v,
   status: v === null ? "unavailable" : reasons.length ? "partial" : "complete",
@@ -22,6 +25,25 @@ const unavailable = {
   percentChange: null,
   change: null,
 };
+test("개요 카드 순서와 세션 파생값은 유지하고 세션 결손이 비용·토큰·추이를 숨기지 않는다", () => {
+  const d = data();
+  const before = presentOverview(d);
+  assert.deepEqual(
+    before.kpis.map((card) => card.label),
+    ["사용자 수", "사용 환산액", "세션 수", "사용자당 환산액", "총 토큰 수"],
+  );
+  assert.match(before.kpis[2].caption, /사용자당 .*회 · 세션당 \$/);
+  d.summary!.sessionCount = {
+    ...d.summary!.sessionCount,
+    ...value<number>(null, ["session_identity_missing"]),
+  };
+  const after = presentOverview(d);
+  assert.equal(after.kpis[2].value, "-");
+  assert.match(after.kpis[2].valueStatus?.reason ?? "", /세션/);
+  assert.equal(after.kpis[1].value, before.kpis[1].value);
+  assert.equal(after.kpis[4].value, before.kpis[4].value);
+  assert.deepEqual(after.chart, before.chart);
+});
 test("소액 환산액 추이는 실제 최댓값에 맞추고 0·미가격 날짜를 유지한다", () => {
   const d = data();
   const amounts = ["0.000800", "0", null];
@@ -64,7 +86,7 @@ test("확인된 금액은 공식 KPI·평균을 대체하지 않고 일별 부�
     pricedUsageRows: index === 1 ? 0 : 3,
     unpricedUsageRows: 1,
   }));
-  const parsed = overviewSchema.parse(d);
+  const parsed = dailyOverviewSchema.parse(d);
   const m = presentOverview(parsed, d.trend!.points[2].date);
   assert.equal(m.kpis[1].value, "-");
   assert.equal(m.kpis[3].value, "-");
@@ -90,7 +112,7 @@ test("부분합 계약이 없는 기존 응답과 부분합도 미확인인 응�
     p.equivalentCostUsd = value<string>(null, ["pricing_missing"]);
     p.knownEquivalentCostUsd = value<string>(null, ["pricing_missing"]);
   });
-  const m = presentOverview(overviewSchema.parse(d));
+  const m = presentOverview(dailyOverviewSchema.parse(d));
   assert.equal(m.kpis[1].value, "-");
   assert.equal(m.kpis[1].supportingValue, undefined);
   assert.ok(m.chart.series[0].values.every((v) => v === null));
@@ -287,7 +309,7 @@ test("추이 부분 실패는 다른 지표를 보존하고 빈 기간은 팀 �
   d.errors = [
     { section: "trend", code: "source_unavailable", retryable: true },
   ];
-  assert.equal(overviewSchema.safeParse(d).success, true);
+  assert.equal(dailyOverviewSchema.safeParse(d).success, true);
   const m = presentOverview(d);
   assert.equal(m.kpis.length, 5);
   assert.equal(m.mix.count, 5);
@@ -297,7 +319,7 @@ test("추이 부분 실패는 다른 지표를 보존하고 빈 기간은 팀 �
   d.modelMix = null;
   d.teamUsage = null;
   d.errors = [];
-  assert.equal(overviewSchema.safeParse(d).success, true);
+  assert.equal(dailyOverviewSchema.safeParse(d).success, true);
   assert.equal(presentOverview(d).attribution.show, false);
 });
 
