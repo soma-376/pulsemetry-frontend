@@ -24,7 +24,6 @@ export default defineConfig({
     timeout: 120000,
     env: {
       PORT: "3187",
-      NEXT_PUBLIC_AUTO_TREND_ENABLED: "true",
       // 유효 세션 API는 Playwright가 모킹한다. 무쿠키 거부 경로는 연결 없이 검사한다.
       BFF_SESSION_ENV: "dev",
       BFF_VALKEY_HOST: "fixture.serverless.apn2.cache.amazonaws.com",

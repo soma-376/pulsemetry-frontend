@@ -341,7 +341,7 @@ for (const width of [1440, 390]) {
 
     if (mode === "day") {
       const lossButton = page.getByRole("button", {
-        name: /최근 7일 보고된 전송 손실 7건/,
+        name: /최근 7일 전송 손실 7건/,
       });
       await expect(lossButton).toBeVisible();
       await lossButton.click();

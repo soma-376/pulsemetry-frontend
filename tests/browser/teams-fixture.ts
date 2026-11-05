@@ -1,3 +1,5 @@
+import { automaticTeamsFixture } from "../../.storybook/fixtures/auto-trend";
+import { teamsResponseSchema } from "../../src/lib/api/teams";
 import { test, type Page, type Route } from "@playwright/test";
 import type { TeamUser } from "../../src/lib/api/teams";
 import example from "../../docs/api/teams-response.example.json";
@@ -127,8 +129,9 @@ export async function mockTeams(
         return route.fulfill({ status: 204, headers: cors });
       const url = new URL(request.url());
       const path = url.pathname.split("/organizations/")[1].split("/").slice(1);
-      const data = teamsFixture(url);
-      options.modify?.(data);
+      const daily = teamsFixture(url);
+      options.modify?.(daily);
+      const data = automaticTeamsFixture(teamsResponseSchema.parse(daily));
       const [, , teamId, tail] = path;
       if (!teamId) return json(route, data);
       const team =

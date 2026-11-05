@@ -2,9 +2,9 @@
 
 허브 ADR 0031과 Backend ADR 0077을 구현한다. 기존 일별 DTO와 PROJ-316 수집 현황·알림 계약은 유지한다. 공유 이벤트 fixture는 [auto-trend.fixture.json](../../tests/fixtures/auto-trend.fixture.json)이며 일별 수치를 시간 구간으로 분배한 자료가 아니다.
 
-## 활성화와 복구
+## 기본 요청
 
-`NEXT_PUBLIC_AUTO_TREND_ENABLED=true`로 **빌드한** 프론트만 개요·팀 목록·팀 상세에 `bucket=auto`를 요청한다. 기본값은 `false`이며 PROJ-315 공통 정책 통합 검증 전 사용자 배포에서 활성화하지 않는다. 복구할 때도 이 호환 버전에서 `false`로 다시 빌드한다. 세션 탭 제거와 PROJ-316 파서는 유지된다. 현재 `collectionPolicy.status=pending`은 통합 완료를 뜻하지 않는다.
+개요·팀 목록·팀 상세는 별도 빌드 플래그 없이 항상 `bucket=auto`를 요청한다. 자동 구간 v2를 지원하는 backend와 함께 배포한다. 기존 일별 DTO 파서와 명시적 `bucket=day` API 호환성은 유지하지만 화면의 기본 요청은 자동 구간이다. 현재 `collectionPolicy.status=pending`은 통합 완료를 뜻하지 않으며 응답의 정책 상태를 그대로 표시한다.
 
 ## 요청과 응답
 
@@ -67,8 +67,8 @@ npm run format:check
 npm run lint
 npm run typecheck
 npm test
-npm run test:browser:mock # flag=false 호환 경로, 3107
-npm run test:browser:auto # flag=true 자동 경로, 3187
+npm run test:browser:mock # 공통 UI 검증, 3107
+npm run test:browser:auto # 자동 구간 기본 경로, 3187
 npm run test:e2e:auto # 격리 실제 API + 3187 브라우저
 ```
 
@@ -82,4 +82,4 @@ npm run test:e2e:auto # 격리 실제 API + 3187 브라우저
 
 간격은 전체 선택 기간으로 정하고 표시 종료는 effectiveEnd=max(rangeStart,min(rangeEnd,asOf))다. 시작이 effectiveEnd 이상인 버킷은 반환하지 않는다. 마지막 끝은 effectiveEnd로 자른다. 원래 계획 종료보다 asOf가 이르면 in_progress, 아니면 elapsed다. 정각에는 길이가 0인 다음 구간을 만들지 않는다. 미래 전체 기간은 빈 배열이며 이미 지난 빈 구간의 값은 no_data로 보존한다. 최소 6개는 전체 계획에만 적용되며 현재까지 응답은 0~12개다.
 
-meta.trendAggregation은 policyVersion=calendar-buckets-v2, intervalSeconds(고정 간격은 초·월은 null), intervalMonths(월은 1·고정 간격은 null), effectiveEnd를 제공한다. rangeStart/rangeEnd는 전체 선택 기간을 유지한다. 차트 축의 끝은 effectiveEnd이며 구간의 정확한 끝을 툴팁과 CSV에 표시한다. 월 구간을 30일로 환산하지 않는다. 자동 snapshot 계약은 dashboard-auto-trend-v2이며 이전 자동 계약과 혼용하지 않는다. 일별 모드와 PROJ-315 활성화 gate는 유지한다.
+meta.trendAggregation은 policyVersion=calendar-buckets-v2, intervalSeconds(고정 간격은 초·월은 null), intervalMonths(월은 1·고정 간격은 null), effectiveEnd를 제공한다. rangeStart/rangeEnd는 전체 선택 기간을 유지한다. 차트 축의 끝은 effectiveEnd이며 구간의 정확한 끝을 툴팁과 CSV에 표시한다. 월 구간을 30일로 환산하지 않는다. 자동 snapshot 계약은 dashboard-auto-trend-v2이며 이전 자동 계약과 혼용하지 않는다. 일별 API 호환성은 유지한다.

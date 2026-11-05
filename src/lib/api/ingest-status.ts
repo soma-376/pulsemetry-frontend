@@ -80,7 +80,7 @@ export function transmissionLossLabel(loss: TransmissionLoss | undefined) {
   if (!loss) return "집계 정보 없음";
   if (loss.availability === "unavailable")
     return "최근 7일 전송 손실 집계 불가";
-  return `최근 7일 보고된 전송 손실 ${loss.payloadCount!.toLocaleString("ko-KR")}건${loss.availability === "partial" ? " · 일부 집계" : ""}`;
+  return `최근 7일 전송 손실 ${loss.payloadCount!.toLocaleString("ko-KR")}건${loss.availability === "partial" ? " · 일부 집계" : ""}`;
 }
 
 const time = (value: string) =>

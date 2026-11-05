@@ -1,15 +1,15 @@
 "use client";
 
 import type { UseQueryResult } from "@tanstack/react-query";
-import { useState } from "react";
 import {
-  transmissionLossLabel,
+  INGEST_STATES,
+  ingestDetails,
   type IngestStatus,
 } from "@/lib/api/ingest-status";
 import { ManagementError } from "@/lib/api/management";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { lossTime, TransmissionLossDrawer } from "./TransmissionLossDrawer";
+import { TransmissionLossPopover } from "./TransmissionLossPopover";
 
 export function IngestStatusBar({
   query,
@@ -18,16 +18,14 @@ export function IngestStatusBar({
   query: UseQueryResult<IngestStatus, Error>;
   enabled: boolean;
 }) {
-  const [open, setOpen] = useState(false);
   const denied =
     query.error instanceof ManagementError &&
     [401, 403, 404].includes(query.error.status);
   const data = denied ? undefined : query.data;
-  const loss = data?.transmissionLoss;
   return (
     <div
       aria-label="조직 수집 현황"
-      className="flex min-h-12 min-w-0 flex-1 items-center gap-2 text-xs text-text2"
+      className="flex min-h-12 min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text2"
     >
       {!enabled ? (
         <span>로그인 후 전송 손실을 확인할 수 있습니다</span>
@@ -50,39 +48,39 @@ export function IngestStatusBar({
         ></ErrorState>
       ) : data ? (
         <>
-          <button
-            type="button"
-            aria-haspopup="dialog"
-            aria-expanded={open}
-            className="min-w-0 cursor-pointer rounded border border-border px-2 py-1 text-left leading-5 hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 [overflow-wrap:anywhere]"
-            onClick={() => setOpen(true)}
-            title={`${lossTime(loss?.windowEnd ?? data.asOf)} 기준`}
-          >
+          <div className="flex flex-wrap items-center gap-1.5">
             <span
-              className={
-                loss?.availability === "partial"
-                  ? "font-medium text-orange-ink"
-                  : "font-medium"
-              }
-            >
-              {transmissionLossLabel(loss)}
+              aria-hidden="true"
+              className="size-1.5 shrink-0 rounded-full"
+              style={{
+                background:
+                  data.reason === "installations_silent"
+                    ? "var(--text3)"
+                    : INGEST_STATES[data.status].color,
+              }}
+            />
+            <strong className="font-medium">
+              {data.reason === "installations_silent"
+                ? "보고 상태 미확인"
+                : INGEST_STATES[data.status].label}
+            </strong>
+            <span className="text-text3">
+              ·{" "}
+              {ingestDetails(data, true)
+                .find((detail) => detail.startsWith("마지막 수신"))
+                ?.replace("마지막 수신 ", "마지막 수신: ") ??
+                "마지막 수신: 기록 없음"}
             </span>
-            {loss?.availability === "partial" && loss.availableFrom && (
-              <span className="block text-[11px] text-text3">
-                집계 시작 {lossTime(loss.availableFrom)}
-              </span>
+            {query.isError && (
+              <span className="text-orange-ink">갱신 실패</span>
             )}
-            <span
-              className={`block text-[11px] leading-4 ${query.isError ? "text-orange-ink" : "text-text3"}`}
-            >
-              {query.isError ? "갱신 실패 · " : ""}
-              {lossTime(loss?.windowEnd ?? data.asOf)} 기준
-            </span>
-          </button>
-          <TransmissionLossDrawer
+          </div>
+          <span
+            aria-hidden="true"
+            className="hidden h-3.5 w-px bg-border sm:block"
+          />
+          <TransmissionLossPopover
             data={data}
-            open={open}
-            onClose={() => setOpen(false)}
             refreshFailed={query.isError}
             refreshingSummary={query.isFetching}
             onRefreshSummary={() =>

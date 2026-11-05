@@ -30,7 +30,6 @@ export default defineConfig({
       ...server?.env,
       PORT: "3198",
       BFF_ORIGIN: "http://localhost:3198",
-      NEXT_PUBLIC_AUTO_TREND_ENABLED: mode === "auto" ? "true" : "false",
     },
   },
 });

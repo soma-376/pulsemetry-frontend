@@ -26,7 +26,7 @@ const response = {
   lastReceivedAt: null,
 };
 
-test("구버전 응답 재조회 실패도 캐시의 기준시각과 갱신 실패를 렌더링한다", async () => {
+test("구버전 응답 재조회 실패도 수신 기록 없음과 갱신 실패를 렌더링한다", async () => {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -52,13 +52,7 @@ test("구버전 응답 재조회 실패도 캐시의 기준시각과 갱신 실�
     );
     assert.match(html, /집계 정보 없음/);
     assert.match(html, /갱신 실패 · /);
-    assert.ok(
-      html.includes(
-        new Date(response.asOf).toLocaleString("ko-KR", {
-          timeZone: "Asia/Seoul",
-        }),
-      ),
-    );
+    assert.match(html, /마지막 수신: 기록 없음/);
     assert.doesNotMatch(html, /전송 손실 0건/);
   } finally {
     observer.destroy();
@@ -121,7 +115,7 @@ test("손실 집계는 확인된 0·부분·불가·구버전 누락을 구분�
   });
   assert.equal(
     transmissionLossLabel(zero.transmissionLoss),
-    "최근 7일 보고된 전송 손실 0건",
+    "최근 7일 전송 손실 0건",
   );
   const partial = ingestStatusSchema.parse({
     ...response,
@@ -133,7 +127,7 @@ test("손실 집계는 확인된 0·부분·불가·구버전 누락을 구분�
   });
   assert.equal(
     transmissionLossLabel(partial.transmissionLoss),
-    "최근 7일 보고된 전송 손실 10건 · 일부 집계",
+    "최근 7일 전송 손실 10건 · 일부 집계",
   );
   const unavailable = ingestStatusSchema.parse({
     ...response,

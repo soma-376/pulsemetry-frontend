@@ -101,8 +101,13 @@ const meta = {
             );
           return HttpResponse.json({
             organizationId: params.org,
-            status: parameters.scenario === "empty" ? "empty" : "unknown",
-            reason: "source_not_available",
+            status:
+              parameters.scenario === "empty"
+                ? "empty"
+                : parameters.lossScenario
+                  ? "healthy"
+                  : "unknown",
+            reason: parameters.lossScenario ? null : "source_not_available",
             asOf: "2026-09-29T00:00:00Z",
             lastReceivedAt:
               parameters.scenario === "empty" ? null : "2026-09-28T23:58:00Z",

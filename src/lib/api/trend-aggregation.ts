@@ -1,10 +1,6 @@
 import { z } from "zod";
 
 export type TrendBucket = "day" | "auto";
-/** 공개 환경 변수는 빌드 시 고정된다. PROJ-315 정책 검증 전에는 활성화하지 않는다. */
-export const configuredTrendBucket = (): TrendBucket =>
-  process.env.NEXT_PUBLIC_AUTO_TREND_ENABLED === "true" ? "auto" : "day";
-
 export const trendAggregationSchema = z.strictObject({
   mode: z.literal("auto"),
   policyVersion: z.literal("calendar-buckets-v2"),

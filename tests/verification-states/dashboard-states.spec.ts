@@ -411,7 +411,7 @@ test("316 손실 헤더의 대기·최초 실패·재시도 복구", async ({ pa
   );
   failed = false;
   await lossBar(page).getByRole("button", { name: "다시 조회" }).click();
-  await expect(lossBar(page)).toContainText("최근 7일 보고된 전송 손실 10건");
+  await expect(lossBar(page)).toContainText("최근 7일 전송 손실 10건");
   await capture(
     page,
     "loss-recovered",
@@ -427,7 +427,7 @@ for (const scenario of [
     id: "zero",
     title: "확인된 0",
     value: { ...loss, payloadCount: 0, affectedInstallationCount: 0 },
-    label: "최근 7일 보고된 전송 손실 0건",
+    label: "최근 7일 전송 손실 0건",
   },
   {
     id: "unavailable",

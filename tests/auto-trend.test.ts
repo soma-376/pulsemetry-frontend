@@ -17,7 +17,6 @@ import {
   teamDetailOptions,
 } from "../src/lib/api/teams";
 import {
-  configuredTrendBucket,
   plannedTrendBuckets,
   validAutoTrend,
   trendAggregationSchema,
@@ -165,20 +164,7 @@ test("월말·윤년·366일은 원래 날짜의 월 경계를 유지하고 13�
   assert.equal(points.at(-1)!.bucketEnd, "2026-01-01T15:00:00.000Z");
 });
 
-test("빌드 gate는 true만 자동 요청하며 cache에 day/auto를 구분한다", () => {
-  const original = process.env.NEXT_PUBLIC_AUTO_TREND_ENABLED;
-  try {
-    delete process.env.NEXT_PUBLIC_AUTO_TREND_ENABLED;
-    assert.equal(configuredTrendBucket(), "day");
-    process.env.NEXT_PUBLIC_AUTO_TREND_ENABLED = "false";
-    assert.equal(configuredTrendBucket(), "day");
-    process.env.NEXT_PUBLIC_AUTO_TREND_ENABLED = "true";
-    assert.equal(configuredTrendBucket(), "auto");
-  } finally {
-    if (original === undefined)
-      delete process.env.NEXT_PUBLIC_AUTO_TREND_ENABLED;
-    else process.env.NEXT_PUBLIC_AUTO_TREND_ENABLED = original;
-  }
+test("day/auto 요청의 캐시를 구분한다", () => {
   assert.notDeepEqual(
     teamsOptions(org, period).queryKey,
     teamsOptions(org, { ...period, bucket: "day" }).queryKey,

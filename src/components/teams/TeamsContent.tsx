@@ -1,7 +1,5 @@
 "use client";
 
-import { configuredTrendBucket } from "@/lib/api/trend-aggregation";
-
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 
@@ -81,7 +79,7 @@ function OrganizationTeams({
     startDate: dates.start,
     endDate: dates.end ?? dates.start,
     compare,
-    bucket: configuredTrendBucket(),
+    bucket: "auto",
   };
   const query = useQuery({
     ...teamsOptions(organizationId, period),
