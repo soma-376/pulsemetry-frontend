@@ -20,6 +20,7 @@ import {
 } from "../src/lib/api/overview-format";
 
 const params: OverviewParams = {
+  bucket: "day",
   organizationId: example.meta.organizationId,
   startDate: example.meta.startDate,
   endDate: example.meta.endDate,

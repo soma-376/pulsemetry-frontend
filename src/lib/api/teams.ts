@@ -273,7 +273,7 @@ function checkTrend(team: TeamAnalytics, meta: z.infer<typeof metaSchema>) {
 }
 function checkMode(meta: z.infer<typeof metaSchema>, period: TeamsPeriod) {
   if (
-    (meta.trendAggregation?.mode ?? "day") !== (period.bucket ?? "day") ||
+    (meta.trendAggregation?.mode ?? "day") !== (period.bucket ?? "auto") ||
     (meta.trendAggregation
       ? !validCollectionPolicy(meta.collectionPolicy, meta.trendAggregation)
       : !!meta.collectionPolicy)
@@ -457,7 +457,7 @@ export const teamsOptions = (organizationId: string, period: TeamsPeriod) =>
       period.startDate,
       period.endDate,
       period.compare,
-      period.bucket ?? "day",
+      period.bucket ?? "auto",
     ],
     queryFn: ({ signal }) => fetchTeams(organizationId, period, signal),
     enabled: !!organizationId && !!period.startDate && !!period.endDate,
@@ -480,7 +480,7 @@ export const teamDetailOptions = (
       period.startDate,
       period.endDate,
       period.compare,
-      period.bucket ?? "day",
+      period.bucket ?? "auto",
     ],
     queryFn: ({ signal }) =>
       fetchTeamDetail(

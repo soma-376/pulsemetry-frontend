@@ -75,18 +75,23 @@ export function IngestStatusBar({
               <span className="text-orange-ink">갱신 실패</span>
             )}
           </div>
-          <span
-            aria-hidden="true"
-            className="hidden h-3.5 w-px bg-border sm:block"
-          />
-          <TransmissionLossPopover
-            data={data}
-            refreshFailed={query.isError}
-            refreshingSummary={query.isFetching}
-            onRefreshSummary={() =>
-              void query.refetch({ cancelRefetch: false })
-            }
-          />
+          {data.transmissionLoss &&
+            data.transmissionLoss.availability !== "unavailable" && (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="hidden h-3.5 w-px bg-border sm:block"
+                />
+                <TransmissionLossPopover
+                  data={data}
+                  refreshFailed={query.isError}
+                  refreshingSummary={query.isFetching}
+                  onRefreshSummary={() =>
+                    void query.refetch({ cancelRefetch: false })
+                  }
+                />
+              </>
+            )}
         </>
       ) : null}
     </div>

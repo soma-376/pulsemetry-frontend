@@ -32,7 +32,6 @@ export function OverviewContent() {
       endDate: dates.end ?? dates.start,
       compare,
       timeZone: "Asia/Seoul",
-      bucket: "auto",
     }),
     enabled: configured,
     refetchInterval: (state) => {
