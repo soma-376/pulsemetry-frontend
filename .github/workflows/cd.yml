@@ -16,6 +16,9 @@ jobs:
   ci:
     name: Verify release commit
     uses: ./.github/workflows/ci.yml
+    with:
+      # The release Docker build below validates both Next.js and ARM64.
+      skip-build-jobs: true
     permissions:
       contents: read
 
@@ -48,12 +51,6 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Build image with public environment
-        run: >-
-          docker build --platform linux/arm64
-          --build-arg NEXT_PUBLIC_ENROLLMENT_API_URL
-          --tag frontend-publish .
-
       - name: Check branch still points to this commit
         id: current
         env:
@@ -66,6 +63,23 @@ jobs:
             echo 'publish=false' >> "$GITHUB_OUTPUT"
             echo '브랜치가 변경되어 이전 커밋의 이미지 게시를 건너뜁니다.' >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      - name: Set up Docker Buildx
+        if: steps.current.outputs.publish == 'true'
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build image with public environment
+        if: steps.current.outputs.publish == 'true'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/arm64
+          load: true
+          push: false
+          tags: frontend-publish
+          build-args: NEXT_PUBLIC_ENROLLMENT_API_URL=${{ vars.NEXT_PUBLIC_ENROLLMENT_API_URL }}
+          cache-from: type=gha,scope=frontend-arm64
+          cache-to: type=gha,scope=frontend-arm64,mode=max,ignore-error=true,timeout=2m
 
       - name: Assume environment image release role
         if: steps.current.outputs.publish == 'true'
@@ -89,7 +103,7 @@ jobs:
           set -euo pipefail
           head_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$GITHUB_REF_NAME" --jq '.object.sha')
           if [ "$head_sha" != "$GITHUB_SHA" ]; then
-            echo '인증 중 브랜치가 변경되어 게시를 건너뜁니다.' >> "$GITHUB_STEP_SUMMARY"
+            echo '빌드 또는 인증 중 브랜치가 변경되어 게시를 건너뜁니다.' >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           image="$REGISTRY/$REPOSITORY:$IMAGE_TAG"
@@ -120,3 +134,28 @@ jobs:
       - name: Record deployment disabled
         if: steps.image.outputs.digest != '' && vars.ECS_DEPLOY_ENABLED != 'true'
         run: echo 'ECS_DEPLOY_ENABLED가 true가 아니므로 이미지 게시만 완료했습니다. 해당 환경의 최초 설정 후 자동 배포를 활성화하세요.' >> "$GITHUB_STEP_SUMMARY"
+
+  timings:
+    name: Report CD timings
+    needs: [ci, publish]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Record queue and stage timings
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/report-cd-timings.mjs

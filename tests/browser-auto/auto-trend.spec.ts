@@ -74,7 +74,7 @@ async function teams(page: Page) {
   );
 }
 
-test("개요 자동 24개 축 · KST 범위 키보드 · Decimal CSV · 미래 null", async ({
+test("개요 자동 현재까지 4개 축 · KST 범위 키보드 · Decimal CSV · 미래 제외", async ({
   page,
 }) => {
   await ready(page);
@@ -85,12 +85,12 @@ test("개요 자동 24개 축 · KST 범위 키보드 · Decimal CSV · 미래 n
     return route.fulfill({ json: autoOverview() });
   });
   await page.goto(`/overview?${period}`);
-  const slider = page.getByRole("slider", { name: /1시간별 사용 환산액/ });
-  await expect(slider).toHaveAttribute("aria-valuemax", "24");
+  const slider = page.getByRole("slider", { name: /3시간별 사용 환산액/ });
+  await expect(slider).toHaveAttribute("aria-valuemax", "4");
   await slider.focus();
   await expect(slider).toHaveAttribute(
     "aria-valuetext",
-    /2026-11-04 00:00 ~ 2026-11-04 01:00 KST/,
+    /2026-11-04 00:00 ~ 2026-11-04 03:00 KST/,
   );
   await expect(slider).toHaveAttribute("aria-valuetext", /\$0\.000000000003/);
   await slider.press("ArrowRight");
@@ -101,12 +101,12 @@ test("개요 자동 24개 축 · KST 범위 키보드 · Decimal CSV · 미래 n
   await slider.press("End");
   await expect(slider).toHaveAttribute(
     "aria-valuetext",
-    /2026-11-05 00:00 KST.*미도래/,
+    /2026-11-04 10:30 KST.*집계 중/,
   );
   const text = await csv(page);
   expect(text).toContain("aggregationMode,auto");
   expect(text).toContain("0.000000000003,complete");
-  expect(text).toMatch(/upcoming,,,unavailable,upcoming/);
+  expect(text).not.toMatch(/upcoming/);
 });
 
 test("팀 자동 서버 누적 그대로 · 비용/토큰만 · 세션 API/CSV 유지", async ({
@@ -127,10 +127,10 @@ test("팀 자동 서버 누적 그대로 · 비용/토큰만 · 세션 API/CSV �
   await slider.press("ArrowRight");
   await expect(slider).toHaveAttribute("aria-valuetext", /집계 중/);
   const line = panel.locator("svg path").first();
-  await expect(line).toHaveAttribute("d", /L14\.58,/);
+  await expect(line).toHaveAttribute("d", /L100,/);
   const text = await csv(page);
   expect(text).toMatch(
-    /chart_trend,team-a,자동 집계 팀,2026-11-03T17:00:00Z,2026-11-03T18:00:00Z,elapsed,2,cost,strict,0.300000000003/,
+    /chart_trend,team-a,자동 집계 팀,2026-11-03T21:00:00Z,2026-11-04T00:00:00Z,elapsed,2,cost,strict,0.300000000003/,
   );
   expect(text).toContain(
     "cumulativeSessionCount_status,cumulativeSessionCount_reasons",
@@ -206,7 +206,7 @@ test("자동 시간축 불연속 응답은 실제 조회 오류로 표시한다"
   await expect(page.getByRole("slider")).toHaveCount(0);
 });
 
-test("자동 빈 기간도 24개 시간축과 미도래 키보드 탐색을 유지한다", async ({
+test("자동 빈 기간은 현재까지 4개 구간과 키보드 탐색을 유지한다", async ({
   page,
 }) => {
   await ready(page);
@@ -235,10 +235,10 @@ test("자동 빈 기간도 24개 시간축과 미도래 키보드 탐색을 유�
   );
   await page.goto(`/overview?${period}`);
   const overviewSlider = page.getByRole("slider");
-  await expect(overviewSlider).toHaveAttribute("aria-valuemax", "24");
+  await expect(overviewSlider).toHaveAttribute("aria-valuemax", "4");
   await overviewSlider.focus();
   await overviewSlider.press("End");
-  await expect(overviewSlider).toHaveAttribute("aria-valuetext", /미도래/);
+  await expect(overviewSlider).toHaveAttribute("aria-valuetext", /집계 중/);
   const data = autoTeamsResponse();
   data.meta.dataState = "no_data";
   data.teams = { items: [], nextOffset: null, totalCount: 0 };
@@ -268,13 +268,13 @@ test("자동 빈 기간도 24개 시간축과 미도래 키보드 탐색을 유�
   );
   await page.goto(`/teams?${period}`);
   const teamSlider = page.getByRole("slider");
-  await expect(teamSlider).toHaveAttribute("aria-valuemax", "24");
+  await expect(teamSlider).toHaveAttribute("aria-valuemax", "4");
   await teamSlider.focus();
   await teamSlider.press("End");
-  await expect(teamSlider).toHaveAttribute("aria-valuetext", /미도래/);
+  await expect(teamSlider).toHaveAttribute("aria-valuetext", /집계 중/);
 });
 
-test("30일 60개 자동 구간은 좁은 화면에서도 실제 시간과 명시적 0을 설명한다", async ({
+test("30일 10개 자동 구간은 좁은 화면에서도 실제 시간과 명시적 0을 설명한다", async ({
   page,
 }) => {
   await ready(page);
@@ -285,7 +285,8 @@ test("30일 60개 자동 구간은 좁은 화면에서도 실제 시간과 명�
   data.meta.endDate = "2026-09-30";
   data.meta.dayCount = 30;
   Object.assign(data.meta.trendAggregation!, {
-    intervalSeconds: 43200,
+    intervalSeconds: 259200,
+    effectiveEnd: new Date(end).toISOString(),
     rangeStart: new Date(start).toISOString(),
     rangeEnd: new Date(end).toISOString(),
   });
@@ -295,9 +296,9 @@ test("30일 60개 자동 구간은 좁은 화면에서도 실제 시간과 명�
   });
   data.trend = {
     bucket: "auto",
-    points: Array.from({ length: 60 }, (_, i) => ({
-      bucketStart: new Date(start + i * 43200_000).toISOString(),
-      bucketEnd: new Date(start + (i + 1) * 43200_000).toISOString(),
+    points: Array.from({ length: 10 }, (_, i) => ({
+      bucketStart: new Date(start + i * 259200_000).toISOString(),
+      bucketEnd: new Date(start + (i + 1) * 259200_000).toISOString(),
       temporalState: "elapsed",
       usageRows: i === 0 ? 1 : 0,
       pricedUsageRows: i === 0 ? 1 : 0,
@@ -324,7 +325,7 @@ test("30일 60개 자동 구간은 좁은 화면에서도 실제 시간과 명�
     "/overview?startDate=2026-09-01&endDate=2026-09-30&compare=none",
   );
   const slider = page.getByRole("slider");
-  await expect(slider).toHaveAttribute("aria-valuemax", "60");
+  await expect(slider).toHaveAttribute("aria-valuemax", "10");
   await slider.focus();
   await expect(slider).toHaveAttribute(
     "aria-valuetext",
@@ -337,7 +338,7 @@ test("30일 60개 자동 구간은 좁은 화면에서도 실제 시간과 명�
   await slider.press("End");
   await expect(slider).toHaveAttribute(
     "aria-valuetext",
-    /2026-09-30 12:00 ~ 2026-10-01 00:00 KST/,
+    /2026-09-28 00:00 ~ 2026-10-01 00:00 KST/,
   );
   expect(
     await page.evaluate(

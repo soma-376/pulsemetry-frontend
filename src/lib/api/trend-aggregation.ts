@@ -5,15 +5,15 @@ export type TrendBucket = "day" | "auto";
 export const configuredTrendBucket = (): TrendBucket =>
   process.env.NEXT_PUBLIC_AUTO_TREND_ENABLED === "true" ? "auto" : "day";
 
-export const TREND_INTERVALS = [
-  3600, 10800, 21600, 43200, 86400, 259200, 604800,
-] as const;
 export const trendAggregationSchema = z.strictObject({
   mode: z.literal("auto"),
-  intervalSeconds: z.number().int().positive(),
+  policyVersion: z.literal("calendar-buckets-v2"),
+  intervalSeconds: z.number().int().positive().nullable(),
+  intervalMonths: z.literal(1).nullable(),
   valueMode: z.enum(["interval", "cumulative"]),
   rangeStart: z.iso.datetime({ offset: true }),
   rangeEnd: z.iso.datetime({ offset: true }),
+  effectiveEnd: z.iso.datetime({ offset: true }),
   asOf: z.iso.datetime({ offset: true }),
 });
 export type TrendAggregation = z.infer<typeof trendAggregationSchema>;
@@ -65,51 +65,82 @@ export type AutoPoint = {
   unpricedUsageRows: number | null;
 };
 
-/** 요청 시작 KST 자정에 정렬한 실제 간격·연속성·시간 상태를 검증한다. */
+/** 서버 계약의 날짜 경계만 검증한다. 사용값을 재집계하지 않는다(허브 ADR 0033). */
+export function plannedTrendBuckets(startDate: string, endDate: string) {
+  const start = Date.parse(`${startDate}T00:00:00+09:00`);
+  const end = Date.parse(`${endDate}T00:00:00+09:00`) + 86_400_000;
+  const days = (end - start) / 86_400_000;
+  const seconds =
+    days === 1
+      ? 10800
+      : days === 2
+        ? 21600
+        : days <= 6
+          ? 43200
+          : days <= 12
+            ? 86400
+            : days <= 24
+              ? 172800
+              : days <= 36
+                ? 259200
+                : days <= 84
+                  ? 604800
+                  : days <= 168
+                    ? 1209600
+                    : null;
+  const [year, month, day] = startDate.split("-").map(Number);
+  const starts: number[] = [];
+  for (let i = 0; i < 12; i++) {
+    // 원래 날짜에서 월을 더한다. 1월 31일 → 2월 말 → 3월 31일이다.
+    const lastDay = new Date(Date.UTC(year, month + i, 0)).getUTCDate();
+    const from =
+      seconds === null
+        ? Date.UTC(year, month - 1 + i, Math.min(day, lastDay)) - 9 * 3600_000
+        : start + i * seconds * 1000;
+    if (from >= end) break;
+    starts.push(from);
+  }
+  return { start, end, days, seconds, starts };
+}
+
 export function validAutoTrend(
   meta: { startDate: string; endDate: string; dayCount: number },
   aggregation: TrendAggregation,
   valueMode: TrendAggregation["valueMode"],
   points?: AutoPoint[],
 ) {
-  const start = Date.parse(`${meta.startDate}T00:00:00+09:00`);
-  const end = Date.parse(`${meta.endDate}T00:00:00+09:00`) + 86_400_000;
-  const duration = end - start;
-  const interval = TREND_INTERVALS.find(
-    (seconds) => Math.ceil(duration / (seconds * 1000)) <= 60,
-  );
+  const plan = plannedTrendBuckets(meta.startDate, meta.endDate);
+  const asOf = Date.parse(aggregation.asOf);
+  const effectiveEnd = Math.max(plan.start, Math.min(plan.end, asOf));
   if (
-    meta.dayCount !== duration / 86_400_000 ||
-    meta.dayCount < 1 ||
-    meta.dayCount > 366 ||
+    !Number.isFinite(asOf) ||
+    meta.dayCount !== plan.days ||
+    plan.days < 1 ||
+    plan.days > 366 ||
+    plan.starts.length < 6 ||
+    plan.starts.length > 12 ||
+    aggregation.policyVersion !== "calendar-buckets-v2" ||
     aggregation.valueMode !== valueMode ||
-    aggregation.intervalSeconds !== interval ||
-    Date.parse(aggregation.rangeStart) !== start ||
-    Date.parse(aggregation.rangeEnd) !== end
+    aggregation.intervalSeconds !== plan.seconds ||
+    aggregation.intervalMonths !== (plan.seconds === null ? 1 : null) ||
+    Date.parse(aggregation.rangeStart) !== plan.start ||
+    Date.parse(aggregation.rangeEnd) !== plan.end ||
+    Date.parse(aggregation.effectiveEnd) !== effectiveEnd
   )
     return false;
   if (!points) return true;
-  const step = aggregation.intervalSeconds * 1000;
-  const asOf = Date.parse(aggregation.asOf);
+  const visible = plan.starts.filter((start) => start < effectiveEnd);
   return (
-    points.length === Math.ceil(duration / step) &&
-    points.length <= 60 &&
+    points.length === visible.length &&
     points.every((point, index) => {
-      const from = start + index * step,
-        to = Math.min(from + step, end);
-      const temporalState =
-        to <= asOf ? "elapsed" : from <= asOf ? "in_progress" : "upcoming";
-      const counts = [
-        point.usageRows,
-        point.pricedUsageRows,
-        point.unpricedUsageRows,
-      ];
+      const plannedEnd = plan.starts[index + 1] ?? plan.end;
       return (
-        Date.parse(point.bucketStart) === from &&
-        Date.parse(point.bucketEnd) === to &&
-        point.temporalState === temporalState &&
-        counts.every((value) =>
-          temporalState === "upcoming" ? value === null : value !== null,
+        Date.parse(point.bucketStart) === visible[index] &&
+        Date.parse(point.bucketEnd) === Math.min(plannedEnd, effectiveEnd) &&
+        point.temporalState ===
+          (asOf < plannedEnd ? "in_progress" : "elapsed") &&
+        [point.usageRows, point.pricedUsageRows, point.unpricedUsageRows].every(
+          (v) => v !== null,
         )
       );
     })

@@ -1,4 +1,8 @@
-import { trendTimeline, type TrendTimeline } from "./trend-timeline";
+import {
+  trendDateLabel,
+  trendTimeline,
+  type TrendTimeline,
+} from "./trend-timeline";
 import {
   trendFeedback,
   trendBadge,
@@ -374,7 +378,10 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
   const ticks = points.map((p, i) => ({
     label:
       timeline?.ticks[i] ??
-      `${Number(p.date.slice(5, 7))}.${Number(p.date.slice(8))}`,
+      trendDateLabel(
+        p.date,
+        points[0]?.date.slice(0, 4) !== points.at(-1)?.date.slice(0, 4),
+      ),
     date: p.date,
     preObserved: p.observation === "unobserved",
     tokens: numberText(p.totalTokens.value),

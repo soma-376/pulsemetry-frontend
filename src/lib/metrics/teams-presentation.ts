@@ -1,4 +1,4 @@
-import { trendTimeline } from "./trend-timeline";
+import { trendDateLabel, trendTimeline } from "./trend-timeline";
 import { trendFeedback } from "./trend-feedback";
 import { pricingRowsText } from "./known-usage";
 import { currentDateIso } from "../date";
@@ -778,8 +778,11 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
     ),
     dayLabels:
       timeline?.ticks ??
-      dates.map(
-        (date) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`,
+      dates.map((date) =>
+        trendDateLabel(
+          date,
+          dates[0]?.slice(0, 4) !== dates.at(-1)?.slice(0, 4),
+        ),
       ),
     trend,
     knownTrend,

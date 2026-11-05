@@ -143,3 +143,67 @@ test("공통 알림함은 보고 공백의 확인·해소·재발을 구분하�
   await expect(security).not.toContainText("설치 보고 공백 알림");
   expect(categories).toContain("security");
 });
+
+for (const status of ["open", "closed"]) {
+  test(`근거 없는 보고 공백도 전용 상태와 안내를 유지한다: ${status}`, async ({
+    page,
+  }) => {
+    await mockSession(page);
+    await mockOverview(page);
+    await page.route("**/api/v1/organizations/*/alerts?*", (route) =>
+      route.fulfill({
+        json: {
+          meta: {
+            organizationId: testOrganizationId,
+            snapshotId: "gap-null",
+            asOf: "2026-11-04T00:00:00Z",
+          },
+          evaluation: {
+            status: "complete",
+            reasons: [],
+            asOf: "2026-11-04T00:00:00Z",
+          },
+          alerts: {
+            items: [
+              {
+                alertId: "gap-null",
+                version: 1,
+                ruleId: "installation_report_gap",
+                category: "collection",
+                status,
+                occurredAt: "2026-11-04T00:00:00Z",
+                lastSeenAt: "2026-11-04T00:00:00Z",
+                windowStart: "2026-10-28T00:00:00Z",
+                windowEnd: "2026-11-04T00:00:00Z",
+                subject: "installation-a",
+                eventCount: null,
+                memberCount: 0,
+                members: [],
+                evidence: null,
+                acknowledgement: null,
+              },
+            ],
+            totalCount: 1,
+            nextCursor: null,
+          },
+        },
+      }),
+    );
+    await page.goto("/overview");
+    await page
+      .getByRole("button", { name: "알림, 미확인 1건", exact: true })
+      .click();
+    const row = page.locator('[data-alert-id="gap-null"]');
+    await expect(row).toContainText(
+      status === "open" ? "보고 공백 지속" : "보고 공백 종료",
+    );
+    await expect(row).toContainText("설치 보고 근거를 확인할 수 없습니다");
+    await row.getByText("상세", { exact: true }).click();
+    await expect(row).toContainText(
+      "단순 보고 공백은 전송 손실이나 사용 이벤트 수가 아닙니다",
+    );
+    await expect(row).not.toContainText("위반 수");
+    await expect(row).not.toContainText("묶음 구간");
+    await expect(row.getByText("설치 ID", { exact: true })).toHaveCount(0);
+  });
+}

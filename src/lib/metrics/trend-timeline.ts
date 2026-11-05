@@ -1,5 +1,10 @@
 import type { AutoPoint, TrendAggregation } from "../api/trend-aggregation";
 
+export const trendDateLabel = (date: string, crossesYear: boolean) =>
+  crossesYear
+    ? date.slice(0, 7).replace("-", ".")
+    : date.slice(5, 10).replace("-", "/");
+
 export const intervalLabel = (seconds: number) =>
   seconds < 86400 ? `${seconds / 3600}시간` : `${seconds / 86400}일`;
 const kst = (timestamp: string) =>
@@ -19,11 +24,20 @@ export function trendTimeline(
   points: AutoPoint[],
 ) {
   const start = Date.parse(aggregation.rangeStart),
-    end = Date.parse(aggregation.rangeEnd);
+    end = Date.parse(aggregation.effectiveEnd);
+  const crossesYear =
+    kst(aggregation.rangeStart).slice(0, 4) !==
+    kst(new Date(Date.parse(aggregation.rangeEnd) - 1).toISOString()).slice(
+      0,
+      4,
+    );
   const position = (timestamp: number) =>
-    ((timestamp - start) / (end - start)) * 100;
+    end > start ? ((timestamp - start) / (end - start)) * 100 : 0;
   return {
-    intervalLabel: intervalLabel(aggregation.intervalSeconds),
+    intervalLabel:
+      aggregation.intervalMonths === 1
+        ? "1개월"
+        : intervalLabel(aggregation.intervalSeconds!),
     asOf: aggregation.asOf,
     positions: points.map((point) =>
       position(
@@ -57,9 +71,7 @@ export function trendTimeline(
             ? aggregation.asOf
             : point.bucketEnd,
       );
-      return aggregation.intervalSeconds < 86400
-        ? `${time.slice(5, 10)} ${time.slice(11)}`
-        : time.slice(5, 10);
+      return trendDateLabel(time, crossesYear);
     }),
   };
 }

@@ -1,5 +1,5 @@
 {
-  "fixtureVersion": "proj-317-auto-v1",
+  "fixtureVersion": "proj-317-auto-v2",
   "description": "가상 명시 이벤트에서 만든 계약 fixture. 실제 API 캡처나 PROJ-315 통합 완료 증거가 아니다.",
   "request": {
     "startDate": "2026-11-04",
@@ -8,11 +8,11 @@
     "compare": "none",
     "bucket": "auto"
   },
-  "asOf": "2026-11-03T18:30:00Z",
+  "asOf": "2026-11-04T01:30:00Z",
   "events": [
     {
       "id": "tiny-1",
-      "sourceTime": "2026-11-03T15:10:00Z",
+      "sourceTime": "2026-11-03T15:30:00Z",
       "teamId": "team-a",
       "product": "codex",
       "sessionNamespace": "conversation",
@@ -23,7 +23,7 @@
     },
     {
       "id": "same-session",
-      "sourceTime": "2026-11-03T15:40:00Z",
+      "sourceTime": "2026-11-03T17:00:00Z",
       "teamId": "team-a",
       "product": "codex",
       "sessionNamespace": "conversation",
@@ -34,7 +34,7 @@
     },
     {
       "id": "other-product",
-      "sourceTime": "2026-11-03T17:00:00Z",
+      "sourceTime": "2026-11-03T21:00:00Z",
       "teamId": "team-a",
       "product": "claude_code",
       "sessionNamespace": "conversation",
@@ -45,7 +45,7 @@
     },
     {
       "id": "other-namespace",
-      "sourceTime": "2026-11-03T17:15:00Z",
+      "sourceTime": "2026-11-03T21:45:00Z",
       "teamId": "team-a",
       "product": "codex",
       "sessionNamespace": "thread",
@@ -56,7 +56,7 @@
     },
     {
       "id": "explicit-zero",
-      "sourceTime": "2026-11-03T18:10:00Z",
+      "sourceTime": "2026-11-04T00:30:00Z",
       "teamId": "team-a",
       "product": "codex",
       "sessionNamespace": "conversation",
@@ -67,7 +67,7 @@
     },
     {
       "id": "exact-as-of-excluded",
-      "sourceTime": "2026-11-03T18:30:00Z",
+      "sourceTime": "2026-11-04T01:30:00Z",
       "teamId": "team-a",
       "product": "codex",
       "sessionNamespace": "conversation",
@@ -78,7 +78,7 @@
     },
     {
       "id": "future-excluded",
-      "sourceTime": "2026-11-03T19:00:00Z",
+      "sourceTime": "2026-11-04T03:00:00Z",
       "teamId": "team-a",
       "product": "codex",
       "sessionNamespace": "conversation",
@@ -104,15 +104,18 @@
       "snapshotId": "fixture-auto-snapshot",
       "trendAggregation": {
         "mode": "auto",
-        "intervalSeconds": 3600,
+        "intervalSeconds": 10800,
         "valueMode": "interval",
         "rangeStart": "2026-11-03T15:00:00Z",
         "rangeEnd": "2026-11-04T15:00:00Z",
-        "asOf": "2026-11-03T18:30:00Z"
+        "asOf": "2026-11-04T01:30:00Z",
+        "intervalMonths": null,
+        "policyVersion": "calendar-buckets-v2",
+        "effectiveEnd": "2026-11-04T01:30:00Z"
       },
       "collectionPolicy": {
         "policyVersion": "proj-315-pending",
-        "asOf": "2026-11-03T18:30:00Z",
+        "asOf": "2026-11-04T01:30:00Z",
         "status": "pending",
         "annotations": [
           {
@@ -130,15 +133,18 @@
       "snapshotId": "fixture-auto-snapshot",
       "trendAggregation": {
         "mode": "auto",
-        "intervalSeconds": 3600,
+        "intervalSeconds": 10800,
         "valueMode": "cumulative",
         "rangeStart": "2026-11-03T15:00:00Z",
         "rangeEnd": "2026-11-04T15:00:00Z",
-        "asOf": "2026-11-03T18:30:00Z"
+        "asOf": "2026-11-04T01:30:00Z",
+        "intervalMonths": null,
+        "policyVersion": "calendar-buckets-v2",
+        "effectiveEnd": "2026-11-04T01:30:00Z"
       },
       "collectionPolicy": {
         "policyVersion": "proj-315-pending",
-        "asOf": "2026-11-03T18:30:00Z",
+        "asOf": "2026-11-04T01:30:00Z",
         "status": "pending",
         "annotations": [
           {
@@ -157,7 +163,7 @@
       "points": [
         {
           "bucketStart": "2026-11-03T15:00:00Z",
-          "bucketEnd": "2026-11-03T16:00:00Z",
+          "bucketEnd": "2026-11-03T18:00:00Z",
           "temporalState": "elapsed",
           "usageRows": 2,
           "pricedUsageRows": 2,
@@ -179,8 +185,8 @@
           }
         },
         {
-          "bucketStart": "2026-11-03T16:00:00Z",
-          "bucketEnd": "2026-11-03T17:00:00Z",
+          "bucketStart": "2026-11-03T18:00:00Z",
+          "bucketEnd": "2026-11-03T21:00:00Z",
           "temporalState": "elapsed",
           "usageRows": 0,
           "pricedUsageRows": 0,
@@ -202,8 +208,8 @@
           }
         },
         {
-          "bucketStart": "2026-11-03T17:00:00Z",
-          "bucketEnd": "2026-11-03T18:00:00Z",
+          "bucketStart": "2026-11-03T21:00:00Z",
+          "bucketEnd": "2026-11-04T00:00:00Z",
           "temporalState": "elapsed",
           "usageRows": 2,
           "pricedUsageRows": 2,
@@ -225,8 +231,8 @@
           }
         },
         {
-          "bucketStart": "2026-11-03T18:00:00Z",
-          "bucketEnd": "2026-11-03T19:00:00Z",
+          "bucketStart": "2026-11-04T00:00:00Z",
+          "bucketEnd": "2026-11-04T01:30:00Z",
           "temporalState": "in_progress",
           "usageRows": 1,
           "pricedUsageRows": 1,
@@ -246,473 +252,13 @@
             "status": "complete",
             "reasons": []
           }
-        },
-        {
-          "bucketStart": "2026-11-03T19:00:00Z",
-          "bucketEnd": "2026-11-03T20:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-03T20:00:00Z",
-          "bucketEnd": "2026-11-03T21:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-03T21:00:00Z",
-          "bucketEnd": "2026-11-03T22:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-03T22:00:00Z",
-          "bucketEnd": "2026-11-03T23:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-03T23:00:00Z",
-          "bucketEnd": "2026-11-04T00:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-04T00:00:00Z",
-          "bucketEnd": "2026-11-04T01:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-04T01:00:00Z",
-          "bucketEnd": "2026-11-04T02:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-04T02:00:00Z",
-          "bucketEnd": "2026-11-04T03:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-04T03:00:00Z",
-          "bucketEnd": "2026-11-04T04:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-04T04:00:00Z",
-          "bucketEnd": "2026-11-04T05:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-04T05:00:00Z",
-          "bucketEnd": "2026-11-04T06:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-04T06:00:00Z",
-          "bucketEnd": "2026-11-04T07:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-04T07:00:00Z",
-          "bucketEnd": "2026-11-04T08:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-04T08:00:00Z",
-          "bucketEnd": "2026-11-04T09:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-04T09:00:00Z",
-          "bucketEnd": "2026-11-04T10:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-04T10:00:00Z",
-          "bucketEnd": "2026-11-04T11:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-04T11:00:00Z",
-          "bucketEnd": "2026-11-04T12:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-04T12:00:00Z",
-          "bucketEnd": "2026-11-04T13:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-04T13:00:00Z",
-          "bucketEnd": "2026-11-04T14:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
-        },
-        {
-          "bucketStart": "2026-11-04T14:00:00Z",
-          "bucketEnd": "2026-11-04T15:00:00Z",
-          "temporalState": "upcoming",
-          "usageRows": null,
-          "pricedUsageRows": null,
-          "unpricedUsageRows": null,
-          "equivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "knownEquivalentCostUsd": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          },
-          "totalTokens": {
-            "value": null,
-            "status": "unavailable",
-            "reasons": ["upcoming"]
-          }
         }
       ]
     },
     "teamTrend": [
       {
         "bucketStart": "2026-11-03T15:00:00Z",
-        "bucketEnd": "2026-11-03T16:00:00Z",
+        "bucketEnd": "2026-11-03T18:00:00Z",
         "temporalState": "elapsed",
         "usageRows": 2,
         "pricedUsageRows": 2,
@@ -739,8 +285,8 @@
         }
       },
       {
-        "bucketStart": "2026-11-03T16:00:00Z",
-        "bucketEnd": "2026-11-03T17:00:00Z",
+        "bucketStart": "2026-11-03T18:00:00Z",
+        "bucketEnd": "2026-11-03T21:00:00Z",
         "temporalState": "elapsed",
         "usageRows": 0,
         "pricedUsageRows": 2,
@@ -767,8 +313,8 @@
         }
       },
       {
-        "bucketStart": "2026-11-03T17:00:00Z",
-        "bucketEnd": "2026-11-03T18:00:00Z",
+        "bucketStart": "2026-11-03T21:00:00Z",
+        "bucketEnd": "2026-11-04T00:00:00Z",
         "temporalState": "elapsed",
         "usageRows": 2,
         "pricedUsageRows": 4,
@@ -795,8 +341,8 @@
         }
       },
       {
-        "bucketStart": "2026-11-03T18:00:00Z",
-        "bucketEnd": "2026-11-03T19:00:00Z",
+        "bucketStart": "2026-11-04T00:00:00Z",
+        "bucketEnd": "2026-11-04T01:30:00Z",
         "temporalState": "in_progress",
         "usageRows": 1,
         "pricedUsageRows": 5,
@@ -820,566 +366,6 @@
           "value": 4,
           "status": "complete",
           "reasons": []
-        }
-      },
-      {
-        "bucketStart": "2026-11-03T19:00:00Z",
-        "bucketEnd": "2026-11-03T20:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-03T20:00:00Z",
-        "bucketEnd": "2026-11-03T21:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-03T21:00:00Z",
-        "bucketEnd": "2026-11-03T22:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-03T22:00:00Z",
-        "bucketEnd": "2026-11-03T23:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-03T23:00:00Z",
-        "bucketEnd": "2026-11-04T00:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-04T00:00:00Z",
-        "bucketEnd": "2026-11-04T01:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-04T01:00:00Z",
-        "bucketEnd": "2026-11-04T02:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-04T02:00:00Z",
-        "bucketEnd": "2026-11-04T03:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-04T03:00:00Z",
-        "bucketEnd": "2026-11-04T04:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-04T04:00:00Z",
-        "bucketEnd": "2026-11-04T05:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-04T05:00:00Z",
-        "bucketEnd": "2026-11-04T06:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-04T06:00:00Z",
-        "bucketEnd": "2026-11-04T07:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-04T07:00:00Z",
-        "bucketEnd": "2026-11-04T08:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-04T08:00:00Z",
-        "bucketEnd": "2026-11-04T09:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-04T09:00:00Z",
-        "bucketEnd": "2026-11-04T10:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-04T10:00:00Z",
-        "bucketEnd": "2026-11-04T11:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-04T11:00:00Z",
-        "bucketEnd": "2026-11-04T12:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-04T12:00:00Z",
-        "bucketEnd": "2026-11-04T13:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-04T13:00:00Z",
-        "bucketEnd": "2026-11-04T14:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        }
-      },
-      {
-        "bucketStart": "2026-11-04T14:00:00Z",
-        "bucketEnd": "2026-11-04T15:00:00Z",
-        "temporalState": "upcoming",
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "cumulativeEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeKnownEquivalentCostUsd": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeTotalTokens": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
-        },
-        "cumulativeSessionCount": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
         }
       }
     ],
@@ -1419,7 +405,7 @@
       "events": [
         {
           "id": "priced",
-          "sourceTime": "2026-11-03T15:10:00Z",
+          "sourceTime": "2026-11-03T15:30:00Z",
           "teamId": "team-a",
           "product": "codex",
           "sessionNamespace": "conversation",
@@ -1430,7 +416,7 @@
         },
         {
           "id": "unpriced-sessionless",
-          "sourceTime": "2026-11-03T16:10:00Z",
+          "sourceTime": "2026-11-03T18:30:00Z",
           "teamId": "team-a",
           "product": "codex",
           "sessionNamespace": "conversation",
@@ -1470,7 +456,7 @@
       "events": [
         {
           "id": "unpriced",
-          "sourceTime": "2026-11-03T15:10:00Z",
+          "sourceTime": "2026-11-03T15:30:00Z",
           "teamId": "team-a",
           "product": "codex",
           "sessionNamespace": "conversation",
@@ -1516,16 +502,6 @@
           "value": null,
           "status": "unavailable",
           "reasons": ["no_data"]
-        }
-      },
-      "expectedUpcoming": {
-        "usageRows": null,
-        "pricedUsageRows": null,
-        "unpricedUsageRows": null,
-        "metricValue": {
-          "value": null,
-          "status": "unavailable",
-          "reasons": ["upcoming"]
         }
       }
     }
