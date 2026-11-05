@@ -262,7 +262,13 @@ const view = (
         ),
     sort: "cost",
     teams,
-    unassigned: team(null, "미배정"),
+    unassigned: team(null, "미배정", {
+      metrics: {
+        ...metrics(usage("0.000000", 0, 0, 0)),
+        pricedUsageRows: 0,
+        unpricedUsageRows: 0,
+      },
+    }),
     modelScatter: {
       availability: "available",
       reason: null,
@@ -551,6 +557,11 @@ test("미배정은 실제 사용이 있을 때만 행이 되고 막대는 팀 �
     view([team("team-a", "플랫폼", { current: usage("1.000000", 1, 1, 10) })], {
       unassigned: team(null, "미배정", {
         current: usage("3.000000", 1, 1, 10),
+        metrics: {
+          ...metrics(usage("3.000000", 1, 1, 10)),
+          pricedUsageRows: 1,
+          unpricedUsageRows: 0,
+        },
       }),
     }),
   );
@@ -1071,8 +1082,14 @@ test("팀 추이는 날짜별 서버 사유를 전달하고 미래는 누락으�
   assert.deepEqual(model.trend.cost[0].values, [1, null, null]);
 });
 
-test("미배정은 no_data인 전부 null 값에서 숨기지만 식별·가격 누락만으로 숨기지 않는다", () => {
-  const unassigned = team(null, "미배정", { current: null });
+test("미배정은 사용 행이 명시된 0일 때만 숨기고 식별·가격 누락과 독립적으로 보존한다", () => {
+  const unassigned = team(null, "미배정", {
+    metrics: {
+      ...metrics(null),
+      pricedUsageRows: 0,
+      unpricedUsageRows: 0,
+    },
+  });
   const withoutData = presentTeams(
     view([team("team-a", "플랫폼")], { unassigned }),
   );
@@ -1090,6 +1107,7 @@ test("미배정은 no_data인 전부 null 값에서 숨기지만 식별·가격 
       "pricing_missing",
     ];
   }
+  unassigned.metrics.unpricedUsageRows = 1;
   const withUnknownUsage = presentTeams(
     view([team("team-a", "플랫폼")], { unassigned }),
   );
@@ -1101,6 +1119,33 @@ test("미배정은 no_data인 전부 null 값에서 숨기지만 식별·가격 
       ?.sub,
     "개",
   );
+});
+
+test("미배정의 0원·0토큰·세션 결손은 관측된 행을 숨기지 않고 구버전 누락은 미사용으로 추측하지 않는다", () => {
+  const base = metrics(usage("0.000000", 0, null, 0));
+  base.sessionCount.reasons = ["session_identity_missing"];
+  for (const [counts, shown] of [
+    [{ pricedUsageRows: 1, unpricedUsageRows: 0 }, true],
+    [{ pricedUsageRows: 0, unpricedUsageRows: 1 }, true],
+    [{ pricedUsageRows: 0, unpricedUsageRows: 0 }, false],
+    [{}, true],
+    [{ pricedUsageRows: 0 }, true],
+    [{ unpricedUsageRows: 0 }, true],
+  ] as const) {
+    const unassigned = team(null, "미배정", {
+      metrics: { ...base, ...counts },
+    });
+    const model = presentTeams(view([], { unassigned }));
+    assert.equal(
+      model.teams.some((row) => row.key === "unassigned"),
+      shown,
+    );
+    if (shown) {
+      assert.equal(model.axes.cost.rows[0].totalValue, 0);
+      assert.equal(model.axes.token.rows[0].totalValue, 0);
+      assert.equal(teamDetail(unassigned, false).sessions, "-");
+    }
+  }
 });
 
 test("팀 추이의 토큰·가격·세션 결손은 해당 축에만 표시하고 다른 정상 축을 부분 집계로 낮추지 않는다", () => {

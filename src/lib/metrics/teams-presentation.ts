@@ -1,7 +1,13 @@
+import { trendDateLabel, trendTimeline } from "./trend-timeline";
 import { trendFeedback } from "./trend-feedback";
 import { pricingRowsText } from "./known-usage";
 import { currentDateIso } from "../date";
-import { moneyText, numberText, numeric } from "@/lib/api/overview-format";
+import {
+  exactMoneyText,
+  moneyText,
+  numberText,
+  numeric,
+} from "@/lib/api/overview-format";
 import {
   UNASSIGNED,
   type TeamAnalytics,
@@ -23,16 +29,16 @@ import {
  * 값·사용자당·단가·증감은 서버가 확정한 값을 쓴다. 클라이언트 계산은 일별 값의 누적과 표시용 비중뿐이고,
  * 필요한 값이 null이면 파생값도 null이다. 0으로 채우거나 다른 값으로 대신하지 않는다.
  *
- * 축이 셋인 이유: 비용만 보면 "인원이 많은 팀"이 항상 1등이라 아무것도 알 수 없다.
- * 토큰은 사용량, 세션은 사용 패턴을 분리해 보여주고, 사용자당 열이 그 셋을 인원수로 나눈다.
+ * 선택 탭은 비용·토큰이다. 세션 데이터는 상세·사용자 표·CSV를 위해 유지한다.
  */
 
 export type AxisKey = "cost" | "token" | "session";
+export type TrendAxisKey = Exclude<AxisKey, "session">;
 export type TrendMode = "strict" | "known";
 export const knownTrendNote = (axis: "cost" | "token") =>
   axis === "cost"
-    ? "보관된 자료 중 계산 가능한 금액의 누적합입니다. 선택 기간 전체 금액의 하한이며, 확인할 수 없는 날짜는 비워 둡니다."
-    : "확인 가능한 날의 토큰만 더한 누적합입니다. 선택 기간 전체 사용량의 하한이며, 확인할 수 없는 날짜는 비워 둡니다.";
+    ? "보관된 자료 중 계산 가능한 금액의 누적합입니다. 선택 기간 전체 금액의 하한이며, 확인할 수 없는 구간은 비워 둡니다."
+    : "확인 가능한 구간의 토큰만 더한 누적합입니다. 선택 기간 전체 사용량의 하한이며, 확인할 수 없는 구간은 비워 둡니다.";
 type Usage = NonNullable<TeamAnalytics["metrics"]>;
 
 /** 팀 선 색 — 표의 체크박스 accent 와 추이 선이 같은 색을 쓴다. */
@@ -92,27 +98,11 @@ export function metric(
       : usage.sessionCount.value;
 }
 
-/** 완전 관측된 기간에 사용이 없으면 서버가 0을 준다 — 미배정 행은 실제 사용이 있을 때만 그린다. */
-function hasUsage(usage: Usage | null) {
-  if (!usage) return false;
-  const values = [
-    usage.activeUsers,
-    usage.sessionCount,
-    usage.totalTokens,
-    usage.equivalentCostUsd,
-  ];
-  if (
-    values.every(
-      (metric) => metric.value === null && metric.reasons.includes("no_data"),
-    )
-  )
-    return false;
-  return !(
-    usage.activeUsers.value === 0 &&
-    usage.sessionCount.value === 0 &&
-    usage.totalTokens.value === 0 &&
-    numeric(usage.equivalentCostUsd.value) === 0
-  );
+/** 사용 관측은 사용 행 수로 판정한다. 구버전 응답의 누락은 미사용을 뜻하지 않는다. */
+function hasRecordedUsage(usage: Usage | null): boolean | null {
+  if (usage?.pricedUsageRows == null || usage.unpricedUsageRows == null)
+    return null;
+  return usage.pricedUsageRows + usage.unpricedUsageRows > 0;
 }
 
 const changeColor = (value: number | null) =>
@@ -234,6 +224,25 @@ function serverChange(
 
 /** 날짜별 응답의 사유는 세 축의 합집합이다. 현재 선택한 값에 적용되는 근거만 표시한다. */
 function trendPointState(point: TeamAnalytics["trend"][number], axis: AxisKey) {
+  if ("bucketStart" in point) {
+    const value =
+      axis === "cost"
+        ? point.cumulativeEquivalentCostUsd
+        : axis === "token"
+          ? point.cumulativeTotalTokens
+          : point.cumulativeSessionCount;
+    return {
+      observation:
+        value.status === "complete"
+          ? ("complete" as const)
+          : value.status === "partial"
+            ? ("partial" as const)
+            : (point.pricedUsageRows ?? 0) + (point.unpricedUsageRows ?? 0) > 0
+              ? ("partial" as const)
+              : ("unobserved" as const),
+      reason: reasonsText(value.reasons),
+    };
+  }
   const selectedValue =
     axis === "cost"
       ? point.equivalentCostUsd
@@ -268,10 +277,24 @@ export function cumulative(
   trend: TeamAnalytics["trend"],
   axis: AxisKey,
 ): (number | null)[] {
+  if (trend.every((point) => "bucketStart" in point))
+    return trend.map((point) =>
+      axis === "cost"
+        ? numeric(point.cumulativeEquivalentCostUsd.value)
+        : axis === "token"
+          ? point.cumulativeTotalTokens.value
+          : point.cumulativeSessionCount.value,
+    );
   if (axis === "session")
-    return trend.map((point) => point.cumulativeSessionCount);
+    return trend.map((point) =>
+      "bucketStart" in point
+        ? point.cumulativeSessionCount.value
+        : point.cumulativeSessionCount,
+    );
   let running: number | null = 0;
   return trend.map((point) => {
+    if ("bucketStart" in point)
+      throw new Error("일별·자동 추이를 섞을 수 없습니다");
     const value =
       axis === "cost" ? numeric(point.equivalentCostUsd) : point.totalTokens;
     running = running === null || value === null ? null : running + value;
@@ -284,8 +307,16 @@ export function knownCumulative(
   trend: TeamAnalytics["trend"],
   axis: "cost" | "token",
 ): (number | null)[] {
+  if (trend.every((point) => "bucketStart" in point))
+    return trend.map((point) =>
+      axis === "cost"
+        ? numeric(point.cumulativeKnownEquivalentCostUsd.value)
+        : point.cumulativeTotalTokens.value,
+    );
   let running = 0;
   return trend.map((point) => {
+    if ("bucketStart" in point)
+      throw new Error("일별·자동 추이를 섞을 수 없습니다");
     const value =
       axis === "cost"
         ? numeric(
@@ -474,7 +505,9 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
   const reason = comparisonReason(view);
   const entries = [
     ...view.teams,
-    ...(hasUsage(view.unassigned.metrics) ? [view.unassigned] : []),
+    ...(hasRecordedUsage(view.unassigned.metrics) !== false
+      ? [view.unassigned]
+      : []),
   ].map(entryOf);
 
   // 선 색은 비용 내림차순(값 없음은 뒤, 동률은 이름)으로 배정한다 — 축을 바꿔도 같은 팀은 같은 색이다.
@@ -553,16 +586,33 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
     session: axisOf("session"),
   };
 
-  const dates = (view.teams[0] ?? view.unassigned).trend.map(
-    (point) => point.date,
+  const sample = (view.teams[0] ?? view.unassigned).trend;
+  const timeline = view.meta.trendAggregation
+    ? trendTimeline(
+        view.meta.trendAggregation,
+        sample.filter((p) => "bucketStart" in p),
+      )
+    : undefined;
+  const dates = sample.map((point) =>
+    "bucketStart" in point ? point.bucketStart : point.date,
   );
+  const future = (i: number) =>
+    timeline ? timeline.states[i] === "upcoming" : dates[i] > today;
   const trendOf = (axis: AxisKey) =>
     entries.map((entry) => ({
       key: entry.key,
       team: entry.team,
       color: colorOf(entry.key),
+      formattedValues:
+        timeline && axis === "cost"
+          ? entry.analytics.trend.map((p) =>
+              "bucketStart" in p
+                ? exactMoneyText(p.cumulativeEquivalentCostUsd.value)
+                : "-",
+            )
+          : undefined,
       values: cumulative(entry.analytics.trend, axis).map((value, i) =>
-        dates[i] > today ? null : value,
+        future(i) ? null : value,
       ),
       observations: entry.analytics.trend.map(
         (point) => trendPointState(point, axis).observation,
@@ -581,11 +631,23 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
       key: entry.key,
       team: entry.team,
       color: colorOf(entry.key),
+      formattedValues:
+        timeline && axis === "cost"
+          ? entry.analytics.trend.map((p) =>
+              "bucketStart" in p
+                ? exactMoneyText(p.cumulativeKnownEquivalentCostUsd.value)
+                : "-",
+            )
+          : undefined,
       values: knownCumulative(entry.analytics.trend, axis).map((value, i) =>
-        dates[i] > today ? null : value,
+        future(i) ? null : value,
       ),
       observations: entry.analytics.trend.map((point) =>
-        point.observation === "unobserved"
+        (
+          "bucketStart" in point
+            ? point.temporalState === "upcoming"
+            : point.observation === "unobserved"
+        )
           ? ("unobserved" as const)
           : ("partial" as const),
       ),
@@ -605,7 +667,7 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
   };
   const broken = (axis: AxisKey) =>
     trend[axis].some((series) =>
-      series.values.some((value, i) => dates[i] <= today && value === null),
+      series.values.some((value, i) => !future(i) && value === null),
     );
   const trendNote = (axis: AxisKey) =>
     !broken(axis)
@@ -700,9 +762,28 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
       color: colorOf(entry.key),
     })),
     axes,
-    dayLabels: dates.map(
-      (date) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`,
+    timeline,
+    emptyFeedback: trendFeedback(
+      dates,
+      [
+        {
+          id: "no-records",
+          name: "사용량",
+          color: "var(--purple)",
+          values: dates.map(() => null),
+          observations: dates.map(() => "unobserved" as const),
+        },
+      ],
+      { today, cumulative: true, timeline },
     ),
+    dayLabels:
+      timeline?.ticks ??
+      dates.map((date) =>
+        trendDateLabel(
+          date,
+          dates[0]?.slice(0, 4) !== dates.at(-1)?.slice(0, 4),
+        ),
+      ),
     trend,
     knownTrend,
     knownTrendFeedback: Object.fromEntries(
@@ -711,7 +792,7 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
         trendFeedback(
           dates,
           knownTrend[axis].map((s) => ({ ...s, id: s.key, name: s.team })),
-          { today, cumulative: true, resumeAfterGap: true },
+          { today, cumulative: true, resumeAfterGap: true, timeline },
         ),
       ]),
     ) as Record<"cost" | "token", ReturnType<typeof trendFeedback>>,
@@ -721,7 +802,7 @@ export function presentTeams(view: TeamsView, today = currentDateIso()) {
         trendFeedback(
           dates,
           trend[axis].map((s) => ({ ...s, id: s.key, name: s.team })),
-          { today, cumulative: true },
+          { today, cumulative: true, timeline },
         ),
       ]),
     ) as Record<AxisKey, ReturnType<typeof trendFeedback>>,

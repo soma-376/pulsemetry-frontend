@@ -1,3 +1,13 @@
+import {
+  collectionPolicySchema,
+  validCollectionPolicy,
+  autoPointFields,
+  trendAggregationSchema,
+  upcomingValuesValid,
+  validAutoTrend,
+  sameAggregation,
+  type TrendBucket,
+} from "./trend-aggregation";
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 import {
@@ -70,6 +80,37 @@ const teamSummaryUsage = z.object({
   totalTokens: countValue,
   equivalentCostUsd: moneyValue,
 });
+export const teamDayPointSchema = z.strictObject({
+  date: z.iso.date(),
+  observation,
+  ...pointStatus,
+  equivalentCostUsd: money,
+  knownEquivalentCostUsd: money.optional(),
+  pricedUsageRows: z.number().int().nonnegative().optional(),
+  unpricedUsageRows: z.number().int().nonnegative().optional(),
+  totalTokens: count,
+  cumulativeSessionCount: count,
+});
+export type TeamDayPoint = z.infer<typeof teamDayPointSchema>;
+export const teamAutoPointSchema = z
+  .strictObject({
+    ...autoPointFields,
+    cumulativeEquivalentCostUsd: moneyValue,
+    cumulativeKnownEquivalentCostUsd: moneyValue,
+    cumulativeTotalTokens: countValue,
+    cumulativeSessionCount: countValue,
+  })
+  .refine(
+    (p) =>
+      upcomingValuesValid(p, [
+        p.cumulativeEquivalentCostUsd,
+        p.cumulativeKnownEquivalentCostUsd,
+        p.cumulativeTotalTokens,
+        p.cumulativeSessionCount,
+      ]),
+    "미도래 값은 비어 있어야 합니다",
+  );
+export type TeamAutoPoint = z.infer<typeof teamAutoPointSchema>;
 export const teamAnalyticsSchema = z.object({
   teamId: z.string().nullable(),
   teamName: z.string(),
@@ -81,20 +122,7 @@ export const teamAnalyticsSchema = z.object({
       models: z.array(modelUsage),
     }),
   ),
-  // 누적 세션은 시작일부터 그날까지 완전 관측일 때만 값이다. null인 날부터 선을 끊는다.
-  trend: z.array(
-    z.object({
-      date: z.iso.date(),
-      observation,
-      ...pointStatus,
-      equivalentCostUsd: money,
-      knownEquivalentCostUsd: money.optional(),
-      pricedUsageRows: z.number().int().nonnegative().optional(),
-      unpricedUsageRows: z.number().int().nonnegative().optional(),
-      totalTokens: count,
-      cumulativeSessionCount: count,
-    }),
-  ),
+  trend: z.array(z.union([teamDayPointSchema, teamAutoPointSchema])),
   products: z.array(productUsage),
 });
 export type TeamAnalytics = z.infer<typeof teamAnalyticsSchema>;
@@ -108,6 +136,8 @@ const metaSchema = z.object({
   dataState: z.enum(["ready", "partial", "no_data", "never_observed"]),
   currentCoverage: coverage,
   snapshotId: z.string(),
+  trendAggregation: trendAggregationSchema.optional(),
+  collectionPolicy: collectionPolicySchema.optional(),
 });
 const page = <T extends z.ZodType>(item: T) =>
   z.object({
@@ -168,9 +198,14 @@ export type TeamsPeriod = {
   startDate: string;
   endDate: string;
   compare: "none" | "prev_week" | "prev_period";
+  bucket?: TrendBucket;
 };
 export type TeamsSort = "cost" | "token" | "session";
 /** 목록의 모든 페이지를 한 snapshot으로 모은 결과. 조직 합계·산점도·미배정은 첫 페이지의 값이다(페이지와 무관한 전체 집계). */
+export type SnapshotContext = Pick<
+  TeamsResponse["meta"],
+  "trendAggregation" | "collectionPolicy"
+>;
 export type TeamsView = Omit<TeamsResponse, "teams"> & {
   teams: TeamAnalytics[];
 };
@@ -205,17 +240,62 @@ function checkMeta(
   if (
     meta.organizationId !== organizationId ||
     meta.startDate !== period.startDate ||
-    meta.endDate !== period.endDate
+    meta.endDate !== period.endDate ||
+    meta.dayCount !==
+      (Date.parse(period.endDate) - Date.parse(period.startDate)) / 86_400_000 +
+        1
   )
     throw invalid();
 }
 function checkTrend(team: TeamAnalytics, meta: z.infer<typeof metaSchema>) {
-  const start = Date.parse(meta.startDate);
-  if (
-    team.trend.length !== meta.dayCount ||
-    team.trend.some(
-      (point, index) => Date.parse(point.date) !== start + index * 86_400_000,
+  const aggregation = meta.trendAggregation;
+  if (aggregation) {
+    const points = team.trend.filter(
+      (p): p is TeamAutoPoint => "bucketStart" in p,
+    );
+    if (
+      points.length !== team.trend.length ||
+      !validAutoTrend(meta, aggregation, "cumulative", points)
     )
+      throw invalid();
+  } else {
+    const start = Date.parse(meta.startDate);
+    if (
+      team.trend.length !== meta.dayCount ||
+      team.trend.some(
+        (point, index) =>
+          !("date" in point) ||
+          Date.parse(point.date) !== start + index * 86_400_000,
+      )
+    )
+      throw invalid();
+  }
+}
+function checkMode(meta: z.infer<typeof metaSchema>, period: TeamsPeriod) {
+  if (
+    (meta.trendAggregation?.mode ?? "day") !== (period.bucket ?? "day") ||
+    (meta.trendAggregation
+      ? !validCollectionPolicy(meta.collectionPolicy, meta.trendAggregation)
+      : !!meta.collectionPolicy)
+  )
+    throw invalid();
+}
+
+function checkSnapshotContext(
+  meta: SnapshotContext,
+  expected?: SnapshotContext,
+) {
+  if (
+    meta.trendAggregation
+      ? !validCollectionPolicy(meta.collectionPolicy, meta.trendAggregation)
+      : !!meta.collectionPolicy
+  )
+    throw invalid();
+  if (
+    expected &&
+    (!sameAggregation(meta.trendAggregation, expected.trendAggregation) ||
+      JSON.stringify(meta.collectionPolicy) !==
+        JSON.stringify(expected.collectionPolicy))
   )
     throw invalid();
 }
@@ -242,6 +322,7 @@ export async function fetchTeams(
         signal,
       );
       checkMeta(first.meta, organizationId, period);
+      checkMode(first.meta, period);
       if (first.comparison.mode !== period.compare || first.sort !== sort)
         throw invalid();
       const items = [...first.teams.items],
@@ -258,7 +339,18 @@ export async function fetchTeams(
           teamsResponseSchema,
           signal,
         );
-        if (next.meta.snapshotId !== first.meta.snapshotId) throw invalid();
+        if (
+          next.meta.snapshotId !== first.meta.snapshotId ||
+          !sameAggregation(
+            first.meta.trendAggregation,
+            next.meta.trendAggregation,
+          ) ||
+          JSON.stringify(first.meta.collectionPolicy) !==
+            JSON.stringify(next.meta.collectionPolicy) ||
+          next.teams.totalCount !== first.teams.totalCount
+        )
+          throw invalid();
+        checkMode(next.meta, period);
         checkMeta(next.meta, organizationId, period);
         items.push(...next.teams.items);
         offset = next.teams.nextOffset;
@@ -293,6 +385,7 @@ export async function fetchTeamDetail(
   snapshotId: string,
   signal?: AbortSignal,
   fetcher: Fetcher = dashboardApi,
+  expected?: SnapshotContext,
 ) {
   const path = `/analytics/teams/${encodeURIComponent(teamId)}?${query({ ...period, timeZone: "Asia/Seoul", snapshotId })}`;
   const detail = await fetcher(
@@ -301,6 +394,8 @@ export async function fetchTeamDetail(
     signal,
   );
   checkMeta(detail.meta, organizationId, period);
+  checkMode(detail.meta, period);
+  checkSnapshotContext(detail.meta, expected);
   if (
     detail.meta.snapshotId !== snapshotId ||
     (teamId !== UNASSIGNED && detail.team.teamId !== teamId)
@@ -333,14 +428,16 @@ export async function fetchTeamUsers(
   signal?: AbortSignal,
   fetcher: Fetcher = dashboardApi,
   ordering: TeamUsersOrder = DEFAULT_USERS_ORDER,
+  expected?: SnapshotContext,
 ) {
-  const path = `/analytics/teams/${encodeURIComponent(teamId)}/users?${query({ ...period, timeZone: "Asia/Seoul", snapshotId, limit: String(TEAM_USERS_PAGE), offset: String(offset), ...ordering })}`;
+  const path = `/analytics/teams/${encodeURIComponent(teamId)}/users?${query({ startDate: period.startDate, endDate: period.endDate, timeZone: "Asia/Seoul", snapshotId, limit: String(TEAM_USERS_PAGE), offset: String(offset), ...ordering })}`;
   const data = await fetcher(
     orgPath(organizationId, path),
     teamUsersSchema,
     signal,
   );
   checkMeta(data.meta, organizationId, period);
+  checkSnapshotContext(data.meta, expected);
   if (
     data.meta.snapshotId !== snapshotId ||
     (teamId !== UNASSIGNED && data.team.teamId !== teamId)
@@ -360,6 +457,7 @@ export const teamsOptions = (organizationId: string, period: TeamsPeriod) =>
       period.startDate,
       period.endDate,
       period.compare,
+      period.bucket ?? "day",
     ],
     queryFn: ({ signal }) => fetchTeams(organizationId, period, signal),
     enabled: !!organizationId && !!period.startDate && !!period.endDate,
@@ -371,6 +469,7 @@ export const teamDetailOptions = (
   teamId: string,
   period: TeamsPeriod,
   snapshotId: string,
+  expected?: SnapshotContext,
 ) =>
   queryOptions({
     queryKey: [
@@ -381,9 +480,18 @@ export const teamDetailOptions = (
       period.startDate,
       period.endDate,
       period.compare,
+      period.bucket ?? "day",
     ],
     queryFn: ({ signal }) =>
-      fetchTeamDetail(organizationId, teamId, period, snapshotId, signal),
+      fetchTeamDetail(
+        organizationId,
+        teamId,
+        period,
+        snapshotId,
+        signal,
+        dashboardApi,
+        expected,
+      ),
     ...readOptions,
   });
 
@@ -393,6 +501,7 @@ export const teamUsersOptions = (
   period: { startDate: string; endDate: string },
   snapshotId: string,
   ordering: TeamUsersOrder = DEFAULT_USERS_ORDER,
+  expected?: SnapshotContext,
 ) =>
   infiniteQueryOptions({
     queryKey: [
@@ -415,6 +524,7 @@ export const teamUsersOptions = (
         signal,
         dashboardApi,
         ordering,
+        expected,
       ),
     initialPageParam: 0,
     getNextPageParam: (last) => last.users.nextOffset,

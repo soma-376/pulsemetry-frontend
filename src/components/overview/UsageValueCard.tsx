@@ -1,5 +1,6 @@
 import { LineAreaChart } from "@/components/charts/LineAreaChart";
 import { ChartInspector } from "@/components/charts/ChartInspector";
+import { TimeAxis } from "@/components/charts/TimeAxis";
 import { Widget } from "@/components/ui/Card";
 import type { OverviewChart } from "@/lib/metrics/overview-presentation";
 import type { OverviewModel } from "@/lib/metrics/overview";
@@ -24,10 +25,15 @@ export function UsageValueCard({
       title={
         chart.showKnownCost ? "확인된 사용 환산액 추이" : "사용 환산액 추이"
       }
-      note="일별 · 포인터 또는 방향키로 탐색"
+      note={`${chart.timeline?.intervalLabel ?? "일별"} · 포인터 또는 방향키로 탐색`}
       def={defs.w12}
       className="col-span-3 @max-[1023px]:col-span-full"
     >
+      {chart.timeline && (
+        <p className="mb-2 text-[11px] text-text3">
+          선택 기간의 수집 상태는 아직 확인되지 않았습니다.
+        </p>
+      )}
       <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-text2">
         {chart.series.length > 1 && (
           <span className="flex items-center gap-2">
@@ -54,6 +60,7 @@ export function UsageValueCard({
           <div className="absolute inset-x-0 bottom-0 border-t border-border" />
           <LineAreaChart
             domain={{ max: chart.yMax }}
+            positions={chart.timeline?.positions}
             series={[
               ...(chart.series.length > 1
                 ? [
@@ -71,32 +78,10 @@ export function UsageValueCard({
           <ChartInspector chart={chart} />
         </div>
         <div />
-        <div className="tnum relative h-5 text-[11px] text-text3">
-          {chart.ticks.map(
-            (tick, index) =>
-              (index === 0 ||
-                index === chart.ticks.length - 1 ||
-                index % Math.max(1, Math.ceil(chart.ticks.length / 5)) ===
-                  0) && (
-                <span
-                  key={tick.date}
-                  className="absolute whitespace-nowrap"
-                  style={{
-                    left: `${chart.ticks.length === 1 ? 50 : (index / (chart.ticks.length - 1)) * 100}%`,
-                    transform:
-                      index === 0 && chart.ticks.length > 1
-                        ? undefined
-                        : index === chart.ticks.length - 1 &&
-                            chart.ticks.length > 1
-                          ? "translateX(-100%)"
-                          : "translateX(-50%)",
-                  }}
-                >
-                  {tick.label}
-                </span>
-              ),
-          )}
-        </div>
+        <TimeAxis
+          labels={chart.ticks.map((tick) => tick.label)}
+          positions={chart.timeline?.positions}
+        />
       </div>
     </Widget>
   );

@@ -1,14 +1,17 @@
 import { overviewSchema } from "@/lib/api/overview";
 import { teamsResponseSchema } from "@/lib/api/teams";
 import { presentOverview } from "@/lib/metrics/overview-presentation";
-import { presentTeams, type AxisKey } from "@/lib/metrics/teams-presentation";
+import {
+  presentTeams,
+  type TrendAxisKey,
+} from "@/lib/metrics/teams-presentation";
 import { UsageValueCard } from "../overview/UsageValueCard";
 import { TeamAxisPanel } from "../teams/TeamAxisPanel";
 import overviewExample from "../../../docs/api/overview-response.example.json";
 import teamsExample from "../../../docs/api/teams-response.example.json";
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, userEvent } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import { trendFeedback } from "@/lib/metrics/trend-feedback";
 import { LineAreaChart } from "./LineAreaChart";
 import { TrendFeedback } from "./TrendFeedback";
@@ -153,24 +156,31 @@ export const Future: Story = {
   },
 };
 
-function DashboardExamples() {
-  const [axis, setAxis] = useState<AxisKey>("cost");
+function DashboardExamples({
+  missingSessions = false,
+}: {
+  missingSessions?: boolean;
+}) {
+  const [axis, setAxis] = useState<TrendAxisKey>("cost");
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
   const overview = overviewSchema.parse(overviewExample);
-  overview.trend!.points = dates.map((date, i) => ({
-    date,
-    observation: i >= 4 ? "unobserved" : "complete",
-    equivalentCostUsd: {
-      value: i >= 4 ? null : String([10, 20, 0, 30][i]),
-      status: i >= 4 ? "unavailable" : "complete",
-      reasons: [],
-    },
-    totalTokens: {
-      value: i >= 4 ? null : [100, 200, 0, 300][i],
-      status: i >= 4 ? "unavailable" : "complete",
-      reasons: [],
-    },
-  }));
+  overview.trend = {
+    bucket: "day",
+    points: dates.map((date, i) => ({
+      date,
+      observation: i >= 4 ? "unobserved" : "complete",
+      equivalentCostUsd: {
+        value: i >= 4 ? null : String([10, 20, 0, 30][i]),
+        status: i >= 4 ? "unavailable" : "complete",
+        reasons: [],
+      },
+      totalTokens: {
+        value: i >= 4 ? null : [100, 200, 0, 300][i],
+        status: i >= 4 ? "unavailable" : "complete",
+        reasons: [],
+      },
+    })),
+  };
   const teams = teamsResponseSchema.parse(teamsExample);
   teams.teams.items = teams.teams.items.slice(0, 2).map((team, teamIndex) => ({
     ...team,
@@ -186,6 +196,24 @@ function DashboardExamples() {
       reasons: i >= teamIndex + 3 ? ["no_data"] : [],
     })),
   }));
+  if (missingSessions) {
+    for (const team of teams.teams.items) {
+      Object.assign(team.metrics.sessionCount, {
+        value: null,
+        status: "unavailable",
+        reasons: ["session_identity_missing"],
+      });
+      for (const point of team.trend) {
+        Object.assign(point, {
+          cumulativeSessionCount: null,
+          status: "partial",
+          reasons: ["session_identity_missing"],
+        });
+      }
+    }
+  }
+  teams.unassigned.metrics.pricedUsageRows = 0;
+  teams.unassigned.metrics.unpricedUsageRows = 0;
   for (const value of Object.values(teams.unassigned.metrics)) {
     if (typeof value !== "object" || !value) continue;
     value.value = null;
@@ -215,4 +243,23 @@ function DashboardExamples() {
 export const DashboardCards: Story = {
   name: "개요·팀 분석 적용",
   render: () => <DashboardExamples />,
+};
+export const SessionsMissing: Story = {
+  name: "세션 식별 결손 · 비용과 토큰 보존",
+  render: () => <DashboardExamples missingSessions />,
+  async play({ canvas }) {
+    const tabs = within(canvas.getByRole("tablist", { name: "지표 축" }));
+    await expect(
+      tabs.queryByRole("tab", { name: "세션" }),
+    ).not.toBeInTheDocument();
+    await userEvent.click(tabs.getByRole("tab", { name: "토큰" }));
+    await expect(tabs.getByRole("tab", { name: "토큰" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await userEvent.click(tabs.getByRole("tab", { name: "비용" }));
+    await expect(
+      canvas.getByRole("button", { name: "세션당 정렬" }),
+    ).toBeVisible();
+  },
 };

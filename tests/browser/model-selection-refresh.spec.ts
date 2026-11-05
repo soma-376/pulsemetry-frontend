@@ -73,13 +73,15 @@ for (const scenario of ["reorder", "removed"] as const) {
     expect(errors).toEqual([]);
     if (scenario === "reorder") {
       await expect(selected).toHaveAttribute("aria-pressed", "true");
-      await expect(card).toContainText("Refresh Model 0 선택됨");
+      await expect(selected).toContainText("10.4%");
       await expect(
         card.getByRole("button", { name: /Refresh Model 1/ }),
       ).toHaveAttribute("aria-pressed", "false");
     } else {
       await expect(card.locator('[aria-pressed="true"]')).toHaveCount(0);
-      await expect(card).toContainText("모델을 클릭하면 선택이 유지됩니다");
+      await expect(
+        card.getByRole("button", { name: /Refresh Model/ }),
+      ).toHaveCount(2);
       await expect(card.getByRole("button", { name: "선택 해제" })).toHaveCount(
         0,
       );
