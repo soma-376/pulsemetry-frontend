@@ -1,3 +1,4 @@
+import { automaticOverviewFixture } from "../../.storybook/fixtures/auto-trend";
 import { expect, test, type Page } from "@playwright/test";
 import { mockOnboarding } from "./onboarding-fixture";
 import { issueFixtureCookie, mockAuthenticatedRoutes } from "./session-fixture";
@@ -81,7 +82,9 @@ export async function mockSeedAuth(page: Page) {
     route.request().method() === "OPTIONS"
       ? route.fulfill({ status: 204, headers: cors })
       : route.fulfill({
-          json: overviewFixture(route.request().url()),
+          json: automaticOverviewFixture(
+            overviewFixture(route.request().url()),
+          ),
           headers: cors,
         }),
   );

@@ -22,6 +22,7 @@ import {
  */
 const ORG = "11111111-1111-4111-8111-111111111111";
 const period = {
+  bucket: "day" as const,
   startDate: "2026-09-07",
   endDate: "2026-09-09",
   compare: "prev_week" as const,

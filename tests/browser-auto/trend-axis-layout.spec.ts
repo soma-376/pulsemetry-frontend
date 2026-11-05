@@ -233,15 +233,15 @@ async function ready(page: Page, data: Fixtures) {
   await mockOverviewSettings(page);
   await page.clock.setFixedTime(new Date(contract.asOf));
   await page.route("**/analytics/overview?*", (route) => {
-    expect(new URL(route.request().url()).searchParams.get("bucket")).toBe(
-      "auto",
-    );
+    expect(
+      new URL(route.request().url()).searchParams.get("bucket"),
+    ).toBeNull();
     return route.fulfill({ json: data.overview });
   });
   await page.route("**/analytics/teams?*", (route) => {
-    expect(new URL(route.request().url()).searchParams.get("bucket")).toBe(
-      "auto",
-    );
+    expect(
+      new URL(route.request().url()).searchParams.get("bucket"),
+    ).toBeNull();
     return route.fulfill({ json: data.teams });
   });
   await page.route("**/analytics/teams/*/users?*", (route) => {

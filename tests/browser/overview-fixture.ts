@@ -69,7 +69,7 @@ export async function mockOverview(
     modify?.(data);
     await route.fulfill({
       json:
-        new URL(route.request().url()).searchParams.get("bucket") === "auto"
+        new URL(route.request().url()).searchParams.get("bucket") !== "day"
           ? automaticOverviewFixture(data)
           : data,
       headers: corsHeaders(page),

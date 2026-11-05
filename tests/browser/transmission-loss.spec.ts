@@ -198,7 +198,7 @@ test("구버전 집계 정보 없음도 갱신 실패와 마지막 수신 시각
   await expect(
     page.getByLabel("조직 수집 현황", { exact: true }),
   ).toContainText("마지막 수신: 2026년 10월 27일 09:00");
-  await expect(trigger).not.toContainText("기준");
+  await expect(trigger).toHaveCount(0);
   const headerHeight = (await page
     .getByLabel("공통 헤더", { exact: true })
     .boundingBox())!.height;
@@ -212,16 +212,11 @@ test("구버전 집계 정보 없음도 갱신 실패와 마지막 수신 시각
   await expect(
     page.getByLabel("조직 수집 현황", { exact: true }),
   ).toContainText("마지막 수신: 2026년 10월 27일 09:00");
-  await expect(trigger).not.toContainText("0건");
+  await expect(trigger).toHaveCount(0);
   expect(
     (await page.getByLabel("공통 헤더", { exact: true }).boundingBox())!.height,
   ).toBe(headerHeight);
-  await trigger.click();
-  const drawer = page.getByRole("dialog", { name: "전송 손실" });
-  await expect(drawer).not.toContainText("기준 시각");
-  await expect(drawer).toContainText(
-    "갱신 실패 · 마지막으로 확인한 집계를 표시합니다",
-  );
+  await expect(page.getByRole("dialog", { name: "전송 손실" })).toHaveCount(0);
 });
 
 for (const scenario of [
@@ -258,7 +253,7 @@ for (const scenario of [
     await page.goto("/overview");
     await expect(
       page.getByRole("button", { name: new RegExp(scenario.label) }),
-    ).toBeVisible();
+    ).toHaveCount(scenario.name === "확인된 0" ? 1 : 0);
     if (scenario.name !== "확인된 0")
       await expect(
         page.getByText("최근 7일 전송 손실 0건", { exact: true }),

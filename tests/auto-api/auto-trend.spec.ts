@@ -136,7 +136,7 @@ test("실제 자동 집계 API → 10개 시간축 → 팀 상세·사용자 →
     if (url.pathname.endsWith("/users")) {
       expect(url.searchParams.has("bucket")).toBe(false);
       expect(url.searchParams.get("snapshotId")).toBe(teams.meta.snapshotId);
-    } else expect(url.searchParams.get("bucket")).toBe("auto");
+    } else expect(url.searchParams.has("bucket")).toBe(false);
   }
   // 직접 상세 API도 같은 snapshot·집계 기준을 계승한다(드로어는 목록의 같은 행을 사용한다).
   const detail = await context.request.get(

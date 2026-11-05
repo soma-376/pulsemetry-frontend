@@ -79,7 +79,6 @@ function OrganizationTeams({
     startDate: dates.start,
     endDate: dates.end ?? dates.start,
     compare,
-    bucket: "auto",
   };
   const query = useQuery({
     ...teamsOptions(organizationId, period),
