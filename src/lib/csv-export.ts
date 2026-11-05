@@ -82,7 +82,10 @@ function aggregationMeta(
 ): CsvMeta {
   return [
     ["aggregationMode", aggregation?.mode ?? "day"],
-    ["intervalSeconds", aggregation?.intervalSeconds ?? 86400],
+    ["intervalSeconds", aggregation ? aggregation.intervalSeconds : 86400],
+    ["intervalMonths", aggregation?.intervalMonths],
+    ["bucketPolicyVersion", aggregation?.policyVersion],
+    ["effectiveEnd", aggregation?.effectiveEnd],
     ["valueMode", aggregation?.valueMode ?? "day"],
     ["timeZone", "Asia/Seoul"],
     ["asOf", aggregation?.asOf],

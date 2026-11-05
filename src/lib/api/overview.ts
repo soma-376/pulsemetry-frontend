@@ -179,7 +179,7 @@ export const overviewSchema = z
         }),
         z.object({
           bucket: z.literal("auto"),
-          points: z.array(overviewAutoPointSchema).max(60),
+          points: z.array(overviewAutoPointSchema).max(12),
         }),
       ])
       .nullable(),

@@ -18,6 +18,7 @@ import {
 } from "../src/lib/api/teams";
 import {
   configuredTrendBucket,
+  plannedTrendBuckets,
   validAutoTrend,
   trendAggregationSchema,
   type AutoPoint,
@@ -42,23 +43,23 @@ const period = {
   compare: "none" as const,
 };
 const org = "11111111-1111-4111-8111-111111111111";
-for (const [days, interval, count] of [
-  [1, 3600, 24],
-  [2, 3600, 48],
-  [3, 10800, 24],
-  [7, 10800, 56],
-  [8, 21600, 32],
-  [15, 21600, 60],
-  [16, 43200, 32],
-  [30, 43200, 60],
-  [31, 86400, 31],
-  [60, 86400, 60],
-  [61, 259200, 21],
-  [180, 259200, 60],
-  [181, 604800, 26],
-  [366, 604800, 53],
+for (const [days, hours, count] of [
+  [1, 3, 8],
+  [2, 6, 8],
+  [3, 12, 6],
+  [6, 12, 12],
+  [7, 24, 7],
+  [12, 24, 12],
+  [13, 48, 7],
+  [24, 48, 12],
+  [25, 72, 9],
+  [36, 72, 12],
+  [37, 168, 6],
+  [84, 168, 12],
+  [85, 336, 7],
+  [168, 336, 12],
 ]) {
-  test(`${days}일 자동 간격 ${interval}초 · ${count}개와 마지막 짧은 구간`, () => {
+  test(`${days}일은 ${hours}시간 · ${count}개 구간이다`, () => {
     const start = Date.parse("2025-01-01T00:00:00+09:00"),
       end = start + days * DAY;
     const meta = {
@@ -68,15 +69,18 @@ for (const [days, interval, count] of [
     };
     const aggregation = trendAggregationSchema.parse({
       mode: "auto",
-      intervalSeconds: interval,
+      policyVersion: "calendar-buckets-v2",
+      intervalSeconds: hours * 3600,
+      intervalMonths: null,
       valueMode: "interval",
       rangeStart: iso(start),
       rangeEnd: iso(end),
+      effectiveEnd: iso(end),
       asOf: iso(end),
     });
     const points: AutoPoint[] = Array.from({ length: count }, (_, i) => ({
-      bucketStart: iso(start + i * interval * 1000),
-      bucketEnd: iso(Math.min(end, start + (i + 1) * interval * 1000)),
+      bucketStart: iso(start + i * hours * 3600_000),
+      bucketEnd: iso(Math.min(end, start + (i + 1) * hours * 3600_000)),
       temporalState: "elapsed",
       usageRows: 0,
       pricedUsageRows: 0,
@@ -86,7 +90,7 @@ for (const [days, interval, count] of [
     assert.equal(
       validAutoTrend(
         meta,
-        { ...aggregation, intervalSeconds: interval * 2 },
+        { ...aggregation, intervalSeconds: hours * 7200 },
         "interval",
         points,
       ),
@@ -96,19 +100,70 @@ for (const [days, interval, count] of [
       validAutoTrend(meta, aggregation, "interval", points.slice(1)),
       false,
     );
-    const timeline = trendTimeline(
-      { ...aggregation, valueMode: "cumulative" },
-      points,
+    assert.equal(
+      trendTimeline(
+        { ...aggregation, valueMode: "cumulative" },
+        points,
+      ).positions.at(-1),
+      100,
     );
-    assert.equal(timeline.positions.at(-1), 100);
-    if (days === 61)
-      assert.ok(
-        Math.abs(
-          timeline.positions.at(-1)! - timeline.positions.at(-2)! - 100 / 61,
-        ) < 1e-10,
-      );
   });
 }
+
+test("월말·윤년·366일은 원래 날짜의 월 경계를 유지하고 13번째 잔여를 합친다", () => {
+  const plan = plannedTrendBuckets("2024-01-31", "2025-01-30");
+  assert.equal(plan.starts.length, 12);
+  assert.equal(plan.seconds, null);
+  assert.equal(plan.starts[1], Date.parse("2024-02-29T00:00:00+09:00"));
+  assert.equal(plan.starts[2], Date.parse("2024-03-31T00:00:00+09:00"));
+  for (const startDate of [
+    "2024-01-31",
+    "2024-02-29",
+    "2025-01-01",
+    "2026-08-31",
+  ]) {
+    for (let days = 1; days <= 366; days++) {
+      const endDate = iso(Date.parse(startDate) + (days - 1) * DAY).slice(
+        0,
+        10,
+      );
+      const p = plannedTrendBuckets(startDate, endDate);
+      assert.ok(p.starts.length >= 6 && p.starts.length <= 12);
+    }
+  }
+  const p = plannedTrendBuckets("2025-01-01", "2026-01-01");
+  assert.equal(p.starts.length, 12);
+  const aggregation = trendAggregationSchema.parse({
+    mode: "auto",
+    policyVersion: "calendar-buckets-v2",
+    intervalSeconds: null,
+    intervalMonths: 1,
+    valueMode: "interval",
+    rangeStart: iso(p.start),
+    rangeEnd: iso(p.end),
+    effectiveEnd: iso(p.end),
+    asOf: iso(p.end),
+  });
+  const points: AutoPoint[] = p.starts.map((start, i) => ({
+    bucketStart: iso(start),
+    bucketEnd: iso(p.starts[i + 1] ?? p.end),
+    temporalState: "elapsed",
+    usageRows: 0,
+    pricedUsageRows: 0,
+    unpricedUsageRows: 0,
+  }));
+  assert.equal(
+    validAutoTrend(
+      { startDate: "2025-01-01", endDate: "2026-01-01", dayCount: 366 },
+      aggregation,
+      "interval",
+      points,
+    ),
+    true,
+  );
+  assert.equal(trendTimeline(aggregation, points).intervalLabel, "1개월");
+  assert.equal(points.at(-1)!.bucketEnd, "2026-01-01T15:00:00.000Z");
+});
 
 test("빌드 gate는 true만 자동 요청하며 cache에 day/auto를 구분한다", () => {
   const original = process.env.NEXT_PUBLIC_AUTO_TREND_ENABLED;
@@ -139,28 +194,22 @@ test("공유 계약의 실제 Decimal/빈 구간/현재/미래를 보존하고 �
   const overview = autoOverview(),
     teams = autoTeams();
   const chart = presentOverview(overview, "1900-01-01").chart;
-  assert.deepEqual(chart.cost.slice(0, 5), [3e-12, null, 0.3, 0, null]);
-  assert.equal(chart.timeline?.positions[3], 12.5);
+  assert.deepEqual(chart.cost.slice(0, 5), [3e-12, null, 0.3, 0]);
+  assert.equal(chart.timeline?.positions[3], (9 / 10.5) * 100);
   const model = presentTeams(teams, "1900-01-01");
-  assert.deepEqual(model.trend.cost[0].values.slice(0, 5), [
-    3e-12,
-    3e-12,
-    0.300000000003,
-    0.300000000003,
-    null,
-  ]);
-  assert.deepEqual(cumulative(teams.teams[0].trend, "session").slice(0, 5), [
-    1,
-    1,
-    3,
-    4,
-    null,
-  ]);
+  assert.deepEqual(
+    model.trend.cost[0].values.slice(0, 5),
+    [3e-12, 3e-12, 0.300000000003, 0.300000000003],
+  );
+  assert.deepEqual(
+    cumulative(teams.teams[0].trend, "session").slice(0, 5),
+    [1, 1, 3, 4],
+  );
   assert.deepEqual(
     knownCumulative(teams.teams[0].trend, "cost"),
     model.knownTrend.cost[0].values,
   );
-  assert.equal(model.timeline?.positions[3], (3.5 / 24) * 100);
+  assert.equal(model.timeline?.positions[3], 100);
   assert.match(
     nullableLinePath([1, 2, 3], { max: 3 }, 0, [0, 50, 60]),
     /L60,0$/,
@@ -173,10 +222,10 @@ test("공유 계약의 실제 Decimal/빈 구간/현재/미래를 보존하고 �
       label: "시간 범위",
     }),
   );
-  assert.match(html, /2026-11-04 00:00 ~ 2026-11-04 01:00 KST/);
+  assert.match(html, /2026-11-04 00:00 ~ 2026-11-04 03:00 KST/);
   assert.match(html, /\$0\.000000000003/);
   assert.match(model.trendFeedback.cost.series[0].notes[3], /집계 중/);
-  assert.match(model.trendFeedback.cost.series[0].notes[4], /도래하지/);
+  assert.equal(model.timeline?.states.includes("upcoming"), false);
 });
 
 test("auto parser는 gap/중복/혼합/잘못된시간상태/미래0/정책기준 불일치를 거부한다", () => {
@@ -196,15 +245,11 @@ test("auto parser는 gap/중복/혼합/잘못된시간상태/미래0/정책기�
     if (d.trend?.bucket === "auto") d.trend.points[3].temporalState = "elapsed";
   });
   mutate((d) => {
-    if (d.trend?.bucket === "auto") d.trend.points[4].usageRows = 0;
+    if (d.trend?.bucket === "auto") d.trend.points[3].usageRows = null;
   });
   mutate((d) => {
     if (d.trend?.bucket === "auto")
-      d.trend.points[4].equivalentCostUsd = {
-        value: "0",
-        status: "complete",
-        reasons: [],
-      };
+      d.trend.points[3].bucketEnd = "2026-11-04T15:00:00Z";
   });
   mutate((d) => {
     d.meta.collectionPolicy!.asOf = "2026-11-03T18:00:00Z";
@@ -226,48 +271,41 @@ test("auto parser는 gap/중복/혼합/잘못된시간상태/미래0/정책기�
   );
 });
 
-test("정각 asOf는 해당 시작 버킷 집계 중이며 미래 null 계약을 검증한다", () => {
+test("asOf 이전·정각·직후에 미래와 길이 0인 구간을 만들지 않는다", () => {
   const base = contract.expected.teamMeta.trendAggregation;
-  const metadata = {
+  const meta = {
     startDate: period.startDate,
     endDate: period.endDate,
     dayCount: 1,
   };
-  for (const offset of [-1, 0, 1]) {
-    const asOf =
-      Date.parse(contract.expected.teamTrend[3].bucketStart) + offset;
-    const points = contract.expected.teamTrend.map((p) => {
-      const temporalState =
-        Date.parse(p.bucketEnd) <= asOf
-          ? ("elapsed" as const)
-          : Date.parse(p.bucketStart) <= asOf
-            ? ("in_progress" as const)
-            : ("upcoming" as const);
-      return {
-        ...p,
-        temporalState,
-        usageRows: temporalState === "upcoming" ? null : 0,
-        pricedUsageRows: temporalState === "upcoming" ? null : 0,
-        unpricedUsageRows: temporalState === "upcoming" ? null : 0,
-      };
+  const start = Date.parse(base.rangeStart);
+  for (const delta of [-1, 0, 1, 10800_000 - 1, 10800_000, 10800_000 + 1]) {
+    const asOf = start + delta,
+      effectiveEnd = Math.max(start, asOf);
+    const points: AutoPoint[] = [start, start + 10800_000]
+      .filter((s) => s < effectiveEnd)
+      .map((s) => ({
+        bucketStart: iso(s),
+        bucketEnd: iso(Math.min(s + 10800_000, effectiveEnd)),
+        temporalState: asOf < s + 10800_000 ? "in_progress" : "elapsed",
+        usageRows: 0,
+        pricedUsageRows: 0,
+        unpricedUsageRows: 0,
+      }));
+    const aggregation = trendAggregationSchema.parse({
+      ...base,
+      asOf: iso(asOf),
+      effectiveEnd: iso(effectiveEnd),
     });
-    assert.equal(
-      validAutoTrend(
-        metadata,
-        trendAggregationSchema.parse({ ...base, asOf: iso(asOf) }),
-        "cumulative",
-        points,
-      ),
-      true,
+    assert.equal(validAutoTrend(meta, aggregation, "cumulative", points), true);
+    assert.ok(
+      trendTimeline(aggregation, points).positions.every(Number.isFinite),
     );
-    assert.equal(
-      points[3].temporalState,
-      offset < 0 ? "upcoming" : "in_progress",
-    );
+    assert.equal(points.length, delta <= 0 ? 0 : delta <= 10800_000 ? 1 : 2);
   }
 });
 
-test("auto 빈 기간도 24개 축을 수용하되 임의 0을 만들지 않는다", () => {
+test("auto 빈 기간도 현재까지의 축을 수용하되 임의 0을 만들지 않는다", () => {
   const data = autoOverview();
   data.meta.dataState = "no_data";
   data.summary = null;
@@ -296,7 +334,7 @@ test("auto 빈 기간도 24개 축을 수용하되 임의 0을 만들지 않는�
     },
   }));
   assert.equal(overviewSchema.safeParse(data).success, true);
-  assert.equal(presentOverview(data).chart.cost.length, 24);
+  assert.equal(presentOverview(data).chart.cost.length, 4);
   assert.ok(presentOverview(data).chart.cost.every((v) => v === null));
 });
 
@@ -317,15 +355,16 @@ test("지표별 결손은 정상 비용/토큰을 숨기지 않고 CSV가 Decima
   });
   assert.match(
     csv,
-    /chart_trend,team-a,자동 집계 팀,2026-11-03T17:00:00Z,2026-11-03T18:00:00Z,elapsed,2,cost,strict,0.300000000003,complete,/,
+    /chart_trend,team-a,자동 집계 팀,2026-11-03T21:00:00Z,2026-11-04T00:00:00Z,elapsed,2,cost,strict,0.300000000003,complete,/,
   );
   assert.match(
     csv,
     /cumulativeSessionCount_status,cumulativeSessionCount_reasons/,
   );
   assert.match(csv, /aggregationMode,auto/);
-  assert.match(csv, /asOf,2026-11-03T18:30:00Z/);
-  assert.match(csv, /upcoming,,cost,strict,,unavailable,upcoming/);
+  assert.match(csv, /asOf,2026-11-04T01:30:00Z/);
+  assert.doesNotMatch(csv, /upcoming/);
+  assert.match(csv, /effectiveEnd,2026-11-04T01:30:00Z/);
   assert.match(
     overviewCsv(autoOverview(), "org", "now"),
     /0.000000000003,complete/,
