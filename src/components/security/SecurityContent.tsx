@@ -3,7 +3,11 @@
 import { PageHeader } from "@/components/layout/PageHeader";
 
 import { useState } from "react";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 import { alertTime } from "@/components/alerts/AlertsPanel";
 import {
   useDashboardPageExport,
@@ -15,12 +19,18 @@ import {
   rolloutRatio,
 } from "@/components/security/PolicyRolloutSection";
 import { SecurityAlertsTable } from "@/components/security/SecurityAlertsTable";
+import {
+  demoPolicyRolloutOptions,
+  securityAlertsOptions,
+  demoSecurityAlertsPage,
+  isSecurityDemoOrganization,
+  type PolicyRolloutData,
+} from "@/components/security/security-demo";
 import { SkeletonMetric } from "@/components/ui/Skeleton";
 import { StatCard } from "@/components/ui/StatCard";
 import { Toast, useToast } from "@/components/ui/Toast";
 import {
   alertReasonText,
-  alertsOptions,
   fetchAlerts,
   type Alert,
   type AlertsPage,
@@ -55,6 +65,7 @@ export function SecurityContent() {
       key={session.user.organizationId}
       organizationId={session.user.organizationId}
       organizationName={session.user.organizationName}
+      demo={isSecurityDemoOrganization(session.user)}
     />
   );
 }
@@ -62,22 +73,35 @@ export function SecurityContent() {
 function OrganizationSecurity({
   organizationId,
   organizationName,
+  demo,
 }: {
   organizationId: string;
   organizationName: string;
+  /** 시연 조직 — 서버를 조회하지 않고 security-demo 의 고정 값을 보인다. */
+  demo: boolean;
 }) {
   const [status, setStatus] = useState<AlertStatus>("unacknowledged");
   const { toast, showToast, dismissToast } = useToast();
   // AlertsPanel이 조회하는 현재 필터의 캐시를 그대로 사용한다.
   // 표가 조회하는 현재 필터의 캐시를 그대로 사용한다.
   const query = useInfiniteQuery(
-    alertsOptions(organizationId, status, "security"),
+    securityAlertsOptions(organizationId, status, demo),
   );
   // 요약 카드는 필터와 무관하게 지금의 미확인 수다. 필터가 미확인이면 같은 캐시다.
   const pending = useInfiniteQuery(
-    alertsOptions(organizationId, "unacknowledged", "security"),
+    securityAlertsOptions(organizationId, "unacknowledged", demo),
   );
-  const settings = useQuery(settingsOptions(organizationId));
+  const realSettings = useQuery({
+    ...settingsOptions(organizationId),
+    enabled: !demo && !!organizationId,
+  });
+  const demoSettings = useQuery({
+    ...demoPolicyRolloutOptions(organizationId),
+    enabled: demo,
+  });
+  const settings: UseQueryResult<PolicyRolloutData> = demo
+    ? demoSettings
+    : realSettings;
   const denied = isDenied(query.error);
   const settingsDenied = isDenied(settings.error);
   useDashboardPageRefresh(
@@ -94,6 +118,21 @@ function OrganizationSecurity({
   );
   // 화면의 상태 필터와 같은 조건의 보안 알림 전부 — 같은 snapshot 으로 끝까지 읽고, 만료되면 처음부터 한 번 다시 읽는다.
   const exportAlerts = async () => {
+    if (demo) {
+      const page = demoSecurityAlertsPage(organizationId, status);
+      downloadCsv(
+        `security_alerts_${status}_${page.meta.asOf.slice(0, 10)}.csv`,
+        alertsCsv(
+          page,
+          page.alerts.items,
+          organizationName,
+          status,
+          "security",
+          new Date().toISOString(),
+        ),
+      );
+      return;
+    }
     for (let attempt = 0; ; attempt++) {
       try {
         const first: AlertsPage = await fetchAlerts(
@@ -219,6 +258,7 @@ function OrganizationSecurity({
       </div>
       <SecurityAlertsTable
         organizationId={organizationId}
+        demo={demo}
         status={status}
         onStatusChange={setStatus}
         onAcknowledged={showToast}
