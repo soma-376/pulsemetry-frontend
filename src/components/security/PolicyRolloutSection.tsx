@@ -5,6 +5,7 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonRows } from "@/components/ui/Skeleton";
 import type { Settings } from "@/lib/api/settings";
+import type { PolicyRolloutData } from "@/components/security/security-demo";
 import { int } from "@/lib/format";
 
 type Rollout = Settings["policyRollout"];
@@ -26,7 +27,7 @@ export function PolicyRolloutSection({
   query,
   denied,
 }: {
-  query: UseQueryResult<Settings>;
+  query: UseQueryResult<PolicyRolloutData>;
   denied: boolean;
 }) {
   const rollout = denied ? undefined : query.data?.policyRollout;

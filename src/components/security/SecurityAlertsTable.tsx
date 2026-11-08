@@ -17,11 +17,14 @@ import {
   ALERT_RULE_TEXT,
   alertQueryKeys,
   alertReasonText,
-  alertsOptions,
   type Alert,
   type AlertStatus,
 } from "@/lib/api/alerts";
 import { ManagementError } from "@/lib/api/management";
+import {
+  acknowledgeDemoSecurityAlert,
+  securityAlertsOptions,
+} from "@/components/security/security-demo";
 import { int } from "@/lib/format";
 
 const STATUS_OPTIONS: { value: AlertStatus; label: string }[] = [
@@ -58,11 +61,13 @@ function ago(value: string, asOf: string) {
  */
 export function SecurityAlertsTable({
   organizationId,
+  demo,
   status,
   onStatusChange,
   onAcknowledged,
 }: {
   organizationId: string;
+  demo: boolean;
   status: AlertStatus;
   onStatusChange: (status: AlertStatus) => void;
   onAcknowledged: (message: string) => void;
@@ -70,7 +75,7 @@ export function SecurityAlertsTable({
   const client = useQueryClient();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const query = useInfiniteQuery(
-    alertsOptions(organizationId, status, "security"),
+    securityAlertsOptions(organizationId, status, demo),
   );
   const refresh = () =>
     Promise.all(
@@ -80,7 +85,9 @@ export function SecurityAlertsTable({
     );
   const acknowledge = useMutation({
     mutationFn: (alert: Alert) =>
-      acknowledgeAlert(organizationId, alert.alertId, alert.version),
+      demo
+        ? acknowledgeDemoSecurityAlert(organizationId)
+        : acknowledgeAlert(organizationId, alert.alertId, alert.version),
     onSuccess: () => {
       onAcknowledged("알림을 확인했습니다.");
       return refresh();
