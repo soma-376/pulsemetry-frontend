@@ -59,9 +59,9 @@ function usersResponse(snapshot: string, offset: number) {
 }
 async function teams(page: Page) {
   await page.route("**/analytics/teams?*", async (route) => {
-    expect(new URL(route.request().url()).searchParams.get("bucket")).toBe(
-      "auto",
-    );
+    expect(
+      new URL(route.request().url()).searchParams.get("bucket"),
+    ).toBeNull();
     await route.fulfill({ json: autoTeamsResponse() });
   });
   await page.route("**/analytics/teams/*/users?*", (route) =>
@@ -79,9 +79,9 @@ test("개요 자동 현재까지 4개 축 · KST 범위 키보드 · Decimal CSV
 }) => {
   await ready(page);
   await page.route("**/analytics/overview?*", (route) => {
-    expect(new URL(route.request().url()).searchParams.get("bucket")).toBe(
-      "auto",
-    );
+    expect(
+      new URL(route.request().url()).searchParams.get("bucket"),
+    ).toBeNull();
     return route.fulfill({ json: autoOverview() });
   });
   await page.goto(`/overview?${period}`);

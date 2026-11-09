@@ -355,7 +355,7 @@ export async function fetchOverview(
     data.meta.endDate !== params.endDate ||
     data.meta.timeZone !== params.timeZone ||
     data.comparison.mode !== params.compare ||
-    (data.meta.trendAggregation?.mode ?? "day") !== (params.bucket ?? "day")
+    (data.meta.trendAggregation?.mode ?? "day") !== (params.bucket ?? "auto")
   ) {
     throw new DashboardError(
       "서버 응답의 조직 또는 조회 조건이 요청과 다릅니다.",

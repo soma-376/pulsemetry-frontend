@@ -4,11 +4,11 @@
 
 ## 기본 요청
 
-개요·팀 목록·팀 상세는 별도 빌드 플래그 없이 항상 `bucket=auto`를 요청한다. 자동 구간 v2를 지원하는 backend와 함께 배포한다. 기존 일별 DTO 파서와 명시적 `bucket=day` API 호환성은 유지하지만 화면의 기본 요청은 자동 구간이다. 현재 `collectionPolicy.status=pending`은 통합 완료를 뜻하지 않으며 응답의 정책 상태를 그대로 표시한다.
+개요·팀 목록·팀 상세는 별도 빌드 플래그 없이 bucket 쿼리 없이 서버의 기본 자동 집계를 요청한다. 자동 구간 v2를 지원하는 backend와 함께 배포한다. 기존 일별 DTO 파서와 명시적 `bucket=day` API 호환성은 유지하지만 화면의 기본 요청은 자동 구간이다. 현재 `collectionPolicy.status=pending`은 통합 완료를 뜻하지 않으며 응답의 정책 상태를 그대로 표시한다.
 
 ## 요청과 응답
 
-개요, 팀 목록, 팀 상세는 `bucket=auto|day`를 받는다. 생략/`day`는 기존 일별 DTO다. 팀 사용자 API에는 `bucket`을 보내지 않으며 `snapshotId`의 집계 기준을 상속한다. 요청과 응답의 모드가 다르면 프론트는 응답을 버린다.
+개요, 팀 목록, 팀 상세는 `bucket=auto|day`를 받는다. 생략/`auto`는 자동 DTO이고 명시적 `day`만 기존 일별 DTO다. 팀 사용자 API에는 `bucket`을 보내지 않으며 `snapshotId`의 집계 기준을 상속한다. 요청과 응답의 모드가 다르면 프론트는 응답을 버린다.
 
 자동 공통 metadata:
 

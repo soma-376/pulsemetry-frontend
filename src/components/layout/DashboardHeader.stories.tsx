@@ -217,7 +217,13 @@ export const PartialLoss: Story = {
   parameters: { lossScenario: "partial" },
 };
 export const UnavailableLoss: Story = {
-  name: "손실 집계 불가",
+  name: "손실 집계 불가 · 손실 UI 숨김",
+  async play({ canvas }) {
+    await canvas.findByText(/마지막 수신:/);
+    await expect(
+      canvas.queryByRole("button", { name: /전송 손실/ }),
+    ).not.toBeInTheDocument();
+  },
   parameters: { lossScenario: "unavailable" },
 };
 export const LossRefreshFailed: Story = {
@@ -225,10 +231,14 @@ export const LossRefreshFailed: Story = {
   parameters: { lossScenario: "complete", scenario: "refresh-error" },
 };
 export const Unknown: Story = {
-  name: "구버전 API · 집계 정보 없음",
+  name: "구버전 API · 손실 UI 숨김",
   async play({ canvas }) {
-    await canvas.findByText("집계 정보 없음");
+    await canvas.findByText(/마지막 수신:/);
     await expect(canvas.queryByText("수집 정상")).not.toBeInTheDocument();
+    await expect(canvas.queryByText("집계 정보 없음")).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByRole("button", { name: /전송 손실/ }),
+    ).not.toBeInTheDocument();
   },
 };
 export const Empty: Story = {
@@ -257,7 +267,7 @@ export const Retry: Story = {
     const bar = canvas.getByLabelText("공통 헤더");
     await expect(bar.getBoundingClientRect().height).toBe(73);
     await userEvent.click(retry);
-    await canvas.findByText("집계 정보 없음");
+    await canvas.findByText(/마지막 수신:/);
     await expect(bar.getBoundingClientRect().height).toBe(73);
   },
 };
@@ -265,7 +275,7 @@ export const Refreshing: Story = {
   name: "재조회 중 기존 수집 현황 유지",
   parameters: { scenario: "refreshing" },
   async play({ canvas, userEvent }) {
-    await canvas.findByText("집계 정보 없음");
+    await canvas.findByText(/마지막 수신:/);
     await userEvent.click(canvas.getByRole("button", { name: "새로고침" }));
     const refreshing = await canvas.findByRole("button", { name: "조회 중…" });
     await expect(refreshing).toBeDisabled();
@@ -273,14 +283,14 @@ export const Refreshing: Story = {
     await expect(
       canvas.queryByLabelText("수집 상태 갱신 중"),
     ).not.toBeInTheDocument();
-    await expect(canvas.getByText("집계 정보 없음")).toBeVisible();
+    await expect(canvas.getByText(/마지막 수신:/)).toBeVisible();
   },
 };
 export const RefreshFailed: Story = {
   name: "갱신 실패·기존 현황과 본문 위치 유지",
   parameters: { scenario: "refresh-error" },
   async play({ canvas, userEvent }) {
-    const status = await canvas.findByText("집계 정보 없음");
+    const status = await canvas.findByText(/마지막 수신:/);
     const heading = canvas.getByRole("heading", { name: "개요" });
     const top = heading.getBoundingClientRect().top;
     await userEvent.click(canvas.getByRole("button", { name: "새로고침" }));
@@ -304,7 +314,7 @@ export const RefreshFailed: Story = {
 export const PageChange: Story = {
   name: "본문 교체에도 공통 영역 유지",
   async play({ canvas, userEvent }) {
-    await canvas.findByText("집계 정보 없음");
+    await canvas.findByText(/마지막 수신:/);
     const bar = canvas.getByLabelText("조직 수집 현황");
     await userEvent.click(canvas.getByRole("button", { name: "설정 보기" }));
     await waitFor(() =>

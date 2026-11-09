@@ -101,7 +101,7 @@ export function sessionPreservationTests(bucket: "day" | "auto") {
         expect(url.searchParams.get("endDate")).toBe(range.endDate);
         if (!url.pathname.endsWith("/users")) {
           expect(url.searchParams.get("compare")).toBe(compare);
-          expect(url.searchParams.get("bucket")).toBe(bucket);
+          expect(url.searchParams.has("bucket")).toBe(false);
           return route.fulfill({
             json: url.pathname.endsWith("/teams")
               ? source

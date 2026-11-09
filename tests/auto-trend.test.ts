@@ -42,8 +42,9 @@ import {
 const DAY = 86_400_000;
 const iso = (time: number) => new Date(time).toISOString();
 const period = {
-  ...contract.request,
-  bucket: "auto" as const,
+  startDate: contract.request.startDate,
+  endDate: contract.request.endDate,
+  timeZone: "Asia/Seoul" as const,
   compare: "none" as const,
 };
 const org = "11111111-1111-4111-8111-111111111111";
@@ -526,4 +527,27 @@ test("자동 값 결손을 사용 여부나 이전 일별 공백으로 추정하
     presentOverview(overview).chart.feedback!.series[0].notes[2],
     /사용 여부|이전 날짜/,
   );
+});
+
+test("기본 자동 조회는 bucket 없이 요청하고 자동 응답을 검증한다", async () => {
+  const original = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    assert.equal(
+      new URL(String(input), "http://localhost").searchParams.has("bucket"),
+      false,
+    );
+    return Response.json(autoOverview());
+  };
+  try {
+    await fetchOverview({ organizationId: org, ...period });
+  } finally {
+    globalThis.fetch = original;
+  }
+  await fetchTeams(org, period, undefined, async (path, schema) => {
+    assert.equal(
+      new URL(path, "http://localhost").searchParams.has("bucket"),
+      false,
+    );
+    return schema.parse(autoTeamsResponse());
+  });
 });

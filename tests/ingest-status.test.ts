@@ -50,8 +50,8 @@ test("구버전 응답 재조회 실패도 수신 기록 없음과 갱신 실패
         createElement(IngestStatusBar, { query, enabled: true }),
       ),
     );
-    assert.match(html, /집계 정보 없음/);
-    assert.match(html, /갱신 실패 · /);
+    assert.doesNotMatch(html, /집계 정보 없음|aria-haspopup="dialog"/);
+    assert.match(html, /갱신 실패/);
     assert.match(html, /마지막 수신: 기록 없음/);
     assert.doesNotMatch(html, /전송 손실 0건/);
   } finally {
@@ -332,3 +332,52 @@ test("header describes the server's judgement and omits values the server left n
     ["사유 new_reason"],
   );
 });
+
+for (const [name, transmissionLoss, visible] of [
+  ["누락", undefined, false],
+  [
+    "집계 불가",
+    {
+      ...loss,
+      availability: "unavailable",
+      payloadCount: null,
+      affectedInstallationCount: null,
+    },
+    false,
+  ],
+  [
+    "확인된 0",
+    { ...loss, payloadCount: 0, affectedInstallationCount: 0 },
+    true,
+  ],
+  ["손실 있음", loss, true],
+  ["일부 집계", { ...loss, availability: "partial" }, true],
+] as const) {
+  test(`헤더 ${name}: 수집 상태는 유지하고 손실 근거에 따라 버튼을 표시한다`, () => {
+    const client = new QueryClient();
+    const options = ingestStatusOptions("org-a");
+    client.setQueryData(
+      options.queryKey,
+      ingestStatusSchema.parse({ ...response, transmissionLoss }),
+    );
+    const observer = new QueryObserver(client, options);
+    try {
+      const html = renderToStaticMarkup(
+        createElement(
+          QueryClientProvider,
+          { client },
+          createElement(IngestStatusBar, {
+            query: observer.getCurrentResult(),
+            enabled: true,
+          }),
+        ),
+      );
+      assert.equal(html.includes('aria-haspopup="dialog"'), visible);
+      assert.match(html, /마지막 수신: 기록 없음/);
+      assert.doesNotMatch(html, /집계 정보 없음/);
+    } finally {
+      observer.destroy();
+      client.clear();
+    }
+  });
+}

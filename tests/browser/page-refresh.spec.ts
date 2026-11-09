@@ -87,7 +87,7 @@ for (const target of pages) {
     expect((await header.boundingBox())?.height).toBe(headerHeight);
     expect(
       (await page.getByLabel("조직 수집 현황").innerText()).replace(
-        "갱신 실패 · ",
+        /\s*갱신 실패(?: · )?/g,
         "",
       ),
     ).toBe(ingest);
@@ -218,7 +218,7 @@ for (const target of pages) {
         page.getByLabel("수집 상태 갱신 중", { exact: true }),
       ).toHaveCount(0);
       await expect(page.getByLabel("조직 수집 현황")).toContainText(
-        "집계 정보 없음",
+        /마지막 수신:/,
       );
 
       // 수집 현황이 먼저 끝나도 본문 요청이 남아 있으면 진행 표시를 유지한다.
