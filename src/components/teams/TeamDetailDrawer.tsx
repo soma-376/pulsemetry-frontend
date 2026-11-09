@@ -1,5 +1,6 @@
 "use client";
 import { ProgressBar } from "@/components/charts/ProgressBar";
+import { ComparisonUnavailableBadge } from "@/components/ui/ComparisonUnavailableBadge";
 import { DetailDrawer } from "@/components/ui/DetailDrawer";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
@@ -149,7 +150,9 @@ export function TeamDetailDrawer({
                       {showDelta && comparison.status === "available" ? (
                         <span className="tnum">{change}</span>
                       ) : (
-                        "-"
+                        <ComparisonUnavailableBadge
+                          reason={comparison.reason || comparisonReason}
+                        />
                       )}
                       {compareLabel && <span>{compareLabel}</span>}
                     </div>

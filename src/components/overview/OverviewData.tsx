@@ -52,6 +52,7 @@ export function OverviewBody({ data }: { data: Overview }) {
               key={kpi.label}
               {...kpi}
               compareLabel={model.compareLabel}
+              compareTitle={model.compareTitle}
             />
           ))}
           {data.trend ? (

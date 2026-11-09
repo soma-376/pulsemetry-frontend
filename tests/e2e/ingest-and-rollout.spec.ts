@@ -124,7 +124,7 @@ test("INGEST-HEADER @p0 @read 헤더 손실 요약과 상세가 실제 API 기�
   await expect(drawer).not.toContainText("수집 정상");
 });
 
-test("COMPARE-A @p0 @read 두 기간이 모두 완전하면 증감·이전 값·팀 증가 기여를, 아니면 비교 품질 배지를 생략한다", async ({
+test("COMPARE-A @p0 @read 두 기간이 모두 완전하면 증감·이전 값·팀 증가 기여를, 아니면 비교 불가 사유를 보여 준다", async ({
   page,
 }) => {
   await signIn(page, "owner@seed-a.example.test");
@@ -183,7 +183,7 @@ test("COMPARE-A @p0 @read 두 기간이 모두 완전하면 증감·이전 값·
   expect(partial.summary!.equivalentCostUsd.comparison.status).toBe(
     "unavailable",
   );
-  await expect(cost).not.toContainText("비교 불가");
+  await expect(cost).toContainText("비교 불가");
   await expect(page.getByRole("note", { name: "데이터 안내" })).toHaveCount(0);
   await expect(cost).not.toContainText("0.0%");
   await expect(

@@ -1,4 +1,4 @@
-import { DAY_MS, fromIso, toIso } from "@/lib/date";
+import { DAY_MS, dayCount, fromIso, toIso, type DateRange } from "@/lib/date";
 import type { CompareKey } from "@/types/domain";
 
 export type DashboardFilters = {
@@ -22,6 +22,21 @@ export function defaultDashboardFilters(todayIso: string): DashboardFilters {
       end: todayIso,
     },
     compare: "prev_week",
+  };
+}
+
+/**
+ * 비교 기간. 전주는 백엔드 계약대로 양 끝을 7일 앞으로, 이전 기간은 선택 기간 길이만큼 앞으로 옮긴다.
+ * 두 경우 모두 선택 기간과 길이가 같다.
+ */
+export function comparisonRange(
+  range: DateRange,
+  compare: CompareKey,
+): { start: string; end: string } {
+  const offset = (compare === "prev_week" ? 7 : dayCount(range)) * DAY_MS;
+  return {
+    start: toIso(new Date(fromIso(range.start).getTime() - offset)),
+    end: toIso(new Date(fromIso(range.end ?? range.start).getTime() - offset)),
   };
 }
 

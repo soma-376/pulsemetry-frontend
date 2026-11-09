@@ -73,9 +73,7 @@ export const UnavailableComparison: Story = {
     await expect(
       card.queryByText("일부 관측", { exact: true }),
     ).not.toBeInTheDocument();
-    await expect(
-      card.queryByText("비교 불가", { exact: true }),
-    ).not.toBeInTheDocument();
+    await expect(card.getByText("비교 불가", { exact: true })).toBeVisible();
   },
 };
 const noUsers = structuredClone(data);

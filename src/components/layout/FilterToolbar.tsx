@@ -1,8 +1,11 @@
 "use client";
 
+import { useId } from "react";
 import { DateRangePicker } from "@/components/layout/DateRangePicker";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
+import { compactRangeText, fromIso, rangeText } from "@/lib/date";
+import { comparisonRange } from "@/lib/filter-query";
 import { useFilters } from "@/lib/filters";
 import type { CompareKey } from "@/types/domain";
 
@@ -82,6 +85,9 @@ export function FilterToolbar({
 /** 개요·팀 분석의 제목 옆에 표시하는 조회 조건. */
 export function PeriodFilters({ todayIso }: { todayIso?: string }) {
   const { compare, setCompare, dates, setDates } = useFilters();
+  const compareRangeId = useId();
+  const compareRange =
+    compare === "none" ? null : comparisonRange(dates, compare);
   return (
     <div
       className="flex min-w-0 flex-wrap items-center gap-2"
@@ -95,12 +101,26 @@ export function PeriodFilters({ todayIso }: { todayIso?: string }) {
         <Select
           value={compare}
           onChange={(e) => setCompare(e.target.value as CompareKey)}
+          aria-describedby={compareRange ? compareRangeId : undefined}
         >
           <option value="prev_period">이전 기간</option>
           <option value="prev_week">전주</option>
           <option value="none">없음</option>
         </Select>
       </label>
+
+      {compareRange && (
+        <span
+          id={compareRangeId}
+          title={`비교 기간 ${rangeText(compareRange)}`}
+          className="tnum text-[12px] whitespace-nowrap text-text2"
+        >
+          {compactRangeText(
+            compareRange,
+            fromIso(dates.start).getUTCFullYear(),
+          )}
+        </span>
+      )}
 
       <span
         title="테넌트 기본 타임존 Asia/Seoul"

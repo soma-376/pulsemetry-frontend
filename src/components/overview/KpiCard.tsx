@@ -1,5 +1,5 @@
+import { ComparisonUnavailableBadge } from "@/components/ui/ComparisonUnavailableBadge";
 import { arrow } from "@/lib/format";
-import { deltaColor } from "@/lib/metrics/deltas";
 
 export type KpiCardProps = {
   label: string;
@@ -10,7 +10,8 @@ export type KpiCardProps = {
   captionTitle?: string;
   delta: string;
   up: boolean;
-  good: boolean;
+  /** 증감 글자색 — deltaTone 규칙(오르면 빨강, 내리면 파랑) */
+  deltaColor: string;
   bad: boolean;
   showDelta: boolean;
   /** 증감률이 숫자일 때만 화살표를 그린다("신규"·"변화 없음"에는 없다) */
@@ -20,6 +21,8 @@ export type KpiCardProps = {
   noDelta: boolean;
   /** 비교 기준 문구 — "전주 대비" */
   compareLabel: string;
+  /** 서버가 비교한 실제 기간 — "비교 기간 2026.08.31 ~ 2026.09.06" */
+  compareTitle?: string;
   /** 비교가 불가능한 이유 */
   noDeltaReason: string;
   /** 현재 값의 누락·부분 관측 상태. 비교 상태와 별개다. */
@@ -40,12 +43,15 @@ export function KpiCard({
   def,
   delta,
   up,
-  good,
+  deltaColor,
   bad,
   showDelta,
   showArrow = true,
   previousText,
+  noDelta,
   compareLabel,
+  compareTitle,
+  noDeltaReason,
   supportingValue,
   action,
 }: KpiCardProps) {
@@ -96,20 +102,30 @@ export function KpiCard({
 
       {showDelta && (
         <div className="tnum flex flex-wrap items-center gap-1.5 text-[12px]">
-          <span
-            className="font-semibold"
-            style={{
-              color: showArrow
-                ? deltaColor(up ? 1 : -1, { good, bad })
-                : "var(--text2)",
-            }}
-          >
+          <span className="font-semibold" style={{ color: deltaColor }}>
             {showArrow && `${arrow(up)} `}
             {delta}
           </span>
-          {compareLabel && <span className="text-text3">{compareLabel}</span>}
+          {compareLabel && (
+            <span title={compareTitle} className="text-text3">
+              {compareLabel}
+            </span>
+          )}
           {previousText && (
-            <span className="text-text3">· 이전 {previousText}</span>
+            <span title={compareTitle} className="text-text3">
+              · 이전 {previousText}
+            </span>
+          )}
+        </div>
+      )}
+
+      {noDelta && value !== "-" && (
+        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+          <ComparisonUnavailableBadge reason={noDeltaReason} />
+          {compareLabel && (
+            <span title={compareTitle} className="text-text3">
+              {compareLabel}
+            </span>
           )}
         </div>
       )}

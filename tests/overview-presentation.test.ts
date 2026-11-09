@@ -470,3 +470,21 @@ test("벤더는 서버 필드만 사용하고 이름과 ID에서는 추정하지
     ],
   );
 });
+
+test("KPI 증가는 빨강으로 칠하고 비교 기간을 툴팁으로 알린다", () => {
+  const m = presentOverview(data());
+  assert.deepEqual(
+    m.kpis.map((card) => [card.label, card.deltaColor]),
+    [
+      ["사용자 수", "var(--red)"],
+      ["사용 환산액", "var(--red)"],
+      ["세션 수", "var(--red)"],
+      ["사용자당 환산액", "var(--red)"],
+      ["총 토큰 수", "var(--red)"],
+    ],
+  );
+  assert.equal(m.compareTitle, "비교 기간 2026.08.31 ~ 2026.09.06");
+  const none = data();
+  none.comparison = { ...none.comparison, mode: "none" };
+  assert.equal(presentOverview(none).compareTitle, undefined);
+});

@@ -53,6 +53,19 @@ export function rangeText(range: DateRange) {
   return `${start} ~ ${end}`;
 }
 
+/** "08.31 ~ 09.06" — 기준 연도와 다른 날짜가 있으면 연도까지 쓴다. */
+export function compactRangeText(
+  range: { start: string; end: string },
+  referenceYear: number,
+) {
+  const sameYear = [range.start, range.end].every(
+    (iso) => fromIso(iso).getUTCFullYear() === referenceYear,
+  );
+  if (!sameYear) return rangeText(range);
+  const part = (iso: string) => iso.slice(5).replace("-", ".");
+  return `${part(range.start)} ~ ${part(range.end)}`;
+}
+
 export function dayCount(range: DateRange) {
   if (!range.end) return 1;
   return (

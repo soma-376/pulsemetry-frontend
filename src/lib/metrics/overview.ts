@@ -7,7 +7,7 @@ import { dayCount, shortDate, type DateRange } from "@/lib/date";
 import { aggregateActivity, comparisonRange } from "./activity";
 import { ACTIVITY, SAMPLE_END } from "@/mocks/activity";
 import { int, pct, signedUsd, usd } from "@/lib/format";
-import { contributionColor, costDeltaColor } from "@/lib/metrics/deltas";
+import { contributionColor, deltaTone } from "@/lib/metrics/deltas";
 import { ingestBadge, ingestDownCopy } from "@/lib/metrics/observation";
 import { buildVendorSeats } from "@/lib/metrics/vendor-seats";
 import {
@@ -207,7 +207,7 @@ export function buildOverview(
         delta: showDelta
           ? (d >= 0 ? "▲ " : "▼ ") + pct(Math.abs(d)).replace("+", "")
           : "—",
-        deltaColor: costDeltaColor(d),
+        deltaColor: deltaTone(d),
       };
     });
 
@@ -260,7 +260,7 @@ export function buildOverview(
         costText: usd(t.cost),
         perUserText: usd(t.cost / (t.users || 1)),
         perUserDelta: showDelta ? pct(t.perUserPct) : "—",
-        perUserColor: costDeltaColor(t.perUserPct),
+        perUserColor: deltaTone(t.perUserPct),
         contribText: showDelta ? signedUsd(t.contrib) : "—",
         contribColor: contributionColor(t.contrib, orgIncrease),
         barColor: t.contrib >= 0 ? "var(--red)" : "var(--green)",
