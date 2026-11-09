@@ -163,5 +163,5 @@ jobs:
           platforms: linux/arm64
           push: false
           build-args: NEXT_PUBLIC_ENROLLMENT_API_URL=https://enrollment.example.invalid
+          # develop/main CD가 저장한 캐시만 읽는다. PR 캐시는 같은 PR에서만 재사용되는데 미스 때 저장에 90초 이상 걸린다.
           cache-from: type=gha,scope=frontend-arm64
-          cache-to: type=gha,scope=frontend-arm64,mode=max,ignore-error=true,timeout=2m
