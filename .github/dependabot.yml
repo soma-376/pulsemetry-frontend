@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # Dockerfile 베이스 이미지 digest만 갱신한다. npm·GitHub Actions 갱신은 범위 밖이다.
+  - package-ecosystem: docker
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Seoul
+    open-pull-requests-limit: 1
+    ignore:
+      # Node 메이저 전환은 런타임 호환성 검토가 필요하므로 별도 작업으로 진행한다.
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      prefix: "chore"
+      include: scope

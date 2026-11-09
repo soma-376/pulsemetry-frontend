@@ -24,7 +24,9 @@ Environment에 required reviewer가 설정되어 있으면 승인 후 진행한�
 PR·수동 CI의 `build`, `container build (ARM64)` 검사는 그대로 실행된다. CD에서는 검증용 주소의 이미지를 별도로 만들지 않고, 실제 `NEXT_PUBLIC_ENROLLMENT_API_URL`을 넣은 배포 이미지를 한 번 빌드한다.
 
 Docker Buildx의 GitHub Actions 캐시(`scope=frontend-arm64`, `mode=max`)에 중간 단계까지 저장한다. Dockerfile은 package.json·lockfile 복사와 `npm ci`를 소스 복사보다 먼저 실행하므로, 앱 코드나 공개 API 주소만 바뀌면 의존성 레이어를 재사용한다. lockfile이 바뀌면 설치 레이어부터 다시 실행한다.
-캐시는 GitHub의 브랜치 접근 규칙을 따르며 PR에서 저장한 캐시가 develop/main 캐시를 덮어쓰지 않는다. 캐시에는 빌드 입력만 포함하고 런타임 시크릿은 전달하지 않는다. 캐시 저장 실패는 빌드 성공을 실패로 바꾸지 않으며, 저장 제한 시간은 2분이다. 로그의 캐시 저장 경고는 별도로 확인한다.
+캐시는 develop/main CD의 배포 이미지 빌드만 저장한다. PR·수동 CI의 컨테이너 검사는 `cache-from`으로 기준 브랜치 캐시를 읽기만 한다. PR 캐시는 같은 PR에서만 재사용되고, 캐시가 빗나가면 저장에만 90초 이상 걸리기 때문이다. 캐시에는 빌드 입력만 포함하고 런타임 시크릿은 전달하지 않는다. 캐시 저장 실패는 빌드 성공을 실패로 바꾸지 않으며, 저장 제한 시간은 2분이다. 로그의 캐시 저장 경고는 별도로 확인한다.
+
+베이스 이미지(`node:24-bookworm-slim`)는 multi-arch index digest로 고정한다. 태그만 쓰면 상위 이미지가 갱신될 때 모든 레이어가 무효가 된다(2026-11-05~08 develop CD 5회 중 2회, 회당 약 100초 증가). digest 갱신은 `.github/dependabot.yml`이 매주 월요일 develop 대상 PR로 올린다. Node 메이저 전환은 제외한다. Dependabot PR을 머지한 뒤 첫 CD는 캐시를 새로 만들어 느린 것이 정상이다. 두 `FROM`의 digest는 같게 유지한다.
 
 일반 CI의 `setup-node` npm 캐시는 다운로드한 패키지를 재사용하며 `node_modules` 설치를 생략하지 않는다. Next.js 작업의 `.next/cache`도 Docker 캐시와 별개다. Docker에는 레이어 캐시를 적용하므로 소스가 바뀌면 Next.js 빌드 단계는 다시 실행한다.
 
@@ -42,7 +44,7 @@ CD의 `Report CD timings` 작업은 실패·건너뜀을 포함해 현재 실행
 
 2026-11-04 기준 실행 [41790737890](https://github.com/soma-376/pulsemetry-frontend/actions/runs/41790737890)은 9분 16초(CI 2분 5초, Docker 1분 50초, 업로드 24초, ECS 4분 42초, 기타 15초)였다. 첫 캐시 생성과 캐시가 준비된 후속 실행을 구분해 비교한다. 후속 dev 배포 3회 이상의 중앙값을 기록한 뒤 단축 효과를 판단한다.
 
-ECS 동시 기동 비율·배치 제약·드레이닝 변경은 이 캐시 변경에 포함하지 않는다. 2026-11-04 dev 실측은 desired=2, min=50%, max=100%, distinctInstance로 순차 교체했다. 추가 단축은 실제 EC2 여유와 BFF 종료·세션 안전성 검증을 근거로 별도 결정한다.
+ECS 배치·배포 비율은 infra가 소유한다. 2026-11-09 [infra #126](https://github.com/soma-376/infra/pull/126)(PROJ-328)으로 dev를 동적 hostPort, min=100%/max=200%로 바꿨다. 이제 `distinctInstance` 없이 새 태스크 두 개를 먼저 띄운 뒤 교체한다. 같은 커밋(실행 42488479566) 재실행 기준 ECS 교체·확인 단계는 262초에서 중앙값 177초로 줄었다. 드레이닝·health check 값은 바꾸지 않았다.
 
 ## 환경 변수와 비밀 값
 
