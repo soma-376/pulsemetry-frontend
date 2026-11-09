@@ -16,6 +16,7 @@ import {
   type TeamUsersPage,
 } from "@/lib/api/teams";
 import { int, pct, signedUsd, usd } from "@/lib/format";
+import { deltaTone } from "@/lib/metrics/deltas";
 import { getVendorProduct } from "@/lib/vendor-catalog";
 import {
   valueStatus,
@@ -58,8 +59,6 @@ const MODEL_SERIES = [
 ];
 /** 산점도에서 점을 그리는 상위 모델 수 */
 const MODEL_TOP_N = 4;
-/** 증가가 이 비율 이상이면 강조한다. */
-const RISE_ALERT = 0.1;
 /** 신규(이전 0 → 현재 양수)는 어떤 증가율보다 크게 정렬한다. */
 const NEW_USAGE = Number.MAX_VALUE;
 const UNMAPPED_PRODUCT = "__unmapped";
@@ -105,14 +104,9 @@ function hasRecordedUsage(usage: Usage | null): boolean | null {
   return usage.pricedUsageRows + usage.unpricedUsageRows > 0;
 }
 
+/** 개요와 같은 증감 색 규칙(오르면 빨강, 내리면 파랑). 신규는 비율이 아니라 회색이다. */
 const changeColor = (value: number | null) =>
-  value === null
-    ? "var(--text3)"
-    : value >= RISE_ALERT
-      ? "var(--red)"
-      : value < 0
-        ? "var(--green)"
-        : "var(--text3)";
+  deltaTone(value === NEW_USAGE ? null : value);
 
 type TeamEntry = {
   key: string;

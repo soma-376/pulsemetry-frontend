@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { SortHeader } from "@/components/ui/SortHeader";
+import { ComparisonUnavailableBadge } from "@/components/ui/ComparisonUnavailableBadge";
 import { nextSort, sortRows, type SortState } from "@/lib/sort";
 import { LineAreaChart } from "@/components/charts/LineAreaChart";
 import { TrendFeedback } from "@/components/charts/TrendFeedback";
@@ -125,6 +126,9 @@ export function TeamAxisPanel({
           >
             {ax.delta}
           </span>
+          {model.compareLabel && ax.delta === "-" && (
+            <ComparisonUnavailableBadge reason={ax.deltaReason} />
+          )}
         </div>
       </div>
 
@@ -295,7 +299,15 @@ export function TeamAxisPanel({
                   className="pointer-events-none tnum inline-flex justify-end text-right text-[12px] font-semibold whitespace-nowrap"
                   style={{ color: r.deltaColor }}
                 >
-                  {r.delta}
+                  {model.compareLabel &&
+                  r.totalValue !== null &&
+                  r.delta === "-" ? (
+                    <span className="pointer-events-auto z-10">
+                      <ComparisonUnavailableBadge reason={r.deltaReason} />
+                    </span>
+                  ) : (
+                    r.delta
+                  )}
                 </span>
                 <span
                   aria-hidden="true"

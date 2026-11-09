@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Widget } from "@/components/ui/Card";
+import { ComparisonUnavailableBadge } from "@/components/ui/ComparisonUnavailableBadge";
 import type { OverviewTeamSummary } from "@/lib/metrics/overview-presentation";
 
 type SortKey = "team" | "userCount" | "cost";
@@ -141,7 +142,17 @@ export function TeamUsageTable({
                   <td className="relative tnum py-3">{row.costText} </td>
                   {attribution.comparable && (
                     <>
-                      <td className="relative tnum py-3">{row.changeText}</td>
+                      <td className="relative tnum py-3">
+                        {row.comparisonReason !== undefined ? (
+                          <ComparisonUnavailableBadge
+                            reason={row.comparisonReason}
+                          />
+                        ) : (
+                          <span style={{ color: row.changeColor }}>
+                            {row.changeText}
+                          </span>
+                        )}
+                      </td>
                       <td className="relative tnum py-3">{row.contribText}</td>
                     </>
                   )}
@@ -175,7 +186,17 @@ export function TeamUsageTable({
                 {attribution.comparable && (
                   <>
                     <td className="relative tnum">
-                      {attribution.unmapped.changeText}
+                      {attribution.unmapped.comparisonReason !== undefined ? (
+                        <ComparisonUnavailableBadge
+                          reason={attribution.unmapped.comparisonReason}
+                        />
+                      ) : (
+                        <span
+                          style={{ color: attribution.unmapped.changeColor }}
+                        >
+                          {attribution.unmapped.changeText}
+                        </span>
+                      )}
                     </td>
                     <td className="relative tnum">
                       {attribution.unmapped.contribText}

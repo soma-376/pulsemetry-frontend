@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { compactRangeText } from "../src/lib/date";
 import {
+  comparisonRange,
   defaultDashboardFilters,
   readFilterQuery,
   resolveDashboardFilters,
@@ -148,5 +150,28 @@ test("관리 페이지를 거쳐 돌아오면 마지막 조건을 복원하고 �
       selected,
     ),
     defaultDashboardFilters(today),
+  );
+});
+
+test("비교 기간은 전주면 7일, 이전 기간이면 선택 기간 길이만큼 앞이다", () => {
+  const midweek = { start: "2026-11-09", end: "2026-11-11" };
+  assert.deepEqual(comparisonRange(midweek, "prev_week"), {
+    start: "2026-11-02",
+    end: "2026-11-04",
+  });
+  assert.deepEqual(comparisonRange(midweek, "prev_period"), {
+    start: "2026-11-06",
+    end: "2026-11-08",
+  });
+});
+
+test("비교 기간 표기는 같은 해면 월.일만, 해가 다르면 연도까지 쓴다", () => {
+  assert.equal(
+    compactRangeText({ start: "2026-08-31", end: "2026-09-06" }, 2026),
+    "08.31 ~ 09.06",
+  );
+  assert.equal(
+    compactRangeText({ start: "2025-12-29", end: "2026-01-04" }, 2026),
+    "2025.12.29 ~ 2026.01.04",
   );
 });

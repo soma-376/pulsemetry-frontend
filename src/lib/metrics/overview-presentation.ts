@@ -9,7 +9,7 @@ import {
   hasNoObservedUsage,
   type TrendFeedback,
 } from "./trend-feedback";
-import { currentDateIso } from "../date";
+import { currentDateIso, rangeText } from "../date";
 import type { ContractStatus } from "../contract-status";
 import type {
   Overview,
@@ -24,6 +24,7 @@ import {
   numeric,
 } from "@/lib/api/overview-format";
 import { signedUsd } from "@/lib/format";
+import { deltaTone } from "@/lib/metrics/deltas";
 import { costAxisLabel, trendAxisMax } from "./chart-axis";
 import { knownMoneyText, pricingRowsText } from "./known-usage";
 import type { OverviewModel } from "./overview";
@@ -76,6 +77,8 @@ export type OverviewVendorDisplay = {
 };
 type TeamChange = {
   changeText: string;
+  /** 증감 글자색 — 개요 KPI·팀 분석과 같은 deltaTone 규칙 */
+  changeColor?: string;
   contrib: number | null;
   contribText: string;
   comparisonReason?: string;
@@ -224,9 +227,19 @@ function teamChange(metric: OverviewMetric<string>): TeamChange {
           : c.change === "unchanged"
             ? "변화 없음"
             : `${(c.percentChange ?? 0) > 0 ? "+" : ""}${c.percentChange?.toFixed(1)}%`,
+    changeColor: deltaTone(
+      c.status !== "available" ||
+        c.change === "new" ||
+        c.change === "unchanged" ||
+        c.percentChange === null
+        ? null
+        : c.percentChange / 100,
+    ),
     contrib: delta,
     contribText: delta === null ? "-" : signedUsd(delta),
-    comparisonReason: reasonsText(c.reasons),
+    // 비교가 가능한 행에는 사유를 두지 않는다 — 화면은 사유가 있을 때만 "비교 불가"를 그린다.
+    comparisonReason:
+      c.status === "available" ? undefined : reasonsText(c.reasons),
     costStatus: valueStatus(metric),
   };
 }
@@ -238,6 +251,12 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
       : data.comparison.mode === "prev_week"
         ? "전주 대비"
         : "이전 기간 대비";
+  const { startDate: compareStart, endDate: compareEnd } = data.comparison;
+  // 비교 기간 날짜는 서버가 실제로 비교한 기간이다.
+  const compareTitle =
+    data.comparison.mode !== "none" && compareStart && compareEnd
+      ? `비교 기간 ${rangeText({ start: compareStart, end: compareEnd })}`
+      : undefined;
   const definitions = summary
     ? [
         {
@@ -247,7 +266,6 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
           unit: "명",
           def: "기간 내 사용이 확인된 고유 구성원 수 · 벤더 좌석 수와 별개",
           caption: "기간 내 사용이 확인된 구성원",
-          good: true,
         },
         {
           label: "사용 환산액",
@@ -257,7 +275,6 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
           unit: "",
           def: "관측별로 저장된 참조 평가액의 합 · 실제 청구액과 별개",
           caption: "사용량을 금액으로 환산한 값",
-          good: false,
           supportingValue:
             summary.equivalentCostUsd.value === null &&
             summary.knownEquivalentCostUsd?.value != null
@@ -279,7 +296,6 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
             ...summary.sessionsPerUser.reasons,
             ...summary.equivalentCostPerSessionUsd.reasons,
           ]),
-          good: false,
         },
         {
           label: "사용자당 환산액",
@@ -289,7 +305,6 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
           unit: "",
           def: "선택 기간의 사용 환산액 ÷ 고유 사용자 수",
           caption: "사용 환산액 ÷ 사용자 수",
-          good: false,
         },
         {
           label: "총 토큰 수",
@@ -301,7 +316,6 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
             summary.totalTokens.value === null
               ? "전체 토큰 수를 확인할 수 없습니다"
               : "기간 내 사용한 전체 토큰",
-          good: false,
         },
       ]
     : [];
@@ -321,6 +335,13 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
               ? "-"
               : `${Math.abs(c.percentChange).toFixed(1)}%`,
       up: (c.percentChange ?? 0) >= 0,
+      deltaColor: deltaTone(
+        c.change === "new" ||
+          c.change === "unchanged" ||
+          c.percentChange === null
+          ? null
+          : c.percentChange / 100,
+      ),
       showArrow: c.percentChange !== null && c.change !== "unchanged",
       showDelta: c.status === "available",
       noDelta: c.status === "unavailable",
@@ -527,6 +548,7 @@ export function presentOverview(data: Overview, today = currentDateIso()) {
     vendorMixes,
     attribution,
     compareLabel,
+    compareTitle,
     periodLabel: `${data.meta.startDate} ~ ${data.meta.endDate}`,
     isEmpty: data.meta.dataState === "never_observed",
     hasData: ["ready", "partial"].includes(data.meta.dataState),

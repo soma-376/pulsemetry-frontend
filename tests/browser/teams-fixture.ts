@@ -114,6 +114,8 @@ export async function mockTeams(
       .origin,
     "access-control-allow-headers": "content-type,authorization",
     "access-control-allow-methods": "GET,OPTIONS",
+    // BFF 요청은 쿠키를 싣는다(credentials: include). 없으면 브라우저가 응답을 막는다.
+    "access-control-allow-credentials": "true",
   };
   const json = (route: Route, value: unknown, status = 200) =>
     route.fulfill({ status, headers: cors, json: value });

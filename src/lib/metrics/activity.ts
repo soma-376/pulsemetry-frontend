@@ -1,17 +1,8 @@
-import { DAY_MS, dayCount, fromIso, toIso, type DateRange } from "@/lib/date";
+import { dayCount, type DateRange } from "@/lib/date";
 import { ACTIVITY } from "@/mocks/activity";
-import type { CompareKey, VendorUsage } from "@/types/domain";
+import type { VendorUsage } from "@/types/domain";
 
-export function comparisonRange(
-  range: DateRange,
-  compare: CompareKey,
-): DateRange {
-  const offset = (compare === "prev_week" ? 7 : dayCount(range)) * DAY_MS;
-  return {
-    start: toIso(new Date(fromIso(range.start).getTime() - offset)),
-    end: toIso(new Date(fromIso(range.end ?? range.start).getTime() - offset)),
-  };
-}
+export { comparisonRange } from "@/lib/filter-query";
 
 export function aggregateActivity(
   range: DateRange,
